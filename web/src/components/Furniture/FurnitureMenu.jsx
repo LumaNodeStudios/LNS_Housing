@@ -130,8 +130,6 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
     setActiveTab('shopping');
   };
 
-
-
   const handleClose = () => {
     post('closeUI');
   };

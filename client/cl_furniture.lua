@@ -372,7 +372,7 @@ Modeler = {
         local spawned = LoadedFurniture[self.property_id] or {}
 
         for _, item in ipairs(property.furniture or {}) do
-            local entity = spawned[item.id]
+            local entity = spawned[item.id] or spawned[tonumber(item.id)] or spawned[tostring(item.id)]
             table.insert(ownedItems, {
                 id = item.id,
                 model = item.model,
@@ -476,11 +476,15 @@ Modeler = {
     HoverOwnedItem = function(self, data)
         self:UnhoverOwnedItem()
         
-        local entity = data.entity
-        if entity and DoesEntityExist(entity) then
-            self.HoveredOwnedEntity = entity
-            SetEntityDrawOutline(entity, true)
-            SetEntityDrawOutlineColor(255, 255, 255, 255)
+        local entity = tonumber(data.entity)
+        if entity then
+            entity = math.floor(entity)
+            if DoesEntityExist(entity) then
+                self.HoveredOwnedEntity = entity
+                SetEntityDrawOutlineColor(255, 255, 255, 200)
+                SetEntityDrawOutlineShader(1)
+                SetEntityDrawOutline(entity, true)
+            end
         end
     end,
 
