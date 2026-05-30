@@ -112,6 +112,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
     if (isPlacing) return;
     setIsPlacing(true);
     setPlacingItem(item);
+    post('unhoverOwnedItem');
     post('previewFurniture', item);
   };
 
@@ -319,6 +320,8 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                         <div
                           key={idx}
                           className={`item-card ${isPlacing ? (placingItem?.id === item.id ? 'is-placing' : 'disabled') : ''}`}
+                          onMouseEnter={() => !isPlacing && post('hoverOwnedItem', { entity: item.entity, id: item.id })}
+                          onMouseLeave={() => !isPlacing && post('unhoverOwnedItem')}
                           onClick={() => handlePreview(item)}
                         >
                           <div className="icon-wrapper">
@@ -330,6 +333,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                           <button className="delete-icon-btn" disabled={isPlacing} onClick={(e) => {
                             if (isPlacing) return;
                             e.stopPropagation();
+                            post('unhoverOwnedItem');
                             post('removeOwnedItem', item);
                           }}>
                             <Trash2 size={14} />

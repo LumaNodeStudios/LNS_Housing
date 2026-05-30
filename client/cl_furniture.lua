@@ -64,6 +64,7 @@ Modeler = {
         SetNuiFocus(false, false)
 
         self:HoverOut()
+        self:UnhoverOwnedItem()
         self:StopPlacement()
         self:FreecamActive(false)
 
@@ -470,6 +471,24 @@ Modeler = {
             self.HoverObject = nil
         end
         self.IsHovering = false
+    end,
+
+    HoverOwnedItem = function(self, data)
+        self:UnhoverOwnedItem()
+        
+        local entity = data.entity
+        if entity and DoesEntityExist(entity) then
+            self.HoveredOwnedEntity = entity
+            SetEntityDrawOutline(entity, true)
+            SetEntityDrawOutlineColor(255, 255, 255, 255)
+        end
+    end,
+
+    UnhoverOwnedItem = function(self)
+        if self.HoveredOwnedEntity and DoesEntityExist(self.HoveredOwnedEntity) then
+            SetEntityDrawOutline(self.HoveredOwnedEntity, false)
+        end
+        self.HoveredOwnedEntity = nil
     end
 }
 
@@ -541,6 +560,16 @@ end)
 
 RegisterNUICallback("hoverOut", function(data, cb)
     Modeler:HoverOut()
+    cb("ok")
+end)
+
+RegisterNUICallback("hoverOwnedItem", function(data, cb)
+    Modeler:HoverOwnedItem(data)
+    cb("ok")
+end)
+
+RegisterNUICallback("unhoverOwnedItem", function(data, cb)
+    Modeler:UnhoverOwnedItem()
     cb("ok")
 end)
 
