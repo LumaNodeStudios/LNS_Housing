@@ -325,9 +325,6 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                           <div className="icon-wrapper">
                             <ItemIcon size={28} className="placeholder" />
                           </div>
-                          <div className="owned-badge">
-                            <Check size={12} />
-                          </div>
                           <button className="delete-icon-btn" disabled={isPlacing} onClick={(e) => {
                             if (isPlacing) return;
                             e.stopPropagation();

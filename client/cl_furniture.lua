@@ -493,6 +493,36 @@ Modeler = {
             SetEntityDrawOutline(self.HoveredOwnedEntity, false)
         end
         self.HoveredOwnedEntity = nil
+    end,
+
+    RemoveOwnedItem = function(self, data)
+        local property = Properties[self.property_id]
+        if not property or not property.furniture then return end
+
+        local foundIndex = nil
+        for i, item in ipairs(property.furniture) do
+            if item.id == data.id or tostring(item.id) == tostring(data.id) then
+                foundIndex = i
+                break
+            end
+        end
+
+        if foundIndex then
+            table.remove(property.furniture, foundIndex)
+            
+            if LoadedFurniture[self.property_id] then
+                UnloadFurnitures(self.property_id)
+                LoadFurnitures(self.property_id)
+            end
+            
+            self:UpdateOwnedItems()
+
+            if property.isApartment then
+                TriggerServerEvent('LNS_Housing:server:saveApartmentFurniture', self.property_id, property.furniture)
+            else
+                TriggerServerEvent('LNS_Housing:server:saveFurniture', self.property_id, property.furniture)
+            end
+        end
     end
 }
 
@@ -574,6 +604,11 @@ end)
 
 RegisterNUICallback("unhoverOwnedItem", function(data, cb)
     Modeler:UnhoverOwnedItem()
+    cb("ok")
+end)
+
+RegisterNUICallback("removeOwnedItem", function(data, cb)
+    Modeler:RemoveOwnedItem(data)
     cb("ok")
 end)
 

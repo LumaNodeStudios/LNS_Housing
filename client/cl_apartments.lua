@@ -491,7 +491,7 @@ RegisterNUICallback('pickApartmentSpawn', function(_, cb)
         lib.showTextUI('[E] - Save Spawn Point | [H] Cancel')
 
         if IsControlJustReleased(0, 38) then
-            local ped = cache.ped or PlayerPedId()
+            local ped = cache.ped
             local coords = GetEntityCoords(ped)
             local heading = GetEntityHeading(ped)
             spawnCoords = {x = coords.x, y = coords.y, z = coords.z, w = heading}
