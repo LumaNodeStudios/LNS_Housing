@@ -15,7 +15,7 @@ const Scene = ({ cameraData, objectPos, objectRot, mode, onUpdate, onModeChange 
     if (cameraData) {
       const threeCamPos = convertToThree(cameraData.position);
       const threeCamLookAt = convertToThree(cameraData.lookAt);
-      
+
       camera.position.set(threeCamPos.x, threeCamPos.y, threeCamPos.z);
       camera.lookAt(threeCamLookAt.x, threeCamLookAt.y, threeCamLookAt.z);
 
@@ -38,15 +38,15 @@ const Scene = ({ cameraData, objectPos, objectRot, mode, onUpdate, onModeChange 
 
   const handleObjectChange = () => {
     if (meshRef.current) {
-      const gtaPos = convertToGTA(meshRef.current.position);
+      const position = convertToGTA(meshRef.current.position);
       const rotation = meshRef.current.rotation;
-      const gtaRot = {
+      const rotation2 = {
         x: THREE.MathUtils.radToDeg(rotation.x),
         y: -THREE.MathUtils.radToDeg(rotation.z),
         z: THREE.MathUtils.radToDeg(rotation.y)
       };
-      
-      onUpdate({ position: gtaPos, rotation: gtaRot });
+
+      onUpdate({ position: position, rotation: rotation2 });
     }
   };
 
@@ -54,9 +54,9 @@ const Scene = ({ cameraData, objectPos, objectRot, mode, onUpdate, onModeChange 
     <>
       <ambientLight intensity={0.5} />
       <pointLight position={[10, 10, 10]} />
-      
-      <mesh 
-        ref={meshRef} 
+
+      <mesh
+        ref={meshRef}
         position={[
           convertToThree(objectPos).x,
           convertToThree(objectPos).y,
@@ -73,9 +73,9 @@ const Scene = ({ cameraData, objectPos, objectRot, mode, onUpdate, onModeChange 
         <meshStandardMaterial color="orange" transparent opacity={0} />
       </mesh>
 
-      <TransformControls 
+      <TransformControls
         ref={controlsRef}
-        object={meshRef.current} 
+        object={meshRef.current}
         mode={mode}
         onObjectChange={handleObjectChange}
         size={0.6}
@@ -117,12 +117,12 @@ const Modeler3D = ({ active, onUpdate }) => {
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, []);useEffect(() => {
+  }, []); useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
         return;
       }
-      
+
       const key = e.key.toLowerCase();
       if (key === 'e') {
         setMode('translate');
@@ -130,7 +130,7 @@ const Modeler3D = ({ active, onUpdate }) => {
         setMode('rotate');
       }
     };
-    
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
@@ -145,7 +145,7 @@ const Modeler3D = ({ active, onUpdate }) => {
 
   return (
     <div className="modeler-3d-container">
-      <Canvas 
+      <Canvas
         camera={{ fov: 45.0, near: 0.1, far: 1000 }}
         style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', pointerEvents: 'auto' }}
         gl={{ alpha: true, antialias: true }}
@@ -158,8 +158,8 @@ const Modeler3D = ({ active, onUpdate }) => {
           }
         }}
       >
-        <Scene 
-          cameraData={cameraData} 
+        <Scene
+          cameraData={cameraData}
           objectPos={position}
           objectRot={rotation}
           mode={mode}
