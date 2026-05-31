@@ -14,6 +14,7 @@ Modeler = {
     IsHovering = false,
     HoverObject = nil,
     HoverDistance = 5.0,
+    HoverSession = 0,
 
     OpenMenu = function(self, propertyId)
         local property = Properties[propertyId]
@@ -502,9 +503,17 @@ Modeler = {
 
     HoverIn = function(self, data)
         self:HoverOut()
+        self.HoverSession = self.HoverSession + 1
+        local currentSession = self.HoverSession
+
         local hash = GetHashKey(data.model)
         lib.requestModel(hash)
         
+        -- If a new hover session was started while we were yielding/requesting the model, discard this one
+        if currentSession ~= self.HoverSession then
+            return
+        end
+
         self.HoverObject = CreateObject(hash, 0.0, 0.0, 0.0, false, false, false)
         local lookAt = Freecam:GetTarget(self.HoverDistance)
         SetEntityCoords(self.HoverObject, lookAt.x, lookAt.y, lookAt.z)
@@ -513,15 +522,17 @@ Modeler = {
 
         self.IsHovering = true
         CreateThread(function()
-            while self.IsHovering do
-                local rot = GetEntityRotation(self.HoverObject)
-                SetEntityRotation(self.HoverObject, rot.x, rot.y, rot.z + 1.0)
+            local spawnedObj = self.HoverObject
+            while self.IsHovering and self.HoverSession == currentSession and DoesEntityExist(spawnedObj) do
+                local rot = GetEntityRotation(spawnedObj)
+                SetEntityRotation(spawnedObj, rot.x, rot.y, rot.z + 1.0)
                 Wait(10)
             end
         end)
     end,
 
     HoverOut = function(self)
+        self.HoverSession = self.HoverSession + 1 -- Invalidate any yielding model requests
         if self.HoverObject then
             DeleteEntity(self.HoverObject)
             self.HoverObject = nil
