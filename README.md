@@ -181,9 +181,15 @@ CREATE TABLE IF NOT EXISTS `housing_employees` (
 
 ## Starter Apartment Spawning Integration
 
-To eliminate double-fading screens and allow players to choose their starter apartments or owned properties directly inside the spawn selection menu, configure the following modifications:
+To eliminate double-fading screens and allow players to choose their starter apartments or owned properties directly inside the spawn selection menu, configure the modifications below for your framework (**Qbox** or **ESX**).
 
-### Part A: Spawning Directly in Starter Apartments (`qbx_core`)
+> **Note:** LNS Housing auto-detects your framework. You only need the section that matches your server.
+
+---
+
+### Qbox (qbx_core / qbx_spawn)
+
+#### Part A: Spawning Directly in Starter Apartments (`qbx_core`)
 Update `qbx_core` to query the player's newly assigned apartment coordinates *before* spawning.
 
 
@@ -282,7 +288,7 @@ RegisterNetEvent('qbx_core:client:spawnNoApartments', function() -- This event i
 end)
 ```
 
-##### Recommended Configuration Settings
+##### Recommended Qbox Configuration Settings
 1. **Disable Qbox Legacy Apartments (`qbx_core`):**
    Open `qbx_core/config/client.lua` and verify that `startingApartment` under the `characters` section is set to `false`:
    ```lua
@@ -296,6 +302,7 @@ end)
 ---
 
 #### Part B: Spawn Menu Selection (`qbx_spawn`)
+
 Allows returning players to select their starter apartments or owned properties directly inside the spawn selection menu.
 
 ##### Edit 1: `qbx_spawn/server/main.lua`
@@ -375,6 +382,178 @@ Open `client/main.lua` and locate the submit key handler in the `inputHandler()`
 
             break
 ```
+
+---
+
+### ESX (es_extended / esx_multicharacter)
+
+ESX Legacy uses `esx_multicharacter` for character selection and `ESX.SpawnPlayer` for the final spawn. Integrate LNS Housing so **new characters** spawn inside their assigned starter apartment instead of `Config.DefaultSpawns`.
+
+#### Part A: Spawning Directly in Starter Apartments (`esx_multicharacter`)
+
+Update `esx_multicharacter` to resolve the player's apartment spawn coordinates before calling `ESX.SpawnPlayer`.
+
+##### Edit: `esx_multicharacter/client/modules/multicharacter.lua`
+
+Open `Multicharacter:PlayerLoaded` and replace the spawn selection block (from `local esxSpawns = ESX.GetConfig().DefaultSpawns` through `if not isNew and playerData.coords then`) with:
+
+```lua
+    local esxSpawns = ESX.GetConfig().DefaultSpawns
+    local spawn = esxSpawns[math.random(1, #esxSpawns)]
+    local isStarterApartment = false
+    local assignedRoom = nil
+
+    if not isNew and playerData.coords then
+        spawn = playerData.coords
+    elseif isNew and GetResourceState('LNS_Housing') == 'started' then
+        assignedRoom = lib.callback.await('LNS_Housing:server:getMyApartment', false)
+        if assignedRoom and assignedRoom.roomData and assignedRoom.roomData.spawn then
+            local aptSpawn = assignedRoom.roomData.spawn
+            spawn = {
+                x = aptSpawn.x,
+                y = aptSpawn.y,
+                z = aptSpawn.z,
+                heading = aptSpawn.w or aptSpawn.heading or 0.0,
+            }
+            isStarterApartment = true
+        end
+    end
+```
+
+Then locate the `ESX.SpawnPlayer(skin, spawn, function()` callback at the end of the same function. Inside that callback, **after** `DoScreenFadeIn(750)` and **before** `self:Reset()`, add:
+
+```lua
+        if isStarterApartment and assignedRoom then
+            TriggerEvent('LNS_Housing:client:setApartmentData', assignedRoom.roomId, assignedRoom.roomData)
+        end
+```
+
+##### Alternative: Servers Without Multicharacter
+
+If `Config.Multichar` is disabled in `es_extended`, edit `es_extended/client/modules/events.lua` instead. In the `RegisterNetEvent("esx:playerLoaded", ...)` handler, wrap the `ESX.SpawnPlayer` call:
+
+```lua
+RegisterNetEvent("esx:playerLoaded", function(xPlayer, _, skin)
+    ESX.PlayerData = xPlayer
+
+    if not Config.Multichar then
+        local spawn = ESX.PlayerData.coords
+        local isStarterApartment = false
+        local assignedRoom = nil
+
+        if GetResourceState('LNS_Housing') == 'started' then
+            assignedRoom = lib.callback.await('LNS_Housing:server:getMyApartment', false)
+            if assignedRoom and assignedRoom.roomData and assignedRoom.roomData.spawn then
+                local aptSpawn = assignedRoom.roomData.spawn
+                spawn = {
+                    x = aptSpawn.x,
+                    y = aptSpawn.y,
+                    z = aptSpawn.z,
+                    heading = aptSpawn.w or aptSpawn.heading or 0.0,
+                }
+                isStarterApartment = true
+            end
+        end
+
+        ESX.SpawnPlayer(skin, spawn, function()
+            if isStarterApartment and assignedRoom then
+                TriggerEvent('LNS_Housing:client:setApartmentData', assignedRoom.roomId, assignedRoom.roomData)
+            end
+
+            TriggerEvent("esx:onPlayerSpawn")
+            TriggerEvent("esx:restoreLoadout")
+            TriggerServerEvent("esx:onPlayerSpawn")
+            TriggerEvent("esx:loadingScreenOff")
+            ShutdownLoadingScreen()
+            ShutdownLoadingScreenNui()
+        end)
+    end
+    -- ... rest of handler unchanged
+```
+
+##### Recommended ESX Configuration Settings
+
+1. **Disable `esx_property`:**
+   LNS Housing replaces default ESX property housing, stashes, and interiors. Stop or remove `esx_property` from your `server.cfg` to avoid conflicts.
+
+2. **Keep starter apartments enabled in LNS Housing:**
+   In `shared/settings.lua`, ensure apartments are enabled:
+   ```lua
+   Apartments = {
+       Enabled = true,
+       -- ...
+   }
+   ```
+
+3. **Appearance / skin resource:**
+   New characters still use `esx_skin` / `skinchanger` during creation. The apartment spawn runs after the skin menu finishes, so players customize their character before loading into their room.
+
+##### Optional: No Core Script Edits (Post-Spawn Teleport)
+
+If you prefer not to modify `esx_multicharacter`, trigger a one-time teleport after the first character is fully loaded. For example, from your skin resource when the first outfit is saved:
+
+```lua
+exports['LNS_Housing']:TeleportToStarterApartment()
+```
+
+Or trigger the event:
+
+```lua
+TriggerEvent('LNS_Housing:client:spawnInStarterApartment')
+```
+
+Returning players keep their saved `coords` from the database and are not affected.
+
+---
+
+#### Part B: Spawn Menu Selection (Third-Party Spawn Selector)
+
+ESX Legacy does not ship with a built-in spawn menu (unlike `qbx_spawn`). If you use a third-party spawn selector, wire it to LNS Housing exports so players can pick apartments and owned houses.
+
+##### Server: Add LNS Housing spawns to your property list
+
+Where your spawn resource builds its location list for a player, merge LNS Housing results:
+
+```lua
+local houseData = {} -- your existing spawn entries
+
+if GetResourceState('LNS_Housing'):find('start') then
+    local success, lnsSpawns = pcall(function()
+        return exports.LNS_Housing:GetPlayerSpawns(source)
+    end)
+    if success and lnsSpawns then
+        for i = 1, #lnsSpawns do
+            local spawn = lnsSpawns[i]
+            houseData[#houseData + 1] = {
+                label = spawn.label,
+                coords = spawn.coords,
+                lnsProperty = {
+                    type = spawn.type, -- "apartment" | "house"
+                    id = spawn.id,
+                },
+            }
+        end
+    end
+end
+
+return houseData
+```
+
+##### Client: Spawn into the selected LNS property
+
+When the player confirms a spawn location, handle LNS entries before falling back to default coordinates:
+
+```lua
+if spawnData.lnsProperty then
+    exports.LNS_Housing:SpawnInProperty(spawnData.lnsProperty.type, spawnData.lnsProperty.id)
+elseif spawnData.coords then
+    local c = spawnData.coords
+    SetEntityCoords(cache.ped, c.x, c.y, c.z, false, false, false, false)
+    SetEntityHeading(cache.ped, c.w or c.heading or 0.0)
+end
+```
+
+`GetPlayerSpawns` returns apartment coords directly; house entries may need client-side resolution via `exports.LNS_Housing:GetPlayerSpawns()` on the client if coords are missing server-side.
 
 ---
 
