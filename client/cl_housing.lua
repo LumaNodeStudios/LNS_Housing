@@ -3,8 +3,6 @@ Properties = {}
 local CurrentProperty = nil
 local CurrentInterior = 0
 
--- Sync properties from server (optimized: merged into unified initialization thread)
-
 -- Open Creator UI
 RegisterCommand(Settings.Creator.Command, function(source, args, rawCommand)
     local hasPermission = lib.callback.await('LNS_Housing:server:getRealEstatePermission', false)
@@ -90,8 +88,6 @@ RegisterNUICallback('respondToContract', function(data, cb)
     SendNUIMessage({ action = 'closeUI' })
     cb(success)
 end)
-
--- Target integration for houses (optimized: merged into unified initialization thread)
 
 function LockpickDoor(propertyId)
     local p = Properties[propertyId]

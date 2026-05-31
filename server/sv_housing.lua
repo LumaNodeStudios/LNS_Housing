@@ -1,5 +1,10 @@
 local Settings = lib.load('shared.settings')
 
+TemporaryAccess = {
+    doors = {},
+    stashes = {}
+}
+
 function GetIdentifier(source)
     return Bridge.Server.GetIdentifier(source)
 end
@@ -55,11 +60,6 @@ function SyncPropertyDoor(propertyId)
         })
     end
 end
-
-TemporaryAccess = {
-    doors = {},
-    stashes = {}
-}
 
 lib.callback.register('LNS_Housing:server:getProperties', function(source)
     return Properties
