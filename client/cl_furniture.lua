@@ -190,6 +190,33 @@ Modeler = {
         })
     end,
 
+    ConstrainCamera = function(self, camPos, lastCamPos)
+        local isInside = true
+        
+        -- Check regular housing zone
+        if IsCoordsInsidePropertyZone then
+            isInside = IsCoordsInsidePropertyZone(self.property_id, camPos)
+        end
+        
+        -- Check apartment zone
+        if isInside and apartmentZone and apartmentZone.contains then
+            isInside = apartmentZone:contains(camPos)
+        end
+
+        if not isInside then
+            if lastCamPos then
+                Freecam:SetPosition(lastCamPos.x, lastCamPos.y, lastCamPos.z)
+                return lastCamPos
+            else
+                local fallback = self.shellPos or GetEntityCoords(cache.ped)
+                Freecam:SetPosition(fallback.x, fallback.y, fallback.z)
+                return fallback
+            end
+        end
+
+        return camPos
+    end,
+
     StartFreecamUpdateThread = function(self)
         if self.FreecamThreadActive then return end
         self.FreecamThreadActive = true
@@ -201,6 +228,8 @@ Modeler = {
             while self.IsFreecamMode do
                 local camPos = Freecam:GetPosition()
                 local lookAt = Freecam:GetTarget(5.0)
+
+                camPos = self:ConstrainCamera(camPos, lastCamPos)
 
                 if not lastCamPos or #(lastCamPos - camPos) > 0.001 or #(lastCamTarget - lookAt) > 0.001 then
                     lastCamPos = camPos
@@ -297,6 +326,8 @@ Modeler = {
                 local camPos = Freecam:GetPosition()
                 local camTarget = Freecam:GetTarget(5.0)
                 
+                camPos = self:ConstrainCamera(camPos, lastCamPos)
+
                 -- Only send if the camera has actually moved
                 if not lastCamPos or #(lastCamPos - camPos) > 0.001 or #(lastCamTarget - camTarget) > 0.001 then
                     lastCamPos = camPos

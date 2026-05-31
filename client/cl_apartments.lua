@@ -9,7 +9,7 @@ local apartmentPed = nil
 insideApartment = false
 MyApartmentId = nil
 local MyRoomData = nil
-local apartmentZone = nil
+apartmentZone = nil
 
 local function CreateApartmentBlip()
     if apartmentBlip then
