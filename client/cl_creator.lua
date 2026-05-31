@@ -90,22 +90,16 @@ RegisterNUICallback('takePhoto', function(_, cb)
     local uploading = false
 
     CreateThread(function()
+        Wait(500)
+
         while not done do
+            Wait(0)
+
             if uploading then
                 lib.showTextUI('Uploading photo, please wait...')
             else
                 lib.showTextUI('[ENTER] Take Photo | [BACKSPACE] Cancel')
             end
-            Wait(0)
-        end
-        lib.hideTextUI()
-    end)
-
-    CreateThread(function()
-        Wait(500)
-
-        while not done do
-            Wait(0)
 
             DisableControlAction(0, 191, true)
             DisableControlAction(0, 177, true)
@@ -140,5 +134,6 @@ RegisterNUICallback('takePhoto', function(_, cb)
                 cb(nil)
             end
         end
+        lib.hideTextUI()
     end)
 end)

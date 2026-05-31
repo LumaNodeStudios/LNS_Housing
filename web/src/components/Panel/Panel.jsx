@@ -11,6 +11,12 @@ const Panel = ({ data: initialData }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showAddModal, setShowAddModal] = useState(false);
   const [newRoommateId, setNewRoommateId] = useState('');
+  const [initialPermissions, setInitialPermissions] = useState({
+    doors: true,
+    storage: true,
+    wardrobe: false,
+    panel: false
+  });
   const [propertyData, setPropertyData] = useState(initialData || {
     id: 1,
     name: 'Grove St',
@@ -87,7 +93,7 @@ const Panel = ({ data: initialData }) => {
     ...(!propertyData.isApartment ? [{ id: 'security', label: 'Security' }] : []),
     { id: 'access', label: 'Access' },
     ...(!propertyData.isApartment ? [{ id: 'rent', label: 'Rent' }] : []),
-    { id: 'settings', label: 'Settings' }
+    ...(!propertyData.isApartment ? [{ id: 'settings', label: 'Settings' }] : [])
   ];
 
   const handleClose = () => {
@@ -186,29 +192,34 @@ const Panel = ({ data: initialData }) => {
 
 
 
+  const [roommates, setRoommates] = useState([]);
+
   const infoBoxes = [
-    {
-      id: 'protection',
-      title: 'Protection',
-      desc: 'Easily monitor your house locks and get notified when someone tries to lockpick your lock.',
-      icon: Shield,
-      actionLabel: 'Upgrade',
-      targetTab: 'security'
-    },
-    {
-      id: 'parking',
-      title: 'Parking Spots',
-      number: '2',
-      desc: 'This is how many parking spots you have outside of your house.',
-      icon: Car
-    },
+    ...(!propertyData.isApartment ? [
+      {
+        id: 'protection',
+        title: 'Protection',
+        desc: 'Easily monitor your house locks and get notified when someone tries to lockpick your lock.',
+        icon: Shield,
+        actionLabel: 'Upgrade',
+        targetTab: 'security'
+      },
+      {
+        id: 'parking',
+        title: 'Parking Spots',
+        number: '2',
+        desc: 'This is how many parking spots you have outside of your house.',
+        icon: Car
+      }
+    ] : []),
     {
       id: 'roommates',
       title: 'Manage your roommates',
-      number: '1',
+      number: roommates.filter(r => !r.isOwner).length.toString(),
       desc: 'See who has access to your house and manage their permissions.',
       icon: Users,
-      actionLabel: 'Manage'
+      actionLabel: 'Manage',
+      targetTab: 'access'
     }
   ];
 
@@ -223,9 +234,6 @@ const Panel = ({ data: initialData }) => {
       price: 10000 * ((propertyData.metadata?.security_level || 0) + 1)
     }
   ];
-
-
-  const [roommates, setRoommates] = useState([]);
 
   const [autoPay, setAutoPay] = useState(true);
   const [rentHistory, setRentHistory] = useState([]);
@@ -284,10 +292,10 @@ const Panel = ({ data: initialData }) => {
       name: 'New Roommate',
       citizenid: newRoommateId,
       permissions: {
-        doors: true,
-        storage: true,
-        wardrobe: false,
-        panel: false
+        doors: initialPermissions.doors,
+        storage: initialPermissions.storage,
+        wardrobe: initialPermissions.wardrobe,
+        panel: initialPermissions.panel
       }
     };
     setRoommates(prev => {
@@ -296,6 +304,12 @@ const Panel = ({ data: initialData }) => {
       return updated;
     });
     setNewRoommateId('');
+    setInitialPermissions({
+      doors: true,
+      storage: true,
+      wardrobe: false,
+      panel: false
+    });
     setShowAddModal(false);
   };
 
@@ -783,10 +797,30 @@ const Panel = ({ data: initialData }) => {
                 <div className="permissions-selector">
                   <label>Initial Permissions</label>
                   <div className="perms-grid">
-                    <div className="perm-toggle active"><Key size={14} /> Doors</div>
-                    <div className="perm-toggle active"><Package size={14} /> Storage</div>
-                    <div className="perm-toggle"><Shirt size={14} /> Wardrobe</div>
-                    <div className="perm-toggle"><Settings size={14} /> Panel</div>
+                    <div 
+                      className={`perm-toggle ${initialPermissions.doors ? 'active' : ''}`}
+                      onClick={() => setInitialPermissions(prev => ({ ...prev, doors: !prev.doors }))}
+                    >
+                      <Key size={14} /> Doors
+                    </div>
+                    <div 
+                      className={`perm-toggle ${initialPermissions.storage ? 'active' : ''}`}
+                      onClick={() => setInitialPermissions(prev => ({ ...prev, storage: !prev.storage }))}
+                    >
+                      <Package size={14} /> Storage
+                    </div>
+                    <div 
+                      className={`perm-toggle ${initialPermissions.wardrobe ? 'active' : ''}`}
+                      onClick={() => setInitialPermissions(prev => ({ ...prev, wardrobe: !prev.wardrobe }))}
+                    >
+                      <Shirt size={14} /> Wardrobe
+                    </div>
+                    <div 
+                      className={`perm-toggle ${initialPermissions.panel ? 'active' : ''}`}
+                      onClick={() => setInitialPermissions(prev => ({ ...prev, panel: !prev.panel }))}
+                    >
+                      <Settings size={14} /> Panel
+                    </div>
                   </div>
                 </div>
               </div>
