@@ -412,8 +412,26 @@ lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, ro
 end)
 
 lib.callback.register('LNS_Housing:server:hasApartmentAccess', function(source, roomId, type)
+    local playerJob = Bridge.Server.GetPlayerJob(source)
+    if playerJob and playerJob.name == 'police' then
+        if type ~= 'storage' and type ~= 'stash' then
+            return true
+        end
+    end
+
     local citizenid = Bridge.Server.GetIdentifier(source)
     if not citizenid then return false end
+
+    -- Check temporary access (lockpicked or breached)
+    if type == 'storage' or type == 'stash' then
+        if TemporaryAccess.stashes[roomId] and TemporaryAccess.stashes[roomId][citizenid] then
+            return true
+        end
+    elseif type == 'entry' or type == 'doors' then
+        if TemporaryAccess.doors[roomId] and TemporaryAccess.doors[roomId][citizenid] then
+            return true
+        end
+    end
 
     local result = MySQL.single.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ?', {roomId})
     if result then

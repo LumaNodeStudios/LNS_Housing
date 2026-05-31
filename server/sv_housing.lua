@@ -56,7 +56,7 @@ function SyncPropertyDoor(propertyId)
     end
 end
 
-local TemporaryAccess = {
+TemporaryAccess = {
     doors = {},
     stashes = {}
 }
@@ -65,7 +65,21 @@ lib.callback.register('LNS_Housing:server:getProperties', function(source)
     return Properties
 end)
 
+lib.callback.register('LNS_Housing:server:isDoorBreached', function(source, propertyId)
+    if TemporaryAccess.doors[propertyId] and next(TemporaryAccess.doors[propertyId]) then
+        return true
+    end
+    return false
+end)
+
 lib.callback.register('LNS_Housing:server:hasAccess', function(source, propertyId, type)
+    local playerJob = Bridge.Server.GetPlayerJob(source)
+    if playerJob and playerJob.name == 'police' then
+        if type ~= 'storage' and type ~= 'stash' then
+            return true
+        end
+    end
+
     local p = Properties[propertyId]
     if not p then return false end
     
@@ -81,19 +95,13 @@ lib.callback.register('LNS_Housing:server:hasAccess', function(source, propertyI
         end
     end
 
-    -- Check temporary access (lockpicked)
+    -- Check temporary access (lockpicked or breached)
     if type == 'entry' or type == 'doors' then
         if TemporaryAccess.doors[propertyId] and TemporaryAccess.doors[propertyId][identifier] then
             return true
         end
     elseif type == 'storage' or type == 'stash' then
-        -- You can only open stash if you have explicit permission or if you lockpicked THIS SPECIFIC stash
-        -- For simplicity, if stashId is not provided, we check if they have general stash access
-        -- But for ox_target on specific stashes, we should probably check by stashId
-        -- However, the client-side onSelect for lockpicking opens it immediately.
-        -- So hasAccess for storage should only return true for authorized users or if they ALREADY lockpicked it.
         if TemporaryAccess.stashes[propertyId] and TemporaryAccess.stashes[propertyId][identifier] then
-            -- This could be more granular by stashId, but for now we'll allow all in that house
             return true
         end
     end
@@ -126,6 +134,60 @@ RegisterNetEvent('LNS_Housing:server:lockpickSuccess', function(propertyId, type
             end
         end)
     end
+end)
+
+RegisterNetEvent('LNS_Housing:server:policeRaidDoor', function(propertyId, propertyType, doorId)
+    local src = source
+    local playerJob = Bridge.Server.GetPlayerJob(src)
+    if not playerJob or playerJob.name ~= 'police' then
+        return
+    end
+
+    local raidItem = Settings.Security.RaidItem
+    local itemCount = exports.ox_inventory:Search(src, 'count', raidItem)
+    if itemCount < 1 then
+        Settings.Notify(src, 'You do not have the required breaching item!', 'error')
+        return
+    end
+
+    if propertyType == 'apartment' then
+        local doorName = "Apartment Room #" .. propertyId
+        local existingDoor = exports.ox_doorlock:getDoorFromName(doorName)
+        if existingDoor then
+            doorId = existingDoor.id
+        end
+    end
+
+    if doorId and doorId ~= 0 then
+        exports.ox_doorlock:setDoorState(doorId, 0) -- 0 = Unlocked
+        
+        local identifier = GetIdentifier(src)
+        if not TemporaryAccess.doors[propertyId] then TemporaryAccess.doors[propertyId] = {} end
+        TemporaryAccess.doors[propertyId][identifier] = true
+
+        Settings.Notify(src, 'Door breached successfully!', 'success')
+    end
+end)
+
+RegisterNetEvent('LNS_Housing:server:policeRaidStash', function(propertyId)
+    local src = source
+    local playerJob = Bridge.Server.GetPlayerJob(src)
+    if not playerJob or playerJob.name ~= 'police' then
+        return
+    end
+
+    local raidItem = Settings.Security.RaidItem
+    local itemCount = exports.ox_inventory:Search(src, 'count', raidItem)
+    if itemCount < 1 then
+        Settings.Notify(src, 'You do not have the required breaching item!', 'error')
+        return
+    end
+
+    local identifier = GetIdentifier(src)
+    if not TemporaryAccess.stashes[propertyId] then TemporaryAccess.stashes[propertyId] = {} end
+    TemporaryAccess.stashes[propertyId][identifier] = true
+
+    Settings.Notify(src, 'Storage breached successfully!', 'success')
 end)
 
 function ProcessPropertySalePayout(propertyId, amount)

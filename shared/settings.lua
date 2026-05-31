@@ -68,7 +68,10 @@ return {
     },
 
     Security = {
-        LockpickItem = 'lockpick',
+        LockpickItem = 'lockpic2k',
+        RaidItem = 'lockpick', -- Item required for police raids
+        RaidDuration = 50000,         -- Time in ms for progressbar
+        RaidStorageDuration = 10000,         -- Time in ms for progressbar
         MaxLevel = 5,
         Difficulty = {
             [0] = { rounds = 1, speed = 1.0, area = 40 }, -- Level 0 (Default)

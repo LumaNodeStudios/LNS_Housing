@@ -3,10 +3,7 @@ Properties = {}
 local CurrentProperty = nil
 local CurrentInterior = 0
 
--- Sync properties from server
-CreateThread(function()
-    Properties = lib.callback.await('LNS_Housing:server:getProperties', false)
-end)
+-- Sync properties from server (optimized: merged into unified initialization thread)
 
 -- Open Creator UI
 RegisterCommand(Settings.Creator.Command, function(source, args, rawCommand)
@@ -94,50 +91,7 @@ RegisterNUICallback('respondToContract', function(data, cb)
     cb(success)
 end)
 
--- Target integration for houses
-CreateThread(function()
-    if not Settings.Debug or not Settings.Debug.BuyHouses then return end
-
-    -- Wait for properties to be synced
-    while not next(Properties) do Wait(1000) end
-
-    for id, p in pairs(Properties) do
-        local doorId = p.door_id
-        if (not doorId or doorId == 0) and p.doors and #p.doors > 0 then
-            doorId = p.doors[1]
-        end
-
-        if doorId and doorId ~= 0 then
-            local door = nil
-            if exports.ox_doorlock.getDoor then
-                door = exports.ox_doorlock:getDoor(doorId)
-            elseif exports.ox_doorlock.getDoorData then
-                door = exports.ox_doorlock:getDoorData(doorId)
-            end
-
-            if door then
-                exports.ox_target:addSphereZone({
-                    coords = door.coords,
-                    radius = 1.2,
-                    debug = true,
-                    options = {
-                        {
-                            label = 'Lockpick ' .. p.label,
-                            icon = 'fas fa-mask',
-                            items = Settings.Security.LockpickItem,
-                            canInteract = function()
-                                return Properties[id].owner and Properties[id].owner ~= Bridge.Client.GetIdentifier()
-                            end,
-                            onSelect = function()
-                                LockpickDoor(id)
-                            end
-                        }
-                    }
-                })
-            end
-        end
-    end
-end)
+-- Target integration for houses (optimized: merged into unified initialization thread)
 
 function LockpickDoor(propertyId)
     local p = Properties[propertyId]
@@ -279,6 +233,30 @@ function LoadFurnitures(propertyId)
                         if p.isApartment then return false end
                         return Properties[propertyId].owner and not lib.callback.await('LNS_Housing:server:hasAccess', false, propertyId, 'storage')
                     end
+                },
+                {
+                    label = 'Raid Storage',
+                    icon = 'fas fa-shield-halved',
+                    items = Settings.Security.RaidItem,
+                    onSelect = function()
+                        StartPoliceStashRaid(propertyId, f.id)
+                    end,
+                    canInteract = function()
+                        local job = Bridge.Client.GetPlayerJob()
+                        if not job or job.name ~= 'police' then return false end
+                        
+                        -- Enforce door breach requirement first!
+                        local isDoorBreached = lib.callback.await('LNS_Housing:server:isDoorBreached', false, propertyId)
+                        if not isDoorBreached then return false end
+                        
+                        local hasAccess
+                        if p.isApartment then
+                            hasAccess = lib.callback.await('LNS_Housing:server:hasApartmentAccess', false, propertyId, 'storage')
+                        else
+                            hasAccess = lib.callback.await('LNS_Housing:server:hasAccess', false, propertyId, 'storage')
+                        end
+                        return not hasAccess
+                    end
                 }
             })
         end
@@ -302,12 +280,11 @@ function LoadFurnitures(propertyId)
             })
         end
 
-        -- Add target for housing panel (third-eye to open house panel)
         if itemData and itemData.id == 'lns_housing_panel' then
             exports.ox_target:addLocalEntity(obj, {
                 {
-                    label = 'Open House Panel',
-                    icon = 'fas fa-house-user',
+                    label = p.isApartment and 'Open Apartment Panel' or 'Open House Panel',
+                    icon = p.isApartment and 'fas fa-building' or 'fas fa-house-user',
                     onSelect = function()
                         local propData = Properties[propertyId]
                         if propData then
@@ -408,12 +385,79 @@ function RegisterPropertyZones(p)
     end
 end
 
--- Sync properties from server and register zones
+-- Sync properties from server and register zones (optimized unified initialization thread)
 CreateThread(function()
     Properties = lib.callback.await('LNS_Housing:server:getProperties', false)
     
-    for id, p in pairs(Properties) do
-        RegisterPropertyZones(p)
+    if Properties then
+        -- 1. Register property zones
+        for id, p in pairs(Properties) do
+            RegisterPropertyZones(p)
+        end
+
+        -- 2. Target integration for houses
+        Wait(1500) -- Wait briefly for doorlocks/targets to load
+        for id, p in pairs(Properties) do
+            local doorId = p.door_id
+            if (not doorId or doorId == 0) and p.doors and #p.doors > 0 then
+                doorId = p.doors[1]
+            end
+
+            if doorId and doorId ~= 0 then
+                local door = nil
+                if exports.ox_doorlock.getDoor then
+                    door = exports.ox_doorlock:getDoor(doorId)
+                elseif exports.ox_doorlock.getDoorData then
+                    door = exports.ox_doorlock:getDoorData(doorId)
+                end
+
+                if door then
+                    -- Register lockpick target for buyable houses
+                    if Settings.Debug and Settings.Debug.BuyHouses then
+                        exports.ox_target:addSphereZone({
+                            coords = door.coords,
+                            radius = 1.2,
+                            debug = true,
+                            options = {
+                                {
+                                    label = 'Lockpick ' .. p.label,
+                                    icon = 'fas fa-mask',
+                                    items = Settings.Security.LockpickItem,
+                                    canInteract = function()
+                                        return Properties[id].owner and Properties[id].owner ~= Bridge.Client.GetIdentifier()
+                                    end,
+                                    onSelect = function()
+                                        LockpickDoor(id)
+                                    end
+                                }
+                            }
+                        })
+                    end
+
+                    -- Register Police Raid target
+                    exports.ox_target:addBoxZone({
+                        coords = door.coords,
+                        size = vec3(1.5, 1.5, 2.0),
+                        rotation = door.heading or 0.0,
+                        debug = false,
+                        options = {
+                            {
+                                label = 'Raid House',
+                                icon = 'fas fa-shield-halved',
+                                items = Settings.Security.RaidItem,
+                                canInteract = function()
+                                    local job = Bridge.Client.GetPlayerJob()
+                                    return job and job.name == 'police'
+                                end,
+                                onSelect = function()
+                                    StartPoliceRaid(id, 'house', doorId)
+                                end
+                            }
+                        }
+                    })
+                end
+            end
+        end
     end
 end)
 
@@ -548,3 +592,46 @@ AddEventHandler('onResourceStop', function(resourceName)
         CleanUpLawn()
     end
 end)
+
+
+function StartPoliceRaid(propertyId, propertyType, doorId)
+    local duration = Settings.Security.RaidDuration or 5000
+
+    if lib.progressBar({
+        duration = duration,
+        label = 'Breaching door lock...',
+        useWhileDead = false,
+        canCancel = true,
+        disable = { car = true, move = true, combat = true },
+        anim = {
+            dict = 'missheistfbi3b_ig7',
+            clip = 'lift_fibagent_loop',
+            flags = 49,
+        },
+    }) then
+        TriggerServerEvent('LNS_Housing:server:policeRaidDoor', propertyId, propertyType, doorId)
+    else
+        Settings.Notify('Breaching cancelled.', 'error')
+    end
+end
+
+function StartPoliceStashRaid(propertyId, stashId)
+    local duration = Settings.Security.RaidStorageDuration or 5000
+
+    if lib.progressBar({
+        duration = duration,
+        label = 'Breaching storage lock...',
+        useWhileDead = false,
+        canCancel = true,
+        disable = { car = true, move = true, combat = true },
+        anim = {
+            dict = 'missheistfbi3b_ig7',
+            clip = 'lift_fibagent_loop',
+            flags = 49,
+        },
+    }) then
+        TriggerServerEvent('LNS_Housing:server:policeRaidStash', propertyId)
+    else
+        Settings.Notify('Breaching cancelled.', 'error')
+    end
+end

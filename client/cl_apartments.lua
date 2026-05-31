@@ -284,6 +284,20 @@ exports('SpawnInStarterApartment', function()
     teleportToStarterApartment()
 end)
 
+local function RegisterApartmentCreatorCommands()
+    local cmd = Settings.ApartmentCreator and Settings.ApartmentCreator.Command or 'createapartment'
+    
+    RegisterCommand(cmd, function()
+        local isAdmin = lib.callback.await('LNS_Housing:server:isApartmentAdmin', false)
+        if not isAdmin then
+            Settings.Notify('You do not have permission to use this command.', 'error')
+            return
+        end
+
+        OpenApartmentCreatorUI()
+    end, false)
+end
+
 CreateThread(function()
     while not NetworkIsPlayerActive(PlayerId()) do
         Wait(100)
@@ -296,6 +310,37 @@ CreateThread(function()
     CreateApartmentPed()
 
     initApartmentForPlayer()
+
+    RegisterApartmentCreatorCommands()
+
+    -- Police Raid Target Registration for Apartments (optimized: sequential run inside unified startup thread)
+    Wait(1500) -- Wait briefly for doorlocks to initialize
+    if Settings.Rooms then
+        for _, room in ipairs(Settings.Rooms) do
+            if room.doorCoords then
+                exports.ox_target:addBoxZone({
+                    coords = room.doorCoords,
+                    size = vec3(1.5, 1.5, 2.0),
+                    rotation = room.doorHeading or 0.0,
+                    debug = false,
+                    options = {
+                        {
+                            label = 'Raid Apartment',
+                            icon = 'fas fa-shield-halved',
+                            items = Settings.Security.RaidItem,
+                            canInteract = function()
+                                local job = Bridge.Client.GetPlayerJob()
+                                return job and job.name == 'police'
+                            end,
+                            onSelect = function()
+                                StartPoliceRaid(room.id, 'apartment', nil)
+                            end
+                        }
+                    }
+                })
+            end
+        end
+    end
 end)
 
 AddEventHandler('onResourceStop', function(resourceName)
@@ -532,21 +577,5 @@ RegisterNUICallback('createApartment', function(data, cb)
     cb('ok')
 end)
 
-local function RegisterApartmentCreatorCommands()
-    local cmd = Settings.ApartmentCreator and Settings.ApartmentCreator.Command or 'createapartment'
-    
-    RegisterCommand(cmd, function()
-        local isAdmin = lib.callback.await('LNS_Housing:server:isApartmentAdmin', false)
-        if not isAdmin then
-            Settings.Notify('You do not have permission to use this command.', 'error')
-            return
-        end
 
-        OpenApartmentCreatorUI()
-    end, false)
-end
-
-CreateThread(function()
-    RegisterApartmentCreatorCommands()
-end)
 
