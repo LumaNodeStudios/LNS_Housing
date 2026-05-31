@@ -55,7 +55,6 @@ Rather than just a simple spawn-and-teleport script, **LNS Housing** introduces 
 
 LNS Housing features automatic framework detection, providing full support for:
 * **ESX** (`es_extended`)
-* **QBCore** (`qb-core`)
 * **Qbox** (`qbx_core`)
 
 ---
@@ -182,23 +181,11 @@ CREATE TABLE IF NOT EXISTS `housing_employees` (
 
 ## Starter Apartment Spawning Integration
 
-LNS Housing provides multiple ways to integrate new character spawning and existing spawn menus.
+To eliminate double-fading screens and allow players to choose their starter apartments or owned properties directly inside the spawn selection menu, configure the following modifications:
 
-### Option 1: Zero-Edit Auto Teleport (Default)
-To support server updates without modifying framework files like `qbx_core` or `qbx_spawn`, `LNS_Housing` includes out-of-the-box auto teleport:
-1. **Character Creation:** The new player creates a character in the multicharacter selector.
-2. **First Spawn Trigger:** Since you have no spawn menu, the framework spawns the player at the default newbies coordinate (e.g., the airport).
-3. **Event Catching:** Immediately upon spawn, the client loaded events trigger `initApartmentForPlayer()`.
-4. **Instant Teleport:** `LNS_Housing` queries the database, identifies `is_new == 1`, teleports the player inside their starter apartment, and marks them as spawned.
-5. **Wardrobe Customization:** The player's clothing script (`illenium-appearance`) will open, letting them customize their appearance inside their new home.
-
----
-
-### Option 2: True Direct Spawn Core Integration (Recommended)
-If you want to eliminate double-fading screens and allow players to choose their starter apartments or owned properties directly inside the spawn selection menu, configure the following modifications:
-
-#### 🛠️ Part A: Spawning Directly in Starter Apartments (`qbx_core`)
+### 🛠️ Part A: Spawning Directly in Starter Apartments (`qbx_core`)
 Update `qbx_core` to query the player's newly assigned apartment coordinates *before* spawning.
+
 
 ##### Edit: `qbx_core/client/character.lua`
 
