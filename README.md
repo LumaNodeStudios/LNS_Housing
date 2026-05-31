@@ -428,65 +428,10 @@ Then locate the `ESX.SpawnPlayer(skin, spawn, function()` callback at the end of
         end
 ```
 
-##### Alternative: Servers Without Multicharacter
-
-If `Config.Multichar` is disabled in `es_extended`, edit `es_extended/client/modules/events.lua` instead. In the `RegisterNetEvent("esx:playerLoaded", ...)` handler, wrap the `ESX.SpawnPlayer` call:
-
-```lua
-RegisterNetEvent("esx:playerLoaded", function(xPlayer, _, skin)
-    ESX.PlayerData = xPlayer
-
-    if not Config.Multichar then
-        local spawn = ESX.PlayerData.coords
-        local isStarterApartment = false
-        local assignedRoom = nil
-
-        if GetResourceState('LNS_Housing') == 'started' then
-            assignedRoom = lib.callback.await('LNS_Housing:server:getMyApartment', false)
-            if assignedRoom and assignedRoom.roomData and assignedRoom.roomData.spawn then
-                local aptSpawn = assignedRoom.roomData.spawn
-                spawn = {
-                    x = aptSpawn.x,
-                    y = aptSpawn.y,
-                    z = aptSpawn.z,
-                    heading = aptSpawn.w or aptSpawn.heading or 0.0,
-                }
-                isStarterApartment = true
-            end
-        end
-
-        ESX.SpawnPlayer(skin, spawn, function()
-            if isStarterApartment and assignedRoom then
-                TriggerEvent('LNS_Housing:client:setApartmentData', assignedRoom.roomId, assignedRoom.roomData)
-            end
-
-            TriggerEvent("esx:onPlayerSpawn")
-            TriggerEvent("esx:restoreLoadout")
-            TriggerServerEvent("esx:onPlayerSpawn")
-            TriggerEvent("esx:loadingScreenOff")
-            ShutdownLoadingScreen()
-            ShutdownLoadingScreenNui()
-        end)
-    end
-    -- ... rest of handler unchanged
-```
-
 ##### Recommended ESX Configuration Settings
 
-1. **Disable `esx_property`:**
-   LNS Housing replaces default ESX property housing, stashes, and interiors. Stop or remove `esx_property` from your `server.cfg` to avoid conflicts.
-
-2. **Keep starter apartments enabled in LNS Housing:**
-   In `shared/settings.lua`, ensure apartments are enabled:
-   ```lua
-   Apartments = {
-       Enabled = true,
-       -- ...
-   }
-   ```
-
-3. **Appearance / skin resource:**
-   New characters still use `esx_skin` / `skinchanger` during creation. The apartment spawn runs after the skin menu finishes, so players customize their character before loading into their room.
+1. **Remove `esx_property`:**
+   LNS Housing replaces default ESX property housing, stashes, and interiors. Remove `esx_property` from your server to avoid conflicts.
 
 ---
 
