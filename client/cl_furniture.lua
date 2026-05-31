@@ -177,6 +177,7 @@ Modeler = {
         if bool then
             Freecam:SetFrozen(false)
             SetNuiFocus(false, false)
+            self:StartFreecamUpdateThread()
         else
             Freecam:SetFrozen(true)
             SetNuiFocus(true, true)
@@ -186,6 +187,37 @@ Modeler = {
             action = "freecamMode",
             data = bool
         })
+    end,
+
+    StartFreecamUpdateThread = function(self)
+        if self.FreecamThreadActive then return end
+        self.FreecamThreadActive = true
+        
+        CreateThread(function()
+            local lastCamPos = nil
+            local lastCamTarget = nil
+
+            while self.IsFreecamMode do
+                local camPos = Freecam:GetPosition()
+                local lookAt = Freecam:GetTarget(5.0)
+
+                if not lastCamPos or #(lastCamPos - camPos) > 0.001 or #(lastCamTarget - lookAt) > 0.001 then
+                    lastCamPos = camPos
+                    lastCamTarget = lookAt
+
+                    SendNUIMessage({
+                        action = "updateCamera",
+                        data = {
+                            cameraPosition = camPos,
+                            cameraLookAt = lookAt,
+                            cameraFov = GetGameplayCamFov(),
+                        }
+                    })
+                end
+                Wait(33) -- Sleep for ~30 FPS instead of checking every tick/frame!
+            end
+            self.FreecamThreadActive = false
+        end)
     end,
 
     StartPlacement = function(self, data)
@@ -257,19 +289,28 @@ Modeler = {
         self.PlacementThreadActive = true
         
         CreateThread(function()
+            local lastCamPos = nil
+            local lastCamTarget = nil
+
             while self.CurrentObject do
                 local camPos = Freecam:GetPosition()
                 local camTarget = Freecam:GetTarget(5.0)
                 
-                SendNUIMessage({
-                    action = "updateCamera",
-                    data = {
-                        cameraPosition = camPos,
-                        cameraLookAt = camTarget,
-                        cameraFov = GetGameplayCamFov(),
-                    }
-                })
-                Wait(0)
+                -- Only send if the camera has actually moved
+                if not lastCamPos or #(lastCamPos - camPos) > 0.001 or #(lastCamTarget - camTarget) > 0.001 then
+                    lastCamPos = camPos
+                    lastCamTarget = camTarget
+
+                    SendNUIMessage({
+                        action = "updateCamera",
+                        data = {
+                            cameraPosition = camPos,
+                            cameraLookAt = camTarget,
+                            cameraFov = GetGameplayCamFov(),
+                        }
+                    })
+                end
+                Wait(33) -- Sleep for ~30 FPS instead of checking every single tick
             end
             self.PlacementThreadActive = false
         end)
@@ -401,6 +442,13 @@ Modeler = {
             category = data.category,
         }
 
+        if self.CurrentObject and DoesEntityExist(self.CurrentObject) then
+            FreezeEntityPosition(self.CurrentObject, true)
+            SetEntityCollision(self.CurrentObject, true, true)
+            SetEntityAlpha(self.CurrentObject, 255, false)
+            SetEntityDrawOutline(self.CurrentObject, false)
+        end
+
         self.Cart[self.CurrentObject] = item
 
         SendNUIMessage({
@@ -409,6 +457,14 @@ Modeler = {
         })
 
         self.CurrentObject = nil -- Keep entity but stop controlling it
+    end,
+
+    RemoveCartItem = function(self, data)
+        local entity = tonumber(data.entity)
+        if entity and DoesEntityExist(entity) then
+            DeleteEntity(entity)
+            self.Cart[entity] = nil
+        end
     end,
 
     ClearCart = function(self)
@@ -582,6 +638,11 @@ RegisterNUICallback("addToCart", function(data, cb)
     cb("ok")
 end)
 
+RegisterNUICallback("removeCartItem", function(data, cb)
+    Modeler:RemoveCartItem(data)
+    cb("ok")
+end)
+
 RegisterNUICallback("buyCartItems", function(data, cb)
     Modeler:BuyCart()
     cb("ok")
@@ -618,21 +679,7 @@ RegisterNUICallback("toggleCursor", function(data, cb)
     cb("ok")
 end)
 
-AddEventHandler('freecam:onTick', function()
-    if not Modeler.IsFreecamMode then return end
 
-    local lookAt = Freecam:GetTarget(5.0)
-    local camPos = Freecam:GetPosition()
-
-    SendNUIMessage({
-        action = "updateCamera",
-        data = {
-            cameraPosition = camPos,
-            cameraLookAt = lookAt,
-            cameraFov = GetGameplayCamFov(),
-        }
-    })
-end)
 
 RegisterNetEvent('LNS_Housing:client:openFurnitureMenu', function(propertyId)
     Modeler:OpenMenu(propertyId)

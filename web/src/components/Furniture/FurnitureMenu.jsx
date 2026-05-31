@@ -285,6 +285,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                               const newCart = [...cart];
                               newCart.splice(idx, 1);
                               setCart(newCart);
+                              post('removeCartItem', { entity: item.entity });
                             }}><Trash2 size={14} /></button>
                           </div>
                         ))}
