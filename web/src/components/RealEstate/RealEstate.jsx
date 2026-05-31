@@ -29,9 +29,8 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     const canDraft = hasPermission === true || (hasPermission && hasPermission.permissions?.draftContract);
     const canManageListings = hasPermission === true || (hasPermission && hasPermission.permissions?.manageListings);
 
-    // Listing Edit states
-    const [editingProperty, setEditingProperty] = useState(null);
-    const [editForm, setEditForm] = useState({ label: '', price: 0, sale_type: 'direct' });
+    // Listing Edit states — we now use the creator tab in edit mode
+    const [editingPropertyId, setEditingPropertyId] = useState(null);
 
     const [formData, setFormData] = useState({
         name: 'New Property',
@@ -193,27 +192,51 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
 
     // Listings Customization Handlers
     const handleStartEdit = (p) => {
-        setEditingProperty(p);
-        setEditForm({ label: p.label, price: p.price, sale_type: p.sale_type || 'direct' });
+        // Navigate to creator tab pre-filled with this property's data
+        setEditingPropertyId(p.id);
+        setFormData({
+            name: p.label || 'New Property',
+            type: p.type || 'Residential',
+            price: p.price || 150000,
+            mlo: true,
+            slots: p.garage || 2,
+            allowWallColors: p.allowWallColors !== false,
+            saleType: p.sale_type || 'direct',
+            doors: p.doors || [],
+            zone_data: p.zone_data || null,
+            yard_zone_data: p.yard_zone_data || null,
+            hasYard: !!p.hasYard,
+            image: p.image || null
+        });
+        setActiveTab('creator');
     };
 
-    const handleSaveEdit = (e) => {
-        e.preventDefault();
+    const handleUpdateProperty = () => {
         if (!window.GetParentResourceName) {
-            alert(`Listing updated locally: ${editForm.label}`);
-            setEditingProperty(null);
+            alert(`Listing updated locally: ${formData.name}`);
+            setEditingPropertyId(null);
+            resetCreatorForm();
             return;
         }
         fetch(`https://${window.GetParentResourceName()}/updateListingDetails`, {
             method: 'POST',
             body: JSON.stringify({
-                id: editingProperty.id,
-                label: editForm.label,
-                price: parseFloat(editForm.price),
-                sale_type: editForm.sale_type
+                id: editingPropertyId,
+                label: formData.name,
+                price: parseFloat(formData.price),
+                sale_type: formData.saleType,
+                type: formData.type,
+                slots: formData.slots,
+                allowWallColors: formData.allowWallColors,
+                doors: formData.doors,
+                zone_data: formData.zone_data,
+                yard_zone_data: formData.yard_zone_data,
+                hasYard: formData.hasYard,
+                image: formData.image
             })
         }).then(() => {
-            setEditingProperty(null);
+            setEditingPropertyId(null);
+            resetCreatorForm();
         });
     };
 
@@ -437,6 +460,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             hasYard: false,
             image: null
         });
+        setEditingPropertyId(null);
         setActiveTab('browse');
     };
 
@@ -579,69 +603,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                             </tbody>
                         </table>
 
-                        <AnimatePresence>
-                            {editingProperty && (
-                                <div className="re-modal-overlay glass-heavy" onClick={() => setEditingProperty(null)}>
-                                    <motion.form
-                                        className="re-detail-modal glass"
-                                        initial={{ opacity: 0, y: 40 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: 40 }}
-                                        onSubmit={handleSaveEdit}
-                                        onClick={(e) => e.stopPropagation()}
-                                        style={{ width: '420px' }}
-                                    >
-                                        <div className="modal-header">
-                                            <div className="header-text">
-                                                <h2><Settings size={16} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Edit Listing</h2>
-                                                <span>#{editingProperty.id} — {editingProperty.label}</span>
-                                            </div>
-                                            <button type="button" className="modal-close" onClick={() => setEditingProperty(null)}><X size={18} /></button>
-                                        </div>
-                                        <div className="modal-content">
-                                            <div className="modal-field-group">
-                                                <div className="modal-field">
-                                                    <label className="modal-label">Property Label</label>
-                                                    <input
-                                                        className="modal-input"
-                                                        type="text"
-                                                        value={editForm.label}
-                                                        onChange={(e) => setEditForm(prev => ({ ...prev, label: e.target.value }))}
-                                                        required
-                                                    />
-                                                </div>
-                                                <div className="modal-field">
-                                                    <label className="modal-label">Price ($)</label>
-                                                    <input
-                                                        className="modal-input"
-                                                        type="number"
-                                                        value={editForm.price}
-                                                        onChange={(e) => setEditForm(prev => ({ ...prev, price: e.target.value }))}
-                                                        required
-                                                    />
-                                                </div>
-                                                <div className="modal-field">
-                                                    <label className="modal-label">Sale Type</label>
-                                                    <select
-                                                        className="modal-select"
-                                                        value={editForm.sale_type}
-                                                        onChange={(e) => setEditForm(prev => ({ ...prev, sale_type: e.target.value }))}
-                                                    >
-                                                        <option value="direct">Direct Sale</option>
-                                                        <option value="auction">Auction</option>
-                                                        <option value="rent">Rental Lease</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div className="modal-actions modal-actions-row">
-                                                <button type="button" className="decline-btn modal-action-btn" onClick={() => setEditingProperty(null)}>Cancel</button>
-                                                <button type="submit" className="accept-btn modal-action-btn">Save Changes</button>
-                                            </div>
-                                        </div>
-                                    </motion.form>
-                                </div>
-                            )}
-                        </AnimatePresence>
+
                     </div>
                 );
 
@@ -968,11 +930,20 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             default:
                 return (
                     <div className="re-creator-wrapper">
+                        {/* Edit mode banner */}
+                        {editingPropertyId && (
+                            <div className="re-edit-mode-banner">
+                                <span>Editing Property <strong>#{editingPropertyId}</strong></span>
+                                <button className="re-edit-cancel-btn" onClick={resetCreatorForm}>
+                                    <X size={14} /> Cancel Edit
+                                </button>
+                            </div>
+                        )}
                         {/* Left Column: Form Fields */}
                         <div className="re-creator-col">
                             <div className="re-creator-card">
                                 <div className="re-creator-card-title">
-                                    Basic Information
+                                    {editingPropertyId ? `Editing: ${formData.name}` : 'Basic Information'}
                                 </div>
                                 <div className="re-creator-inputs">
                                     <div className="re-creator-input-field">
@@ -1150,10 +1121,10 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
 
                             <div className="re-creator-footer">
                                 <button className="re-btn-secondary" type="button" onClick={resetCreatorForm}>
-                                    <Trash2 size={16} /> Discard
+                                    <Trash2 size={16} /> {editingPropertyId ? 'Cancel' : 'Discard'}
                                 </button>
-                                <button className="re-btn-primary" type="button" onClick={handleCreateProperty}>
-                                    <Save size={16} /> Create Property
+                                <button className="re-btn-primary" type="button" onClick={editingPropertyId ? handleUpdateProperty : handleCreateProperty}>
+                                    <Save size={16} /> {editingPropertyId ? 'Save Changes' : 'Create Property'}
                                 </button>
                             </div>
                         </div>
