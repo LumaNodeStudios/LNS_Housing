@@ -1,7 +1,6 @@
 if Bridge.Framework == 'qbx' then
     Bridge.Server.GetBankMoney = function(source)
-        local player = exports.qbx_core:GetPlayer(source)
-        return player and player.PlayerData.money.bank or 0
+        return exports.qbx_core:GetMoney(source, 'bank') or 0
     end
 
     Bridge.Server.RemoveBankMoney = function(source, amount, reason)
@@ -38,12 +37,6 @@ if Bridge.Framework == 'qbx' then
     Bridge.Server.AddSocietyMoney = function(job, amount)
         if GetResourceState('Renewed-Banking') == 'started' then
             exports['Renewed-Banking']:addAccountMoney(job, amount)
-        elseif GetResourceState('qbx_management') == 'started' then
-            exports.qbx_management:AddMoney(job, amount)
-        elseif GetResourceState('qb-banking') == 'started' then
-            exports['qb-banking']:AddMoney(job, amount)
-        elseif GetResourceState('qb-management') == 'started' then
-            exports['qb-management']:AddMoney(job, amount)
         else
             print('No Management System Found')
         end
@@ -52,12 +45,6 @@ if Bridge.Framework == 'qbx' then
     Bridge.Server.RemoveSocietyMoney = function(job, amount)
         if GetResourceState('Renewed-Banking') == 'started' then
             exports['Renewed-Banking']:removeAccountMoney(job, amount)
-        elseif GetResourceState('qbx_management') == 'started' then
-            exports.qbx_management:RemoveMoney(job, amount)
-        elseif GetResourceState('qb-banking') == 'started' then
-            exports['qb-banking']:RemoveMoney(job, amount)
-        elseif GetResourceState('qb-management') == 'started' then
-            exports['qb-management']:RemoveMoney(job, amount)
         else
             print('No Management System Found')
         end
@@ -66,12 +53,6 @@ if Bridge.Framework == 'qbx' then
     Bridge.Server.GetSocietyMoney = function(job)
         if GetResourceState('Renewed-Banking') == 'started' then
             return exports['Renewed-Banking']:getAccountMoney(job) or 0
-        elseif GetResourceState('qbx_management') == 'started' then
-            return exports.qbx_management:GetAccount(job) or 0
-        elseif GetResourceState('qb-banking') == 'started' then
-            return exports['qb-banking']:GetAccountBalance(job) or 0
-        elseif GetResourceState('qb-management') == 'started' then
-            return exports['qb-management']:GetAccount(job) or 0
         else
             return print('No Management System Found')
         end
