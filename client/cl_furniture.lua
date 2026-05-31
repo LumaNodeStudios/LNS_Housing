@@ -208,7 +208,7 @@ Modeler = {
                 Freecam:SetPosition(lastCamPos.x, lastCamPos.y, lastCamPos.z)
                 return lastCamPos
             else
-                local fallback = self.shellPos or GetEntityCoords(cache.ped)
+                local fallback = GetEntityCoords(cache.ped)
                 Freecam:SetPosition(fallback.x, fallback.y, fallback.z)
                 return fallback
             end

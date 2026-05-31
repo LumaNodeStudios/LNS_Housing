@@ -165,8 +165,6 @@ function IsCoordsInsidePropertyZone(propertyId, coords)
 
     if zone.contains then
         return zone:contains(coords)
-    elseif zone.coords and zone.distance then
-        return #(coords - zone.coords) <= zone.distance
     end
 
     return true
