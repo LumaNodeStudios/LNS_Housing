@@ -93,6 +93,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 12px 15px;
     padding: 15px 0;
     margin-bottom: 25px;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
@@ -101,22 +103,23 @@
 
 .re-tabs-v4 {
     display: flex;
-    gap: 8px;
+    gap: 6px;
 }
 
 .tab-v4 {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 12px;
+    padding: 8px 10px;
     border-radius: 8px;
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 800;
     color: var(--text-muted);
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.05);
     transition: all 0.2s ease;
     cursor: pointer;
+    white-space: nowrap;
 }
 
 .tab-v4:not(.active):hover {
@@ -141,7 +144,7 @@
 .re-sort-v2 {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .sort-label {
@@ -153,21 +156,22 @@
 
 .sort-buttons-v2 {
     display: flex;
-    gap: 6px;
+    gap: 5px;
 }
 
 .sort-btn-v2 {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
+    gap: 5px;
+    padding: 6px 8px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 6px;
     color: #fff;
-    font-size: 10px;
+    font-size: 9.5px;
     font-weight: 700;
     transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
 .sort-btn-v2:hover {
@@ -1280,6 +1284,87 @@
         transform: translateY(0);
         opacity: 1;
     }
+}
+
+/* ── Shared Modal Form & Action Styles ─────────────────────────────────── */
+
+.modal-message {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.modal-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.modal-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.modal-label {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-muted);
+}
+
+.modal-input,
+.modal-select {
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.modal-input:focus,
+.modal-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(110, 211, 243, 0.08);
+}
+
+.modal-select option {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+.modal-actions-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.modal-action-btn {
+    flex: 1;
+    padding: 11px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+}
+
+.modal-confirm-btn {
+    border: 1px solid;
+    font-weight: 800;
+}
+
+.modal-confirm-btn:hover {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
 }
 
 /* Agent Name Display */

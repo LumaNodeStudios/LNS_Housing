@@ -16,6 +16,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     const [activeTab, setActiveTab] = useState(initialTab || 'browse'); // browse, management, creator, contracts
     const [selectedProperty, setSelectedProperty] = useState(null);
     const [bidAmount, setBidAmount] = useState(0);
+    const [confirmModal, setConfirmModal] = useState(null);
 
     const [pendingContracts, setPendingContracts] = useState([]);
     const [agencyContracts, setAgencyContracts] = useState([]);
@@ -27,14 +28,6 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     const canCreate = hasPermission === true || (hasPermission && hasPermission.permissions?.createHouse);
     const canDraft = hasPermission === true || (hasPermission && hasPermission.permissions?.draftContract);
     const canManageListings = hasPermission === true || (hasPermission && hasPermission.permissions?.manageListings);
-    const canManageEmployees = hasPermission === true || (hasPermission && hasPermission.permissions?.manageEmployees);
-
-    // Employee states
-    const [employees, setEmployees] = useState([]);
-    const [hireTargetId, setHireTargetId] = useState('');
-    const [hireManualCid, setHireManualCid] = useState('');
-    const [hireManualName, setHireManualName] = useState('');
-    const [selectedEmployee, setSelectedEmployee] = useState(null);
 
     // Listing Edit states
     const [editingProperty, setEditingProperty] = useState(null);
@@ -95,9 +88,6 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 fetchAgencyContracts();
                 fetchNearbyPlayers();
             }
-        }
-        if (activeTab === 'employees' && isAgent && canManageEmployees) {
-            fetchEmployees();
         }
     }, [activeTab]);
 
@@ -200,83 +190,6 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         setActiveTab('browse');
     };
 
-    // Employee Management Handlers
-    const fetchEmployees = () => {
-        if (!window.GetParentResourceName) {
-            setEmployees([
-                { citizenid: 'ABC12345', name: 'John Realtor', commission_rate: 15, permissions: { createHouse: true, draftContract: true, manageListings: true, manageEmployees: false } },
-                { citizenid: 'XYZ98765', name: 'Jane Estate', commission_rate: 10, permissions: { createHouse: false, draftContract: true, manageListings: false, manageEmployees: false } }
-            ]);
-            return;
-        }
-        fetch(`https://${window.GetParentResourceName()}/getEmployees`, {
-            method: 'POST',
-            body: JSON.stringify({})
-        })
-            .then(res => res.json())
-            .then(data => {
-                setEmployees(data || []);
-            });
-    };
-
-    const handleHireEmployee = (e) => {
-        e.preventDefault();
-        const targetId = hireTargetId;
-        const manualCid = hireManualCid;
-        const manualName = hireManualName;
-
-        if (!window.GetParentResourceName) {
-            setEmployees(prev => [...prev, { citizenid: manualCid || 'DEV12345', name: manualName || 'New Hire', commission_rate: 10, permissions: { createHouse: false, draftContract: true, manageListings: false, manageEmployees: false } }]);
-            setHireTargetId('');
-            setHireManualCid('');
-            setHireManualName('');
-            return;
-        }
-
-        fetch(`https://${window.GetParentResourceName()}/hireEmployee`, {
-            method: 'POST',
-            body: JSON.stringify({ targetId, manualCid, manualName })
-        })
-            .then(res => res.json())
-            .then(success => {
-                if (success) {
-                    fetchEmployees();
-                    setHireTargetId('');
-                    setHireManualCid('');
-                    setHireManualName('');
-                }
-            });
-    };
-
-    const handleFireEmployee = (citizenid) => {
-        if (!confirm('Are you sure you want to fire this employee?')) return;
-        if (!window.GetParentResourceName) {
-            setEmployees(prev => prev.filter(emp => emp.citizenid !== citizenid));
-            return;
-        }
-        fetch(`https://${window.GetParentResourceName()}/fireEmployee`, {
-            method: 'POST',
-            body: JSON.stringify({ citizenid })
-        }).then(() => {
-            fetchEmployees();
-            if (selectedEmployee?.citizenid === citizenid) {
-                setSelectedEmployee(null);
-            }
-        });
-    };
-
-    const handleUpdateEmployee = (emp) => {
-        if (!window.GetParentResourceName) {
-            setEmployees(prev => prev.map(e => e.citizenid === emp.citizenid ? emp : e));
-            return;
-        }
-        fetch(`https://${window.GetParentResourceName()}/updateEmployee`, {
-            method: 'POST',
-            body: JSON.stringify(emp)
-        }).then(() => {
-            fetchEmployees();
-        });
-    };
 
     // Listings Customization Handlers
     const handleStartEdit = (p) => {
@@ -305,40 +218,75 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     };
 
     const handleDeleteListing = (id) => {
-        if (!confirm('Are you sure you want to delete this property listing permanently?')) return;
-        if (!window.GetParentResourceName) {
-            alert(`Deleted locally: #${id}`);
-            return;
-        }
-        fetch(`https://${window.GetParentResourceName()}/deleteListing`, {
-            method: 'POST',
-            body: JSON.stringify({ id })
+        setConfirmModal({
+            title: 'Delete Listing',
+            message: 'Are you sure you want to permanently delete this property listing? This action cannot be undone.',
+            confirmLabel: 'Delete Listing',
+            confirmColor: 'rgba(239, 68, 68, 0.2)',
+            confirmBorderColor: 'rgba(239, 68, 68, 0.3)',
+            confirmTextColor: '#fda4af',
+            onConfirm: () => {
+                if (!window.GetParentResourceName) {
+                    alert(`Deleted locally: #${id}`);
+                    setConfirmModal(null);
+                    return;
+                }
+                fetch(`https://${window.GetParentResourceName()}/deleteListing`, {
+                    method: 'POST',
+                    body: JSON.stringify({ id })
+                }).then(() => {
+                    setConfirmModal(null);
+                });
+            }
         });
     };
 
     const handleEvictTenant = (id) => {
-        if (!confirm('Are you sure you want to evict the tenant and terminate the lease?')) return;
-        if (!window.GetParentResourceName) {
-            alert(`Tenant evicted locally: #${id}`);
-            return;
-        }
-        fetch(`https://${window.GetParentResourceName()}/evictTenant`, {
-            method: 'POST',
-            body: JSON.stringify({ id })
+        setConfirmModal({
+            title: 'Evict Tenant',
+            message: 'Are you sure you want to evict the tenant and terminate the lease for this property?',
+            confirmLabel: 'Evict Tenant',
+            confirmColor: 'rgba(239, 68, 68, 0.2)',
+            confirmBorderColor: 'rgba(239, 68, 68, 0.3)',
+            confirmTextColor: '#fda4af',
+            onConfirm: () => {
+                if (!window.GetParentResourceName) {
+                    alert(`Tenant evicted locally: #${id}`);
+                    setConfirmModal(null);
+                    return;
+                }
+                fetch(`https://${window.GetParentResourceName()}/evictTenant`, {
+                    method: 'POST',
+                    body: JSON.stringify({ id })
+                }).then(() => {
+                    setConfirmModal(null);
+                });
+            }
         });
     };
 
     const handleTerminateOwnLease = (id) => {
-        if (!confirm('Are you sure you want to move out and terminate your lease?')) return;
-        if (!window.GetParentResourceName) {
-            alert(`Lease terminated locally: #${id}`);
-            return;
-        }
-        fetch(`https://${window.GetParentResourceName()}/terminateOwnLease`, {
-            method: 'POST',
-            body: JSON.stringify({ id })
-        }).then(() => {
-            fetchPendingContracts();
+        setConfirmModal({
+            title: 'Terminate Lease',
+            message: 'Are you sure you want to move out and terminate your lease for this property?',
+            confirmLabel: 'Terminate Lease',
+            confirmColor: 'rgba(239, 68, 68, 0.2)',
+            confirmBorderColor: 'rgba(239, 68, 68, 0.3)',
+            confirmTextColor: '#fda4af',
+            onConfirm: () => {
+                if (!window.GetParentResourceName) {
+                    alert(`Lease terminated locally: #${id}`);
+                    setConfirmModal(null);
+                    return;
+                }
+                fetch(`https://${window.GetParentResourceName()}/terminateOwnLease`, {
+                    method: 'POST',
+                    body: JSON.stringify({ id })
+                }).then(() => {
+                    fetchPendingContracts();
+                    setConfirmModal(null);
+                });
+            }
         });
     };
 
@@ -631,251 +579,73 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                             </tbody>
                         </table>
 
-                        {editingProperty && (
-                            <div className="re-edit-modal-backdrop">
-                                <form className="re-creator-card re-edit-modal glass-heavy" onSubmit={handleSaveEdit} style={{ width: '400px', margin: '20px auto', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                    <div className="re-creator-card-title" style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <Settings size={18} /> Edit Listing #{editingProperty.id}
-                                    </div>
-                                    <div className="re-creator-inputs" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                        <div className="re-creator-input-field">
-                                            <label style={{ fontSize: '0.8rem', opacity: 0.8, marginBottom: '5px', display: 'block' }}>Property Label</label>
-                                            <input
-                                                type="text"
-                                                value={editForm.label}
-                                                onChange={(e) => setEditForm(prev => ({ ...prev, label: e.target.value }))}
-                                                required
-                                                style={{ width: '100%', padding: '10px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
-                                            />
+                        <AnimatePresence>
+                            {editingProperty && (
+                                <div className="re-modal-overlay glass-heavy" onClick={() => setEditingProperty(null)}>
+                                    <motion.form
+                                        className="re-detail-modal glass"
+                                        initial={{ opacity: 0, y: 40 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: 40 }}
+                                        onSubmit={handleSaveEdit}
+                                        onClick={(e) => e.stopPropagation()}
+                                        style={{ width: '420px' }}
+                                    >
+                                        <div className="modal-header">
+                                            <div className="header-text">
+                                                <h2><Settings size={16} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />Edit Listing</h2>
+                                                <span>#{editingProperty.id} — {editingProperty.label}</span>
+                                            </div>
+                                            <button type="button" className="modal-close" onClick={() => setEditingProperty(null)}><X size={18} /></button>
                                         </div>
-                                        <div className="re-creator-input-field">
-                                            <label style={{ fontSize: '0.8rem', opacity: 0.8, marginBottom: '5px', display: 'block' }}>Price ($)</label>
-                                            <input
-                                                type="number"
-                                                value={editForm.price}
-                                                onChange={(e) => setEditForm(prev => ({ ...prev, price: e.target.value }))}
-                                                required
-                                                style={{ width: '100%', padding: '10px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
-                                            />
-                                        </div>
-                                        <div className="re-creator-input-field">
-                                            <label style={{ fontSize: '0.8rem', opacity: 0.8, marginBottom: '5px', display: 'block' }}>Sale Type</label>
-                                            <select
-                                                value={editForm.sale_type}
-                                                onChange={(e) => setEditForm(prev => ({ ...prev, sale_type: e.target.value }))}
-                                                style={{ width: '100%', padding: '10px', borderRadius: '6px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
-                                            >
-                                                <option value="direct">Direct Sale</option>
-                                                <option value="auction">Auction</option>
-                                                <option value="rent">Rental Lease</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div className="modal-actions" style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                                        <button type="button" className="decline-btn" style={{ flex: 1, padding: '10px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#fda4af', cursor: 'pointer' }} onClick={() => setEditingProperty(null)}>
-                                            Cancel
-                                        </button>
-                                        <button type="submit" className="accept-btn" style={{ flex: 1, padding: '10px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.2)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#a7f3d0', cursor: 'pointer' }}>
-                                            Save Changes
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        )}
-                    </div>
-                );
-
-            case 'employees':
-                return (
-                    <div className="re-contracts-wrapper">
-                        {/* Left Column: Hire & Edit Employee */}
-                        <div className="re-creator-col">
-                            <form className="re-creator-card" onSubmit={handleHireEmployee}>
-                                <div className="re-creator-card-title" style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '15px' }}>
-                                    <UserPlus size={16} /> Hire New Agent
-                                </div>
-                                <div className="re-creator-inputs" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                    <div className="re-creator-input-field">
-                                        <label style={{ fontSize: '0.8rem', opacity: 0.8 }}><UserCheck size={14} /> Select Player (Nearby)</label>
-                                        <select
-                                            value={hireTargetId}
-                                            onChange={(e) => {
-                                                setHireTargetId(e.target.value);
-                                                if (e.target.value) {
-                                                    setHireManualCid('');
-                                                    setHireManualName('');
-                                                }
-                                            }}
-                                            style={{ width: '100%', padding: '10px', borderRadius: '6px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
-                                        >
-                                            <option value="">-- Select Online Player --</option>
-                                            {nearbyPlayers.map(p => (
-                                                <option key={p.id} value={p.id}>
-                                                    {p.name} (ID: {p.id})
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="re-creator-input-field">
-                                        <label style={{ fontSize: '0.8rem', opacity: 0.8 }}><Database size={14} /> Or Enter Citizen ID (CID)</label>
-                                        <input
-                                            type="text"
-                                            placeholder="Player CitizenID"
-                                            value={hireManualCid}
-                                            onChange={(e) => {
-                                                setHireManualCid(e.target.value);
-                                                if (e.target.value) setHireTargetId('');
-                                            }}
-                                            style={{ width: '100%', padding: '10px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
-                                        />
-                                    </div>
-                                    <div className="re-creator-input-field">
-                                        <label style={{ fontSize: '0.8rem', opacity: 0.8 }}><FileText size={14} /> Full Name (If Manual)</label>
-                                        <input
-                                            type="text"
-                                            placeholder="Firstname Lastname"
-                                            value={hireManualName}
-                                            onChange={(e) => setHireManualName(e.target.value)}
-                                            style={{ width: '100%', padding: '10px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
-                                        />
-                                    </div>
-                                    <button type="submit" className="re-btn-primary full-width" style={{ marginTop: '10px', cursor: 'pointer' }}>
-                                        <UserPlus size={16} /> Hire Agent
-                                    </button>
-                                </div>
-                            </form>
-
-                            {selectedEmployee && (
-                                <div className="re-creator-card" style={{ marginTop: '20px' }}>
-                                    <div className="re-creator-card-title" style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '15px' }}>
-                                        <Settings size={16} /> Adjust Agent Settings
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '15px' }}>
-                                        <div className="agent-name-display" style={{ fontWeight: '600', color: '#10b981' }}>
-                                            {selectedEmployee.name} ({selectedEmployee.citizenid})
-                                        </div>
-                                        <div className="re-creator-input-field">
-                                            <label style={{ fontSize: '0.8rem', opacity: 0.8 }}><Percent size={14} /> Custom Commission ({selectedEmployee.commission_rate}%)</label>
-                                            <div className="slider-wrapper" style={{ marginTop: '8px' }}>
-                                                <input
-                                                    type="range"
-                                                    min="5"
-                                                    max="50"
-                                                    value={selectedEmployee.commission_rate}
-                                                    onChange={(e) => setSelectedEmployee(prev => ({ ...prev, commission_rate: parseInt(e.target.value) }))}
-                                                    style={{ width: '100%' }}
-                                                />
+                                        <div className="modal-content">
+                                            <div className="modal-field-group">
+                                                <div className="modal-field">
+                                                    <label className="modal-label">Property Label</label>
+                                                    <input
+                                                        className="modal-input"
+                                                        type="text"
+                                                        value={editForm.label}
+                                                        onChange={(e) => setEditForm(prev => ({ ...prev, label: e.target.value }))}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div className="modal-field">
+                                                    <label className="modal-label">Price ($)</label>
+                                                    <input
+                                                        className="modal-input"
+                                                        type="number"
+                                                        value={editForm.price}
+                                                        onChange={(e) => setEditForm(prev => ({ ...prev, price: e.target.value }))}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div className="modal-field">
+                                                    <label className="modal-label">Sale Type</label>
+                                                    <select
+                                                        className="modal-select"
+                                                        value={editForm.sale_type}
+                                                        onChange={(e) => setEditForm(prev => ({ ...prev, sale_type: e.target.value }))}
+                                                    >
+                                                        <option value="direct">Direct Sale</option>
+                                                        <option value="auction">Auction</option>
+                                                        <option value="rent">Rental Lease</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div className="modal-actions modal-actions-row">
+                                                <button type="button" className="decline-btn modal-action-btn" onClick={() => setEditingProperty(null)}>Cancel</button>
+                                                <button type="submit" className="accept-btn modal-action-btn">Save Changes</button>
                                             </div>
                                         </div>
-
-                                        <div className="re-creator-input-field">
-                                            <label style={{ fontSize: '0.8rem', opacity: 0.8 }}><UserCheck size={14} /> Agent Permissions</label>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '8px' }}>
-                                                <label className="checkbox-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', cursor: 'pointer' }}>
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedEmployee.permissions?.createHouse || false}
-                                                        onChange={(e) => setSelectedEmployee(prev => ({
-                                                            ...prev,
-                                                            permissions: { ...prev.permissions, createHouse: e.target.checked }
-                                                        }))}
-                                                    />
-                                                    Create New Properties
-                                                </label>
-                                                <label className="checkbox-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', cursor: 'pointer' }}>
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedEmployee.permissions?.draftContract || false}
-                                                        onChange={(e) => setSelectedEmployee(prev => ({
-                                                            ...prev,
-                                                            permissions: { ...prev.permissions, draftContract: e.target.checked }
-                                                        }))}
-                                                    />
-                                                    Draft Lease / Sale Contracts
-                                                </label>
-                                                <label className="checkbox-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', cursor: 'pointer' }}>
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedEmployee.permissions?.manageListings || false}
-                                                        onChange={(e) => setSelectedEmployee(prev => ({
-                                                            ...prev,
-                                                            permissions: { ...prev.permissions, manageListings: e.target.checked }
-                                                        }))}
-                                                    />
-                                                    Manage Properties Listings
-                                                </label>
-                                                <label className="checkbox-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', cursor: 'pointer' }}>
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedEmployee.permissions?.manageEmployees || false}
-                                                        onChange={(e) => setSelectedEmployee(prev => ({
-                                                            ...prev,
-                                                            permissions: { ...prev.permissions, manageEmployees: e.target.checked }
-                                                        }))}
-                                                    />
-                                                    Manage Agency Employees
-                                                </label>
-                                            </div>
-                                        </div>
-
-                                        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                                            <button className="decline-btn" style={{ flex: 1, padding: '10px', borderRadius: '6px', background: 'rgba(239,68,68,0.2)', border: '1px solid rgba(239,68,68,0.3)', color: '#fda4af', cursor: 'pointer' }} onClick={() => handleFireEmployee(selectedEmployee.citizenid)}>
-                                                Fire Agent
-                                            </button>
-                                            <button className="accept-btn" style={{ flex: 1, padding: '10px', borderRadius: '6px', background: 'rgba(16,185,129,0.2)', border: '1px solid rgba(16,185,129,0.3)', color: '#a7f3d0', cursor: 'pointer' }} onClick={() => {
-                                                handleUpdateEmployee(selectedEmployee);
-                                                setSelectedEmployee(null);
-                                            }}>
-                                                Save Settings
-                                            </button>
-                                        </div>
-                                    </div>
+                                    </motion.form>
                                 </div>
                             )}
-                        </div>
-
-                        {/* Right Column: Employees List */}
-                        <div className="re-creator-col">
-                            <div className="re-creator-card" style={{ maxHeight: '560px', overflowY: 'auto' }}>
-                                <div className="re-creator-card-title" style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '15px' }}>
-                                    <Briefcase size={16} /> Active Agency Employees
-                                </div>
-                                <table className="management-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Agent Name</th>
-                                            <th>Citizen ID</th>
-                                            <th>Comm. Rate</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {employees.map(emp => (
-                                            <tr key={emp.citizenid} style={{ cursor: 'pointer' }} onClick={() => setSelectedEmployee(emp)}>
-                                                <td>{emp.name}</td>
-                                                <td>{emp.citizenid}</td>
-                                                <td>{emp.commission_rate}%</td>
-                                                <td>
-                                                    <button className="manage-action-btn edit-btn" style={{ cursor: 'pointer' }} onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setSelectedEmployee(emp);
-                                                    }}><Settings size={14} /></button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {employees.length === 0 && (
-                                            <tr>
-                                                <td colSpan="4" style={{ textAlign: 'center', padding: '20px', opacity: 0.5 }}>
-                                                    No employees registered.
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                        </AnimatePresence>
                     </div>
                 );
+
+
 
             case 'contracts':
                 return (
@@ -1409,45 +1179,40 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                     {isAgent && hasPermission.societyBalance > 0 && (
                         <div className="society-balance glass-heavy">
                             <Database size={14} className="price-green" />
-                            <span>Agency Funds: <strong className="price-green">${hasPermission.societyBalance.toLocaleString()}</strong></span>
+                            <span>Agency Funds: <strong className="price-green">$${hasPermission.societyBalance.toLocaleString()}</strong></span>
                         </div>
                     )}
-                    <div className="re-search-v3 glass-heavy">
-                        <Search size={18} className="re-search-icon" />
+                    <div className="re-search-v3">
+                        <Search size={16} opacity={0.4} />
                         <input
                             type="text"
-                            placeholder="Search properties, regions, types..."
+                            placeholder="Search properties..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
                     <button className="re-close-v3" onClick={handleClose}>
-                        <X size={20} />
+                        <X size={18} />
                     </button>
                 </div>
             </div>
 
             <div className="re-sub-header">
                 <div className="re-tabs-v4">
-                    <button className={`tab-v4 ${activeTab === 'browse' ? 'active' : ''}`} onClick={() => setActiveTab('browse')}>
+                    <button className={`tab-v4 $${activeTab === 'browse' ? 'active' : ''}`} onClick={() => setActiveTab('browse')}>
                         <Home size={16} /> BROWSE LISTINGS
                     </button>
-                    {isAgent && (
-                        <button className={`tab-v4 ${activeTab === 'management' ? 'active' : ''}`} onClick={() => setActiveTab('management')}>
+                    {isAgent && canManageListings && (
+                        <button className={`tab-v4 $${activeTab === 'management' ? 'active' : ''}`} onClick={() => setActiveTab('management')}>
                             <Settings size={16} /> MANAGEMENT
                         </button>
                     )}
                     {isAgent && canCreate && (
-                        <button className={`tab-v4 ${activeTab === 'creator' ? 'active' : ''}`} onClick={() => setActiveTab('creator')}>
+                        <button className={`tab-v4 $${activeTab === 'creator' ? 'active' : ''}`} onClick={() => setActiveTab('creator')}>
                             <Plus size={16} /> PROPERTY CREATOR
                         </button>
                     )}
-                    {isAgent && canManageEmployees && (
-                        <button className={`tab-v4 ${activeTab === 'employees' ? 'active' : ''}`} onClick={() => setActiveTab('employees')}>
-                            <Briefcase size={16} /> EMPLOYEES
-                        </button>
-                    )}
-                    <button className={`tab-v4 ${activeTab === 'contracts' ? 'active' : ''}`} onClick={() => setActiveTab('contracts')}>
+                    <button className={`tab-v4 $${activeTab === 'contracts' ? 'active' : ''}`} onClick={() => setActiveTab('contracts')}>
                         <FileText size={16} /> CONTRACTS
                     </button>
                 </div>
@@ -1456,23 +1221,22 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                     <div className="re-sort-v2">
                         <span className="sort-label">SORT BY</span>
                         <div className="sort-buttons-v2">
-                            <button className={`sort-btn-v2 ${sortBy === 'none' ? 'active' : ''}`} onClick={() => setSortBy('none')}>
+                            <button className={`sort-btn-v2 $${sortBy === 'none' ? 'active' : ''}`} onClick={() => setSortBy('none')}>
                                 <Filter size={14} /> NONE
                             </button>
-                            <button className={`sort-btn-v2 ${sortBy === 'price' ? 'active' : ''}`} onClick={() => setSortBy('price')}>
+                            <button className={`sort-btn-v2 $${sortBy === 'price' ? 'active' : ''}`} onClick={() => setSortBy('price')}>
                                 <Tag size={14} /> PRICE
                             </button>
-                            <button className={`sort-btn-v2 ${sortBy === 'garage' ? 'active' : ''}`} onClick={() => setSortBy('garage')}>
+                            <button className={`sort-btn-v2 $${sortBy === 'garage' ? 'active' : ''}`} onClick={() => setSortBy('garage')}>
                                 <Warehouse size={14} /> GARAGE
                             </button>
-                            <button className={`sort-btn-v2 ${sortBy === 'size' ? 'active' : ''}`} onClick={() => setSortBy('size')}>
+                            <button className={`sort-btn-v2 $${sortBy === 'size' ? 'active' : ''}`} onClick={() => setSortBy('size')}>
                                 <Maximize size={14} /> SIZE
                             </button>
                         </div>
                     </div>
                 )}
             </div>
-
             <div className="re-grid-v2">
                 {renderTabContent()}
             </div>
@@ -1553,6 +1317,51 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                             PURCHASE
                                         </button>
                                     )}
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Custom NUI Confirmation Modal */}
+            <AnimatePresence>
+                {confirmModal && (
+                    <div className="re-modal-overlay glass-heavy" onClick={() => setConfirmModal(null)}>
+                        <motion.div
+                            className="re-detail-modal glass"
+                            initial={{ opacity: 0, y: 40 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 40 }}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ width: '420px' }}
+                        >
+                            <div className="modal-header">
+                                <div className="header-text">
+                                    <h2>{confirmModal.title}</h2>
+                                </div>
+                                <button className="modal-close" onClick={() => setConfirmModal(null)}><X size={18} /></button>
+                            </div>
+                            <div className="modal-content">
+                                <p className="modal-message">{confirmModal.message}</p>
+                                <div className="modal-actions modal-actions-row">
+                                    <button
+                                        className="decline-btn modal-action-btn"
+                                        onClick={() => setConfirmModal(null)}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        className="modal-action-btn modal-confirm-btn"
+                                        style={{
+                                            background: confirmModal.confirmColor || 'rgba(16, 185, 129, 0.2)',
+                                            borderColor: confirmModal.confirmBorderColor || 'rgba(16, 185, 129, 0.3)',
+                                            color: confirmModal.confirmTextColor || '#a7f3d0',
+                                        }}
+                                        onClick={confirmModal.onConfirm}
+                                    >
+                                        {confirmModal.confirmLabel || 'Confirm'}
+                                    </button>
                                 </div>
                             </div>
                         </motion.div>

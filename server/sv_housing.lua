@@ -218,7 +218,7 @@ function ProcessPropertySalePayout(propertyId, amount)
     end
 end
 
-lib.callback.register('LNS_Housing:server:getRealEstatePermission', function(source)
+local function GetRealEstatePermission(source)
     local isAllowed = false
     local jobName = nil
     local gradeLevel = 0
@@ -277,44 +277,12 @@ lib.callback.register('LNS_Housing:server:getRealEstatePermission', function(sou
         end
 
         local citizenid = GetIdentifier(source)
-        local empRecord = MySQL.query.await('SELECT * FROM housing_employees WHERE agency = ? AND citizenid = ?', { jobName, citizenid })
         
         local createHouse = gradeLevel >= (permConfig.CreateHouse or 2)
         local draftContract = gradeLevel >= (permConfig.DraftContract or 1)
         local manageListings = gradeLevel >= (permConfig.ManageListings or 3)
         local manageEmployees = gradeLevel >= (permConfig.ManageEmployees or 4)
         local commissionRate = agencyConfig and agencyConfig.defaultCommission or 10
-
-        if empRecord and empRecord[1] then
-            local dbPerms = json.decode(empRecord[1].permissions or '{}')
-            createHouse = dbPerms.createHouse
-            draftContract = dbPerms.draftContract
-            manageListings = dbPerms.manageListings
-            manageEmployees = dbPerms.manageEmployees
-            commissionRate = tonumber(empRecord[1].commission_rate) or commissionRate
-        else
-            -- If boss, auto-insert to database for visibility
-            if gradeLevel >= (permConfig.ManageEmployees or 4) and jobName ~= 'admin' then
-                local pName = Bridge.Server.GetPlayerName(source) or 'Agency Boss'
-                pcall(function()
-                    MySQL.insert.await([[
-                        INSERT INTO housing_employees (agency, citizenid, name, commission_rate, permissions)
-                        VALUES (?, ?, ?, ?, ?)
-                    ]], {
-                        jobName, citizenid, pName, commissionRate, json.encode({
-                            createHouse = true,
-                            draftContract = true,
-                            manageListings = true,
-                            manageEmployees = true
-                        })
-                    })
-                end)
-                createHouse = true
-                draftContract = true
-                manageListings = true
-                manageEmployees = true
-            end
-        end
 
         return {
             allowed = true,
@@ -337,6 +305,10 @@ lib.callback.register('LNS_Housing:server:getRealEstatePermission', function(sou
         allowed = false,
         citizenid = GetIdentifier(source)
     }
+end
+
+lib.callback.register('LNS_Housing:server:getRealEstatePermission', function(source)
+    return GetRealEstatePermission(source)
 end)
 
 lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
@@ -930,95 +902,11 @@ end)
 
 -- ==========================================
 -- Employee Management APIs
--- ==========================================
-
-lib.callback.register('LNS_Housing:server:getEmployees', function(source)
-    local jobPerm = lib.callback.await('LNS_Housing:server:getRealEstatePermission', source)
-    if not jobPerm or not jobPerm.permissions.manageEmployees then return {} end
-
-    local results = MySQL.query.await('SELECT * FROM housing_employees WHERE agency = ?', { jobPerm.job })
-    if results then
-        for _, emp in ipairs(results) do
-            emp.permissions = json.decode(emp.permissions or '{}')
-        end
-    end
-    return results or {}
-end)
-
-lib.callback.register('LNS_Housing:server:hireEmployee', function(source, targetId, manualCid, manualName)
-    local jobPerm = lib.callback.await('LNS_Housing:server:getRealEstatePermission', source)
-    if not jobPerm or not jobPerm.permissions.manageEmployees then return false, "No permission" end
-
-    local citizenid = nil
-    local name = nil
-
-    if targetId and targetId ~= "" then
-        local tSrc = tonumber(targetId)
-        citizenid = GetIdentifier(tSrc)
-        name = Bridge.Server.GetPlayerName(tSrc)
-    else
-        citizenid = manualCid
-        name = manualName or "Unknown Employee"
-    end
-
-    if not citizenid or citizenid == "" then
-        return false, "Invalid player"
-    end
-
-    local success, err = pcall(function()
-        MySQL.insert.await([[
-            INSERT INTO housing_employees (agency, citizenid, name, commission_rate, permissions)
-            VALUES (?, ?, ?, ?, ?)
-        ]], {
-            jobPerm.job, citizenid, name, 10, json.encode({
-                createHouse = false,
-                draftContract = true,
-                manageListings = false,
-                manageEmployees = false
-            })
-        })
-    end)
-
-    if success then
-        return true
-    else
-        return false, "Employee already hired"
-    end
-end)
-
-lib.callback.register('LNS_Housing:server:fireEmployee', function(source, citizenid)
-    local jobPerm = lib.callback.await('LNS_Housing:server:getRealEstatePermission', source)
-    if not jobPerm or not jobPerm.permissions.manageEmployees then return false end
-
-    MySQL.update.await('DELETE FROM housing_employees WHERE agency = ? AND citizenid = ?', {
-        jobPerm.job, citizenid
-    })
-    return true
-end)
-
-lib.callback.register('LNS_Housing:server:updateEmployee', function(source, data)
-    local jobPerm = lib.callback.await('LNS_Housing:server:getRealEstatePermission', source)
-    if not jobPerm or not jobPerm.permissions.manageEmployees then return false end
-
-    MySQL.update.await([[
-        UPDATE housing_employees 
-        SET commission_rate = ?, permissions = ? 
-        WHERE agency = ? AND citizenid = ?
-    ]], {
-        tonumber(data.commissionRate) or 10,
-        json.encode(data.permissions or {}),
-        jobPerm.job,
-        data.citizenid
-    })
-    return true
-end)
-
--- ==========================================
 -- Listings Management & Eviction APIs
 -- ==========================================
 
 lib.callback.register('LNS_Housing:server:updateListingDetails', function(source, data)
-    local jobPerm = lib.callback.await('LNS_Housing:server:getRealEstatePermission', source)
+    local jobPerm = GetRealEstatePermission(source)
     if not jobPerm or not jobPerm.permissions.manageListings then return false end
 
     local propertyId = tonumber(data.id)
@@ -1043,7 +931,7 @@ lib.callback.register('LNS_Housing:server:updateListingDetails', function(source
 end)
 
 lib.callback.register('LNS_Housing:server:deleteListing', function(source, propertyId)
-    local jobPerm = lib.callback.await('LNS_Housing:server:getRealEstatePermission', source)
+    local jobPerm = GetRealEstatePermission(source)
     if not jobPerm or not jobPerm.permissions.manageListings then return false end
 
     local id = tonumber(propertyId)
@@ -1057,7 +945,7 @@ lib.callback.register('LNS_Housing:server:deleteListing', function(source, prope
 end)
 
 lib.callback.register('LNS_Housing:server:evictTenant', function(source, propertyId)
-    local jobPerm = lib.callback.await('LNS_Housing:server:getRealEstatePermission', source)
+    local jobPerm = GetRealEstatePermission(source)
     if not jobPerm or not jobPerm.permissions.manageListings then return false end
 
     local id = tonumber(propertyId)
