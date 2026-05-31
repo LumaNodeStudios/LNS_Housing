@@ -25,27 +25,27 @@ Rather than just a simple spawn-and-teleport script, **LNS Housing** introduces 
 
 ## Features
 
-### 🏡 Advanced Property Management & Editing
+### Advanced Property Management & Editing
 * **In-Game House Creator:** Admin commands (`/createhouse`) to quickly define shell locations, entrance/exit coordinates, pricing, and allowed agencies.
 * **MLO & Shell support:** Built-in tools for both MLO-based houses and traditional teleporting shell interiors.
 * **Wall Colors & Customization:** Real-time interior wall painting/color selection, allowing players to truly personalize their houses.
 
-### 🛋️ Interactive Furniture & Shop
+### Interactive Furniture & Shop
 * **Rich Furniture Catalog:** Dozens of pre-configured furniture props across sofas, chairs, beds, tables, storage containers, lights, and decor.
 * **Dynamic Placement UI:** Smooth translation, rotation, and height adjustment tools to position props precisely in-game.
 * **Stashes & Wardrobes:** Place storage crates, lockers, wardrobes, or safes anywhere. Placing storage furniture automatically registers the containers with the inventory system.
 
-### 🚜 Dynamic Lawn Mower & Yard System
+### Dynamic Lawn Mower & Yard System
 * **Grass Growth:** Grass props spawn dynamically in designated yard zones, growing in height over time.
 * **Lawn Maintenance:** Players must mow their yard using a lawnmower item or drivable mower vehicles to maintain their properties.
 * **Yard Customization:** Define specific lawn zone boundaries for any property using the built-in zone editor.
 
-### 💼 Real Estate & Contracts
+### Real Estate & Contracts
 * **Agent Dashboard:** Real estate agents access a custom panel (`/properties`) to manage listings, adjust pricing, and hire employees.
 * **Draft Purchase Contracts:** Draft legal agreements specifying commission rates, deposit requirements, and buyer parameters.
 * **Agency Permissions:** Granular agent grades control access to creating listings, editing details, managing employees, or drafting contracts.
 
-### 👮 Security & Raids
+### Security & Raids
 * **Lockpicking:** Immersive minigame to lockpick house and apartment doors.
 * **Police Breaches:** Authorize law enforcement agents to raid properties, bypass door locks, and search stashes under active warrants.
 
@@ -54,8 +54,8 @@ Rather than just a simple spawn-and-teleport script, **LNS Housing** introduces 
 ## Framework Compatibility
 
 LNS Housing features automatic framework detection, providing full support for:
-* **ESX** (`es_extended`)
 * **Qbox** (`qbx_core`)
+* **ESX** (`es_extended`)
 
 ---
 
@@ -183,7 +183,7 @@ CREATE TABLE IF NOT EXISTS `housing_employees` (
 
 To eliminate double-fading screens and allow players to choose their starter apartments or owned properties directly inside the spawn selection menu, configure the following modifications:
 
-### 🛠️ Part A: Spawning Directly in Starter Apartments (`qbx_core`)
+### Part A: Spawning Directly in Starter Apartments (`qbx_core`)
 Update `qbx_core` to query the player's newly assigned apartment coordinates *before* spawning.
 
 
@@ -282,7 +282,7 @@ RegisterNetEvent('qbx_core:client:spawnNoApartments', function() -- This event i
 end)
 ```
 
-##### ⚙️ Recommended Configuration Settings
+##### Recommended Configuration Settings
 1. **Disable Qbox Legacy Apartments (`qbx_core`):**
    Open `qbx_core/config/client.lua` and verify that `startingApartment` under the `characters` section is set to `false`:
    ```lua
@@ -295,7 +295,7 @@ end)
 
 ---
 
-#### 🛠️ Part B: Spawn Menu Selection (`qbx_spawn`)
+#### Part B: Spawn Menu Selection (`qbx_spawn`)
 Allows returning players to select their starter apartments or owned properties directly inside the spawn selection menu.
 
 ##### Edit 1: `qbx_spawn/server/main.lua`
@@ -431,7 +431,9 @@ exports.LNS_Housing:SpawnInProperty(type, id)
 
 **LNS Housing** is developed and distributed by **[LumaNode Studios](https://github.com/LumaNodeStudios)**. 
 
-Special thanks to the FiveM developer community and the creators of **ox_lib** and **ox_doorlock** for providing key integration libraries that make this script lightweight and performant.
+Special thanks to **[Project Sloth](https://github.com/Project-Sloth)** for their work on **[ps-housing](https://github.com/Project-Sloth/ps-housing)** and **[ps-realtor](https://github.com/Project-Sloth/ps-realtor)**, which served as reference and inspiration for some of the codebase's logic.
+
+We also thank the wider FiveM developer community and the creators of **ox_lib** and **ox_doorlock** for providing key integration libraries that make this script lightweight and performant.
 
 ---
 
