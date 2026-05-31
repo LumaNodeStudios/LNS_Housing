@@ -46,6 +46,7 @@ local function CreateApartmentPed()
             name = 'apartment_info',
             icon = 'fa-solid fa-door-open',
             label = 'Check Apartment Info',
+            debug = Settings.Debug.Zones,
             onSelect = function()
                 if MyApartmentId then
                     Settings.Notify('Your apartment is room #' .. MyApartmentId, 'info')
@@ -298,6 +299,47 @@ local function RegisterApartmentCreatorCommands()
     end, false)
 end
 
+local function GetDoorCenter(door)
+    if not door then return nil end
+
+    if door.doors and #door.doors > 1 then
+        -- Double door: return the midpoint between the two doors
+        local c1 = door.doors[1].coords
+        local c2 = door.doors[2].coords
+        return (c1 + c2) / 2
+    end
+
+    local coords = door.coords
+    local heading = door.heading or 0.0
+    local model = door.model
+
+    if not model or not coords then
+        return coords
+    end
+
+    local success = pcall(function()
+        lib.requestModel(model, 1000)
+    end)
+
+    if not success or not HasModelLoaded(model) then
+        return coords
+    end
+
+    local min, max = GetModelDimensions(model)
+    SetModelAsNoLongerNeeded(model)
+
+    local localCenter = (min + max) / 2
+    local rad = math.rad(heading)
+    local rx, ry = math.cos(rad), math.sin(rad)
+    local fx, fy = -math.sin(rad), math.cos(rad)
+
+    local worldX = coords.x + (localCenter.x * rx) + (localCenter.y * fx)
+    local worldY = coords.y + (localCenter.x * ry) + (localCenter.y * fy)
+    local worldZ = coords.z + localCenter.z
+
+    return vector3(worldX, worldY, worldZ)
+end
+
 CreateThread(function()
     while not NetworkIsPlayerActive(PlayerId()) do
         Wait(100)
@@ -318,11 +360,20 @@ CreateThread(function()
     if Settings.Rooms then
         for _, room in ipairs(Settings.Rooms) do
             if room.doorCoords then
+                local targetCoords = room.doorCoords
+                local door = nil
+                if exports.ox_doorlock.getDoorFromName then
+                    door = exports.ox_doorlock:getDoorFromName("Apartment Room #" .. room.id)
+                end
+                if door then
+                    targetCoords = GetDoorCenter(door) or targetCoords
+                end
+
                 exports.ox_target:addBoxZone({
-                    coords = room.doorCoords,
+                    coords = targetCoords,
                     size = vec3(1.5, 1.5, 2.0),
                     rotation = room.doorHeading or 0.0,
-                    debug = false,
+                    debug = Settings.Debug.Zones,
                     options = {
                         {
                             label = 'Raid Apartment',

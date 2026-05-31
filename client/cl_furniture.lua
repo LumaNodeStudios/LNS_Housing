@@ -199,7 +199,7 @@ Modeler = {
         end
         
         -- Check apartment zone
-        if isInside and apartmentZone and apartmentZone.contains then
+        if isInside and insideApartment and apartmentZone and apartmentZone.contains then
             isInside = apartmentZone:contains(camPos)
         end
 

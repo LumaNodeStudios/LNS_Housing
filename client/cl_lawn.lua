@@ -551,17 +551,18 @@ function RegisterYardZone(p)
     if YardZones[p.id] then return end
     if not p.yard_zone_data or not p.yard_zone_data.points or #p.yard_zone_data.points < 3 then return end
 
+    local thickness = p.yard_zone_data.thickness or 10.0
     local points = {}
     for i = 1, #p.yard_zone_data.points do
         local pt = p.yard_zone_data.points[i]
-        points[i] = vector3(pt.x, pt.y, pt.z)
+        points[i] = vector3(pt.x, pt.y, pt.z + (thickness / 2))
     end
 
     GetYardCenter(p.id, p.yard_zone_data.points)
 
     YardZones[p.id] = lib.zones.poly({
         points = points,
-        thickness = p.yard_zone_data.thickness or 10.0,
+        thickness = thickness,
         debug = Settings.Debug.Zones,
         onEnter = function()
             ActiveYardPropertyId = p.id

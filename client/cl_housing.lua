@@ -205,6 +205,7 @@ function LoadFurnitures(propertyId)
                 {
                     label = 'Open Storage',
                     icon = 'fas fa-box-open',
+                    debug = Settings.Debug.Zones,
                     onSelect = function()
                         Bridge.Client.OpenStash(propertyId, f.id)
                     end,
@@ -260,6 +261,7 @@ function LoadFurnitures(propertyId)
                 {
                     label = 'Open Wardrobe',
                     icon = 'fas fa-shirt',
+                    debug = Settings.Debug.Zones,
                     onSelect = function()
                         Bridge.Client.OpenWardrobe(propertyId, f.id)
                     end,
@@ -279,6 +281,7 @@ function LoadFurnitures(propertyId)
                 {
                     label = p.isApartment and 'Open Apartment Panel' or 'Open House Panel',
                     icon = p.isApartment and 'fas fa-building' or 'fas fa-house-user',
+                    debug = Settings.Debug.Zones,
                     onSelect = function()
                         local propData = Properties[propertyId]
                         if propData then
@@ -322,15 +325,16 @@ function RegisterPropertyZones(p)
     
     -- If zone_data exists (Polyzone), use lib.zones
     if p.zone_data and p.zone_data.points and #p.zone_data.points >= 3 then
+        local thickness = p.zone_data.thickness or 10.0
         local points = {}
         for i = 1, #p.zone_data.points do
             local pt = p.zone_data.points[i]
-            points[i] = vector3(pt.x, pt.y, pt.z)
+            points[i] = vector3(pt.x, pt.y, pt.z + (thickness / 2))
         end
 
         PropertyZones[p.id] = lib.zones.poly({
             points = points,
-            thickness = p.zone_data.thickness or 10.0,
+            thickness = thickness,
             debug = Settings.Debug.Zones,
             onEnter = function()
                 LoadFurnitures(p.id)
@@ -379,6 +383,47 @@ function RegisterPropertyZones(p)
     end
 end
 
+function GetDoorCenter(door)
+    if not door then return nil end
+
+    if door.doors and #door.doors > 1 then
+        -- Double door: return the midpoint between the two doors
+        local c1 = door.doors[1].coords
+        local c2 = door.doors[2].coords
+        return (c1 + c2) / 2
+    end
+
+    local coords = door.coords
+    local heading = door.heading or 0.0
+    local model = door.model
+
+    if not model or not coords then
+        return coords
+    end
+
+    local success = pcall(function()
+        lib.requestModel(model, 1000)
+    end)
+
+    if not success or not HasModelLoaded(model) then
+        return coords
+    end
+
+    local min, max = GetModelDimensions(model)
+    SetModelAsNoLongerNeeded(model)
+
+    local localCenter = (min + max) / 2
+    local rad = math.rad(heading)
+    local rx, ry = math.cos(rad), math.sin(rad)
+    local fx, fy = -math.sin(rad), math.cos(rad)
+
+    local worldX = coords.x + (localCenter.x * rx) + (localCenter.y * fx)
+    local worldY = coords.y + (localCenter.x * ry) + (localCenter.y * fy)
+    local worldZ = coords.z + localCenter.z
+
+    return vector3(worldX, worldY, worldZ)
+end
+
 -- Sync properties from server and register zones (optimized unified initialization thread)
 CreateThread(function()
     Properties = lib.callback.await('LNS_Housing:server:getProperties', false)
@@ -406,12 +451,14 @@ CreateThread(function()
                 end
 
                 if door then
+                    local targetCoords = GetDoorCenter(door) or door.coords
+
                     -- Register lockpick target for buyable houses
                     if Settings.Debug and Settings.Debug.BuyHouses then
                         exports.ox_target:addSphereZone({
-                            coords = door.coords,
+                            coords = targetCoords,
                             radius = 1.2,
-                            debug = true,
+                            debug = Settings.Debug.Zones,
                             options = {
                                 {
                                     label = 'Lockpick ' .. p.label,
@@ -430,10 +477,10 @@ CreateThread(function()
 
                     -- Register Police Raid target
                     exports.ox_target:addBoxZone({
-                        coords = door.coords,
+                        coords = targetCoords,
                         size = vec3(1.5, 1.5, 2.0),
                         rotation = door.heading or 0.0,
-                        debug = false,
+                        debug = Settings.Debug.Zones,
                         options = {
                             {
                                 label = 'Raid House',

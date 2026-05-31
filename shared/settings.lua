@@ -3,7 +3,7 @@ return {
     Debug = {
         BuyHouses = true, -- Set to true to allow buying houses via ox_target on doors
         LawnGrowth = true, -- Set to true for 5 min growth (300s), false for 7 days (604800s)
-        Zones = false -- Seto to true for zone boxes, false to hide zone boxes
+        Zones = true -- Seto to true for zone boxes, false to hide zone boxes
     },
 
     Creator = {
