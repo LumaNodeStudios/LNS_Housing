@@ -276,7 +276,7 @@ Modeler = {
             local hash = GetHashKey(model)
             lib.requestModel(hash)
 
-            curObject = CreateObject(hash, self.CurrentCameraLookAt.x, self.CurrentCameraLookAt.y, self.CurrentCameraLookAt.z, false, false, false)
+            curObject = CreateObjectNoOffset(hash, self.CurrentCameraLookAt.x, self.CurrentCameraLookAt.y, self.CurrentCameraLookAt.z, false, false, false)
             objectRot = GetEntityRotation(curObject, 2)
             objectPos = self.CurrentCameraLookAt
             
@@ -545,7 +545,7 @@ Modeler = {
             return
         end
 
-        self.HoverObject = CreateObject(hash, 0.0, 0.0, 0.0, false, false, false)
+        self.HoverObject = CreateObjectNoOffset(hash, 0.0, 0.0, 0.0, false, false, false)
         local lookAt = Freecam:GetTarget(self.HoverDistance)
         SetEntityCoords(self.HoverObject, lookAt.x, lookAt.y, lookAt.z)
         FreezeEntityPosition(self.HoverObject, true)

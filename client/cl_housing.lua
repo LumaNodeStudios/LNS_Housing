@@ -180,7 +180,7 @@ function LoadFurnitures(propertyId)
         local hash = tonumber(f.model) or GetHashKey(f.model)
         lib.requestModel(hash)
         
-        local obj = CreateObject(hash, f.position.x, f.position.y, f.position.z, false, false, false)
+        local obj = CreateObjectNoOffset(hash, f.position.x, f.position.y, f.position.z, false, false, false)
         SetEntityRotation(obj, f.rotation.x, f.rotation.y, f.rotation.z, 2, true)
         FreezeEntityPosition(obj, true)
 
