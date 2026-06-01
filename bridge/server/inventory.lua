@@ -1,11 +1,15 @@
 local Settings = lib.load('shared.settings')
 
 Bridge.Server.RegisterStash = function(propertyId, furnitureId, storageConfig, label)
-    local stashId = string.format('housing_%d_%s', propertyId, furnitureId)
-    local slots = storageConfig and storageConfig.slots or Settings.Stash.slots
-    local weight = storageConfig and storageConfig.weight or Settings.Stash.weight
-    local stashLabel = label or Settings.Stash.label
-    exports.ox_inventory:RegisterStash(stashId, stashLabel, slots, weight)
+    if getResourceState('ox_inventory') ~= 'started' then
+        local stashId = string.format('housing_%d_%s', propertyId, furnitureId)
+        local slots = storageConfig and storageConfig.slots or Settings.Stash.slots
+        local weight = storageConfig and storageConfig.weight or Settings.Stash.weight
+        local stashLabel = label or Settings.Stash.label
+        exports.ox_inventory:RegisterStash(stashId, stashLabel, slots, weight)
+    else
+        print('ox_inventory not started')
+    end
 end
 
 Bridge.Server.RegisterPropertyStashes = function(propertyId, furnitureList)

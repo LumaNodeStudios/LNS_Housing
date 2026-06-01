@@ -535,6 +535,11 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
     local citizenid = Bridge.Server.GetIdentifier(src)
     if not citizenid then return end
 
+    if type(items) ~= 'table' then
+        Settings.Notify(src, 'Invalid furniture payload.', 'error')
+        return
+    end
+
     local price = tonumber(totalPrice)
     if not price or price ~= price then
         Settings.Notify(src, 'Invalid purchase amount.', 'error')
@@ -547,7 +552,16 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
         return
     end
 
-    local result = MySQL.single.await('SELECT citizenid, furniture FROM apartments WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
+    local okSelect, result = pcall(function()
+        return MySQL.single.await('SELECT citizenid, furniture FROM apartments WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
+    end)
+
+    if not okSelect then
+        print(('[LNS_Housing] buyApartmentFurniture SELECT failed for %s/%s: %s'):format(tostring(citizenid), tostring(roomId), tostring(result)))
+        Settings.Notify(src, 'Database error while loading apartment data.', 'error')
+        return
+    end
+
     if result then
         local money = Bridge.Server.GetBankMoney(src)
         if price > 0 then
@@ -563,16 +577,44 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
             end
         end
 
-        local currentFurniture = json.decode(result.furniture or '[]')
+        local currentFurniture = {}
+        if result.furniture and result.furniture ~= '' then
+            local okDecode, decoded = pcall(function()
+                return json.decode(result.furniture)
+            end)
+
+            if okDecode and type(decoded) == 'table' then
+                currentFurniture = decoded
+            else
+                print(('[LNS_Housing] buyApartmentFurniture decode failed for %s/%s, resetting furniture list'):format(tostring(citizenid), tostring(roomId)))
+            end
+        end
+
         for _, item in ipairs(items) do
             table.insert(currentFurniture, item)
         end
 
-        MySQL.update.await('UPDATE apartments SET furniture = ? WHERE room_id = ? AND citizenid = ?', {
-            json.encode(currentFurniture),
-            roomId,
-            citizenid
-        })
+        local okEncode, furnitureJson = pcall(function()
+            return json.encode(currentFurniture)
+        end)
+        if not okEncode then
+            print(('[LNS_Housing] buyApartmentFurniture encode failed for %s/%s: %s'):format(tostring(citizenid), tostring(roomId), tostring(furnitureJson)))
+            Settings.Notify(src, 'Could not process furniture data.', 'error')
+            return
+        end
+
+        local okUpdate, updateResult = pcall(function()
+            return MySQL.update.await('UPDATE apartments SET furniture = ? WHERE room_id = ? AND citizenid = ?', {
+                furnitureJson,
+                roomId,
+                citizenid
+            })
+        end)
+        if not okUpdate then
+            print(('[LNS_Housing] buyApartmentFurniture UPDATE failed for %s/%s: %s'):format(tostring(citizenid), tostring(roomId), tostring(updateResult)))
+            Settings.Notify(src, 'Database error while saving furniture.', 'error')
+            return
+        end
 
         if Bridge.Server.RegisterPropertyStashes then
             Bridge.Server.RegisterPropertyStashes(roomId, currentFurniture)
