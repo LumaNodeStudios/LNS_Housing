@@ -542,7 +542,7 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
     end
 
     price = math.floor(price + 0.0)
-    if price <= 0 then
+    if price < 0 then
         Settings.Notify(src, 'Invalid purchase amount.', 'error')
         return
     end
@@ -550,15 +550,17 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
     local result = MySQL.single.await('SELECT citizenid, furniture FROM apartments WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
     if result then
         local money = Bridge.Server.GetBankMoney(src)
-        if money < price then
-            Settings.Notify(src, 'Not enough money in your bank!', 'error')
-            return
-        end
+        if price > 0 then
+            if money < price then
+                Settings.Notify(src, 'Not enough money in your bank!', 'error')
+                return
+            end
 
-        local removed = Bridge.Server.RemoveBankMoney(src, price, "Bought furniture for apartment #" .. roomId)
-        if not removed then
-            Settings.Notify(src, 'Could not process bank payment.', 'error')
-            return
+            local removed = Bridge.Server.RemoveBankMoney(src, price, "Bought furniture for apartment #" .. roomId)
+            if not removed then
+                Settings.Notify(src, 'Could not process bank payment.', 'error')
+                return
+            end
         end
 
         local currentFurniture = json.decode(result.furniture or '[]')
