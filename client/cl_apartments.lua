@@ -299,47 +299,6 @@ local function RegisterApartmentCreatorCommands()
     end, false)
 end
 
-local function GetDoorCenter(door)
-    if not door then return nil end
-
-    if door.doors and #door.doors > 1 then
-        -- Double door: return the midpoint between the two doors
-        local c1 = door.doors[1].coords
-        local c2 = door.doors[2].coords
-        return (c1 + c2) / 2
-    end
-
-    local coords = door.coords
-    local heading = door.heading or 0.0
-    local model = door.model
-
-    if not model or not coords then
-        return coords
-    end
-
-    local success = pcall(function()
-        lib.requestModel(model, 1000)
-    end)
-
-    if not success or not HasModelLoaded(model) then
-        return coords
-    end
-
-    local min, max = GetModelDimensions(model)
-    SetModelAsNoLongerNeeded(model)
-
-    local localCenter = (min + max) / 2
-    local rad = math.rad(heading)
-    local rx, ry = math.cos(rad), math.sin(rad)
-    local fx, fy = -math.sin(rad), math.cos(rad)
-
-    local worldX = coords.x + (localCenter.x * rx) + (localCenter.y * fx)
-    local worldY = coords.y + (localCenter.x * ry) + (localCenter.y * fy)
-    local worldZ = coords.z + localCenter.z
-
-    return vector3(worldX, worldY, worldZ)
-end
-
 CreateThread(function()
     while not NetworkIsPlayerActive(PlayerId()) do
         Wait(100)
@@ -360,7 +319,6 @@ CreateThread(function()
     if Settings.Rooms then
         for _, room in ipairs(Settings.Rooms) do
             if room.doorCoords then
-                local targetCoords = room.doorCoords
                 local door = nil
                 if GetResourceState('ox_doorlock') == 'started' then
                     local ok, result = pcall(function()
@@ -370,14 +328,18 @@ CreateThread(function()
                         door = result
                     end
                 end
-                if door then
-                    targetCoords = GetDoorCenter(door) or targetCoords
-                end
+
+                local targetCoords, targetHeading = ResolveDoorTargetPlacement(
+                    room.doorModel,
+                    room.doorCoords,
+                    room.doorHeading,
+                    door
+                )
 
                 exports.ox_target:addBoxZone({
                     coords = targetCoords,
-                    size = vec3(1.5, 1.5, 2.0),
-                    rotation = room.doorHeading or 0.0,
+                    size = vec3(1.0, 1.5, 2.0),
+                    rotation = targetHeading,
                     debug = Settings.Debug.Zones,
                     options = {
                         {

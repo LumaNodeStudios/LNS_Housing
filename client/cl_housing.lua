@@ -356,10 +356,11 @@ function RegisterPropertyZones(p)
         })
     else
         -- Fallback to distance-based loading using lib.points
-        local door = p.door_id and exports.ox_doorlock:getDoor(p.door_id)
-        if door then
+        local door = p.door_id and GetOxDoorlockDoor(p.door_id)
+        if door and door.coords then
+            local doorCoords = vec3(door.coords.x, door.coords.y, door.coords.z)
             PropertyZones[p.id] = lib.points.new({
-                coords = door.coords,
+                coords = doorCoords,
                 distance = 40,
                 onEnter = function()
                     LoadFurnitures(p.id)
@@ -383,47 +384,6 @@ function RegisterPropertyZones(p)
     end
 end
 
-function GetDoorCenter(door)
-    if not door then return nil end
-
-    if door.doors and #door.doors > 1 then
-        -- Double door: return the midpoint between the two doors
-        local c1 = door.doors[1].coords
-        local c2 = door.doors[2].coords
-        return (c1 + c2) / 2
-    end
-
-    local coords = door.coords
-    local heading = door.heading or 0.0
-    local model = door.model
-
-    if not model or not coords then
-        return coords
-    end
-
-    local success = pcall(function()
-        lib.requestModel(model, 1000)
-    end)
-
-    if not success or not HasModelLoaded(model) then
-        return coords
-    end
-
-    local min, max = GetModelDimensions(model)
-    SetModelAsNoLongerNeeded(model)
-
-    local localCenter = (min + max) / 2
-    local rad = math.rad(heading)
-    local rx, ry = math.cos(rad), math.sin(rad)
-    local fx, fy = -math.sin(rad), math.cos(rad)
-
-    local worldX = coords.x + (localCenter.x * rx) + (localCenter.y * fx)
-    local worldY = coords.y + (localCenter.x * ry) + (localCenter.y * fy)
-    local worldZ = coords.z + localCenter.z
-
-    return vector3(worldX, worldY, worldZ)
-end
-
 -- Sync properties from server and register zones (optimized unified initialization thread)
 CreateThread(function()
     Properties = lib.callback.await('LNS_Housing:server:getProperties', false)
@@ -443,16 +403,12 @@ CreateThread(function()
             end
 
             if doorId and doorId ~= 0 then
-                local door = nil
-                if exports.ox_doorlock.getDoor then
-                    door = exports.ox_doorlock:getDoor(doorId)
-                elseif exports.ox_doorlock.getDoorData then
-                    door = exports.ox_doorlock:getDoorData(doorId)
-                end
+                local door = GetOxDoorlockDoor(doorId)
 
-                if door then
-                    local targetCoords = GetDoorCenter(door) or door.coords
+                if door and door.coords then
+                    local targetCoords, targetHeading = ResolveDoorTargetPlacement(door.model, door.coords, door.heading, door)
 
+                    if targetCoords then
                     -- Register lockpick target for buyable houses
                     if Settings.Debug and Settings.Debug.BuyHouses then
                         exports.ox_target:addSphereZone({
@@ -478,8 +434,8 @@ CreateThread(function()
                     -- Register Police Raid target
                     exports.ox_target:addBoxZone({
                         coords = targetCoords,
-                        size = vec3(1.5, 1.5, 2.0),
-                        rotation = door.heading or 0.0,
+                        size = vec3(1.0, 1.5, 2.0),
+                        rotation = targetHeading,
                         debug = Settings.Debug.Zones,
                         options = {
                             {
@@ -496,6 +452,7 @@ CreateThread(function()
                             }
                         }
                     })
+                    end
                 end
             end
         end
@@ -514,8 +471,8 @@ CreateThread(function()
             if interiorId ~= 0 then
                 -- Check if this interior belongs to a property (for wall color)
                 for id, p in pairs(Properties) do
-                    local door = p.door_id and exports.ox_doorlock:getDoor(p.door_id)
-                    if door and #(GetEntityCoords(ped) - door.coords) < 30.0 then
+                    local door = p.door_id and GetOxDoorlockDoor(p.door_id)
+                    if door and door.coords and #(GetEntityCoords(ped) - vec3(door.coords.x, door.coords.y, door.coords.z)) < 30.0 then
                         if p.metadata and p.metadata.wall_color and p.metadata.allow_wall_colors then
                             ApplyWallColor(interiorId, p.metadata.wall_color)
                         end
