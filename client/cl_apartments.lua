@@ -362,8 +362,13 @@ CreateThread(function()
             if room.doorCoords then
                 local targetCoords = room.doorCoords
                 local door = nil
-                if exports.ox_doorlock.getDoorFromName then
-                    door = exports.ox_doorlock:getDoorFromName("Apartment Room #" .. room.id)
+                if GetResourceState('ox_doorlock') == 'started' then
+                    local ok, result = pcall(function()
+                        return exports.ox_doorlock:getDoorFromName("Apartment Room #" .. room.id)
+                    end)
+                    if ok then
+                        door = result
+                    end
                 end
                 if door then
                     targetCoords = GetDoorCenter(door) or targetCoords
