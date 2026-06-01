@@ -1,7 +1,7 @@
 local Settings = lib.load('shared.settings')
 
 Bridge.Server.RegisterStash = function(propertyId, furnitureId, storageConfig, label)
-    if getResourceState('ox_inventory') ~= 'started' then
+    if GetResourceState('ox_inventory') == 'started' then
         local stashId = string.format('housing_%d_%s', propertyId, furnitureId)
         local slots = storageConfig and storageConfig.slots or Settings.Stash.slots
         local weight = storageConfig and storageConfig.weight or Settings.Stash.weight
