@@ -1,0 +1,63 @@
+local Settings = lib.load('shared.settings')
+
+RegisterNetEvent('LNS_Housing:server:buyFurniture', function(propertyId, items, totalPrice)
+    local src = source
+    local p = Properties[propertyId]
+    if not p then return end
+
+    local identifier = GetIdentifier(src)
+    local money = Bridge.Server.GetBankMoney(src)
+
+    if money < totalPrice then
+        Settings.Notify(src, 'Not enough money!', 'error')
+        return
+    end
+
+    local hasAccess = p.owner == identifier
+    if not hasAccess and p.permissions and p.permissions.manage then
+        for _, cid in ipairs(p.permissions.manage) do
+            if cid == identifier then
+                hasAccess = true
+                break
+            end
+        end
+    end
+
+    if not hasAccess then return end
+
+    Bridge.Server.RemoveBankMoney(src, totalPrice, "Bought furniture for house #" .. propertyId)
+
+    if not p.furniture then p.furniture = {} end
+    for _, item in ipairs(items) do
+        table.insert(p.furniture, item)
+    end
+
+    SaveProperty(propertyId)
+    if Bridge and Bridge.Server and Bridge.Server.RegisterPropertyStashes then
+        Bridge.Server.RegisterPropertyStashes(propertyId, p.furniture)
+    end
+    TriggerClientEvent('LNS_Housing:client:updateFurniture', -1, propertyId, p.furniture)
+end)
+
+RegisterNetEvent('LNS_Housing:server:saveFurniture', function(propertyId, furnitureData)
+    local src = source
+    local p = Properties[propertyId]
+    if not p then return end
+
+    local identifier = GetIdentifier(src)
+    local hasAccess = p.owner == identifier
+
+    if not hasAccess then return end
+
+    p.furniture = furnitureData
+    SaveProperty(propertyId)
+    if Bridge and Bridge.Server and Bridge.Server.RegisterPropertyStashes then
+        Bridge.Server.RegisterPropertyStashes(propertyId, p.furniture)
+    end
+    TriggerClientEvent('LNS_Housing:client:updateFurniture', -1, propertyId, p.furniture)
+end)
+
+function RegisterStash(propertyId, furnitureId, config)
+    local stashId = string.format('housing_%d_%s', propertyId, furnitureId)
+    exports.ox_inventory:RegisterStash(stashId, Settings.Stash.label, Settings.Stash.slots, Settings.Stash.weight)
+end

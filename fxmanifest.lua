@@ -40,5 +40,9 @@ server_scripts {
     'bridge/server/inventory.lua',
     'server/sv_db.lua',
     'server/sv_housing.lua',
+    'server/sv_creator.lua',
+    'server/sv_furniture.lua',
+    'server/sv_lawn.lua',
+    'server/sv_panel.lua',
     'server/sv_apartments.lua'
 }
