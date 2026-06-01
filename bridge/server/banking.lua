@@ -1,3 +1,17 @@
+local function normalizeAmount(amount)
+    local parsed = tonumber(amount)
+    if not parsed or parsed ~= parsed then
+        return nil
+    end
+
+    parsed = math.floor(parsed + 0.0)
+    if parsed < 0 then
+        return nil
+    end
+
+    return parsed
+end
+
 if Bridge.Framework == 'qbx' then
     Bridge.Server.GetBankMoney = function(source)
         return exports.qbx_core:GetMoney(source, 'bank') or 0
@@ -5,16 +19,32 @@ if Bridge.Framework == 'qbx' then
 
     Bridge.Server.RemoveBankMoney = function(source, amount, reason)
         local player = exports.qbx_core:GetPlayer(source)
-        if player then
-            player.Functions.RemoveMoney('bank', amount, reason or "Property System")
+        local safeAmount = normalizeAmount(amount)
+        if not player or not safeAmount or safeAmount <= 0 then
+            return false
         end
+
+        if player then
+            player.Functions.RemoveMoney('bank', safeAmount, reason or "Property System")
+            return true
+        end
+
+        return false
     end
 
     Bridge.Server.AddBankMoney = function(source, amount, reason)
         local player = exports.qbx_core:GetPlayer(source)
-        if player then
-            player.Functions.AddMoney('bank', amount, reason or "Property Commission")
+        local safeAmount = normalizeAmount(amount)
+        if not player or not safeAmount or safeAmount <= 0 then
+            return false
         end
+
+        if player then
+            player.Functions.AddMoney('bank', safeAmount, reason or "Property Commission")
+            return true
+        end
+
+        return false
     end
 
     Bridge.Server.GetOfflineBankMoney = function(identifier)
@@ -27,11 +57,23 @@ if Bridge.Framework == 'qbx' then
     end
 
     Bridge.Server.RemoveOfflineBankMoney = function(identifier, amount)
-        MySQL.update.await('UPDATE players SET money = JSON_SET(money, "$.bank", JSON_EXTRACT(money, "$.bank") - ?) WHERE citizenid = ?', {amount, identifier})
+        local safeAmount = normalizeAmount(amount)
+        if not safeAmount or safeAmount <= 0 then
+            return false
+        end
+
+        MySQL.update.await('UPDATE players SET money = JSON_SET(money, "$.bank", JSON_EXTRACT(money, "$.bank") - ?) WHERE citizenid = ?', {safeAmount, identifier})
+        return true
     end
 
     Bridge.Server.AddOfflineBankMoney = function(identifier, amount)
-        MySQL.update.await('UPDATE players SET money = JSON_SET(money, "$.bank", JSON_EXTRACT(money, "$.bank") + ?) WHERE citizenid = ?', {amount, identifier})
+        local safeAmount = normalizeAmount(amount)
+        if not safeAmount or safeAmount <= 0 then
+            return false
+        end
+
+        MySQL.update.await('UPDATE players SET money = JSON_SET(money, "$.bank", JSON_EXTRACT(money, "$.bank") + ?) WHERE citizenid = ?', {safeAmount, identifier})
+        return true
     end
 
     Bridge.Server.AddSocietyMoney = function(job, amount)
@@ -67,16 +109,24 @@ elseif Bridge.Framework == 'esx' then
 
     Bridge.Server.RemoveBankMoney = function(source, amount, reason)
         local player = ESX.GetPlayerFromId(source)
-        if player then
-            player.removeAccountMoney('bank', amount)
+        local safeAmount = normalizeAmount(amount)
+        if not player or not safeAmount or safeAmount <= 0 then
+            return false
         end
+
+        player.removeAccountMoney('bank', safeAmount)
+        return true
     end
 
     Bridge.Server.AddBankMoney = function(source, amount, reason)
         local player = ESX.GetPlayerFromId(source)
-        if player then
-            player.addAccountMoney('bank', amount)
+        local safeAmount = normalizeAmount(amount)
+        if not player or not safeAmount or safeAmount <= 0 then
+            return false
         end
+
+        player.addAccountMoney('bank', safeAmount)
+        return true
     end
 
     Bridge.Server.GetOfflineBankMoney = function(identifier)
@@ -89,11 +139,23 @@ elseif Bridge.Framework == 'esx' then
     end
 
     Bridge.Server.RemoveOfflineBankMoney = function(identifier, amount)
-        MySQL.update.await('UPDATE users SET accounts = JSON_SET(accounts, "$.bank", JSON_EXTRACT(accounts, "$.bank") - ?) WHERE identifier = ?', {amount, identifier})
+        local safeAmount = normalizeAmount(amount)
+        if not safeAmount or safeAmount <= 0 then
+            return false
+        end
+
+        MySQL.update.await('UPDATE users SET accounts = JSON_SET(accounts, "$.bank", JSON_EXTRACT(accounts, "$.bank") - ?) WHERE identifier = ?', {safeAmount, identifier})
+        return true
     end
 
     Bridge.Server.AddOfflineBankMoney = function(identifier, amount)
-        MySQL.update.await('UPDATE users SET accounts = JSON_SET(accounts, "$.bank", JSON_EXTRACT(accounts, "$.bank") + ?) WHERE identifier = ?', {amount, identifier})
+        local safeAmount = normalizeAmount(amount)
+        if not safeAmount or safeAmount <= 0 then
+            return false
+        end
+
+        MySQL.update.await('UPDATE users SET accounts = JSON_SET(accounts, "$.bank", JSON_EXTRACT(accounts, "$.bank") + ?) WHERE identifier = ?', {safeAmount, identifier})
+        return true
     end
 
     Bridge.Server.AddSocietyMoney = function(job, amount)
