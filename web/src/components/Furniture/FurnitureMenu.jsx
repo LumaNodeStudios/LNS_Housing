@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sofa, Bed, Lamp, Tv, Utensils, Bath, Search, Package, Check, Trash2, Camera, Move, RotateCw, X, ShoppingCart, ShoppingBag, Hammer, Palette, ArrowLeft, Grid } from 'lucide-react';
+import { Sofa, Bed, Lamp, Tv, Utensils, Bath, Search, Package, Check, Trash2, Camera, Move, RotateCw, X, ShoppingCart, ShoppingBag, Hammer, Palette, ArrowLeft, Grid, ArrowDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Modeler3D from './Modeler3D';
 import './FurnitureMenu.css';
@@ -29,6 +29,13 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
       }
     };
 
+    window.addEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, []);
+
+  useEffect(() => {
     const handleKeyDown = (e) => {
       // Ignore key events when the user is typing in inputs or textareas to prevent interface issues
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
@@ -43,16 +50,16 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
         const newState = !freecamMode;
         setFreecamMode(newState);
         post('freecamMode', newState);
+      } else if ((e.key === 'g' || e.key === 'G') && isPlacing) {
+        post('placeOnGround');
       }
     };
 
-    window.addEventListener('message', handleMessage);
     window.addEventListener('keydown', handleKeyDown);
     return () => {
-      window.removeEventListener('message', handleMessage);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [freecamMode]);
+  }, [freecamMode, isPlacing]);
 
   const IconMap = {
     Sofa: Sofa,
@@ -365,12 +372,20 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
             <span className="controls-title">3D Placement</span>
             <div className="controls-actions">
               <div className="controls-hint">
-                <Move size={14} /> <span>Drag arrows | [LALT] Cam</span>
+                <Move size={14} /> <span>Drag | [LALT] Cam | [G] Ground</span>
               </div>
             </div>
           </div>
 
           <div className="controls-footer">
+            <button className="reset-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} onClick={() => post('placeOnGround')}>
+              <ArrowDown size={14} />
+              <span>Place on Ground</span>
+              <kbd style={{ background: 'rgba(255, 255, 255, 0.12)', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '3px', padding: '1px 5px', fontSize: '9px', fontFamily: 'monospace', marginLeft: '2px' }}>G</kbd>
+            </button>
+          </div>
+
+          <div className="controls-footer" style={{ marginTop: '-5px' }}>
             <button className="confirm-btn" onClick={() => {
               if (activeTab === 'shopping' && placingItem) {
                 handleAddToCart(placingItem);
