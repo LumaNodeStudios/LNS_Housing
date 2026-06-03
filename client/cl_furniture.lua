@@ -415,31 +415,19 @@ Modeler = {
         local targetZ = pos.z
         local found = false
         
-        -- Run up to 5 successive raycasts to bypass ceilings/roofs and find the actual floor
         for i = 1, 5 do
             local startCoords = vector3(pos.x, pos.y, startZ)
             local endCoords = vector3(pos.x, pos.y, pos.z - 30.0)
-            
-            local ray = StartShapeTestRay(
-                startCoords.x, startCoords.y, startCoords.z,
-                endCoords.x, endCoords.y, endCoords.z,
-                -1, -- Collide with everything
-                self.CurrentObject,
-                7
-            )
-            
+            local ray = StartShapeTestRay(startCoords.x, startCoords.y, startCoords.z, endCoords.x, endCoords.y, endCoords.z, -1, self.CurrentObject, 7)
             local retval, hit, endCoordsResult, surfaceNormal, entityHit = GetShapeTestResult(ray)
             
             if hit ~= 0 then
-                -- If we hit a ceiling/roof (normal points down, surfaceNormal.z < 0)
                 if surfaceNormal.z < 0.0 then
-                    -- Re-cast from just below this ceiling
                     startZ = endCoordsResult.z - 0.05
                     if startZ < pos.z - 30.0 then
                         break
                     end
                 else
-                    -- We hit a floor/ground (normal points up)
                     targetZ = endCoordsResult.z
                     found = true
                     break
@@ -450,7 +438,6 @@ Modeler = {
         end
         
         if not found then
-            -- Fallback to native GetGroundZFor_3dCoord
             local success, groundZ = GetGroundZFor_3dCoord(pos.x, pos.y, pos.z, false)
             if success then
                 targetZ = groundZ
