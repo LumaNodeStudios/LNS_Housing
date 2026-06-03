@@ -178,9 +178,11 @@ Modeler = {
         if bool then
             Freecam:SetFrozen(false)
             SetNuiFocus(false, false)
+            exports.ox_target:disableTargeting(true)
             self:StartFreecamUpdateThread()
         else
             Freecam:SetFrozen(true)
+            exports.ox_target:disableTargeting(false)
             SetNuiFocus(true, true)
         end
 

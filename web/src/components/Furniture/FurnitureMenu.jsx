@@ -378,10 +378,8 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
           </div>
 
           <div className="controls-footer">
-            <button className="reset-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} onClick={() => post('placeOnGround')}>
-              <ArrowDown size={14} />
+            <button className="placeonground-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} onClick={() => post('placeOnGround')}>
               <span>Place on Ground</span>
-              <kbd style={{ background: 'rgba(255, 255, 255, 0.12)', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '3px', padding: '1px 5px', fontSize: '9px', fontFamily: 'monospace', marginLeft: '2px' }}>G</kbd>
             </button>
           </div>
 
