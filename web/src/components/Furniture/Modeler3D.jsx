@@ -168,7 +168,6 @@ const Modeler3D = ({ active, onUpdate }) => {
         />
       </Canvas>
 
-      {/* Slim Mode Controls Panel */}
       <div className="placement-mode-controls">
         <div className={`mode-pill ${mode === 'translate' ? 'active' : ''}`} onClick={() => setMode('translate')}>
           <kbd>E</kbd>

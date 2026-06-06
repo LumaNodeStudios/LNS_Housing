@@ -18,7 +18,6 @@
   transition: var(--transition-smooth);
 }
 
-/* Sidebar Header & Main Tabs */
 .sidebar-header {
   display: flex;
   width: 100%;
@@ -63,7 +62,6 @@
   overflow: hidden;
 }
 
-/* Categories Section */
 .categories-section {
   padding: 10px 15px;
   margin-bottom: 10px;
@@ -101,7 +99,6 @@
   color: var(--primary-text);
 }
 
-/* Cart Button Spec */
 .cat-icon-btn.cart-btn {
   position: relative;
   background: rgba(16, 185, 129, 0.08);
@@ -137,7 +134,6 @@
   border: 1px solid var(--bg-panel);
 }
 
-/* Search Bar (RealEstate style) */
 .search-bar {
   display: flex;
   align-items: center;
@@ -192,7 +188,6 @@
   margin-top: 15px;
 }
 
-/* Scroll Container */
 .items-grid-scroll {
   flex: 1;
   overflow-y: auto;
@@ -224,7 +219,6 @@
   padding-bottom: 20px;
 }
 
-/* Item Cards Redesign */
 .item-card {
   display: flex;
   align-items: center;
@@ -255,7 +249,6 @@
   pointer-events: auto;
 }
 
-/* Placed / Placing Active Highlight */
 .item-card.is-placing {
   border-color: var(--primary);
   background: rgba(110, 211, 243, 0.04);
@@ -340,7 +333,6 @@
   z-index: 4;
 }
 
-/* Cart View Layout */
 .cart-view {
   display: flex;
   flex-direction: column;
@@ -493,7 +485,6 @@
   color: #ef4444;
 }
 
-/* Placement Floating UI & Hints */
 .freecam-hint,
 .placement-controls {
   position: fixed;
@@ -662,8 +653,6 @@
   border-color: #ef4444;
 }
 
-
-/* Placement Mode Controls Panel at Top Center */
 .placement-mode-controls {
   position: fixed;
   top: 25px;
@@ -709,7 +698,6 @@
   color: var(--primary);
 }
 
-/* Styled Key Cap (KBD) */
 .mode-pill kbd {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -736,9 +724,6 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* ==========================================================================
-   Floating RHS Properties Panel
-   ========================================================================== */
 .furniture-rhs-container {
   position: fixed;
   top: 20px;
@@ -800,7 +785,6 @@
   gap: 16px;
 }
 
-/* preview item wrap */
 .rhs-preview-section {
   display: flex;
   align-items: center;
@@ -854,7 +838,6 @@
   font-family: monospace;
 }
 
-/* properties section labels & inputs */
 .properties-section {
   display: flex;
   flex-direction: column;
@@ -915,7 +898,6 @@
   margin: 0;
 }
 
-/* color swatches */
 .colors-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -942,7 +924,6 @@
   transform: scale(1.05);
 }
 
-/* Clickable Palette badge in Shopping List */
 .palette-badge.clickable {
   cursor: pointer;
   border: none;

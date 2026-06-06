@@ -614,7 +614,6 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                     <div className="re-contracts-wrapper">
                         {isAgent ? (
                             <>
-                                {/* Left Column: Draft Contract */}
                                 <div className="re-creator-col">
                                     <form className="re-creator-card" onSubmit={handleDraftContract}>
                                         <div className="re-creator-card-title">
@@ -739,7 +738,6 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                     </form>
                                 </div>
 
-                                {/* Right Column: History */}
                                 <div className="re-creator-col">
                                     <div className="re-creator-card" style={{ maxHeight: '520px', overflowY: 'auto' }}>
                                         <div className="re-creator-card-title">
@@ -930,7 +928,6 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             default:
                 return (
                     <div className="re-creator-wrapper">
-                        {/* Edit mode banner */}
                         {editingPropertyId && (
                             <div className="re-edit-mode-banner">
                                 <span>Editing Property <strong>#{editingPropertyId}</strong></span>
@@ -939,7 +936,6 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                 </button>
                             </div>
                         )}
-                        {/* Left Column: Form Fields */}
                         <div className="re-creator-col">
                             <div className="re-creator-card">
                                 <div className="re-creator-card-title">
@@ -1033,7 +1029,6 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                             </div>
                         </div>
 
-                        {/* Right Column: Photo, Interactive Actions, Doors & Footer */}
                         <div className="re-creator-col">
                             <div className="re-creator-card">
                                 <div className="re-creator-card-title">
@@ -1212,7 +1207,6 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 {renderTabContent()}
             </div>
 
-            {/* Property Detail Modal */}
             <AnimatePresence>
                 {selectedProperty && (
                     <div className="re-modal-overlay glass-heavy" onClick={() => setSelectedProperty(null)}>
@@ -1295,7 +1289,6 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 )}
             </AnimatePresence>
 
-            {/* Custom NUI Confirmation Modal */}
             <AnimatePresence>
                 {confirmModal && (
                     <div className="re-modal-overlay glass-heavy" onClick={() => setConfirmModal(null)}>

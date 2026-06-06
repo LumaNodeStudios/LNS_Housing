@@ -191,7 +191,7 @@
     background: rgba(110, 211, 243, 0.1);
 }
 
-/* Grid */
+
 .re-grid-v2 {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -211,7 +211,7 @@
     border-radius: 10px;
 }
 
-/* Card */
+
 .re-card-v2 {
     display: flex;
     flex-direction: column;
@@ -276,7 +276,7 @@
     font-size: 11px;
     font-weight: 600;
     color: var(--primary);
-    /* Updated to primary */
+    
     opacity: 0.8;
 }
 
@@ -354,7 +354,7 @@
     gap: 15px;
 }
 
-/* Tabs */
+
 .re-tabs-v3 {
     display: flex;
     gap: 10px;
@@ -383,7 +383,7 @@
     color: var(--primary-text);
 }
 
-/* Management Table */
+
 .management-container {
     padding: 20px;
     border-radius: 12px;
@@ -468,7 +468,7 @@
     color: #fff;
 }
 
-/* Modal */
+
 .re-modal-overlay {
     position: absolute;
     top: 0;
@@ -662,7 +662,7 @@
     letter-spacing: 1px;
 }
 
-/* Integrated Creator Tab Layout */
+
 .re-creator-wrapper {
     display: grid;
     grid-template-columns: 1.1fr 0.9fr;
@@ -675,7 +675,7 @@
     align-content: start;
 }
 
-/* Edit mode banner spans both columns */
+
 .re-edit-mode-banner {
     grid-column: span 2;
     display: flex;
@@ -830,7 +830,7 @@
     color: var(--text-muted);
 }
 
-/* Image Upload / Photo Card */
+
 .re-photo-card {
     display: flex;
     flex-direction: column;
@@ -879,7 +879,7 @@
     letter-spacing: 0.5px;
 }
 
-/* Zone defining / door picking rows */
+
 .re-interactive-row {
     display: flex;
     justify-content: space-between;
@@ -944,7 +944,7 @@
     align-content: flex-start;
 }
 
-/* Footer layout inside creator tab */
+
 .re-creator-footer {
     display: flex;
     gap: 15px;
@@ -996,7 +996,7 @@
     box-shadow: 0 0 15px rgba(110, 211, 243, 0.2);
 }
 
-/* Real Estate Contracts Styles */
+
 .re-contracts-wrapper {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1065,7 +1065,7 @@
     transform: scale(1.2);
 }
 
-/* Player Contracts View */
+
 .player-contracts-container {
     grid-column: span 2;
     display: flex;
@@ -1248,7 +1248,7 @@
     color: #ef4444;
 }
 
-/* Listings & Employee Custom Styles */
+
 
 .manage-action-btn {
     width: 30px;
@@ -1338,7 +1338,7 @@
     }
 }
 
-/* ── Shared Modal Form & Action Styles ─────────────────────────────────── */
+
 
 .modal-message {
     font-size: 0.9rem;
@@ -1419,7 +1419,7 @@
     transform: translateY(-1px);
 }
 
-/* Agent Name Display */
+
 .agent-name-display {
     font-size: 14px;
     font-weight: 700;
@@ -1428,7 +1428,7 @@
     padding-bottom: 8px;
 }
 
-/* Checkbox design */
+
 .checkbox-row input[type="checkbox"] {
     -webkit-appearance: none;
     appearance: none;
@@ -1463,7 +1463,7 @@
     color: var(--primary) !important;
 }
 
-/* Rental Lease Card Highlights */
+
 .rental-lease-card {
     transition: all 0.25s ease-in-out;
 }

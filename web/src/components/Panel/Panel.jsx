@@ -319,7 +319,6 @@ const Panel = ({ data: initialData }) => {
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
     >
-      {/* Header with Tabs and Close */}
       <div className="panel-header">
         <div className="tabs-container glass-heavy">
           {tabs.map((tab) => (
@@ -668,7 +667,6 @@ const Panel = ({ data: initialData }) => {
 
               <div className="settings-grid">
                 <div className="settings-left-col">
-                  {/* Security & System */}
                   <div className="settings-section glass-heavy">
                     <div className="section-header-row">
                       <h3>Security & Privacy</h3>
@@ -722,7 +720,6 @@ const Panel = ({ data: initialData }) => {
                 </div>
 
                 <div className="settings-right-col">
-                  {/* Interior Design */}
                   {propertyData.allowWallColors && (
                     <div className="settings-section glass-heavy design-section">
                       <div className="section-header-row">
@@ -797,25 +794,25 @@ const Panel = ({ data: initialData }) => {
                 <div className="permissions-selector">
                   <label>Initial Permissions</label>
                   <div className="perms-grid">
-                    <div 
+                    <div
                       className={`perm-toggle ${initialPermissions.doors ? 'active' : ''}`}
                       onClick={() => setInitialPermissions(prev => ({ ...prev, doors: !prev.doors }))}
                     >
                       <Key size={14} /> Doors
                     </div>
-                    <div 
+                    <div
                       className={`perm-toggle ${initialPermissions.storage ? 'active' : ''}`}
                       onClick={() => setInitialPermissions(prev => ({ ...prev, storage: !prev.storage }))}
                     >
                       <Package size={14} /> Storage
                     </div>
-                    <div 
+                    <div
                       className={`perm-toggle ${initialPermissions.wardrobe ? 'active' : ''}`}
                       onClick={() => setInitialPermissions(prev => ({ ...prev, wardrobe: !prev.wardrobe }))}
                     >
                       <Shirt size={14} /> Wardrobe
                     </div>
-                    <div 
+                    <div
                       className={`perm-toggle ${initialPermissions.panel ? 'active' : ''}`}
                       onClick={() => setInitialPermissions(prev => ({ ...prev, panel: !prev.panel }))}
                     >

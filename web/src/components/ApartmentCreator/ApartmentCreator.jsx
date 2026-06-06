@@ -156,7 +156,7 @@ const ApartmentCreator = ({ onClose }) => {
     const canSubmit = roomId && zoneData && doorData && spawnData;
 
     return (
-        <motion.div 
+        <motion.div
             className="apt-creator-modal glass-heavy"
             initial={{ opacity: 0, scale: 0.95, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -178,7 +178,7 @@ const ApartmentCreator = ({ onClose }) => {
                     <label className="apt-input-label">
                         <Building size={14} /> Room Number / ID
                     </label>
-                    <input 
+                    <input
                         type="number"
                         placeholder="e.g. 105"
                         value={roomId}
@@ -189,7 +189,6 @@ const ApartmentCreator = ({ onClose }) => {
                 </div>
 
                 <div className="apt-setup-cards">
-                    {/* Setup Card: Zone */}
                     <div className={`apt-setup-card ${zoneData ? 'defined' : ''}`}>
                         <div className="setup-card-info">
                             <div className="setup-card-icon-wrapper">
@@ -202,8 +201,8 @@ const ApartmentCreator = ({ onClose }) => {
                                 </span>
                             </div>
                         </div>
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             className={`setup-btn ${zoneData ? 'defined' : ''}`}
                             onClick={handleDefineZone}
                         >
@@ -211,7 +210,6 @@ const ApartmentCreator = ({ onClose }) => {
                         </button>
                     </div>
 
-                    {/* Setup Card: Doorlock */}
                     <div className={`apt-setup-card ${doorData ? 'defined' : ''}`}>
                         <div className="setup-card-info">
                             <div className="setup-card-icon-wrapper">
@@ -224,8 +222,8 @@ const ApartmentCreator = ({ onClose }) => {
                                 </span>
                             </div>
                         </div>
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             className={`setup-btn ${doorData ? 'defined' : ''}`}
                             onClick={handlePickDoor}
                         >
@@ -233,7 +231,6 @@ const ApartmentCreator = ({ onClose }) => {
                         </button>
                     </div>
 
-                    {/* Setup Card: Spawn point */}
                     <div className={`apt-setup-card ${spawnData ? 'defined' : ''}`}>
                         <div className="setup-card-info">
                             <div className="setup-card-icon-wrapper">
@@ -246,8 +243,8 @@ const ApartmentCreator = ({ onClose }) => {
                                 </span>
                             </div>
                         </div>
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             className={`setup-btn ${spawnData ? 'defined' : ''}`}
                             onClick={handleDefineSpawn}
                         >
@@ -262,9 +259,9 @@ const ApartmentCreator = ({ onClose }) => {
                     </div>
                 )}
 
-                <button 
-                    type="submit" 
-                    className="apt-submit-btn" 
+                <button
+                    type="submit"
+                    className="apt-submit-btn"
                     disabled={!canSubmit}
                 >
                     <Save size={16} />

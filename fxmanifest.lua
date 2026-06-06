@@ -20,9 +20,7 @@ shared_scripts {
 }
 
 client_scripts {
-    'bridge/client/framework.lua',
-    'bridge/client/appearance.lua',
-    'bridge/client/inventory.lua',
+    'bridge/client.lua',
     'client/cl_door_utils.lua',
     'client/cl_housing.lua',
     'client/cl_creator.lua',
@@ -35,9 +33,7 @@ client_scripts {
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    'bridge/server/framework.lua',
-    'bridge/server/banking.lua',
-    'bridge/server/inventory.lua',
+    'bridge/server.lua',
     'server/sv_db.lua',
     'server/sv_housing.lua',
     'server/sv_creator.lua',

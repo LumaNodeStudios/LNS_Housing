@@ -96,7 +96,6 @@
     box-shadow: 0 0 0 2px rgba(110, 211, 243, 0.15);
 }
 
-/* Chrome, Safari, Edge, Opera: Remove spin arrows */
 .apt-input::-webkit-outer-spin-button,
 .apt-input::-webkit-inner-spin-button {
     -webkit-appearance: none;

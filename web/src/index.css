@@ -9,8 +9,6 @@
   --primary: #6ed3f3;
   --primary-dark: #4fbfdf;
   --primary-text: #000000;
-
-  /* Helper glass variables derived from the theme */
   --bg-glass: rgba(15, 15, 16, 0.85);
   --bg-glass-heavy: rgba(26, 26, 26, 0.9);
   --border-glass: var(--border-dim);
@@ -73,7 +71,6 @@ button:hover {
   filter: brightness(1.2);
 }
 
-/* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 4px;
   height: 4px;
