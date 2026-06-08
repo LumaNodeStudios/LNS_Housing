@@ -1,4 +1,5 @@
 local Settings = lib.load('shared.settings')
+local Furniture = lib.load('shared.furniture')
 local isCapturing = false
 
 local function LoadModel(modelHash)
@@ -76,7 +77,7 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
 
     local itemsToCapture = {}
     local seenModels = {}
-    for _, category in ipairs(Settings.Furniture) do
+    for _, category in ipairs(Furniture.Furniture) do
         for _, item in ipairs(category.items) do
             if item.model and item.model ~= "" then
                 if not targetModel or item.model == targetModel then

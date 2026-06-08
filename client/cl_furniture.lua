@@ -1,4 +1,5 @@
 local Settings = lib.load('shared.settings')
+local Furniture = lib.load('shared.furniture')
 local Freecam = exports['fivem-freecam']
 
 Modeler = {
@@ -38,7 +39,7 @@ Modeler = {
 
         SendNUIMessage({
             action = "setFurnituresData",
-            data = Settings.Furniture
+            data = Furniture.Furniture
         })
 
         self:FreecamActive(true)

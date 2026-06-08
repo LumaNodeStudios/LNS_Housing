@@ -190,7 +190,7 @@ local function getAvailableRoom()
     return nil
 end
 
-local function getPlayerRoom(src, citizenid)
+local function getPlayerRoom(src, citizenid, isNew)
     if not citizenid then return nil end
 
     if playerRooms[citizenid] then
@@ -219,22 +219,7 @@ local function getPlayerRoom(src, citizenid)
 
     local room = getAvailableRoom()
     if room then
-        local isNewChar = false
-        if Bridge.Framework == 'qbx' then
-            local player = exports.qbx_core:GetPlayer(src)
-            if player then
-                if player.PlayerData.charinfo and player.PlayerData.charinfo.new then
-                    isNewChar = true
-                end
-            end
-        elseif Bridge.Framework == 'esx' then
-            local resultSkin = MySQL.single.await('SELECT skin FROM users WHERE identifier = ?', {citizenid})
-            if resultSkin and (not resultSkin.skin or resultSkin.skin == '' or resultSkin.skin == '{}') then
-                isNewChar = true
-            end
-        end
-        
-        isNewChar = true
+        local isNewChar = not not isNew
 
         local insertSuccess = pcall(function()
             MySQL.insert.await('INSERT INTO player_apartments (citizenid, room_id, is_new) VALUES (?, ?, ?)', {
@@ -265,7 +250,7 @@ local function OnPlayerLoaded(src)
         return 
     end
 
-    local roomId = getPlayerRoom(src, citizenid)
+    local roomId = getPlayerRoom(src, citizenid, false)
     if roomId then
         local roomData = getRoomDataById(roomId)
         if roomData then
@@ -319,7 +304,7 @@ lib.callback.register('LNS_Housing:server:getMyApartment', function(source)
     
     local roomId = playerRooms[citizenid]
     if not roomId then
-        roomId = getPlayerRoom(source, citizenid)
+        roomId = getPlayerRoom(source, citizenid, true)
     end
     
     if not roomId then

@@ -1,4 +1,5 @@
 local Settings = lib.load('shared.settings')
+local Furniture = lib.load('shared.furniture')
 Properties = {}
 local CurrentProperty = nil
 local CurrentInterior = 0
@@ -189,7 +190,7 @@ function LoadFurnitures(propertyId)
         end
         -- Add target for storage items
         local itemData = nil
-        for _, cat in ipairs(Settings.Furniture) do
+        for _, cat in ipairs(Furniture.Furniture) do
             for _, item in ipairs(cat.items) do
                 if (tonumber(item.model) or GetHashKey(item.model)) == (tonumber(f.model) or GetHashKey(f.model)) then
                     itemData = item

@@ -1,6 +1,7 @@
 Bridge.Server = {}
 
 local Settings = lib.load('shared.settings')
+local Furniture = lib.load('shared.furniture')
 local ESX = Bridge.Framework == 'esx' and exports['es_extended']:getSharedObject() or nil
 
 -- Helper Function
@@ -282,7 +283,7 @@ function Bridge.Server.RegisterPropertyStashes(propertyId, furnitureList)
     if not furnitureList then return end
     for _, f in ipairs(furnitureList) do
         local itemData = nil
-        for _, cat in ipairs(Settings.Furniture) do
+        for _, cat in ipairs(Furniture.Furniture) do
             for _, item in ipairs(cat.items) do
                 if (tonumber(item.model) or GetHashKey(item.model)) == (tonumber(f.model) or GetHashKey(f.model)) then
                     itemData = item

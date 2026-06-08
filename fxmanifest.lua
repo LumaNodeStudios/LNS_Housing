@@ -15,6 +15,7 @@ files {
 
 shared_scripts {
     '@ox_lib/init.lua',
+    'shared/furniture.lua',
     'shared/settings.lua',
     'bridge/shared.lua'
 }
