@@ -20,14 +20,17 @@ function stripDataUri(b64) {
 }
 
 function checkPermission(src) {
-    const esx = global.exports['es_extended'];
-    if (esx) {
+    const isEsx = GetResourceState('es_extended') === 'started';
+    if (isEsx) {
         try {
-            const ESX = esx.getSharedObject();
-            const p = ESX.GetPlayerFromId(src);
-            const group = p && p.getGroup && p.getGroup();
-            if (group === 'admin' || group === 'god') {
-                return true;
+            const esx = global.exports['es_extended'];
+            if (esx) {
+                const ESX = esx.getSharedObject();
+                const p = ESX.GetPlayerFromId(src);
+                const group = p && p.getGroup && p.getGroup();
+                if (group === 'admin' || group === 'god' || group === 'superadmin') {
+                    return true;
+                }
             }
         } catch (e) { }
         return false;

@@ -638,13 +638,11 @@
   align-items: center;
   justify-content: center;
   transition: var(--transition-smooth);
-  box-shadow: 0 4px 12px rgba(110, 211, 243, 0.15);
 }
 
 .checkout-btn:hover {
   background: var(--primary-dark);
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(110, 211, 243, 0.25);
 }
 
 .footer-btn {
@@ -1112,4 +1110,194 @@
   border-color: var(--primary) !important;
   box-shadow: 0 0 8px rgba(110, 211, 243, 0.4);
   transform: scale(1.05);
+}
+
+/* Payment Selection Modal */
+.payment-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-glass);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 150;
+}
+
+.payment-modal {
+  width: 100%;
+  max-width: 310px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-main);
+}
+
+.payment-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.payment-modal-header h3 {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: var(--primary);
+  margin: 0;
+}
+
+.payment-modal-close {
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: var(--transition-smooth);
+}
+
+.payment-modal-close:hover {
+  color: #fff;
+  opacity: 1;
+}
+
+.payment-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.payment-modal-subtitle {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.payment-modal-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-radius: 8px;
+}
+
+.payment-modal-total span:first-child {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.payment-modal-total .price {
+  font-size: 18px;
+  font-weight: 800;
+  color: #10b981;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+}
+
+.payment-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.payment-opt-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.payment-opt-btn.cash:hover {
+  background: rgba(16, 185, 129, 0.04);
+  border-color: rgba(16, 185, 129, 0.25);
+  transform: translateY(-1px);
+}
+
+.payment-opt-btn.bank:hover {
+  background: rgba(110, 211, 243, 0.04);
+  border-color: rgba(110, 211, 243, 0.25);
+  transform: translateY(-1px);
+}
+
+.opt-icon-wrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  color: var(--text-muted);
+  transition: var(--transition-smooth);
+}
+
+.payment-opt-btn.cash:hover .opt-icon-wrapper {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.payment-opt-btn.bank:hover .opt-icon-wrapper {
+  background: rgba(110, 211, 243, 0.1);
+  border-color: rgba(110, 211, 243, 0.2);
+  color: var(--primary);
+}
+
+.opt-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.opt-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.opt-desc {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.payment-modal-cancel {
+  margin-top: 15px;
+  height: 38px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.payment-modal-cancel:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
 }

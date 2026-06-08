@@ -135,6 +135,24 @@ function Bridge.Server.GetBankMoney(source)
     end
 end
 
+function Bridge.Server.GetMoney(source, moneyType)
+    if Bridge.Framework == 'qbx' then
+        return exports.qbx_core:GetMoney(source, moneyType) or 0
+    elseif Bridge.Framework == 'esx' then
+        local player = ESX.GetPlayerFromId(source)
+        if not player then return 0 end
+        if moneyType == 'cash' then
+            if player.getMoney then
+                return player.getMoney() or 0
+            else
+                return player.getAccount('money') and player.getAccount('money').money or 0
+            end
+        else
+            return player.getAccount('bank') and player.getAccount('bank').money or 0
+        end
+    end
+end
+
 function Bridge.Server.RemoveBankMoney(source, amount, reason)
     local safeAmount = normalizeAmount(amount)
     if not safeAmount or safeAmount <= 0 then return false end
@@ -149,6 +167,34 @@ function Bridge.Server.RemoveBankMoney(source, amount, reason)
         local player = ESX.GetPlayerFromId(source)
         if player then
             player.removeAccountMoney('bank', safeAmount)
+            return true
+        end
+    end
+    return false
+end
+
+function Bridge.Server.RemoveMoney(source, moneyType, amount, reason)
+    local safeAmount = normalizeAmount(amount)
+    if not safeAmount or safeAmount <= 0 then return false end
+
+    if Bridge.Framework == 'qbx' then
+        local player = exports.qbx_core:GetPlayer(source)
+        if player then
+            player.Functions.RemoveMoney(moneyType, safeAmount, reason or "Property System")
+            return true
+        end
+    elseif Bridge.Framework == 'esx' then
+        local player = ESX.GetPlayerFromId(source)
+        if player then
+            if moneyType == 'cash' then
+                if player.removeMoney then
+                    player.removeMoney(safeAmount)
+                else
+                    player.removeAccountMoney('money', safeAmount)
+                end
+            else
+                player.removeAccountMoney('bank', safeAmount)
+            end
             return true
         end
     end

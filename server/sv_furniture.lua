@@ -1,15 +1,17 @@
 local Settings = lib.load('shared.settings')
 
-RegisterNetEvent('LNS_Housing:server:buyFurniture', function(propertyId, items, totalPrice)
+RegisterNetEvent('LNS_Housing:server:buyFurniture', function(propertyId, items, totalPrice, paymentMethod)
     local src = source
     local p = Properties[propertyId]
     if not p then return end
 
     local identifier = GetIdentifier(src)
-    local money = Bridge.Server.GetBankMoney(src)
+    local payType = paymentMethod == 'cash' and 'cash' or 'bank'
+    local money = Bridge.Server.GetMoney(src, payType)
 
     if money < totalPrice then
-        Bridge.Server.Notify(src, 'Not enough money!', 'error')
+        local targetAccountName = payType == 'cash' and 'cash' or 'bank account'
+        Bridge.Server.Notify(src, 'Not enough money in your ' .. targetAccountName .. '!', 'error')
         return
     end
 
@@ -25,7 +27,7 @@ RegisterNetEvent('LNS_Housing:server:buyFurniture', function(propertyId, items, 
 
     if not hasAccess then return end
 
-    Bridge.Server.RemoveBankMoney(src, totalPrice, "Bought furniture for house #" .. propertyId)
+    Bridge.Server.RemoveMoney(src, payType, totalPrice, "Bought furniture for house #" .. propertyId)
 
     if not p.furniture then p.furniture = {} end
     for _, item in ipairs(items) do

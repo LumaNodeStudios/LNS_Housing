@@ -547,7 +547,7 @@ Modeler = {
         SendNUIMessage({ action = "clearCart" })
     end,
 
-    BuyCart = function(self)
+    BuyCart = function(self, paymentMethod)
         local items = {}
         local totalPrice = 0
 
@@ -565,9 +565,9 @@ Modeler = {
 
         local property = Properties[self.property_id]
         if property and property.isApartment then
-            TriggerServerEvent("LNS_Housing:server:buyApartmentFurniture", self.property_id, items, totalPrice)
+            TriggerServerEvent("LNS_Housing:server:buyApartmentFurniture", self.property_id, items, totalPrice, paymentMethod)
         else
-            TriggerServerEvent("LNS_Housing:server:buyFurniture", self.property_id, items, totalPrice)
+            TriggerServerEvent("LNS_Housing:server:buyFurniture", self.property_id, items, totalPrice, paymentMethod)
         end
         self:ClearCart()
     end,
@@ -726,7 +726,8 @@ RegisterNUICallback("removeCartItem", function(data, cb)
 end)
 
 RegisterNUICallback("buyCartItems", function(data, cb)
-    Modeler:BuyCart()
+    local paymentMethod = data and data.paymentMethod or "bank"
+    Modeler:BuyCart(paymentMethod)
     cb("ok")
 end)
 

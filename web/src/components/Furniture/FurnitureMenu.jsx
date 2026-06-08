@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sofa, Bed, Lamp, Tv, Utensils, Bath, Search, Package, Check, Trash2, Camera, Move, RotateCw, X, ShoppingCart, ShoppingBag, Hammer, ArrowLeft, Grid, ArrowDown } from 'lucide-react';
+import { Sofa, Bed, Lamp, Tv, Utensils, Bath, Search, Package, Check, Trash2, Camera, Move, RotateCw, X, ShoppingCart, ShoppingBag, Hammer, ArrowLeft, Grid, ArrowDown, CreditCard, Banknote } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Modeler3D from './Modeler3D';
 import './FurnitureMenu.css';
@@ -29,6 +29,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [activeTab, setActiveTab] = useState('shopping');
   const [cart, setCart] = useState([]);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isPlacing, setIsPlacing] = useState(false);
   const [placingItem, setPlacingItem] = useState(null);
@@ -151,10 +152,11 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
     setPlacingItem(null);
   };
 
-  const handleBuy = () => {
-    post('buyCartItems', { items: cart });
+  const handleBuy = (paymentMethod) => {
+    post('buyCartItems', { items: cart, paymentMethod });
     setCart([]);
     setActiveTab('shopping');
+    setShowPaymentModal(false);
   };
 
   const handleClose = () => {
@@ -363,7 +365,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                           <span className="total-label">Total Amount</span>
                           <span className="total-price">${cart.reduce((acc, item) => acc + item.price, 0).toLocaleString()}</span>
                         </div>
-                        <button className="checkout-btn" onClick={handleBuy}>CONFIRM PURCHASE</button>
+                        <button className="checkout-btn" onClick={() => setShowPaymentModal(true)}>CONFIRM PURCHASE</button>
                       </div>
                     </>
                   )}
@@ -464,6 +466,66 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
           </div>
         </div>
       )}
+      {/* Payment Selection Modal */}
+      <AnimatePresence>
+        {showPaymentModal && (
+          <motion.div
+            className="payment-modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="payment-modal"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 350 }}
+            >
+              <div className="payment-modal-header">
+                <h3>SELECT PAYMENT</h3>
+                <button className="payment-modal-close" onClick={() => setShowPaymentModal(false)}>
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="payment-modal-body">
+                <p className="payment-modal-subtitle">Choose a payment method to complete purchase</p>
+                <div className="payment-modal-total">
+                  <span>Total Amount</span>
+                  <span className="price">${cart.reduce((acc, item) => acc + item.price, 0).toLocaleString()}</span>
+                </div>
+
+                <div className="payment-options">
+                  <button className="payment-opt-btn cash" onClick={() => handleBuy('cash')}>
+                    <div className="opt-icon-wrapper">
+                      <Banknote size={20} />
+                    </div>
+                    <div className="opt-info">
+                      <span className="opt-title">Pay with Cash</span>
+                      <span className="opt-desc">Deduct from pocket cash</span>
+                    </div>
+                  </button>
+
+                  <button className="payment-opt-btn bank" onClick={() => handleBuy('bank')}>
+                    <div className="opt-icon-wrapper">
+                      <CreditCard size={20} />
+                    </div>
+                    <div className="opt-info">
+                      <span className="opt-title">Pay with Card</span>
+                      <span className="opt-desc">Deduct from bank account</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              <button className="payment-modal-cancel" onClick={() => setShowPaymentModal(false)}>
+                Cancel
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

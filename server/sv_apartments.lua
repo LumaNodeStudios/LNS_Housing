@@ -530,7 +530,7 @@ RegisterNetEvent('LNS_Housing:server:saveApartmentFurniture', function(roomId, f
     end
 end)
 
-RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, items, totalPrice)
+RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, items, totalPrice, paymentMethod)
     local src = source
     local citizenid = Bridge.Server.GetIdentifier(src)
     if not citizenid then return end
@@ -563,16 +563,19 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
     end
 
     if result then
-        local money = Bridge.Server.GetBankMoney(src)
+        local payType = paymentMethod == 'cash' and 'cash' or 'bank'
+        local money = Bridge.Server.GetMoney(src, payType)
         if price > 0 then
             if money < price then
-                Bridge.Server.Notify(src, 'Not enough money in your bank!', 'error')
+                local targetAccountName = payType == 'cash' and 'cash' or 'bank account'
+                Bridge.Server.Notify(src, 'Not enough money in your ' .. targetAccountName .. '!', 'error')
                 return
             end
 
-            local removed = Bridge.Server.RemoveBankMoney(src, price, "Bought furniture for apartment #" .. roomId)
+            local removed = Bridge.Server.RemoveMoney(src, payType, price, "Bought furniture for apartment #" .. roomId)
             if not removed then
-                Bridge.Server.Notify(src, 'Could not process bank payment.', 'error')
+                local targetAccountName = payType == 'cash' and 'cash' or 'bank'
+                Bridge.Server.Notify(src, 'Could not process ' .. targetAccountName .. ' payment.', 'error')
                 return
             end
         end

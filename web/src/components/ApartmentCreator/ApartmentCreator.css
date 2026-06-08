@@ -52,7 +52,6 @@
     background: rgba(239, 68, 68, 0.15);
     border-color: rgba(239, 68, 68, 0.3);
     color: #fca5a5;
-    transform: rotate(90deg);
 }
 
 .apt-creator-form {
