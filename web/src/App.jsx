@@ -8,7 +8,7 @@ import { AnimatePresence } from 'framer-motion';
 
 function App() {
   const [showPanel, setShowPanel] = useState(false);
-  const [showFurniture, setShowFurniture] = useState(true);
+  const [showFurniture, setShowFurniture] = useState(false);
   const [showRealEstate, setShowRealEstate] = useState(false);
   const [showApartmentCreator, setShowApartmentCreator] = useState(false);
 
