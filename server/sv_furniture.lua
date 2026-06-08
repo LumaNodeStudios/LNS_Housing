@@ -9,7 +9,7 @@ RegisterNetEvent('LNS_Housing:server:buyFurniture', function(propertyId, items, 
     local money = Bridge.Server.GetBankMoney(src)
 
     if money < totalPrice then
-        Settings.Notify(src, 'Not enough money!', 'error')
+        Bridge.Server.Notify(src, 'Not enough money!', 'error')
         return
     end
 

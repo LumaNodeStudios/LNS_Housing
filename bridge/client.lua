@@ -79,3 +79,12 @@ function Bridge.Client.OpenStash(propertyId, furnitureId)
         print('No inventory found!')
     end
 end
+
+-- Notify Function
+
+function Bridge.Client.Notify(msg, type)
+    lib.notify({
+        description = msg,
+        type = type or 'inform'
+    })
+end

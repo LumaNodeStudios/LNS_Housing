@@ -70,7 +70,7 @@ function ProcessPropertySalePayout(propertyId, amount)
             if agent then
                 local agentSource = agent.PlayerData.source
                 Bridge.Server.AddBankMoney(agentSource, commission, "Property Sale Commission: " .. p.label)
-                Settings.Notify(agentSource, string.format("You received $%s commission for selling %s!", commission, p.label), "success")
+                Bridge.Server.Notify(agentSource, string.format("You received $%s commission for selling %s!", commission, p.label), "success")
             else
                 Bridge.Server.AddOfflineBankMoney(p.agent_cid, commission)
             end
@@ -166,7 +166,7 @@ RegisterNetEvent('LNS_Housing:server:policeRaidDoor', function(propertyId, prope
     local raidItem = Settings.Security.RaidItem
     local itemCount = exports.ox_inventory:Search(src, 'count', raidItem)
     if itemCount < 1 then
-        Settings.Notify(src, 'You do not have the required breaching item!', 'error')
+        Bridge.Server.Notify(src, 'You do not have the required breaching item!', 'error')
         return
     end
 
@@ -185,7 +185,7 @@ RegisterNetEvent('LNS_Housing:server:policeRaidDoor', function(propertyId, prope
         if not TemporaryAccess.doors[propertyId] then TemporaryAccess.doors[propertyId] = {} end
         TemporaryAccess.doors[propertyId][identifier] = true
 
-        Settings.Notify(src, 'Door breached successfully!', 'success')
+        Bridge.Server.Notify(src, 'Door breached successfully!', 'success')
     end
 end)
 
@@ -199,7 +199,7 @@ RegisterNetEvent('LNS_Housing:server:policeRaidStash', function(propertyId)
     local raidItem = Settings.Security.RaidItem
     local itemCount = exports.ox_inventory:Search(src, 'count', raidItem)
     if itemCount < 1 then
-        Settings.Notify(src, 'You do not have the required breaching item!', 'error')
+        Bridge.Server.Notify(src, 'You do not have the required breaching item!', 'error')
         return
     end
 
@@ -207,7 +207,7 @@ RegisterNetEvent('LNS_Housing:server:policeRaidStash', function(propertyId)
     if not TemporaryAccess.stashes[propertyId] then TemporaryAccess.stashes[propertyId] = {} end
     TemporaryAccess.stashes[propertyId][identifier] = true
 
-    Settings.Notify(src, 'Storage breached successfully!', 'success')
+    Bridge.Server.Notify(src, 'Storage breached successfully!', 'success')
 end)
 
 lib.callback.register('LNS_Housing:server:buyHouse', function(source, propertyId)
@@ -255,13 +255,13 @@ CreateThread(function()
 
                         local tenant = Bridge.Server.IsPlayerOnline(p.owner)
                         if tenant then
-                            Settings.Notify(tenant.PlayerData.source, "Your rent for " .. p.label .. " is overdue! Your access is suspended.", "error")
+                            Bridge.Server.Notify(tenant.PlayerData.source, "Your rent for " .. p.label .. " is overdue! Your access is suspended.", "error")
                         end
                     elseif timeSincePaid > rentPeriod then
                         local tenant = Bridge.Server.IsPlayerOnline(p.owner)
                         if tenant then
                             local hoursLeft = math.ceil(((rentPeriod + gracePeriod) - timeSincePaid) / 3600)
-                            Settings.Notify(tenant.PlayerData.source, "Your rent for " .. p.label .. " is due! You have " .. hoursLeft .. " hours to pay before lockout.", "warning")
+                            Bridge.Server.Notify(tenant.PlayerData.source, "Your rent for " .. p.label .. " is due! You have " .. hoursLeft .. " hours to pay before lockout.", "warning")
                         end
                     end
                 end

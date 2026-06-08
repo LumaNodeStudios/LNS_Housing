@@ -243,7 +243,7 @@ end
 function StartMowing(propertyId, isAuto)
     if MowingActive then
         if not isAuto then
-            Settings.Notify('You are already mowing!', 'error')
+            Bridge.Client.Notify('You are already mowing!', 'error')
         end
         return
     end
@@ -251,7 +251,7 @@ function StartMowing(propertyId, isAuto)
     local p = Properties[propertyId]
     if not p then
         if not isAuto then
-            Settings.Notify('No property found here.', 'error')
+            Bridge.Client.Notify('No property found here.', 'error')
         end
         return
     end
@@ -273,7 +273,7 @@ function StartMowing(propertyId, isAuto)
 
     if not hasGrowth then
         if not isAuto then
-            Settings.Notify('The lawn is already clean and short!', 'inform')
+            Bridge.Client.Notify('The lawn is already clean and short!', 'inform')
         end
         return
     end
@@ -364,7 +364,7 @@ function StartMowing(propertyId, isAuto)
                     if #newlyMowedIndices > 0 then
                         TriggerServerEvent('LNS_Housing:server:saveMowedBlades', propertyId, newlyMowedIndices)
                     end
-                    Settings.Notify('You put away the mower.', 'inform')
+                    Bridge.Client.Notify('You put away the mower.', 'inform')
                     break
                 end
             end
@@ -443,7 +443,7 @@ function StartMowing(propertyId, isAuto)
                         -- Send remaining indices and mark full mow
                         TriggerServerEvent('LNS_Housing:server:finishMowing', propertyId, newlyMowedIndices, true)
                         newlyMowedIndices = {}
-                        Settings.Notify('Lawn successfully mowed! It will grow back over time.', 'success')
+                        Bridge.Client.Notify('Lawn successfully mowed! It will grow back over time.', 'success')
                         StopMowing()
                     end
                 end
@@ -455,12 +455,12 @@ end
 RegisterNetEvent('LNS_Housing:client:useMower', function()
     if MowingActive then
         StopMowing()
-        Settings.Notify('You put away the mower.', 'inform')
+        Bridge.Client.Notify('You put away the mower.', 'inform')
         return
     end
 
     if not ActiveYardPropertyId then
-        Settings.Notify('You must be in a yard to use the mower!', 'error')
+        Bridge.Client.Notify('You must be in a yard to use the mower!', 'error')
         return
     end
 

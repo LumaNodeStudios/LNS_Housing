@@ -251,3 +251,12 @@ function Bridge.Server.RegisterPropertyStashes(propertyId, furnitureList)
         end
     end
 end
+
+-- Notify Function
+
+function Bridge.Server.Notify(source, msg, type)
+    lib.notify(source, {
+        description = msg,
+        type = type or 'inform'
+    })
+end

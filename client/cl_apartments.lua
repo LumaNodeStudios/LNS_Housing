@@ -49,13 +49,21 @@ local function CreateApartmentPed()
             debug = Settings.Debug.Zones,
             onSelect = function()
                 if MyApartmentId then
-                    Settings.Notify('Your apartment is room #' .. MyApartmentId, 'info')
+                    Bridge.Client.Notify('Your apartment is room #' .. MyApartmentId, 'info')
                 else
-                    Settings.Notify('You don\'t have an apartment assigned', 'error')
+                    Bridge.Client.Notify('You don\'t have an apartment assigned', 'error')
                 end
             end
         }
     })
+end
+
+local function OpenApartmentCreatorUI()
+    SendNUIMessage({
+        action = 'openApartmentCreator',
+        data = {}
+    })
+    SetNuiFocus(true, true)
 end
 
 function openKeyManagementUI()
@@ -291,7 +299,7 @@ local function RegisterApartmentCreatorCommands()
     RegisterCommand(cmd, function()
         local isAdmin = lib.callback.await('LNS_Housing:server:isApartmentAdmin', false)
         if not isAdmin then
-            Settings.Notify('You do not have permission to use this command.', 'error')
+            Bridge.Client.Notify('You do not have permission to use this command.', 'error')
             return
         end
 
@@ -485,14 +493,6 @@ RegisterNetEvent('LNS_Housing:client:addApartmentRoom', function(roomData)
     end
 end)
 
-local function OpenApartmentCreatorUI()
-    SendNUIMessage({
-        action = 'openApartmentCreator',
-        data = {}
-    })
-    SetNuiFocus(true, true)
-end
-
 RegisterNUICallback('createApartmentZone', function(_, cb)
     SendNUIMessage({ action = 'toggleVisibility', data = { visible = false } })
     SetNuiFocus(false, false)
@@ -532,9 +532,9 @@ RegisterNUICallback('pickApartmentDoor', function(_, cb)
         end
         cb(doorId)
         if type(doorId) == 'table' then
-            Settings.Notify('New Door selected at ' .. math.floor(doorId.coords.x) .. ', ' .. math.floor(doorId.coords.y), 'success')
+            Bridge.Client.Notify('New Door selected at ' .. math.floor(doorId.coords.x) .. ', ' .. math.floor(doorId.coords.y), 'success')
         else
-            Settings.Notify('Door ID ' .. doorId .. ' selected.', 'success')
+            Bridge.Client.Notify('Door ID ' .. doorId .. ' selected.', 'success')
         end
     else
         cb(nil)
@@ -545,7 +545,7 @@ RegisterNUICallback('pickApartmentSpawn', function(_, cb)
     SendNUIMessage({ action = 'toggleVisibility', data = { visible = false } })
     SetNuiFocus(false, false)
     
-    Settings.Notify('Stand at the exact spawn/interior point where players should teleport. Press [E] to save spawn point.', 'inform')
+    Bridge.Client.Notify('Stand at the exact spawn/interior point where players should teleport. Press [E] to save spawn point.', 'inform')
     Wait(1000)
 
     local spawnCoords = nil
@@ -571,7 +571,7 @@ RegisterNUICallback('pickApartmentSpawn', function(_, cb)
     
     if spawnCoords then
         cb(spawnCoords)
-        Settings.Notify('Spawn point captured successfully.', 'success')
+        Bridge.Client.Notify('Spawn point captured successfully.', 'success')
     else
         cb(nil)
     end
@@ -587,9 +587,9 @@ RegisterNUICallback('createApartment', function(data, cb)
     SetNuiFocus(false, false)
     local success = lib.callback.await('LNS_Housing:server:createApartment', false, data)
     if success then
-        Settings.Notify('Apartment room created successfully!', 'success')
+        Bridge.Client.Notify('Apartment room created successfully!', 'success')
     else
-        Settings.Notify('Failed to create apartment room.', 'error')
+        Bridge.Client.Notify('Failed to create apartment room.', 'error')
     end
     SendNUIMessage({ action = 'closeUI' })
     cb('ok')

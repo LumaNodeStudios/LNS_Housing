@@ -29,7 +29,7 @@ RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgr
 
     local currentLevel = p.metadata.security_level or 0
     if currentLevel >= Settings.Security.MaxLevel then
-        Settings.Notify(src, 'Security is already at maximum level!', 'error')
+        Bridge.Server.Notify(src, 'Security is already at maximum level!', 'error')
         return
     end
 
@@ -41,9 +41,9 @@ RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgr
         p.metadata.security_level = nextLevel
         SaveProperty(propertyId)
         TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
-        Settings.Notify(src, 'Security upgraded to level ' .. nextLevel, 'success')
+        Bridge.Server.Notify(src, 'Security upgraded to level ' .. nextLevel, 'success')
     else
-        Settings.Notify(src, 'Not enough money in bank!', 'error')
+        Bridge.Server.Notify(src, 'Not enough money in bank!', 'error')
     end
 end)
 
@@ -69,7 +69,7 @@ RegisterNetEvent('LNS_Housing:server:payRent', function(propertyId)
             local agent = Bridge.Server.IsPlayerOnline(p.agent_cid)
             if agent then
                 Bridge.Server.AddBankMoney(agent.PlayerData.source, commission, "Property Rent Commission: " .. p.label)
-                Settings.Notify(agent.PlayerData.source, string.format("You received $%s rent commission for %s!", commission, p.label), "success")
+                Bridge.Server.Notify(agent.PlayerData.source, string.format("You received $%s rent commission for %s!", commission, p.label), "success")
             else
                 Bridge.Server.AddOfflineBankMoney(p.agent_cid, commission)
             end
@@ -83,9 +83,9 @@ RegisterNetEvent('LNS_Housing:server:payRent', function(propertyId)
         SaveProperty(propertyId)
 
         TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
-        Settings.Notify(src, string.format("You successfully paid $%s rent for %s.", rentAmount, p.label), "success")
+        Bridge.Server.Notify(src, string.format("You successfully paid $%s rent for %s.", rentAmount, p.label), "success")
     else
-        Settings.Notify(src, "Not enough money in bank to pay rent!", "error")
+        Bridge.Server.Notify(src, "Not enough money in bank to pay rent!", "error")
     end
 end)
 
@@ -128,7 +128,7 @@ RegisterNetEvent('LNS_Housing:server:createContract', function(data)
 
     local permConfig = Settings.RealEstate.Permissions or { DraftContract = 1 }
     if playerJob.grade < (permConfig.DraftContract or 1) then
-        Settings.Notify(src, "You do not have permission to draft contracts.", "error")
+        Bridge.Server.Notify(src, "You do not have permission to draft contracts.", "error")
         return
     end
 
@@ -140,13 +140,13 @@ RegisterNetEvent('LNS_Housing:server:createContract', function(data)
 
     local p = Properties[propertyId]
     if not p or p.owner then
-        Settings.Notify(src, "Property is not available or already owned.", "error")
+        Bridge.Server.Notify(src, "Property is not available or already owned.", "error")
         return
     end
 
     local clientCid = GetIdentifier(targetId)
     if not clientCid then
-        Settings.Notify(src, "Invalid target player.", "error")
+        Bridge.Server.Notify(src, "Invalid target player.", "error")
         return
     end
 
@@ -168,12 +168,12 @@ RegisterNetEvent('LNS_Housing:server:createContract', function(data)
         p.commission_rate = commissionRate
         SaveProperty(propertyId)
 
-        Settings.Notify(src, "Contract sent to " .. clientName .. "!", "success")
-        Settings.Notify(targetId, "You received a new real estate contract! Use /contracts to view.", "inform")
+        Bridge.Server.Notify(src, "Contract sent to " .. clientName .. "!", "success")
+        Bridge.Server.Notify(targetId, "You received a new real estate contract! Use /contracts to view.", "inform")
 
         TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
     else
-        Settings.Notify(src, "Failed to create contract.", "error")
+        Bridge.Server.Notify(src, "Failed to create contract.", "error")
     end
 end)
 
@@ -193,7 +193,7 @@ lib.callback.register('LNS_Housing:server:respondToContract', function(source, c
         MySQL.update.await('UPDATE housing_contracts SET status = ? WHERE id = ?', {'declined', contractId})
         local agent = Bridge.Server.IsPlayerOnline(contract.agent_cid)
         if agent then
-            Settings.Notify(agent.PlayerData.source, contract.client_name .. " declined your contract for " .. p.label .. ".", "error")
+            Bridge.Server.Notify(agent.PlayerData.source, contract.client_name .. " declined your contract for " .. p.label .. ".", "error")
         end
         return true
     elseif action == 'accept' then
@@ -201,7 +201,7 @@ lib.callback.register('LNS_Housing:server:respondToContract', function(source, c
         local bankMoney = Bridge.Server.GetBankMoney(src)
 
         if bankMoney < price then
-            Settings.Notify(src, "You do not have enough money in your bank account.", "error")
+            Bridge.Server.Notify(src, "You do not have enough money in your bank account.", "error")
             return false
         end
 
@@ -215,7 +215,7 @@ lib.callback.register('LNS_Housing:server:respondToContract', function(source, c
         if agent then
             local agentSrc = agent.PlayerData.source
             Bridge.Server.AddBankMoney(agentSrc, commission, "Property Payout Commission: " .. p.label)
-            Settings.Notify(agentSrc, string.format("You received $%s commission for the sale of %s!", commission, p.label), "success")
+            Bridge.Server.Notify(agentSrc, string.format("You received $%s commission for the sale of %s!", commission, p.label), "success")
         else
             Bridge.Server.AddOfflineBankMoney(contract.agent_cid, commission)
         end
@@ -242,7 +242,7 @@ lib.callback.register('LNS_Housing:server:respondToContract', function(source, c
         SyncPropertyDoor(propertyId)
 
         TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
-        Settings.Notify(src, "Congratulations! You accepted the contract and now have access to " .. p.label .. ".", "success")
+        Bridge.Server.Notify(src, "Congratulations! You accepted the contract and now have access to " .. p.label .. ".", "success")
         return true
     end
 

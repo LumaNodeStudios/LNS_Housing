@@ -7,7 +7,7 @@ local CurrentInterior = 0
 RegisterCommand(Settings.Creator.Command, function(source, args, rawCommand)
     local hasPermission = lib.callback.await('LNS_Housing:server:getRealEstatePermission', false)
     if not hasPermission then
-        Settings.Notify('You do not have permission to use this command.', 'error')
+        Bridge.Client.Notify('You do not have permission to use this command.', 'error')
         return
     end
 
@@ -29,9 +29,9 @@ RegisterNUICallback('createHouse', function(data, cb)
     SetNuiFocus(false, false)
     local success = lib.callback.await('LNS_Housing:server:createHouse', false, data)
     if success then
-        Settings.Notify('House created successfully!', 'success')
+        Bridge.Client.Notify('House created successfully!', 'success')
     else
-        Settings.Notify('Failed to create house.', 'error')
+        Bridge.Client.Notify('Failed to create house.', 'error')
     end
     SendNUIMessage({ action = 'closeUI' })
     cb('ok')
@@ -108,9 +108,9 @@ function LockpickDoor(propertyId)
         
         if success then
             TriggerServerEvent('LNS_Housing:server:lockpickSuccess', propertyId, 'door')
-            Settings.Notify('You successfully picked the lock!', 'success')
+            Bridge.Client.Notify('You successfully picked the lock!', 'success')
         else
-            Settings.Notify('You failed to pick the lock.', 'error')
+            Bridge.Client.Notify('You failed to pick the lock.', 'error')
             -- Optional: break lockpick item logic here
         end
     end
@@ -135,10 +135,10 @@ function LockpickStash(propertyId, stashId)
         
         if success then
             TriggerServerEvent('LNS_Housing:server:lockpickSuccess', propertyId, 'stash', stashId)
-            Settings.Notify('You successfully picked the stash lock!', 'success')
+            Bridge.Client.Notify('You successfully picked the stash lock!', 'success')
             exports.ox_inventory:openInventory('stash', stashId)
         else
-            Settings.Notify('You failed to pick the stash lock.', 'error')
+            Bridge.Client.Notify('You failed to pick the stash lock.', 'error')
         end
     end
 end
@@ -609,7 +609,7 @@ function StartPoliceRaid(propertyId, propertyType, doorId)
     }) then
         TriggerServerEvent('LNS_Housing:server:policeRaidDoor', propertyId, propertyType, doorId)
     else
-        Settings.Notify('Breaching cancelled.', 'error')
+        Bridge.Client.Notify('Breaching cancelled.', 'error')
     end
 end
 
@@ -630,6 +630,6 @@ function StartPoliceStashRaid(propertyId, stashId)
     }) then
         TriggerServerEvent('LNS_Housing:server:policeRaidStash', propertyId)
     else
-        Settings.Notify('Breaching cancelled.', 'error')
+        Bridge.Client.Notify('Breaching cancelled.', 'error')
     end
 end

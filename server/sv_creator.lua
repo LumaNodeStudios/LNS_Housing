@@ -167,18 +167,18 @@ RegisterNetEvent('LNS_Housing:server:placeBid', function(data)
 
     if not p or p.sale_type ~= 'auction' then return end
     if not p.auction_data or p.auction_data.status ~= 'live' then
-        Settings.Notify(src, 'Auction is not live!', 'error')
+        Bridge.Server.Notify(src, 'Auction is not live!', 'error')
         return
     end
 
     if amount <= p.auction_data.current_bid then
-        Settings.Notify(src, 'Bid must be higher than current!', 'error')
+        Bridge.Server.Notify(src, 'Bid must be higher than current!', 'error')
         return
     end
 
     local bankMoney = Bridge.Server.GetBankMoney(src)
     if bankMoney < amount then
-        Settings.Notify(src, 'Not enough money in bank to place this bid!', 'error')
+        Bridge.Server.Notify(src, 'Not enough money in bank to place this bid!', 'error')
         return
     end
 
@@ -187,7 +187,7 @@ RegisterNetEvent('LNS_Housing:server:placeBid', function(data)
 
     SaveProperty(propertyId)
     TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
-    Settings.Notify(src, 'You placed a bid of $' .. amount, 'success')
+    Bridge.Server.Notify(src, 'You placed a bid of $' .. amount, 'success')
 end)
 
 RegisterNetEvent('LNS_Housing:server:controlAuction', function(data)
@@ -205,7 +205,7 @@ RegisterNetEvent('LNS_Housing:server:controlAuction', function(data)
     elseif action == 'end' then
         if p.auction_data.highest_bidder then
             p.auction_data.status = 'pending'
-            Settings.Notify(src, 'Auction ended. Waiting for confirmation of bid: $' .. p.auction_data.current_bid, 'inform')
+            Bridge.Server.Notify(src, 'Auction ended. Waiting for confirmation of bid: $' .. p.auction_data.current_bid, 'inform')
         else
             p.auction_data.status = 'ended'
         end
@@ -236,15 +236,15 @@ RegisterNetEvent('LNS_Housing:server:controlAuction', function(data)
                 p.owner = bidderId
                 p.auction_data.status = 'ended'
                 if bidder then
-                    Settings.Notify(bidder.PlayerData.source, 'Congratulations! Your bid for ' .. p.label .. ' was confirmed!', 'success')
+                    Bridge.Server.Notify(bidder.PlayerData.source, 'Congratulations! Your bid for ' .. p.label .. ' was confirmed!', 'success')
                 end
                 SyncPropertyDoor(propertyId)
 
                 MySQL.update.await('UPDATE housing_contracts SET status = ? WHERE property_id = ? AND status = ?', {'declined', propertyId, 'pending'})
 
-                Settings.Notify(src, 'Sale confirmed for ' .. p.label, 'success')
+                Bridge.Server.Notify(src, 'Sale confirmed for ' .. p.label, 'success')
             else
-                Settings.Notify(src, 'Confirmation failed: Bidder does not have enough money!', 'error')
+                Bridge.Server.Notify(src, 'Confirmation failed: Bidder does not have enough money!', 'error')
             end
         end
     end

@@ -169,7 +169,7 @@ function zoneCreator.editPoint()
         lib.hideTextUI()
         lib.showTextUI('[K] - Set Point \n [N] - Cancel Set')
     else
-        Settings.Notify('Need to be close to a point', 'error')
+        Bridge.Client.Notify('Need to be close to a point', 'error')
     end
 end
 

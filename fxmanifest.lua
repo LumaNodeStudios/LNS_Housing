@@ -28,7 +28,8 @@ client_scripts {
     'client/cl_panel.lua',
     'client/cl_zoneCreator.lua',
     'client/cl_lawn.lua',
-    'client/cl_apartments.lua'
+    'client/cl_apartments.lua',
+    'client/cl_screenshot.lua'
 }
 
 server_scripts {
@@ -40,5 +41,11 @@ server_scripts {
     'server/sv_furniture.lua',
     'server/sv_lawn.lua',
     'server/sv_panel.lua',
-    'server/sv_apartments.lua'
+    'server/sv_apartments.lua',
+    'server/sv_screenshot.lua',
+    'server/sv_screenshot.js'
+}
+
+dependencies {
+    'screenshot-basic'
 }

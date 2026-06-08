@@ -262,7 +262,24 @@
   width: 100%;
   height: 100%;
   z-index: 2;
+  position: relative;
 }
+
+.furniture-img {
+  width: 85%;
+  height: 85%;
+  object-fit: contain;
+  z-index: 3;
+  pointer-events: none;
+  transition: all 0.2s ease;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15));
+}
+
+.item-card:hover .furniture-img {
+  transform: scale(1.08);
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.25));
+}
+
 
 .item-card .placeholder {
   color: rgba(255, 255, 255, 0.4);
@@ -274,7 +291,6 @@
   transform: scale(1.05);
 }
 
-.palette-badge,
 .owned-badge {
   position: absolute;
   top: 8px;
@@ -286,11 +302,6 @@
   justify-content: center;
   border-radius: 4px;
   z-index: 5;
-}
-
-.palette-badge {
-  color: var(--primary-text);
-  background: var(--primary);
 }
 
 .owned-badge {
@@ -513,10 +524,7 @@
 }
 
 .freecam-hint span {
-  background: linear-gradient(90deg, #fff, var(--primary));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #fff;
 }
 
 .placement-controls {
@@ -922,17 +930,4 @@
   border-color: var(--primary) !important;
   box-shadow: 0 0 8px rgba(110, 211, 243, 0.4);
   transform: scale(1.05);
-}
-
-.palette-badge.clickable {
-  cursor: pointer;
-  border: none;
-  background: var(--primary);
-  color: var(--primary-text);
-  transition: var(--transition-smooth);
-}
-
-.palette-badge.clickable:hover {
-  transform: scale(1.15);
-  box-shadow: 0 0 10px var(--primary);
 }

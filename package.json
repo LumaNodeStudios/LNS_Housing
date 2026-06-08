@@ -1,0 +1,9 @@
+{
+  "name": "lns_housing",
+  "version": "1.0.0",
+  "description": "LumaNode Studios - Advanced Housing System",
+  "main": "server/sv_screenshot.js",
+  "dependencies": {
+    "pngjs": "^7.0.0"
+  }
+}

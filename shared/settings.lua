@@ -46,20 +46,6 @@ return {
         Token = 'xOSaS3kRrUNyEvNBnWg2FWdxX8uKg2Zp' -- Change this if your token is invalid or expired
     },
 
-    Notify = function(source, msg, type)
-        if IsDuplicityVersion() then
-            lib.notify(source, {
-                description = msg,
-                type = type
-            })
-        else
-            lib.notify({
-                description = source,
-                type = msg or 'inform'
-            })
-        end
-    end,
-
     -- Housing --
     Stash = {
         label = 'Property Storage',

@@ -1,12 +1,8 @@
----@param coords vector3|table|nil
----@return vector3|nil
 local function ToVec3(coords)
     if not coords then return nil end
     return vec3(coords.x, coords.y, coords.z)
 end
 
----@param doorId number
----@return table|nil
 function GetOxDoorlockDoor(doorId)
     if not doorId or doorId == 0 or GetResourceState('ox_doorlock') ~= 'started' then
         return nil
@@ -25,10 +21,6 @@ function GetOxDoorlockDoor(doorId)
     return nil
 end
 
----@param model number|string
----@param coords vector3|table
----@param heading number
----@return vector3 coords, number heading
 function GetDoorInteractionPoint(model, coords, heading)
     coords = ToVec3(coords)
     if not model or not coords then
@@ -76,11 +68,6 @@ function GetDoorInteractionPoint(model, coords, heading)
     return coords, heading or 0.0
 end
 
----@param model number|string|nil
----@param coords vector3|table|nil
----@param heading number|nil
----@param door table|nil ox_doorlock door data
----@return vector3|nil coords, number heading
 function ResolveDoorTargetPlacement(model, coords, heading, door)
     if door and door.doors and door.doors[1] and door.doors[2] then
         local c1 = ToVec3(door.doors[1].coords)
@@ -101,11 +88,6 @@ function ResolveDoorTargetPlacement(model, coords, heading, door)
     return resolvedCoords, resolvedHeading
 end
 
----@param door table|nil
----@param model number|string|nil
----@param coords vector3|nil
----@param heading number|nil
----@return vector3|nil coords, number heading
 function GetDoorCenter(door, model, coords, heading)
     return ResolveDoorTargetPlacement(model, coords, heading, door)
 end

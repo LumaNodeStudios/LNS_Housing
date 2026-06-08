@@ -16,9 +16,9 @@ RegisterNUICallback('pickDoor', function(_, cb)
             data = doorId
         })
         if type(doorId) == 'table' then
-            Settings.Notify('New Door selected at ' .. math.floor(doorId.coords.x) .. ', ' .. math.floor(doorId.coords.y), 'success')
+            Bridge.Client.Notify('New Door selected at ' .. math.floor(doorId.coords.x) .. ', ' .. math.floor(doorId.coords.y), 'success')
         else
-            Settings.Notify('Door ID ' .. doorId .. ' added to list.', 'success')
+            Bridge.Client.Notify('Door ID ' .. doorId .. ' added to list.', 'success')
         end
     end
     cb('ok')
@@ -118,10 +118,10 @@ RegisterNUICallback('takePhoto', function(_, cb)
 
                     if resp and resp.data and resp.data.url then
                         cb(resp.data.url)
-                        Settings.Notify('Photo uploaded successfully!', 'success')
+                        Bridge.Client.Notify('Photo uploaded successfully!', 'success')
                     else
                         cb(nil)
-                        Settings.Notify('Failed to upload photo. Check console for errors.', 'error')
+                        Bridge.Client.Notify('Failed to upload photo. Check console for errors.', 'error')
                         print('^1[Housing] Photo upload failed: ' .. tostring(data) .. '^7')
                     end
                 end)

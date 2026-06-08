@@ -1,8 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Sofa, Bed, Lamp, Tv, Utensils, Bath, Search, Package, Check, Trash2, Camera, Move, RotateCw, X, ShoppingCart, ShoppingBag, Hammer, Palette, ArrowLeft, Grid, ArrowDown } from 'lucide-react';
+import { Sofa, Bed, Lamp, Tv, Utensils, Bath, Search, Package, Check, Trash2, Camera, Move, RotateCw, X, ShoppingCart, ShoppingBag, Hammer, ArrowLeft, Grid, ArrowDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Modeler3D from './Modeler3D';
 import './FurnitureMenu.css';
+
+const FurnitureImage = ({ item, ItemIcon }) => {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+
+  return (
+    <div className="icon-wrapper">
+      {!error && (
+        <img
+          src={`assets/furniture/${item.model}.png`}
+          alt={item.label}
+          className="furniture-img"
+          onLoad={() => setLoaded(true)}
+          onError={() => setError(true)}
+          style={{ display: loaded ? 'block' : 'none' }}
+        />
+      )}
+      {(!loaded || error) && <ItemIcon size={28} className="placeholder" />}
+    </div>
+  );
+};
 
 const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
   const [activeCategory, setActiveCategory] = useState('all');
@@ -251,14 +272,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                               onMouseLeave={() => !isPlacing && post('hoverOut')}
                               onClick={() => handlePreview(item)}
                             >
-                              <div className="icon-wrapper">
-                                <ItemIcon size={28} className="placeholder" />
-                              </div>
-                              {isPlacing && placingItem?.id === item.id && (
-                                <div className="palette-badge">
-                                  <Palette size={12} />
-                                </div>
-                              )}
+                              <FurnitureImage item={item} ItemIcon={ItemIcon} />
                               <span className="item-card-price">${item.price}</span>
                             </motion.div>
                           );
@@ -330,9 +344,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                           onMouseLeave={() => !isPlacing && post('unhoverOwnedItem')}
                           onClick={() => handlePreview(item)}
                         >
-                          <div className="icon-wrapper">
-                            <ItemIcon size={28} className="placeholder" />
-                          </div>
+                          <FurnitureImage item={item} ItemIcon={ItemIcon} />
                           <button className="delete-icon-btn" disabled={isPlacing} onClick={(e) => {
                             if (isPlacing) return;
                             e.stopPropagation();
@@ -349,6 +361,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
               )}
             </div>
           )}
+
         </motion.div>
       </AnimatePresence>
 

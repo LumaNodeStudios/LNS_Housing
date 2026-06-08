@@ -90,7 +90,7 @@ end, false)
 RegisterNUICallback('buyProperty', function(data, cb)
     local success = lib.callback.await('LNS_Housing:server:buyHouse', false, data.id)
     if success then
-        Settings.Notify('You bought ' .. data.label .. '!', 'success')
+        Bridge.Client.Notify('You bought ' .. data.label .. '!', 'success')
         -- Update the UI state locally or re-fetch
         local properties = lib.callback.await('LNS_Housing:server:getProperties', false)
         SendNUIMessage({
@@ -98,7 +98,7 @@ RegisterNUICallback('buyProperty', function(data, cb)
             data = properties
         })
     else
-        Settings.Notify('Could not buy house. Check your bank balance.', 'error')
+        Bridge.Client.Notify('Could not buy house. Check your bank balance.', 'error')
     end
     cb('ok')
 end)
@@ -115,7 +115,7 @@ RegisterNUICallback('setWaypoint', function(data, cb)
             local door = exports.ox_doorlock:getDoor(doorId)
             if door then
                 SetNewWaypoint(door.coords.x, door.coords.y)
-                Settings.Notify('GPS waypoint set to ' .. p.label, 'success')
+                Bridge.Client.Notify('GPS waypoint set to ' .. p.label, 'success')
             end
         end
     end
@@ -141,9 +141,9 @@ end)
 RegisterNUICallback('hireEmployee', function(data, cb)
     local success, err = lib.callback.await('LNS_Housing:server:hireEmployee', false, data.targetId, data.manualCid, data.manualName)
     if success then
-        Settings.Notify("Hired successfully!", "success")
+        Bridge.Client.Notify("Hired successfully!", "success")
     else
-        Settings.Notify(err or "Failed to hire", "error")
+        Bridge.Client.Notify(err or "Failed to hire", "error")
     end
     cb(success)
 end)
@@ -151,7 +151,7 @@ end)
 RegisterNUICallback('fireEmployee', function(data, cb)
     local success = lib.callback.await('LNS_Housing:server:fireEmployee', false, data.citizenid)
     if success then
-        Settings.Notify("Fired successfully!", "success")
+        Bridge.Client.Notify("Fired successfully!", "success")
     end
     cb(success)
 end)
@@ -159,7 +159,7 @@ end)
 RegisterNUICallback('updateEmployee', function(data, cb)
     local success = lib.callback.await('LNS_Housing:server:updateEmployee', false, data)
     if success then
-        Settings.Notify("Employee settings updated!", "success")
+        Bridge.Client.Notify("Employee settings updated!", "success")
     end
     cb(success)
 end)
@@ -168,7 +168,7 @@ end)
 RegisterNUICallback('updateListingDetails', function(data, cb)
     local success = lib.callback.await('LNS_Housing:server:updateListingDetails', false, data)
     if success then
-        Settings.Notify("Listing details updated!", "success")
+        Bridge.Client.Notify("Listing details updated!", "success")
     end
     cb(success)
 end)
@@ -176,7 +176,7 @@ end)
 RegisterNUICallback('deleteListing', function(data, cb)
     local success = lib.callback.await('LNS_Housing:server:deleteListing', false, data.id)
     if success then
-        Settings.Notify("Listing deleted successfully!", "success")
+        Bridge.Client.Notify("Listing deleted successfully!", "success")
     end
     cb(success)
 end)
@@ -184,7 +184,7 @@ end)
 RegisterNUICallback('evictTenant', function(data, cb)
     local success = lib.callback.await('LNS_Housing:server:evictTenant', false, data.id)
     if success then
-        Settings.Notify("Tenant evicted successfully!", "success")
+        Bridge.Client.Notify("Tenant evicted successfully!", "success")
     end
     cb(success)
 end)
@@ -192,7 +192,7 @@ end)
 RegisterNUICallback('terminateOwnLease', function(data, cb)
     local success = lib.callback.await('LNS_Housing:server:terminateOwnLease', false, data.id)
     if success then
-        Settings.Notify("You terminated your lease.", "success")
+        Bridge.Client.Notify("You terminated your lease.", "success")
     end
     cb(success)
 end)
@@ -204,9 +204,9 @@ RegisterNUICallback('updateSpawnPoint', function(data, cb)
     
     local success = lib.callback.await('LNS_Housing:server:updateSpawnPoint', false, propertyId, vector4(coords.x, coords.y, coords.z, heading))
     if success then
-        Settings.Notify('Spawn point updated successfully to your current position!', 'success')
+        Bridge.Client.Notify('Spawn point updated successfully to your current position!', 'success')
     else
-        Settings.Notify('Failed to update spawn point.', 'error')
+        Bridge.Client.Notify('Failed to update spawn point.', 'error')
     end
     cb(success)
 end)

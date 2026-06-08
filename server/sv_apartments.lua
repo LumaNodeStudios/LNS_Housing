@@ -469,7 +469,7 @@ RegisterNetEvent('LNS_Housing:server:updateApartmentPermissions', function(roomI
         end
         
         if count > Settings.MaxKeys then
-            Settings.Notify(src, 'You have reached the maximum number of keys (' .. Settings.MaxKeys .. ') for this apartment!', 'error')
+            Bridge.Server.Notify(src, 'You have reached the maximum number of keys (' .. Settings.MaxKeys .. ') for this apartment!', 'error')
             return
         end
 
@@ -490,7 +490,7 @@ RegisterNetEvent('LNS_Housing:server:updateApartmentPermissions', function(roomI
             wallColor = 0
         })
         
-        Settings.Notify(src, 'Apartment permissions updated successfully!', 'success')
+        Bridge.Server.Notify(src, 'Apartment permissions updated successfully!', 'success')
     end
 end)
 
@@ -536,19 +536,19 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
     if not citizenid then return end
 
     if type(items) ~= 'table' then
-        Settings.Notify(src, 'Invalid furniture payload.', 'error')
+        Bridge.Server.Notify(src, 'Invalid furniture payload.', 'error')
         return
     end
 
     local price = tonumber(totalPrice)
     if not price or price ~= price then
-        Settings.Notify(src, 'Invalid purchase amount.', 'error')
+        Bridge.Server.Notify(src, 'Invalid purchase amount.', 'error')
         return
     end
 
     price = math.floor(price + 0.0)
     if price < 0 then
-        Settings.Notify(src, 'Invalid purchase amount.', 'error')
+        Bridge.Server.Notify(src, 'Invalid purchase amount.', 'error')
         return
     end
 
@@ -558,7 +558,7 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
 
     if not okSelect then
         print(('[LNS_Housing] buyApartmentFurniture SELECT failed for %s/%s: %s'):format(tostring(citizenid), tostring(roomId), tostring(result)))
-        Settings.Notify(src, 'Database error while loading apartment data.', 'error')
+        Bridge.Server.Notify(src, 'Database error while loading apartment data.', 'error')
         return
     end
 
@@ -566,13 +566,13 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
         local money = Bridge.Server.GetBankMoney(src)
         if price > 0 then
             if money < price then
-                Settings.Notify(src, 'Not enough money in your bank!', 'error')
+                Bridge.Server.Notify(src, 'Not enough money in your bank!', 'error')
                 return
             end
 
             local removed = Bridge.Server.RemoveBankMoney(src, price, "Bought furniture for apartment #" .. roomId)
             if not removed then
-                Settings.Notify(src, 'Could not process bank payment.', 'error')
+                Bridge.Server.Notify(src, 'Could not process bank payment.', 'error')
                 return
             end
         end
@@ -599,7 +599,7 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
         end)
         if not okEncode then
             print(('[LNS_Housing] buyApartmentFurniture encode failed for %s/%s: %s'):format(tostring(citizenid), tostring(roomId), tostring(furnitureJson)))
-            Settings.Notify(src, 'Could not process furniture data.', 'error')
+            Bridge.Server.Notify(src, 'Could not process furniture data.', 'error')
             return
         end
 
@@ -612,7 +612,7 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
         end)
         if not okUpdate then
             print(('[LNS_Housing] buyApartmentFurniture UPDATE failed for %s/%s: %s'):format(tostring(citizenid), tostring(roomId), tostring(updateResult)))
-            Settings.Notify(src, 'Database error while saving furniture.', 'error')
+            Bridge.Server.Notify(src, 'Database error while saving furniture.', 'error')
             return
         end
 
@@ -621,7 +621,7 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
         end
 
         TriggerClientEvent('LNS_Housing:client:updateApartmentFurniture', -1, roomId, currentFurniture)
-        Settings.Notify(src, 'Furniture bought successfully!', 'success')
+        Bridge.Server.Notify(src, 'Furniture bought successfully!', 'success')
     end
 end)
 
