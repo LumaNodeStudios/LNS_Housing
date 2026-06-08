@@ -7,9 +7,8 @@ import ApartmentCreator from './components/ApartmentCreator/ApartmentCreator';
 import { AnimatePresence } from 'framer-motion';
 
 function App() {
-  // Manual UI Toggles - Set to true to force open in browser
   const [showPanel, setShowPanel] = useState(false);
-  const [showFurniture, setShowFurniture] = useState(false);
+  const [showFurniture, setShowFurniture] = useState(true);
   const [showRealEstate, setShowRealEstate] = useState(false);
   const [showApartmentCreator, setShowApartmentCreator] = useState(false);
 
@@ -92,7 +91,6 @@ function App() {
 
   useEffect(() => {
     if (!window.GetParentResourceName) {
-      // Mock data for local development
       setFurnitureData([
         {
           id: 'living',
@@ -232,7 +230,7 @@ function App() {
           auctionEnd: '8/28/2025, 10:00:00 PM'
         },
       });
-      // Set mock property data so Panel works when toggled manually
+
       setPropertyData({
         id: 1,
         label: 'Luxury Villa',

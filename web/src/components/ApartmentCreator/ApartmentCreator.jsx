@@ -23,7 +23,6 @@ const ApartmentCreator = ({ onClose }) => {
 
     const handleDefineZone = () => {
         if (!window.GetParentResourceName) {
-            // Mock zone points for browser
             setZoneData({
                 points: [
                     { x: -826.63, y: -724.74, z: 42.07 },
@@ -49,7 +48,6 @@ const ApartmentCreator = ({ onClose }) => {
 
     const handlePickDoor = () => {
         if (!window.GetParentResourceName) {
-            // Mock door for browser
             setDoorData({
                 coords: { x: -825.87, y: -724.61, z: 41.67 },
                 model: -138454175,
@@ -72,7 +70,6 @@ const ApartmentCreator = ({ onClose }) => {
 
     const handleDefineSpawn = () => {
         if (!window.GetParentResourceName) {
-            // Mock spawn point for browser
             setSpawnData({
                 x: -823.46,
                 y: -727.60,
@@ -125,7 +122,6 @@ const ApartmentCreator = ({ onClose }) => {
             return;
         }
 
-        // Check if roomId already exists
         fetch(`https://${window.GetParentResourceName()}/doesApartmentExist`, {
             method: 'POST',
             body: JSON.stringify({ id: numericId })
@@ -137,7 +133,6 @@ const ApartmentCreator = ({ onClose }) => {
                     return;
                 }
 
-                // Submit to creator NUI callback
                 fetch(`https://${window.GetParentResourceName()}/createApartment`, {
                     method: 'POST',
                     body: JSON.stringify({

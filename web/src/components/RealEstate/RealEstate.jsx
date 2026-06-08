@@ -13,23 +13,19 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     const [filter, setFilter] = useState('all');
     const [search, setSearch] = useState('');
     const [sortBy, setSortBy] = useState('none');
-    const [activeTab, setActiveTab] = useState(initialTab || 'browse'); // browse, management, creator, contracts
+    const [activeTab, setActiveTab] = useState(initialTab || 'browse');
     const [selectedProperty, setSelectedProperty] = useState(null);
     const [bidAmount, setBidAmount] = useState(0);
     const [confirmModal, setConfirmModal] = useState(null);
-
     const [pendingContracts, setPendingContracts] = useState([]);
     const [agencyContracts, setAgencyContracts] = useState([]);
     const [nearbyPlayers, setNearbyPlayers] = useState([]);
     const [selectedNearbyPlayer, setSelectedNearbyPlayer] = useState('');
     const [manualPlayerId, setManualPlayerId] = useState('');
-
     const isAgent = hasPermission && (hasPermission.allowed || hasPermission === true);
     const canCreate = hasPermission === true || (hasPermission && hasPermission.permissions?.createHouse);
     const canDraft = hasPermission === true || (hasPermission && hasPermission.permissions?.draftContract);
     const canManageListings = hasPermission === true || (hasPermission && hasPermission.permissions?.manageListings);
-
-    // Listing Edit states — we now use the creator tab in edit mode
     const [editingPropertyId, setEditingPropertyId] = useState(null);
 
     const [formData, setFormData] = useState({
@@ -189,10 +185,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         setActiveTab('browse');
     };
 
-
-    // Listings Customization Handlers
     const handleStartEdit = (p) => {
-        // Navigate to creator tab pre-filled with this property's data
         setEditingPropertyId(p.id);
         setFormData({
             name: p.label || 'New Property',
@@ -794,11 +787,11 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                             <div className="contracts-list" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                                                 {myActiveLeases.map(p => {
                                                     const lastPaid = p.metadata?.last_rent_paid || 0;
-                                                    const rentPeriod = 604800; // 7 days in seconds
+                                                    const rentPeriod = 604800;
                                                     const timeRemaining = lastPaid > 0 ? (lastPaid + rentPeriod) - Math.floor(Date.now() / 1000) : 0;
                                                     const hoursRemaining = Math.max(0, Math.ceil(timeRemaining / 3600));
                                                     const daysRemaining = Math.max(0, Math.ceil(hoursRemaining / 24));
-                                                    const isDelinquent = timeRemaining < -86400; // grace period expired (1 day)
+                                                    const isDelinquent = timeRemaining < -86400;
 
                                                     return (
                                                         <motion.div

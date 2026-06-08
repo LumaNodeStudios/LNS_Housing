@@ -223,14 +223,12 @@ onNet('LNS_Housing:server:processScreenshot', (payload) => {
             return;
         }
 
-        // Apply green screen chroma-key removal
         try {
             outputData = removeChromaKey(outputData, 'green');
         } catch (e) {
             console.log('^3[LNS_Housing]^0 Chroma key failed: ' + e.message);
         }
 
-        // Resize to standard 256x256 icon size
         try {
             outputData = resizePNG(outputData, 256, 256);
         } catch (e) {

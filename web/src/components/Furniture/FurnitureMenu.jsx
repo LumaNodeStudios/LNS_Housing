@@ -27,7 +27,7 @@ const FurnitureImage = ({ item, ItemIcon }) => {
 
 const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
   const [activeCategory, setActiveCategory] = useState('all');
-  const [activeTab, setActiveTab] = useState('shopping'); // shopping, editor, cart
+  const [activeTab, setActiveTab] = useState('shopping');
   const [cart, setCart] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isPlacing, setIsPlacing] = useState(false);
@@ -58,7 +58,6 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Ignore key events when the user is typing in inputs or textareas to prevent interface issues
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
         return;
       }
@@ -283,36 +282,87 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                 </>
               ) : (
                 <div className="cart-view">
-                  <div className="category-title">
-                    <button className="back-btn" onClick={() => setActiveTab('shopping')}>
+                  <div className="cart-header">
+                    <button className="cart-back-btn" onClick={() => setActiveTab('shopping')} title="Back to Shopping">
                       <ArrowLeft size={16} />
                     </button>
-                    SHOPPING CART
+                    <div className="cart-title-info">
+                      <h2>SHOPPING CART</h2>
+                      <span className="cart-count-badge">
+                        {cart.length} {cart.length === 1 ? 'item' : 'items'}
+                      </span>
+                    </div>
                   </div>
 
                   {cart.length === 0 ? (
-                    <div className="empty-state">
-                      <ShoppingCart size={40} />
-                      <p>Your cart is empty</p>
+                    <div className="cart-empty-container">
+                      <motion.div
+                        className="cart-empty-glow"
+                        initial={{ opacity: 0.3, scale: 0.9 }}
+                        animate={{ opacity: [0.3, 0.6, 0.3], scale: [0.9, 1, 0.9] }}
+                        transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+                      >
+                        <ShoppingCart size={40} className="cart-empty-icon" />
+                      </motion.div>
+                      <h3 className="cart-empty-title">Your cart is empty</h3>
+                      <p className="cart-empty-subtitle">Choose from our catalog to decorate your home</p>
+                      <button className="cart-empty-shop-btn" onClick={() => setActiveTab('shopping')}>
+                        Browse Catalog
+                      </button>
                     </div>
                   ) : (
                     <>
                       <div className="cart-items-list">
-                        {cart.map((item, idx) => (
-                          <div key={idx} className="cart-list-item">
-                            <span className="cart-item-name">{item.label}</span>
-                            <span className="cart-item-price">${item.price}</span>
-                            <button className="remove-btn" onClick={() => {
-                              const newCart = [...cart];
-                              newCart.splice(idx, 1);
-                              setCart(newCart);
-                              post('removeCartItem', { entity: item.entity });
-                            }}><Trash2 size={14} /></button>
-                          </div>
-                        ))}
+                        <AnimatePresence mode="popLayout">
+                          {cart.map((item, idx) => {
+                            const ItemIcon = getItemIcon(item);
+                            return (
+                              <motion.div
+                                key={item.entity || idx}
+                                className="cart-list-item"
+                                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, x: -50, scale: 0.95 }}
+                                transition={{ duration: 0.2 }}
+                              >
+                                <div className="cart-item-preview">
+                                  <FurnitureImage item={item} ItemIcon={ItemIcon} />
+                                </div>
+                                <div className="cart-item-details">
+                                  <span className="cart-item-name">{item.label}</span>
+                                  <span className="cart-item-meta">{item.model || 'Furniture'}</span>
+                                </div>
+                                <div className="cart-item-actions">
+                                  <span className="cart-item-price">${item.price.toLocaleString()}</span>
+                                  <button
+                                    className="cart-remove-btn"
+                                    onClick={() => {
+                                      const newCart = [...cart];
+                                      newCart.splice(idx, 1);
+                                      setCart(newCart);
+                                      post('removeCartItem', { entity: item.entity });
+                                    }}
+                                    title="Remove item"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </motion.div>
+                            );
+                          })}
+                        </AnimatePresence>
                       </div>
                       <div className="cart-footer">
-                        <div className="cart-total">Total: ${cart.reduce((acc, item) => acc + item.price, 0)}</div>
+                        <div className="cart-summary-details">
+                          <div className="summary-row">
+                            <span>Subtotal ({cart.length} {cart.length === 1 ? 'item' : 'items'})</span>
+                            <span>${cart.reduce((acc, item) => acc + item.price, 0).toLocaleString()}</span>
+                          </div>
+                        </div>
+                        <div className="cart-total-section">
+                          <span className="total-label">Total Amount</span>
+                          <span className="total-price">${cart.reduce((acc, item) => acc + item.price, 0).toLocaleString()}</span>
+                        </div>
                         <button className="checkout-btn" onClick={handleBuy}>CONFIRM PURCHASE</button>
                       </div>
                     </>
