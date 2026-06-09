@@ -320,3 +320,13 @@ RegisterNetEvent('LNS_Housing:server:toggleLock', function(propertyId)
     local state = p.metadata.locked and 'locked' or 'unlocked'
     Bridge.Server.Notify(src, 'Property is now ' .. state .. '.', 'success')
 end)
+
+RegisterNetEvent('LNS_Housing:server:enterPropertyBucket', function(propertyId)
+    local src = source
+    SetPlayerRoutingBucket(src, propertyId)
+end)
+
+RegisterNetEvent('LNS_Housing:server:leavePropertyBucket', function()
+    local src = source
+    SetPlayerRoutingBucket(src, 0)
+end)

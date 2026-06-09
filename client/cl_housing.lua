@@ -369,7 +369,13 @@ function RegisterPropertyZones(p)
                 size = vec3(25.0, 25.0, 10.0),
                 debug = Settings.Debug.Zones,
                 onEnter = function()
+                    -- Ensure shell is spawned locally (for crash/relog support)
+                    local shellName = p.metadata.shell or 'Standard Motel'
+                    SpawnShellForProperty(p.id, shellName, shellCoords)
+
                     LoadFurnitures(p.id)
+                    TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', p.id)
+
                     if lib.callback.await('LNS_Housing:server:hasAccess', false, p.id, 'manage') then
                         lib.addRadialItem({
                             id = 'housing_furniture',
@@ -384,6 +390,7 @@ function RegisterPropertyZones(p)
                 onExit = function()
                     UnloadFurnitures(p.id)
                     lib.removeRadialItem('housing_furniture')
+                    TriggerServerEvent('LNS_Housing:server:leavePropertyBucket')
                 end
             })
         end

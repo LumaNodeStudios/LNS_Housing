@@ -66,5 +66,6 @@ end
 
 RegisterNetEvent('LNS_Housing:server:logoutPlayer', function()
     local src = source
+    SetPlayerRoutingBucket(src, 0)
     Bridge.Server.Logout(src)
 end)
