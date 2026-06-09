@@ -39,7 +39,7 @@ Modeler = {
 
         SendNUIMessage({
             action = "setFurnituresData",
-            data = Furniture.Furniture
+            data = Furniture
         })
 
         self:FreecamActive(true)
@@ -797,3 +797,23 @@ CreateThread(function()
         Wait(sleep)
     end
 end)
+
+RegisterCommand('checkfurniture', function()
+    print('^2[LNS_Housing] Starting furniture check...^0')
+    local invalidCount = 0
+    local validCount = 0
+
+    for _, category in ipairs(Furniture) do
+        for _, item in ipairs(category.items) do
+            local hash = tonumber(item.model) or GetHashKey(item.model)
+            if IsModelInCdimage(hash) then
+                validCount = validCount + 1
+            else
+                print(string.format('^1[LNS_Housing] Model NOT in game: %s (%s) under category: %s^0', item.model, item.label, category.label))
+                invalidCount = invalidCount + 1
+            end
+        end
+    end
+
+    print(string.format('^2[LNS_Housing] Check finished. Valid models: %d, Non-existent models: %d^0', validCount, invalidCount))
+end, false)

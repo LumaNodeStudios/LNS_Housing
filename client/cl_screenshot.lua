@@ -77,7 +77,7 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
 
     local itemsToCapture = {}
     local seenModels = {}
-    for _, category in ipairs(Furniture.Furniture) do
+    for _, category in ipairs(Furniture) do
         for _, item in ipairs(category.items) do
             if item.model and item.model ~= "" then
                 if not targetModel or item.model == targetModel then
@@ -161,7 +161,7 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
 
             local done = false
             local base64 = nil
-            exports['screenshot-basic']:requestScreenshot({ encoding = 'png' }, function(data)
+            exports.screencapture:requestScreenshot({ encoding = 'png' }, function(data)
                 base64 = data
                 done = true
             end)

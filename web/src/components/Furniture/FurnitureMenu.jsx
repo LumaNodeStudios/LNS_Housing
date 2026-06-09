@@ -31,9 +31,15 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
   const [cart, setCart] = useState([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchQueryOwned, setSearchQueryOwned] = useState('');
   const [isPlacing, setIsPlacing] = useState(false);
   const [placingItem, setPlacingItem] = useState(null);
   const [freecamMode, setFreecamMode] = useState(false);
+
+  useEffect(() => {
+    setSearchQuery('');
+    setSearchQueryOwned('');
+  }, [activeTab]);
 
   useEffect(() => {
     if (items.length > 0 && !activeCategory) {
@@ -48,6 +54,10 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
       } else if (event.data.action === 'selectFurniture') {
         setIsPlacing(true);
         setPlacingItem(event.data.data);
+      } else if (event.data.action === 'addToCart') {
+        setCart(prevCart => [...prevCart, event.data.data]);
+      } else if (event.data.action === 'clearCart') {
+        setCart([]);
       }
     };
 
@@ -120,6 +130,12 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
     }
   })();
 
+  const filteredOwnedItems = Array.isArray(ownedItems)
+    ? ownedItems.filter(item =>
+        item.label.toLowerCase().includes(searchQueryOwned.toLowerCase())
+      )
+    : [];
+
   const getItemIcon = (item) => {
     const catId = item.categoryId || item.category || activeCategory;
     const cat = items.find(c => c.id === catId);
@@ -147,7 +163,6 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
   const handleAddToCart = (item) => {
     const catId = item.categoryId || activeCategory;
     post('addToCart', { ...item, category: catId });
-    setCart([...cart, { ...item, category: catId }]);
     setIsPlacing(false);
     setPlacingItem(null);
   };
@@ -379,37 +394,86 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
               <div className="category-title">OWNED FURNITURE</div>
 
               {ownedItems.length === 0 ? (
-                <div className="empty-state">
-                  <Hammer size={40} />
-                  <p>No furniture placed.</p>
+                <div className="editor-empty-container">
+                  <motion.div
+                    className="editor-empty-glow"
+                    initial={{ opacity: 0.3, scale: 0.9 }}
+                    animate={{ opacity: [0.3, 0.6, 0.3], scale: [0.9, 1, 0.9] }}
+                    transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+                  >
+                    <Hammer size={40} className="editor-empty-icon" />
+                  </motion.div>
+                  <h3 className="editor-empty-title">No Furniture Placed</h3>
+                  <p className="editor-empty-subtitle">Purchase furniture from the shop and place it in your home to see it here</p>
                 </div>
               ) : (
-                <div className="items-grid-scroll">
-                  <div className="items-grid">
-                    {ownedItems.map((item, idx) => {
-                      const ItemIcon = getItemIcon(item);
-                      return (
-                        <div
-                          key={idx}
-                          className={`item-card ${isPlacing ? (placingItem?.id === item.id ? 'is-placing' : 'disabled') : ''}`}
-                          onMouseEnter={() => !isPlacing && post('hoverOwnedItem', { entity: item.entity, id: item.id })}
-                          onMouseLeave={() => !isPlacing && post('unhoverOwnedItem')}
-                          onClick={() => handlePreview(item)}
-                        >
-                          <FurnitureImage item={item} ItemIcon={ItemIcon} />
-                          <button className="delete-icon-btn" disabled={isPlacing} onClick={(e) => {
-                            if (isPlacing) return;
-                            e.stopPropagation();
-                            post('unhoverOwnedItem');
-                            post('removeOwnedItem', item);
-                          }}>
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      );
-                    })}
+                <>
+                  <div className={`search-bar ${isPlacing ? 'disabled' : ''}`} style={{ opacity: isPlacing ? 0.5 : 1, pointerEvents: isPlacing ? 'none' : 'auto' }}>
+                    <Search size={16} className="search-icon" />
+                    <input
+                      placeholder="Search placed furniture..."
+                      value={searchQueryOwned}
+                      onChange={(e) => setSearchQueryOwned(e.target.value)}
+                      disabled={isPlacing}
+                    />
                   </div>
-                </div>
+
+                  <div className="editor-items-list-container">
+                    <div className="editor-items-list">
+                      <AnimatePresence mode="popLayout">
+                        {filteredOwnedItems.map((item, idx) => {
+                          const ItemIcon = getItemIcon(item);
+                          const isPlacingThisItem = placingItem?.id === item.id;
+                          return (
+                            <motion.div
+                              key={item.id || idx}
+                              className={`editor-list-item ${isPlacing ? (isPlacingThisItem ? 'is-placing' : 'disabled') : ''}`}
+                              initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, x: -50, scale: 0.95 }}
+                              transition={{ duration: 0.2 }}
+                              onMouseEnter={() => !isPlacing && post('hoverOwnedItem', { entity: item.entity, id: item.id })}
+                              onMouseLeave={() => !isPlacing && post('unhoverOwnedItem')}
+                            >
+                              <div className="editor-item-preview">
+                                <FurnitureImage item={item} ItemIcon={ItemIcon} />
+                              </div>
+                              <div className="editor-item-details">
+                                <span className="editor-item-name">{item.label}</span>
+                                <span className="editor-item-meta">{item.model || 'Furniture'}</span>
+                                <div className="editor-item-actions">
+                                  <button
+                                    className="editor-move-btn"
+                                    disabled={isPlacing}
+                                    onClick={() => handlePreview(item)}
+                                    title="Move / Reposition"
+                                  >
+                                    <Move size={12} />
+                                    <span>MOVE</span>
+                                  </button>
+                                  <button
+                                    className="editor-remove-btn"
+                                    disabled={isPlacing}
+                                    onClick={(e) => {
+                                      if (isPlacing) return;
+                                      e.stopPropagation();
+                                      post('unhoverOwnedItem');
+                                      post('removeOwnedItem', item);
+                                    }}
+                                    title="Pack Up"
+                                  >
+                                    <Trash2 size={12} />
+                                    <span>PACK UP</span>
+                                  </button>
+                                </div>
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           )}

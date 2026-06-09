@@ -260,6 +260,32 @@ lib.callback.register('LNS_Housing:server:updateListingDetails', function(source
     p.label = data.label or p.label
     p.price = tonumber(data.price) or p.price
     p.sale_type = data.sale_type or p.sale_type
+    p.image = data.image
+    p.zone_data = data.zone_data or p.zone_data
+    p.yard_zone_data = data.yard_zone_data or p.yard_zone_data
+
+    if not p.metadata then p.metadata = {} end
+    p.metadata.shell = data.mlo and 'mlo' or (data.shell or p.metadata.shell or 'Standard Motel')
+    p.metadata.allow_wall_colors = data.allowWallColors or false
+
+    if data.entranceType == 'coords' then
+        p.metadata.entrance = data.entranceCoords
+        if p.metadata.locked == nil then
+            p.metadata.locked = true
+        end
+        p.doors = {}
+        if data.entranceCoords then
+            p.metadata.spawn = {
+                x = data.entranceCoords.x,
+                y = data.entranceCoords.y,
+                z = data.entranceCoords.z,
+                h = data.entranceCoords.h or 0.0
+            }
+        end
+    else
+        p.metadata.entrance = nil
+        p.doors = data.doors or p.doors
+    end
 
     if p.sale_type == 'auction' then
         if not p.auction_data then

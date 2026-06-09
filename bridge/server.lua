@@ -127,6 +127,14 @@ function Bridge.Server.CreateUseableItem(name, callback)
     end
 end
 
+function Bridge.Server.Logout(source)
+    if Bridge.Framework == 'qbx' then
+        exports.qbx_core:Logout(source)
+    elseif Bridge.Framework == 'esx' then
+        TriggerEvent('esx:playerLogout', source)
+    end
+end
+
 function Bridge.Server.GetBankMoney(source)
     if Bridge.Framework == 'qbx' then
         return exports.qbx_core:GetMoney(source, 'bank') or 0
@@ -283,7 +291,7 @@ function Bridge.Server.RegisterPropertyStashes(propertyId, furnitureList)
     if not furnitureList then return end
     for _, f in ipairs(furnitureList) do
         local itemData = nil
-        for _, cat in ipairs(Furniture.Furniture) do
+        for _, cat in ipairs(Furniture) do
             for _, item in ipairs(cat.items) do
                 if (tonumber(item.model) or GetHashKey(item.model)) == (tonumber(f.model) or GetHashKey(f.model)) then
                     itemData = item

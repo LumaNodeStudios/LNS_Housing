@@ -33,6 +33,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         type: 'Residential',
         price: 150000,
         mlo: true,
+        shell: 'mlo',
         slots: 2,
         allowWallColors: true,
         saleType: 'direct',
@@ -40,7 +41,9 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         zone_data: null,
         yard_zone_data: null,
         hasYard: false,
-        image: null
+        image: null,
+        entranceType: 'door',
+        entranceCoords: null
     });
 
     const [draftData, setDraftData] = useState({
@@ -185,13 +188,15 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         setActiveTab('browse');
     };
 
-    const handleStartEdit = (p) => {
+     const handleStartEdit = (p) => {
         setEditingPropertyId(p.id);
+        const hasEntranceCoords = !!(p.metadata && p.metadata.entrance);
         setFormData({
             name: p.label || 'New Property',
             type: p.type || 'Residential',
             price: p.price || 150000,
-            mlo: true,
+            mlo: !p.metadata || !p.metadata.shell || p.metadata.shell === 'mlo',
+            shell: p.metadata && p.metadata.shell ? p.metadata.shell : 'mlo',
             slots: p.garage || 2,
             allowWallColors: p.allowWallColors !== false,
             saleType: p.sale_type || 'direct',
@@ -199,7 +204,9 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             zone_data: p.zone_data || null,
             yard_zone_data: p.yard_zone_data || null,
             hasYard: !!p.hasYard,
-            image: p.image || null
+            image: p.image || null,
+            entranceType: hasEntranceCoords ? 'coords' : 'door',
+            entranceCoords: p.metadata && p.metadata.entrance ? p.metadata.entrance : null
         });
         setActiveTab('creator');
     };
@@ -221,11 +228,15 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 type: formData.type,
                 slots: formData.slots,
                 allowWallColors: formData.allowWallColors,
+                mlo: formData.mlo,
+                shell: formData.shell,
                 doors: formData.doors,
                 zone_data: formData.zone_data,
                 yard_zone_data: formData.yard_zone_data,
                 hasYard: formData.hasYard,
-                image: formData.image
+                image: formData.image,
+                entranceType: formData.entranceType,
+                entranceCoords: formData.entranceCoords
             })
         }).then(() => {
             setEditingPropertyId(null);
@@ -438,12 +449,26 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             });
     };
 
+    const handlePickEntranceCoords = () => {
+        fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/pickEntranceCoords`, {
+            method: 'POST',
+            body: JSON.stringify({})
+        })
+            .then(resp => resp.json())
+            .then(coords => {
+                if (coords) {
+                    setFormData(prev => ({ ...prev, entranceCoords: coords }));
+                }
+            });
+    };
+
     const resetCreatorForm = () => {
         setFormData({
             name: 'New Property',
             type: 'Residential',
             price: 150000,
             mlo: true,
+            shell: 'mlo',
             slots: 2,
             allowWallColors: true,
             saleType: 'direct',
@@ -451,7 +476,9 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             zone_data: null,
             yard_zone_data: null,
             hasYard: false,
-            image: null
+            image: null,
+            entranceType: 'door',
+            entranceCoords: null
         });
         setEditingPropertyId(null);
         setActiveTab('browse');
@@ -994,6 +1021,70 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                     Technical Details & Options
                                 </div>
                                 <div className="re-creator-col" style={{ gap: '15px' }}>
+                                    <div className="re-creator-input-field" style={{ width: '100%' }}>
+                                        <label><Database size={14} /> Interior Type</label>
+                                        <select
+                                            name="mlo"
+                                            value={formData.mlo ? 'true' : 'false'}
+                                            onChange={(e) => {
+                                                const isMlo = e.target.value === 'true';
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    mlo: isMlo,
+                                                    shell: isMlo ? 'mlo' : 'Standard Motel'
+                                                }));
+                                            }}
+                                            style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
+                                        >
+                                            <option value="true">MLO (Physical Map Interior)</option>
+                                            <option value="false">Shell (Instanced Interior)</option>
+                                        </select>
+                                    </div>
+
+                                    {!formData.mlo && (
+                                        <>
+                                            <div className="re-creator-input-field" style={{ width: '100%' }}>
+                                                <label><Database size={14} /> Shell Model</label>
+                                                <select
+                                                    name="shell"
+                                                    value={formData.shell || 'Standard Motel'}
+                                                    onChange={(e) => setFormData(prev => ({ ...prev, shell: e.target.value }))}
+                                                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
+                                                >
+                                                    <option value="Standard Motel">Standard Motel</option>
+                                                    <option value="Modern Hotel">Modern Hotel</option>
+                                                    <option value="Apartment Furnished">Apartment Furnished</option>
+                                                    <option value="Apartment Unfurnished">Apartment Unfurnished</option>
+                                                    <option value="Apartment 2 Unfurnished">Apartment 2 Unfurnished</option>
+                                                    <option value="Garage">Garage</option>
+                                                    <option value="Office">Office</option>
+                                                    <option value="Store">Store</option>
+                                                    <option value="Warehouse">Warehouse</option>
+                                                    <option value="Container">Container</option>
+                                                    <option value="2 Floor House">2 Floor House</option>
+                                                    <option value="House 1">House 1</option>
+                                                    <option value="House 2">House 2</option>
+                                                    <option value="House 3">House 3</option>
+                                                    <option value="House 4">House 4</option>
+                                                    <option value="Trailer">Trailer</option>
+                                                </select>
+                                            </div>
+
+                                            <div className="re-creator-input-field" style={{ width: '100%' }}>
+                                                <label><Database size={14} /> Entrance Type</label>
+                                                <select
+                                                    name="entranceType"
+                                                    value={formData.entranceType || 'door'}
+                                                    onChange={(e) => setFormData(prev => ({ ...prev, entranceType: e.target.value }))}
+                                                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
+                                                >
+                                                    <option value="door">Physical Door (ox_doorlock)</option>
+                                                    <option value="coords">Standing Coordinates</option>
+                                                </select>
+                                            </div>
+                                        </>
+                                    )}
+
                                     <div className="re-creator-checkbox-field">
                                         <div className="re-creator-checkbox-info">
                                             <span className="re-creator-checkbox-label">Allow Wall Colors</span>
@@ -1006,18 +1097,20 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                             onChange={handleInputChange}
                                         />
                                     </div>
-                                    <div className="re-creator-checkbox-field">
-                                        <div className="re-creator-checkbox-info">
-                                            <span className="re-creator-checkbox-label">Has Outside Yard</span>
-                                            <span className="re-creator-checkbox-desc">Enables an interactive lawn/yard area that grows grass.</span>
+                                    {formData.mlo && (
+                                        <div className="re-creator-checkbox-field">
+                                            <div className="re-creator-checkbox-info">
+                                                <span className="re-creator-checkbox-label">Has Outside Yard</span>
+                                                <span className="re-creator-checkbox-desc">Enables an interactive lawn/yard area that grows grass.</span>
+                                            </div>
+                                            <input
+                                                type="checkbox"
+                                                name="hasYard"
+                                                checked={formData.hasYard}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, hasYard: e.target.checked }))}
+                                            />
                                         </div>
-                                        <input
-                                            type="checkbox"
-                                            name="hasYard"
-                                            checked={formData.hasYard}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, hasYard: e.target.checked }))}
-                                        />
-                                    </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -1049,61 +1142,79 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                     Interactive Setup
                                 </div>
                                 <div className="re-creator-col" style={{ gap: '12px' }}>
-                                    <div className="re-interactive-row">
-                                        <div className="re-interactive-info">
-                                            <span className="re-interactive-label">Property Zone</span>
-                                            <span className={`re-interactive-status ${formData.zone_data ? 'active' : ''}`}>
-                                                {formData.zone_data ? 'Zone Defined' : 'Not Defined'}
-                                            </span>
-                                        </div>
-                                        <button className="re-btn-action" onClick={handleCreateZone}>
-                                            {formData.zone_data ? 'Redefine' : 'Define'}
-                                        </button>
-                                    </div>
+                                    {formData.mlo && (
+                                        <>
+                                            <div className="re-interactive-row">
+                                                <div className="re-interactive-info">
+                                                    <span className="re-interactive-label">Property Zone</span>
+                                                    <span className={`re-interactive-status ${formData.zone_data ? 'active' : ''}`}>
+                                                        {formData.zone_data ? 'Zone Defined' : 'Not Defined'}
+                                                    </span>
+                                                </div>
+                                                <button className="re-btn-action" onClick={handleCreateZone}>
+                                                    {formData.zone_data ? 'Redefine' : 'Define'}
+                                                </button>
+                                            </div>
 
-                                    {formData.hasYard && (
-                                        <div className="re-interactive-row">
+                                            {formData.hasYard && (
+                                                <div className="re-interactive-row">
+                                                    <div className="re-interactive-info">
+                                                        <span className="re-interactive-label">Outside Yard Zone</span>
+                                                        <span className={`re-interactive-status ${formData.yard_zone_data ? 'active' : ''}`}>
+                                                            {formData.yard_zone_data ? 'Yard Zone Defined' : 'Not Defined'}
+                                                        </span>
+                                                    </div>
+                                                    <button className="re-btn-action" onClick={handleCreateYardZone}>
+                                                        {formData.yard_zone_data ? 'Redefine' : 'Define'}
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+
+                                    {(formData.mlo || formData.entranceType === 'door') ? (
+                                        <div className="re-creator-input-field" style={{ marginTop: '5px' }}>
+                                            <label><Database size={14} /> Property Doors (ox_doorlock)</label>
+                                            <div className="re-doors-list">
+                                                {formData.doors.length === 0 ? (
+                                                    <span className="no-doors" style={{ margin: 'auto' }}>No doors added yet. Use the picker below.</span>
+                                                ) : (
+                                                    formData.doors.map((door, index) => (
+                                                        <div key={index} className="door-tag">
+                                                            <span>{typeof door === 'object' ? `New Door (${Math.floor(door.coords.x)}, ${Math.floor(door.coords.y)})` : `ID: ${door}`}</span>
+                                                            <button
+                                                                className="remove-door-btn"
+                                                                type="button"
+                                                                onClick={() => setFormData(prev => ({ ...prev, doors: prev.doors.filter(d => d !== door) }))}
+                                                            >
+                                                                <X size={12} />
+                                                            </button>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                            <button
+                                                className="re-btn-primary"
+                                                style={{ marginTop: '5px' }}
+                                                type="button"
+                                                onClick={() => fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/pickDoor`)}
+                                            >
+                                                <Plus size={14} /> Pick Nearby Door
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="re-interactive-row" style={{ marginTop: '5px' }}>
                                             <div className="re-interactive-info">
-                                                <span className="re-interactive-label">Outside Yard Zone</span>
-                                                <span className={`re-interactive-status ${formData.yard_zone_data ? 'active' : ''}`}>
-                                                    {formData.yard_zone_data ? 'Yard Zone Defined' : 'Not Defined'}
+                                                <span className="re-interactive-label">Entrance Coordinates</span>
+                                                <span className={`re-interactive-status ${formData.entranceCoords ? 'active' : ''}`}>
+                                                    {formData.entranceCoords ? `(${Math.floor(formData.entranceCoords.x)}, ${Math.floor(formData.entranceCoords.y)}, ${Math.floor(formData.entranceCoords.z)})` : 'Not Selected'}
                                                 </span>
                                             </div>
-                                            <button className="re-btn-action" onClick={handleCreateYardZone}>
-                                                {formData.yard_zone_data ? 'Redefine' : 'Define'}
+                                            <button className="re-btn-action" type="button" onClick={handlePickEntranceCoords}>
+                                                {formData.entranceCoords ? 'Reselect Location' : 'Set Standing Location'}
                                             </button>
                                         </div>
                                     )}
-
-                                    <div className="re-creator-input-field" style={{ marginTop: '5px' }}>
-                                        <label><Database size={14} /> Property Doors (ox_doorlock)</label>
-                                        <div className="re-doors-list">
-                                            {formData.doors.length === 0 ? (
-                                                <span className="no-doors" style={{ margin: 'auto' }}>No doors added yet. Use the picker below.</span>
-                                            ) : (
-                                                formData.doors.map((door, index) => (
-                                                    <div key={index} className="door-tag">
-                                                        <span>{typeof door === 'object' ? `New Door (${Math.floor(door.coords.x)}, ${Math.floor(door.coords.y)})` : `ID: ${door}`}</span>
-                                                        <button
-                                                            className="remove-door-btn"
-                                                            type="button"
-                                                            onClick={() => setFormData(prev => ({ ...prev, doors: prev.doors.filter(d => d !== door) }))}
-                                                        >
-                                                            <X size={12} />
-                                                        </button>
-                                                    </div>
-                                                ))
-                                            )}
-                                        </div>
-                                        <button
-                                            className="re-btn-primary"
-                                            style={{ marginTop: '5px' }}
-                                            type="button"
-                                            onClick={() => fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/pickDoor`)}
-                                        >
-                                            <Plus size={14} /> Pick Nearby Door
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
 

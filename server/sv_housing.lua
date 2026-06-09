@@ -186,6 +186,20 @@ RegisterNetEvent('LNS_Housing:server:policeRaidDoor', function(propertyId, prope
         TemporaryAccess.doors[propertyId][identifier] = true
 
         Bridge.Server.Notify(src, 'Door breached successfully!', 'success')
+    else
+        -- Coordinate entrance!
+        local p = Properties[propertyId]
+        if p and p.metadata and p.metadata.entrance then
+            p.metadata.locked = false
+            SaveProperty(propertyId)
+
+            local identifier = GetIdentifier(src)
+            if not TemporaryAccess.doors[propertyId] then TemporaryAccess.doors[propertyId] = {} end
+            TemporaryAccess.doors[propertyId][identifier] = true
+
+            TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
+            Bridge.Server.Notify(src, 'Door breached successfully!', 'success')
+        end
     end
 end)
 
@@ -268,4 +282,41 @@ CreateThread(function()
             end
         end
     end
+end)
+
+RegisterNetEvent('LNS_Housing:server:toggleLock', function(propertyId)
+    local src = source
+    local p = Properties[propertyId]
+    if not p then return end
+
+    -- Verify access (owner or manager)
+    local hasAccess = false
+    local identifier = GetIdentifier(src)
+    
+    if p.owner == identifier then
+        hasAccess = true
+    elseif p.permissions and p.permissions.manage then
+        for _, cid in ipairs(p.permissions.manage) do
+            if cid == identifier then
+                hasAccess = true
+                break
+            end
+        end
+    end
+
+    if not hasAccess then
+        Bridge.Server.Notify(src, 'You do not have key access to lock/unlock this property.', 'error')
+        return
+    end
+
+    if p.metadata.locked == nil then
+        p.metadata.locked = true
+    end
+
+    p.metadata.locked = not p.metadata.locked
+    SaveProperty(propertyId)
+    TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
+
+    local state = p.metadata.locked and 'locked' or 'unlocked'
+    Bridge.Server.Notify(src, 'Property is now ' .. state .. '.', 'success')
 end)

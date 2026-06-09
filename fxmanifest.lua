@@ -10,13 +10,15 @@ ui_page 'web/dist/index.html'
 
 files {
     'web/dist/index.html',
-    'web/dist/**/*'
+    'web/dist/**/*',
+    'stream/[Shells]/*.ytyp'
 }
 
 shared_scripts {
     '@ox_lib/init.lua',
     'shared/furniture.lua',
     'shared/settings.lua',
+    'shared/sv_settings.lua',
     'bridge/shared.lua'
 }
 
@@ -48,5 +50,16 @@ server_scripts {
 }
 
 dependencies {
-    'screenshot-basic'
+    'screencapture'
 }
+
+data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/starter_shells_k4mb1.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_aqua.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_black.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_green.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_grey.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_purple.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_red.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_wall.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_white.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_yellow.ytyp'

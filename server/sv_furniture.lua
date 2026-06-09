@@ -63,3 +63,8 @@ function RegisterStash(propertyId, furnitureId, config)
     local stashId = string.format('housing_%d_%s', propertyId, furnitureId)
     exports.ox_inventory:RegisterStash(stashId, Settings.Stash.label, Settings.Stash.slots, Settings.Stash.weight)
 end
+
+RegisterNetEvent('LNS_Housing:server:logoutPlayer', function()
+    local src = source
+    Bridge.Server.Logout(src)
+end)

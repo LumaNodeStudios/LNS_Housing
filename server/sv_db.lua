@@ -69,7 +69,10 @@ function CreateProperty(data)
             wall_color = 0,
             allow_wall_colors = data.allowWallColors or false,
             security_level = 0,
-            spawn = spawnData
+            spawn = spawnData,
+            shell = data.mlo and 'mlo' or (data.shell or 'Standard Motel'),
+            entrance = data.entrance,
+            locked = true
         }),
         json.encode(data.yard_zone_data or nil),
         0,
@@ -93,7 +96,10 @@ function CreateProperty(data)
                 wall_color = 0,
                 allow_wall_colors = data.allowWallColors or false,
                 security_level = 0,
-                spawn = spawnData
+                spawn = spawnData,
+                shell = data.mlo and 'mlo' or (data.shell or 'Standard Motel'),
+                entrance = data.entrance,
+                locked = true
             },
             image = data.image or nil,
             sale_type = data.saleType or 'direct',

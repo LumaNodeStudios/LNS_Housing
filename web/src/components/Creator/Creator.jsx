@@ -9,12 +9,15 @@ const Creator = () => {
     type: 'Residential',
     price: 150000,
     mlo: true,
+    shell: 'mlo',
     slots: 2,
     allowWallColors: true,
     saleType: 'direct',
     doors: [],
     zone_data: null,
-    image: null
+    image: null,
+    entranceType: 'door',
+    entranceCoords: null
   });
 
   const handleClose = () => {
@@ -67,6 +70,19 @@ const Creator = () => {
       .then(url => {
         if (url) {
           setFormData(prev => ({ ...prev, image: url }));
+        }
+      });
+  };
+
+  const handlePickEntranceCoords = () => {
+    fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/pickEntranceCoords`, {
+      method: 'POST',
+      body: JSON.stringify({})
+    })
+      .then(resp => resp.json())
+      .then(coords => {
+        if (coords) {
+          setFormData(prev => ({ ...prev, entranceCoords: coords }));
         }
       });
   };
@@ -190,6 +206,66 @@ const Creator = () => {
         <div className="creator-section">
           <h3 className="section-subtitle">Technical Details</h3>
 
+          <div className="input-field" style={{ marginTop: '10px', marginBottom: '15px' }}>
+            <label><Database size={14} /> Interior Type</label>
+            <select
+              name="mlo"
+              value={formData.mlo ? 'true' : 'false'}
+              onChange={(e) => {
+                const isMlo = e.target.value === 'true';
+                setFormData(prev => ({
+                  ...prev,
+                  mlo: isMlo,
+                  shell: isMlo ? 'mlo' : 'Standard Motel'
+                }));
+              }}
+            >
+              <option value="true">MLO (Physical Map Interior)</option>
+              <option value="false">Shell (Instanced Interior)</option>
+            </select>
+          </div>
+
+          {!formData.mlo && (
+            <>
+              <div className="input-field" style={{ marginTop: '10px', marginBottom: '15px' }}>
+                <label><Database size={14} /> Shell Model</label>
+                <select
+                  name="shell"
+                  value={formData.shell || 'Standard Motel'}
+                  onChange={(e) => setFormData(prev => ({ ...prev, shell: e.target.value }))}
+                >
+                  <option value="Standard Motel">Standard Motel</option>
+                  <option value="Modern Hotel">Modern Hotel</option>
+                  <option value="Apartment Furnished">Apartment Furnished</option>
+                  <option value="Apartment Unfurnished">Apartment Unfurnished</option>
+                  <option value="Apartment 2 Unfurnished">Apartment 2 Unfurnished</option>
+                  <option value="Garage">Garage</option>
+                  <option value="Office">Office</option>
+                  <option value="Store">Store</option>
+                  <option value="Warehouse">Warehouse</option>
+                  <option value="Container">Container</option>
+                  <option value="2 Floor House">2 Floor House</option>
+                  <option value="House 1">House 1</option>
+                  <option value="House 2">House 2</option>
+                  <option value="House 3">House 3</option>
+                  <option value="House 4">House 4</option>
+                  <option value="Trailer">Trailer</option>
+                </select>
+              </div>
+
+              <div className="input-field" style={{ marginTop: '10px', marginBottom: '15px' }}>
+                <label><Database size={14} /> Entrance Type</label>
+                <select
+                  name="entranceType"
+                  value={formData.entranceType || 'door'}
+                  onChange={(e) => setFormData(prev => ({ ...prev, entranceType: e.target.value }))}
+                >
+                  <option value="door">Physical Door (ox_doorlock)</option>
+                  <option value="coords">Standing Coordinates</option>
+                </select>
+              </div>
+            </>
+          )}
 
           <div className="checkbox-field glass-heavy" style={{ marginTop: '10px' }}>
             <div className="checkbox-info">
@@ -204,75 +280,93 @@ const Creator = () => {
             />
           </div>
 
-          <div className="input-group" style={{ marginTop: '15px' }}>
-            <div className="input-field" style={{ width: '100%' }}>
-              <label><Database size={14} /> Property Doors (ox_doorlock)</label>
-              <div className="doors-list-container glass-heavy">
-                {formData.doors.length === 0 ? (
-                  <span className="no-doors">No doors added yet. Use "Pick Nearby" to add doors.</span>
-                ) : (
-                  <div className="doors-tags">
-                    {formData.doors.map((door, index) => (
-                      <div key={index} className="door-tag">
-                        <span>{typeof door === 'object' ? `New Door (${Math.floor(door.coords.x)}, ${Math.floor(door.coords.y)})` : `ID: ${door}`}</span>
-                        <button
-                          className="remove-door-btn"
-                          onClick={() => setFormData(prev => ({ ...prev, doors: prev.doors.filter(d => d !== door) }))}
-                        >
-                          <X size={12} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <button
-                className="pick-btn full-width"
-                style={{ marginTop: '10px' }}
-                onClick={() => fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/pickDoor`)}
-              >
-                <Plus size={14} /> Pick Nearby Door
-              </button>
-            </div>
-          </div>
-
-          <div className="input-field" style={{ marginTop: '15px' }}>
-            <label><MapPin size={14} /> Property Zone</label>
-            <div className="input-with-btn">
-              <div className={`zone-status ${formData.zone_data ? 'defined' : ''}`}>
-                {formData.zone_data ? 'Zone Defined' : 'Not Defined'}
-              </div>
-              <button className="pick-btn" onClick={handleCreateZone}>
-                {formData.zone_data ? 'Redefine Zone' : 'Define Zone'}
-              </button>
-            </div>
-          </div>
-
-          <div className="checkbox-field glass-heavy" style={{ marginTop: '15px' }}>
-            <div className="checkbox-info">
-              <span className="checkbox-label">Has Outside Yard</span>
-              <span className="checkbox-desc">Enables an interactive lawn/yard area that grows grass.</span>
-            </div>
-            <input
-              type="checkbox"
-              name="hasYard"
-              checked={formData.hasYard || false}
-              onChange={(e) => setFormData(prev => ({ ...prev, hasYard: e.target.checked }))}
-            />
-          </div>
-
-          {formData.hasYard && (
-            <div className="input-field" style={{ marginTop: '15px' }}>
-              <label><MapPin size={14} /> Outside Yard Zone</label>
-              <div className="input-with-btn">
-                <div className={`zone-status ${formData.yard_zone_data ? 'defined' : ''}`}>
-                  {formData.yard_zone_data ? 'Yard Zone Defined' : 'Not Defined'}
+          {(formData.mlo || formData.entranceType === 'door') ? (
+            <div className="input-group" style={{ marginTop: '15px' }}>
+              <div className="input-field" style={{ width: '100%' }}>
+                <label><Database size={14} /> Property Doors (ox_doorlock)</label>
+                <div className="doors-list-container glass-heavy">
+                  {formData.doors.length === 0 ? (
+                    <span className="no-doors">No doors added yet. Use "Pick Nearby" to add doors.</span>
+                  ) : (
+                    <div className="doors-tags">
+                      {formData.doors.map((door, index) => (
+                        <div key={index} className="door-tag">
+                          <span>{typeof door === 'object' ? `New Door (${Math.floor(door.coords.x)}, ${Math.floor(door.coords.y)})` : `ID: ${door}`}</span>
+                          <button
+                            className="remove-door-btn"
+                            onClick={() => setFormData(prev => ({ ...prev, doors: prev.doors.filter(d => d !== door) }))}
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <button className="pick-btn" onClick={handleCreateYardZone}>
-                  {formData.yard_zone_data ? 'Redefine Yard' : 'Define Yard'}
+                <button
+                  className="pick-btn full-width"
+                  style={{ marginTop: '10px' }}
+                  onClick={() => fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/pickDoor`)}
+                >
+                  <Plus size={14} /> Pick Nearby Door
                 </button>
               </div>
             </div>
+          ) : (
+            <div className="input-field" style={{ marginTop: '15px' }}>
+              <label><MapPin size={14} /> Entrance Location (Standing)</label>
+              <div className="input-with-btn">
+                <div className={`zone-status ${formData.entranceCoords ? 'defined' : ''}`}>
+                  {formData.entranceCoords ? `Coords Defined (${Math.floor(formData.entranceCoords.x)}, ${Math.floor(formData.entranceCoords.y)}, ${Math.floor(formData.entranceCoords.z)})` : 'Not Defined'}
+                </div>
+                <button className="pick-btn" onClick={handlePickEntranceCoords}>
+                  {formData.entranceCoords ? 'Redefine Location' : 'Set Standing Location'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {formData.mlo && (
+            <>
+              <div className="input-field" style={{ marginTop: '15px' }}>
+                <label><MapPin size={14} /> Property Zone</label>
+                <div className="input-with-btn">
+                  <div className={`zone-status ${formData.zone_data ? 'defined' : ''}`}>
+                    {formData.zone_data ? 'Zone Defined' : 'Not Defined'}
+                  </div>
+                  <button className="pick-btn" onClick={handleCreateZone}>
+                    {formData.zone_data ? 'Redefine Zone' : 'Define Zone'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="checkbox-field glass-heavy" style={{ marginTop: '15px' }}>
+                <div className="checkbox-info">
+                  <span className="checkbox-label">Has Outside Yard</span>
+                  <span className="checkbox-desc">Enables an interactive lawn/yard area that grows grass.</span>
+                </div>
+                <input
+                  type="checkbox"
+                  name="hasYard"
+                  checked={formData.hasYard || false}
+                  onChange={(e) => setFormData(prev => ({ ...prev, hasYard: e.target.checked }))}
+                />
+              </div>
+
+              {formData.hasYard && (
+                <div className="input-field" style={{ marginTop: '15px' }}>
+                  <label><MapPin size={14} /> Outside Yard Zone</label>
+                  <div className="input-with-btn">
+                    <div className={`zone-status ${formData.yard_zone_data ? 'defined' : ''}`}>
+                      {formData.yard_zone_data ? 'Yard Zone Defined' : 'Not Defined'}
+                    </div>
+                    <button className="pick-btn" onClick={handleCreateYardZone}>
+                      {formData.yard_zone_data ? 'Redefine Yard' : 'Define Yard'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
 

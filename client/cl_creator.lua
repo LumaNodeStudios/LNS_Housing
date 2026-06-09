@@ -24,6 +24,52 @@ RegisterNUICallback('pickDoor', function(_, cb)
     cb('ok')
 end)
 
+-- NUI Callback to pick a standing coordinate/heading for the entrance
+RegisterNUICallback('pickEntranceCoords', function(_, cb)
+    SendNUIMessage({ action = 'toggleVisibility', data = { visible = false } })
+    SetNuiFocus(false, false) -- Hide UI while picking
+    
+    Wait(500)
+    lib.showTextUI('[E] - Confirm standing location | [H] Cancel')
+    
+    local pickedCoords = nil
+    while true do
+        Wait(0)
+        local ped = cache.ped
+        local coords = GetEntityCoords(ped)
+        local heading = GetEntityHeading(ped)
+        
+        -- Draw marker on floor and arrow pointer
+        DrawMarker(1, coords.x, coords.y, coords.z - 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.2, 1.2, 0.2, 0, 255, 0, 100, false, false, 2, false, nil, nil, false)
+        DrawMarker(2, coords.x, coords.y, coords.z + 0.2, 0.0, 0.0, 0.0, 180.0, 0.0, 0.0, 0.3, 0.3, 0.3, 0, 255, 0, 150, true, true, 2, nil, nil, false)
+        
+        if IsDisabledControlJustPressed(0, 38) then -- E
+            pickedCoords = {
+                x = coords.x,
+                y = coords.y,
+                z = coords.z,
+                h = heading
+            }
+            break
+        end
+        
+        if IsDisabledControlJustPressed(0, 104) then -- H
+            break
+        end
+    end
+    
+    lib.hideTextUI()
+    SendNUIMessage({ action = 'toggleVisibility', data = { visible = true } })
+    SetNuiFocus(true, true) -- Show UI again
+    
+    if pickedCoords then
+        Bridge.Client.Notify('Entrance coordinates registered at standing location.', 'success')
+        cb(pickedCoords)
+    else
+        cb(nil)
+    end
+end)
+
 -- NUI Callback to trigger the zone creator
 RegisterNUICallback('createZone', function(_, cb)
     SendNUIMessage({ action = 'toggleVisibility', data = { visible = false } })
@@ -107,22 +153,18 @@ RegisterNUICallback('takePhoto', function(_, cb)
             if IsDisabledControlJustReleased(0, 191) then
                 uploading = true
 
-                exports['screenshot-basic']:requestScreenshotUpload(Settings.ImageUpload.Url, 'file', {
-                    headers = { ['Authorization'] = Settings.ImageUpload.Token }
-                }, function(data)
-                    local resp = json.decode(data)
+                lib.callback('LNS_Housing:server:uploadPhoto', false, function(url)
                     done = true
                     SetFollowPedCamViewMode(oldCamMode)
                     SendNUIMessage({ action = 'toggleVisibility', data = { visible = true } })
                     SetNuiFocus(true, true)
 
-                    if resp and resp.data and resp.data.url then
-                        cb(resp.data.url)
+                    if url then
+                        cb(url)
                         Bridge.Client.Notify('Photo uploaded successfully!', 'success')
                     else
                         cb(nil)
                         Bridge.Client.Notify('Failed to upload photo. Check console for errors.', 'error')
-                        print('^1[Housing] Photo upload failed: ' .. tostring(data) .. '^7')
                     end
                 end)
 

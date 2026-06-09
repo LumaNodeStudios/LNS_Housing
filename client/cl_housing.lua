@@ -1,8 +1,11 @@
 local Settings = lib.load('shared.settings')
 local Furniture = lib.load('shared.furniture')
 Properties = {}
+EntranceTargets = {}
 local CurrentProperty = nil
 local CurrentInterior = 0
+local PropertyBlips = {}
+local ClearPropertyBlips, UpdatePropertyBlips
 
 -- Open Creator UI
 RegisterCommand(Settings.Creator.Command, function(source, args, rawCommand)
@@ -190,7 +193,7 @@ function LoadFurnitures(propertyId)
         end
         -- Add target for storage items
         local itemData = nil
-        for _, cat in ipairs(Furniture.Furniture) do
+        for _, cat in ipairs(Furniture) do
             for _, item in ipairs(cat.items) do
                 if (tonumber(item.model) or GetHashKey(item.model)) == (tonumber(f.model) or GetHashKey(f.model)) then
                     itemData = item
@@ -277,6 +280,26 @@ function LoadFurnitures(propertyId)
             })
         end
 
+        if itemData and itemData.isLogout then
+            exports.ox_target:addLocalEntity(obj, {
+                {
+                    label = 'Logout',
+                    icon = 'fas fa-right-from-bracket',
+                    debug = Settings.Debug.Zones,
+                    onSelect = function()
+                        TriggerServerEvent('LNS_Housing:server:logoutPlayer')
+                    end,
+                    canInteract = function()
+                        if p.isApartment then
+                            return lib.callback.await('LNS_Housing:server:hasApartmentAccess', false, propertyId, 'entry')
+                        else
+                            return lib.callback.await('LNS_Housing:server:hasAccess', false, propertyId, 'entry')
+                        end
+                    end
+                }
+            })
+        end
+
         if itemData and itemData.id == 'lns_housing_panel' then
             exports.ox_target:addLocalEntity(obj, {
                 {
@@ -324,8 +347,36 @@ function RegisterPropertyZones(p)
     end
     if PropertyZones[p.id] then return end
     
+    if p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
+        -- Shell Property Zone
+        local doorCoords = GetEntranceCoords(p)
+        if doorCoords then
+            local shellCoords = vec3(doorCoords.x, doorCoords.y, doorCoords.z - 35.0)
+            PropertyZones[p.id] = lib.zones.box({
+                coords = shellCoords,
+                size = vec3(25.0, 25.0, 10.0),
+                debug = Settings.Debug.Zones,
+                onEnter = function()
+                    LoadFurnitures(p.id)
+                    if lib.callback.await('LNS_Housing:server:hasAccess', false, p.id, 'manage') then
+                        lib.addRadialItem({
+                            id = 'housing_furniture',
+                            icon = 'couch',
+                            label = 'Furniture Menu',
+                            onSelect = function()
+                                TriggerEvent('LNS_Housing:client:openFurnitureMenu', p.id)
+                            end
+                        })
+                    end
+                end,
+                onExit = function()
+                    UnloadFurnitures(p.id)
+                    lib.removeRadialItem('housing_furniture')
+                end
+            })
+        end
     -- If zone_data exists (Polyzone), use lib.zones
-    if p.zone_data and p.zone_data.points and #p.zone_data.points >= 3 then
+    elseif p.zone_data and p.zone_data.points and #p.zone_data.points >= 3 then
         local thickness = p.zone_data.thickness or 10.0
         local points = {}
         for i = 1, #p.zone_data.points do
@@ -385,152 +436,166 @@ function RegisterPropertyZones(p)
     end
 end
 
--- Sync properties from server and register zones (optimized unified initialization thread)
-CreateThread(function()
-    Properties = lib.callback.await('LNS_Housing:server:getProperties', false)
+function RegisterPropertyEntranceTargets(p)
+    if not p then return end
+    local id = p.id
     
-    if Properties then
-        -- 1. Register property zones
-        for id, p in pairs(Properties) do
-            RegisterPropertyZones(p)
-        end
+    -- Clean up existing entrance target if registered
+    if EntranceTargets[id] then
+        exports.ox_target:removeZone(EntranceTargets[id])
+        EntranceTargets[id] = nil
+    end
 
-        -- 2. Target integration for houses
-        Wait(1500) -- Wait briefly for doorlocks/targets to load
-        for id, p in pairs(Properties) do
-            local doorId = p.door_id
-            if (not doorId or doorId == 0) and p.doors and #p.doors > 0 then
-                doorId = p.doors[1]
-            end
+    local doorId = p.door_id
+    if (not doorId or doorId == 0) and p.doors and #p.doors > 0 then
+        doorId = p.doors[1]
+    end
 
-            if doorId and doorId ~= 0 then
-                local door = GetOxDoorlockDoor(doorId)
+    if doorId and doorId ~= 0 then
+        local door = GetOxDoorlockDoor(doorId)
 
-                if door and door.coords then
-                    local targetCoords, targetHeading = ResolveDoorTargetPlacement(door.model, door.coords, door.heading, door)
+        if door and door.coords then
+            local targetCoords, targetHeading = ResolveDoorTargetPlacement(door.model, door.coords, door.heading, door)
 
-                    if targetCoords then
-                    -- Register lockpick target for buyable houses
-                    if Settings.Debug and Settings.Debug.BuyHouses then
-                        exports.ox_target:addSphereZone({
-                            coords = targetCoords,
-                            radius = 1.2,
-                            debug = Settings.Debug.Zones,
-                            options = {
-                                {
-                                    label = 'Lockpick ' .. p.label,
-                                    icon = 'fas fa-mask',
-                                    items = Settings.Security.LockpickItem,
-                                    canInteract = function()
-                                        return Properties[id].owner and Properties[id].owner ~= Bridge.Client.GetIdentifier()
-                                    end,
-                                    onSelect = function()
-                                        LockpickDoor(id)
-                                    end
-                                }
-                            }
-                        })
-                    end
-
-                    -- Register Police Raid target
-                    exports.ox_target:addBoxZone({
+            if targetCoords then
+                local isShell = p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo'
+                if isShell then
+                    EntranceTargets[id] = exports.ox_target:addBoxZone({
                         coords = targetCoords,
-                        size = vec3(1.0, 1.5, 2.0),
+                        size = vec3(1.2, 1.5, 2.0),
                         rotation = targetHeading,
                         debug = Settings.Debug.Zones,
                         options = {
                             {
-                                label = 'Raid House',
-                                icon = 'fas fa-shield-halved',
-                                items = Settings.Security.RaidItem,
+                                label = 'Enter ' .. p.label,
+                                icon = 'fas fa-door-open',
                                 canInteract = function()
-                                    local job = Bridge.Client.GetPlayerJob()
-                                    return job and job.name == 'police'
+                                    local doorState = exports.ox_doorlock:getDoor(doorId).state
+                                    local isUnlocked = doorState == 0
+                                    if isUnlocked then return true end
+                                    return lib.callback.await('LNS_Housing:server:hasAccess', false, id, 'entry')
                                 end,
                                 onSelect = function()
-                                    StartPoliceRaid(id, 'house', doorId)
+                                    EnterShellProperty(id)
                                 end
                             }
                         }
                     })
-                    end
                 end
+
+                -- Register lockpick target for buyable houses
+                if Settings.Debug and Settings.Debug.BuyHouses then
+                    exports.ox_target:addSphereZone({
+                        coords = targetCoords,
+                        radius = 1.2,
+                        debug = Settings.Debug.Zones,
+                        options = {
+                            {
+                                label = 'Lockpick ' .. p.label,
+                                icon = 'fas fa-mask',
+                                items = Settings.Security.LockpickItem,
+                                canInteract = function()
+                                    return Properties[id].owner and Properties[id].owner ~= Bridge.Client.GetIdentifier()
+                                end,
+                                onSelect = function()
+                                    LockpickDoor(id)
+                                end
+                            }
+                        }
+                    })
+                end
+
+                -- Register Police Raid target
+                exports.ox_target:addBoxZone({
+                    coords = targetCoords,
+                    size = vec3(1.0, 1.5, 2.0),
+                    rotation = targetHeading,
+                    debug = Settings.Debug.Zones,
+                    options = {
+                        {
+                            label = 'Raid House',
+                            icon = 'fas fa-shield-halved',
+                            items = Settings.Security.RaidItem,
+                            canInteract = function()
+                                local job = Bridge.Client.GetPlayerJob()
+                                return job and job.name == 'police'
+                            end,
+                            onSelect = function()
+                                StartPoliceRaid(id, 'house', doorId)
+                            end
+                        }
+                    }
+                })
             end
         end
-    end
-end)
+    else
+        -- Coordinate based entrance target registration!
+        local isShell = p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo'
+        local entranceCoords = p.metadata and p.metadata.entrance
+        if isShell and entranceCoords then
+            local targetCoords = vec3(entranceCoords.x, entranceCoords.y, entranceCoords.z)
+            local targetHeading = entranceCoords.h or 0.0
 
--- Monitor interior changes only for wall colors now
-CreateThread(function()
-    while true do
-        local ped = cache.ped
-        local interiorId = GetInteriorFromEntity(ped)
-        
-        if interiorId ~= CurrentInterior then
-            CurrentInterior = interiorId
-            
-            if interiorId ~= 0 then
-                -- Check if this interior belongs to a property (for wall color)
-                for id, p in pairs(Properties) do
-                    local door = p.door_id and GetOxDoorlockDoor(p.door_id)
-                    if door and door.coords and #(GetEntityCoords(ped) - vec3(door.coords.x, door.coords.y, door.coords.z)) < 30.0 then
-                        if p.metadata and p.metadata.wall_color and p.metadata.allow_wall_colors then
-                            ApplyWallColor(interiorId, p.metadata.wall_color)
+            EntranceTargets[id] = exports.ox_target:addBoxZone({
+                coords = targetCoords,
+                size = vec3(1.5, 1.5, 2.0),
+                rotation = targetHeading,
+                debug = Settings.Debug.Zones,
+                options = {
+                    {
+                        label = 'Enter ' .. p.label,
+                        icon = 'fas fa-door-open',
+                        canInteract = function()
+                            local isLocked = p.metadata.locked ~= false
+                            if not isLocked then return true end
+                            return lib.callback.await('LNS_Housing:server:hasAccess', false, id, 'entry')
+                        end,
+                        onSelect = function()
+                            EnterShellProperty(id)
                         end
-                        break
-                    end
-                end
-            end
-        end
-        Wait(2000)
-    end
-end)
-
-RegisterNetEvent('LNS_Housing:client:updateFurniture', function(propertyId, furniture)
-    if Properties[propertyId] then
-        Properties[propertyId].furniture = furniture
-        
-        -- If the furniture is currently loaded (meaning we are inside/near the property), refresh it
-        if LoadedFurniture[propertyId] then
-            UnloadFurnitures(propertyId)
-            LoadFurnitures(propertyId)
-            
-            if Modeler and Modeler.IsMenuActive and Modeler.property_id == propertyId then
-                Modeler:UpdateOwnedItems()
-            end
-        end
-    end
-end)
-
-RegisterNetEvent('LNS_Housing:client:updateProperties', function(allProperties)
-    -- Update in-place to keep references for closures
-    for k, v in pairs(allProperties) do
-        local isNew = Properties[k] == nil
-        Properties[k] = v
-        if isNew then
-            RegisterPropertyZones(v)
-        else
-            if ActiveYardPropertyId == k and RefreshYardGrass then
-                RefreshYardGrass(k)
-            end
-        end
-    end
-    -- Remove deleted properties if any
-    for k, v in pairs(Properties) do
-        if not allProperties[k] then
-            Properties[k] = nil
+                    },
+                    {
+                        label = 'Lock/Unlock ' .. p.label,
+                        icon = 'fas fa-key',
+                        canInteract = function()
+                            return lib.callback.await('LNS_Housing:server:hasAccess', false, id, 'manage')
+                        end,
+                        onSelect = function()
+                            TriggerServerEvent('LNS_Housing:server:toggleLock', id)
+                        end
+                    },
+                    {
+                        label = 'Lockpick ' .. p.label,
+                        icon = 'fas fa-mask',
+                        items = Settings.Security.LockpickItem,
+                        canInteract = function()
+                            local isLocked = p.metadata.locked ~= false
+                            if not isLocked then return false end
+                            return Properties[id].owner and Properties[id].owner ~= Bridge.Client.GetIdentifier()
+                        end,
+                        onSelect = function()
+                            LockpickDoor(id)
+                        end
+                    },
+                    {
+                        label = 'Raid House',
+                        icon = 'fas fa-shield-halved',
+                        items = Settings.Security.RaidItem,
+                        canInteract = function()
+                            local job = Bridge.Client.GetPlayerJob()
+                            return job and job.name == 'police'
+                        end,
+                        onSelect = function()
+                            StartPoliceRaid(id, 'house', nil)
+                        end
+                    }
+                }
+            })
         end
     end
+end
 
-    SendNUIMessage({
-        action = 'updateProperties',
-        data = Properties
-    })
-end)
-
-AddEventHandler('onResourceStop', function(resourceName)
-    if GetCurrentResourceName() ~= resourceName then return end
-
+function CleanUpHousingSession()
     -- Hide any active TextUI
     lib.hideTextUI()
 
@@ -590,6 +655,163 @@ AddEventHandler('onResourceStop', function(resourceName)
     if CleanUpLawn then
         CleanUpLawn()
     end
+
+    -- Clean up spawned shells
+    for propertyId, entity in pairs(SpawnedShells) do
+        if DoesEntityExist(entity) then
+            DeleteEntity(entity)
+        end
+    end
+    SpawnedShells = {}
+
+    for propertyId, targetId in pairs(ExitTargets) do
+        exports.ox_target:removeZone(targetId)
+    end
+    ExitTargets = {}
+
+    for propertyId, targetId in pairs(EntranceTargets) do
+        exports.ox_target:removeZone(targetId)
+    end
+    EntranceTargets = {}
+
+    ClearPropertyBlips()
+
+    Properties = {}
+    CurrentProperty = nil
+    CurrentInterior = 0
+end
+
+function InitializeHousing()
+    -- Clean up first to prevent duplicates
+    CleanUpHousingSession()
+
+    Properties = lib.callback.await('LNS_Housing:server:getProperties', false)
+    
+    if Properties then
+        UpdatePropertyBlips()
+
+        -- 1. Register property zones
+        for id, p in pairs(Properties) do
+            RegisterPropertyZones(p)
+        end
+
+        -- 2. Target integration for houses
+        Wait(1500) -- Wait briefly for doorlocks/targets to load
+        for id, p in pairs(Properties) do
+            RegisterPropertyEntranceTargets(p)
+        end
+    end
+end
+
+-- Sync properties from server and register zones (optimized unified initialization thread)
+CreateThread(function()
+    while not NetworkIsPlayerActive(PlayerId()) do
+        Wait(100)
+    end
+    Wait(1000)
+
+    local hasIdentifier = Bridge.Client.GetIdentifier()
+    if hasIdentifier then
+        InitializeHousing()
+    end
+end)
+
+-- Framework Event Handlers for Player Load / Unload
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    InitializeHousing()
+end)
+
+RegisterNetEvent('esx:playerLoaded', function(xPlayer)
+    InitializeHousing()
+end)
+
+RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
+    CleanUpHousingSession()
+end)
+
+RegisterNetEvent('esx:onPlayerLogout', function()
+    CleanUpHousingSession()
+end)
+
+-- Monitor interior changes only for wall colors now
+CreateThread(function()
+    while true do
+        local ped = cache.ped
+        local interiorId = GetInteriorFromEntity(ped)
+        
+        if interiorId ~= CurrentInterior then
+            CurrentInterior = interiorId
+            
+            if interiorId ~= 0 then
+                -- Check if this interior belongs to a property (for wall color)
+                for id, p in pairs(Properties) do
+                    local door = p.door_id and GetOxDoorlockDoor(p.door_id)
+                    if door and door.coords and #(GetEntityCoords(ped) - vec3(door.coords.x, door.coords.y, door.coords.z)) < 30.0 then
+                        if p.metadata and p.metadata.wall_color and p.metadata.allow_wall_colors then
+                            ApplyWallColor(interiorId, p.metadata.wall_color)
+                        end
+                        break
+                    end
+                end
+            end
+        end
+        Wait(2000)
+    end
+end)
+
+RegisterNetEvent('LNS_Housing:client:updateFurniture', function(propertyId, furniture)
+    if Properties[propertyId] then
+        Properties[propertyId].furniture = furniture
+        
+        -- If the furniture is currently loaded (meaning we are inside/near the property), refresh it
+        if LoadedFurniture[propertyId] then
+            UnloadFurnitures(propertyId)
+            LoadFurnitures(propertyId)
+            
+            if Modeler and Modeler.IsMenuActive and Modeler.property_id == propertyId then
+                Modeler:UpdateOwnedItems()
+            end
+        end
+    end
+end)
+
+RegisterNetEvent('LNS_Housing:client:updateProperties', function(allProperties)
+    -- Update in-place to keep references for closures
+    for k, v in pairs(allProperties) do
+        local isNew = Properties[k] == nil
+        Properties[k] = v
+        if isNew then
+            RegisterPropertyZones(v)
+            RegisterPropertyEntranceTargets(v)
+        else
+            RegisterPropertyEntranceTargets(v)
+            if ActiveYardPropertyId == k and RefreshYardGrass then
+                RefreshYardGrass(k)
+            end
+        end
+    end
+    -- Remove deleted properties if any
+    for k, v in pairs(Properties) do
+        if not allProperties[k] then
+            if EntranceTargets[k] then
+                exports.ox_target:removeZone(EntranceTargets[k])
+                EntranceTargets[k] = nil
+            end
+            Properties[k] = nil
+        end
+    end
+
+    UpdatePropertyBlips()
+
+    SendNUIMessage({
+        action = 'updateProperties',
+        data = Properties
+    })
+end)
+
+AddEventHandler('onResourceStop', function(resourceName)
+    if GetCurrentResourceName() ~= resourceName then return end
+    CleanUpHousingSession()
 end)
 
 
@@ -633,4 +855,208 @@ function StartPoliceStashRaid(propertyId, stashId)
     else
         Bridge.Client.Notify('Breaching cancelled.', 'error')
     end
+end
+
+-- Shell Spawning and Entrance/Exit Mechanics
+SpawnedShells = {}
+ExitTargets = {}
+
+function GetEntranceCoords(p)
+    if not p then return nil end
+
+    if p.metadata and p.metadata.entrance then
+        local ent = p.metadata.entrance
+        return vec3(ent.x, ent.y, ent.z)
+    end
+
+    local doorId = p.door_id
+    if (not doorId or doorId == 0) and p.doors and #p.doors > 0 then
+        doorId = p.doors[1]
+    end
+
+    if doorId and doorId ~= 0 then
+        local door = GetOxDoorlockDoor(doorId)
+        if door and door.coords then
+            return vec3(door.coords.x, door.coords.y, door.coords.z)
+        end
+    end
+
+    if p.zone_data and p.zone_data.points and #p.zone_data.points > 0 then
+        local sumX, sumY, sumZ = 0, 0, 0
+        local count = #p.zone_data.points
+        for _, pt in ipairs(p.zone_data.points) do
+            sumX = sumX + pt.x
+            sumY = sumY + pt.y
+            sumZ = sumZ + pt.z
+        end
+        return vec3(sumX / count, sumY / count, sumZ / count)
+    end
+
+    return nil
+end
+
+function ClearPropertyBlips()
+    for id, blip in pairs(PropertyBlips) do
+        if DoesBlipExist(blip) then
+            RemoveBlip(blip)
+        end
+    end
+    PropertyBlips = {}
+end
+
+function UpdatePropertyBlips()
+    ClearPropertyBlips()
+
+    if not Settings.Blips then return end
+
+    local playerIdentifier = Bridge.Client.GetIdentifier()
+
+    for id, p in pairs(Properties) do
+        if not p.isApartment then
+            local entranceCoords = GetEntranceCoords(p)
+            if entranceCoords then
+                local isOwned = p.owner ~= nil and p.owner ~= false and p.owner ~= ""
+                local isMyOwned = isOwned and (p.owner == playerIdentifier)
+                
+                local blipConfig = nil
+                if isOwned then
+                    blipConfig = Settings.Blips.Owned
+                else
+                    blipConfig = Settings.Blips.ReadyToBuy
+                end
+
+                if blipConfig and blipConfig.Enabled then
+                    if not isOwned or not blipConfig.ShowOnlyMyOwned or isMyOwned then
+                        local blip = AddBlipForCoord(entranceCoords.x, entranceCoords.y, entranceCoords.z)
+                        SetBlipSprite(blip, blipConfig.Sprite)
+                        SetBlipDisplay(blip, 4)
+                        SetBlipScale(blip, blipConfig.Scale)
+                        SetBlipColour(blip, blipConfig.Color)
+                        SetBlipAsShortRange(blip, true)
+                        
+                        local blipLabel = p.label
+                        if blipConfig.Label and blipConfig.Label ~= "" then
+                            blipLabel = string.format("%s - %s", blipConfig.Label, p.label)
+                        end
+
+                        BeginTextCommandSetBlipName("STRING")
+                        AddTextComponentString(blipLabel)
+                        EndTextCommandSetBlipName(blip)
+
+                        PropertyBlips[id] = blip
+                    end
+                end
+            end
+        end
+    end
+end
+
+function SpawnShellForProperty(propertyId, shellName, shellCoords)
+    local shellData = Settings.Shells[shellName]
+    if not shellData then return nil end
+
+    local shellEntity = SpawnedShells[propertyId]
+    if not shellEntity or not DoesEntityExist(shellEntity) then
+        local shellHash = tonumber(shellData.hash) or GetHashKey(shellData.hash)
+        lib.requestModel(shellHash)
+        shellEntity = CreateObjectNoOffset(shellHash, shellCoords.x, shellCoords.y, shellCoords.z, false, false, false)
+        FreezeEntityPosition(shellEntity, true)
+        SetEntityRotation(shellEntity, 0.0, 0.0, 0.0, 2, true)
+        SpawnedShells[propertyId] = shellEntity
+    end
+
+    local doorOffset = shellData.doorOffset
+    local spawnCoords = GetOffsetFromEntityInWorldCoords(shellEntity, doorOffset.x, doorOffset.y, doorOffset.z)
+    local heading = doorOffset.h or 0.0
+
+    if not ExitTargets[propertyId] then
+        local options = {
+            {
+                label = 'Exit Property',
+                icon = 'fas fa-door-closed',
+                onSelect = function()
+                    LeaveShellProperty(propertyId)
+                end
+            }
+        }
+
+        local p = Properties[propertyId]
+        if p and p.metadata and p.metadata.entrance then
+            table.insert(options, {
+                label = 'Lock/Unlock Property',
+                icon = 'fas fa-key',
+                canInteract = function()
+                    return lib.callback.await('LNS_Housing:server:hasAccess', false, propertyId, 'manage')
+                end,
+                onSelect = function()
+                    TriggerServerEvent('LNS_Housing:server:toggleLock', propertyId)
+                end
+            })
+        end
+
+        ExitTargets[propertyId] = exports.ox_target:addBoxZone({
+            coords = spawnCoords,
+            size = vec3(1.2, 1.5, 2.0),
+            rotation = heading,
+            debug = Settings.Debug.Zones,
+            options = options
+        })
+    end
+
+    return shellEntity, spawnCoords, heading
+end
+
+function EnterShellProperty(propertyId)
+    local p = Properties[propertyId]
+    if not p then return end
+
+    local shellName = p.metadata.shell or 'Standard Motel'
+    local doorCoords = GetEntranceCoords(p)
+    if not doorCoords then
+        Bridge.Client.Notify('Entrance coordinates not found!', 'error')
+        return
+    end
+
+    local shellCoords = vec3(doorCoords.x, doorCoords.y, doorCoords.z - 35.0)
+
+    DoScreenFadeOut(500)
+    while not IsScreenFadedOut() do Wait(0) end
+
+    local shellEntity, spawnCoords, heading = SpawnShellForProperty(propertyId, shellName, shellCoords)
+
+    if spawnCoords then
+        local ped = cache.ped
+        SetEntityCoords(ped, spawnCoords.x, spawnCoords.y, spawnCoords.z, false, false, false, false)
+        SetEntityHeading(ped, heading)
+    end
+
+    Wait(500)
+    DoScreenFadeIn(1000)
+end
+
+function LeaveShellProperty(propertyId)
+    local p = Properties[propertyId]
+    if not p then return end
+
+    local doorCoords = GetEntranceCoords(p)
+    if not doorCoords then return end
+
+    DoScreenFadeOut(500)
+    while not IsScreenFadedOut() do Wait(0) end
+
+    if ExitTargets[propertyId] then
+        exports.ox_target:removeZone(ExitTargets[propertyId])
+        ExitTargets[propertyId] = nil
+    end
+
+    if SpawnedShells[propertyId] and DoesEntityExist(SpawnedShells[propertyId]) then
+        DeleteEntity(SpawnedShells[propertyId])
+        SpawnedShells[propertyId] = nil
+    end
+
+    local ped = cache.ped
+    SetEntityCoords(ped, doorCoords.x, doorCoords.y, doorCoords.z, false, false, false, false)
+
+    Wait(500)
+    DoScreenFadeIn(1000)
 end

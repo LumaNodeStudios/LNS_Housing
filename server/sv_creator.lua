@@ -1,4 +1,5 @@
 local Settings = lib.load('shared.settings')
+local SvSettings = lib.load('shared.sv_settings')
 
 function GetRealEstatePermission(source)
     local isAllowed = false
@@ -92,6 +93,30 @@ lib.callback.register('LNS_Housing:server:getRealEstatePermission', function(sou
     return GetRealEstatePermission(source)
 end)
 
+lib.callback.register('LNS_Housing:server:uploadPhoto', function(source)
+    local promise = promise.new()
+    
+    exports.screencapture:remoteUpload(source, SvSettings.ImageUpload.Url, {
+        encoding = 'png',
+        formField = 'file',
+        headers = { ['Authorization'] = SvSettings.ImageUpload.Token }
+    }, function(response)
+        local resp = response
+        if type(resp) == 'string' then
+            resp = json.decode(resp)
+        end
+        
+        if resp and resp.data and resp.data.url then
+            promise:resolve(resp.data.url)
+        else
+            print('^1[LNS_Housing]^0 Photo upload failed: ' .. json.encode(response) .. '^7')
+            promise:resolve(nil)
+        end
+    end, 'blob')
+    
+    return Citizen.Await(promise)
+end)
+
 lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
     local playerJob = Bridge.Server.GetPlayerJob(source)
     local citizenid = GetIdentifier(source)
@@ -104,7 +129,11 @@ lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
     end
 
     local spawnCoords = nil
-    if data.doors and #data.doors > 0 then
+    if data.entranceType == 'coords' and data.entranceCoords then
+        data.doors = {}
+        data.entrance = data.entranceCoords
+        spawnCoords = vector4(data.entranceCoords.x, data.entranceCoords.y, data.entranceCoords.z, data.entranceCoords.h or 0.0)
+    elseif data.doors and #data.doors > 0 then
         local doorIds = {}
         for i, door in ipairs(data.doors) do
             if type(door) == 'table' and door.isNew then

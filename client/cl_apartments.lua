@@ -389,6 +389,28 @@ AddEventHandler('onResourceStop', function(resourceName)
     end
 end)
 
+local function CleanUpApartmentSession()
+    if MyApartmentId then
+        UnloadFurnitures(MyApartmentId)
+    end
+    if apartmentZone then
+        apartmentZone:remove()
+        apartmentZone = nil
+    end
+    MyApartmentId = nil
+    MyRoomData = nil
+    insideApartment = false
+end
+
+RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
+    CleanUpApartmentSession()
+end)
+
+RegisterNetEvent('esx:onPlayerLogout', function()
+    CleanUpApartmentSession()
+end)
+
+
 local function GetPropertyCoords(p)
     if not p then return nil end
     
@@ -443,6 +465,13 @@ exports('SpawnInProperty', function(type, id)
     elseif type == "house" then
         local p = Properties[id]
         if p then
+            if p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
+                local doorCoords = GetEntranceCoords(p)
+                if doorCoords then
+                    local shellCoords = vec3(doorCoords.x, doorCoords.y, doorCoords.z - 35.0)
+                    SpawnShellForProperty(id, p.metadata.shell, shellCoords)
+                end
+            end
             local coords = GetPropertyCoords(p)
             if coords then
                 local ped = cache.ped
