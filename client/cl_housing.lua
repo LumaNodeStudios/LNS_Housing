@@ -287,7 +287,19 @@ function LoadFurnitures(propertyId)
                     icon = 'fas fa-right-from-bracket',
                     debug = Settings.Debug.Zones,
                     onSelect = function()
-                        TriggerServerEvent('LNS_Housing:server:logoutPlayer')
+                        local alert = lib.alertDialog({
+                            header = 'Confirm Logout',
+                            content = 'Are you sure you want to log out of your character?',
+                            centered = true,
+                            cancel = true,
+                            labels = {
+                                confirm = 'Log out',
+                                cancel = 'Cancel'
+                            }
+                        })
+                        if alert == 'confirm' then
+                            TriggerServerEvent('LNS_Housing:server:logoutPlayer')
+                        end
                     end,
                     canInteract = function()
                         if p.isApartment then
