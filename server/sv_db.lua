@@ -36,8 +36,8 @@ function LoadProperties()
                 Bridge.Server.RegisterPropertyStashes(v.id, v.furniture)
             end
         end
+        print('^2[Housing] ^7Loaded ' .. #result .. ' properties.')
     end
-    print('^2[Housing] ^7Loaded ' .. #result .. ' properties.')
 end
 
 function CreateProperty(data)
@@ -289,18 +289,6 @@ MySQL.ready(function()
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ]])
 
-    MySQL.query.await([[
-        CREATE TABLE IF NOT EXISTS `housing_employees` (
-            `id` INT AUTO_INCREMENT PRIMARY KEY,
-            `agency` VARCHAR(50) NOT NULL,
-            `citizenid` VARCHAR(50) NOT NULL,
-            `name` VARCHAR(100) DEFAULT 'Unknown',
-            `commission_rate` INT DEFAULT 10,
-            `permissions` LONGTEXT DEFAULT '{"createHouse": false, "draftContract": true, "manageListings": false, "manageEmployees": false}',
-            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE KEY `unique_agency_employee` (`agency`, `citizenid`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    ]])
 
     LoadProperties()
 end)

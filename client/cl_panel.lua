@@ -57,7 +57,6 @@ RegisterNUICallback('changeWallColor', function(data, cb)
     cb('ok')
 end)
 
-
 RegisterCommand(Settings.RealEstate.Command, function()
     local properties = lib.callback.await('LNS_Housing:server:getProperties', false)
     local hasPermission = lib.callback.await('LNS_Housing:server:getRealEstatePermission', false)
@@ -130,38 +129,6 @@ end)
 RegisterNUICallback('payRent', function(data, cb)
     TriggerServerEvent('LNS_Housing:server:payRent', data.propertyId)
     cb('ok')
-end)
-
-
-RegisterNUICallback('getEmployees', function(data, cb)
-    local employees = lib.callback.await('LNS_Housing:server:getEmployees', false)
-    cb(employees or {})
-end)
-
-RegisterNUICallback('hireEmployee', function(data, cb)
-    local success, err = lib.callback.await('LNS_Housing:server:hireEmployee', false, data.targetId, data.manualCid, data.manualName)
-    if success then
-        Bridge.Client.Notify("Hired successfully!", "success")
-    else
-        Bridge.Client.Notify(err or "Failed to hire", "error")
-    end
-    cb(success)
-end)
-
-RegisterNUICallback('fireEmployee', function(data, cb)
-    local success = lib.callback.await('LNS_Housing:server:fireEmployee', false, data.citizenid)
-    if success then
-        Bridge.Client.Notify("Fired successfully!", "success")
-    end
-    cb(success)
-end)
-
-RegisterNUICallback('updateEmployee', function(data, cb)
-    local success = lib.callback.await('LNS_Housing:server:updateEmployee', false, data)
-    if success then
-        Bridge.Client.Notify("Employee settings updated!", "success")
-    end
-    cb(success)
 end)
 
 

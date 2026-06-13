@@ -213,6 +213,24 @@ RegisterNetEvent('LNS_Housing:server:placeBid', function(data)
         return
     end
 
+    -- Deduct bid amount immediately to lock funds
+    local removed = Bridge.Server.RemoveBankMoney(src, amount, "Auction Bid: " .. p.label)
+    if not removed then
+        Bridge.Server.Notify(src, 'Failed to process bid transaction.', 'error')
+        return
+    end
+
+    -- Refund the previous highest bidder
+    local prevBidder = p.auction_data.highest_bidder
+    local prevAmount = p.auction_data.current_bid
+    if prevBidder and prevAmount > 0 then
+        Bridge.Server.AddOfflineBankMoney(prevBidder, prevAmount)
+        local onlinePrev = Bridge.Server.IsPlayerOnline(prevBidder)
+        if onlinePrev then
+            Bridge.Server.Notify(onlinePrev.PlayerData.source, "You have been outbid on " .. p.label .. "! $" .. prevAmount .. " has been refunded to your bank.", "warning")
+        end
+    end
+
     p.auction_data.current_bid = amount
     p.auction_data.highest_bidder = Bridge.Server.GetIdentifier(src)
 
@@ -245,38 +263,20 @@ RegisterNetEvent('LNS_Housing:server:controlAuction', function(data)
             local bidderId = p.auction_data.highest_bidder
             local amount = p.auction_data.current_bid
             local bidder = Bridge.Server.IsPlayerOnline(bidderId)
-            local success = false
 
+            -- Funds were already collected on bid placement; process the sale directly
+            ProcessPropertySalePayout(propertyId, amount)
+
+            p.owner = bidderId
+            p.auction_data.status = 'ended'
             if bidder then
-                local bidderSource = bidder.PlayerData.source
-                if Bridge.Server.GetBankMoney(bidderSource) >= amount then
-                    Bridge.Server.RemoveBankMoney(bidderSource, amount, "Won Auction: " .. p.label)
-                    success = true
-                end
-            else
-                local offlineMoney = Bridge.Server.GetOfflineBankMoney(bidderId)
-                if offlineMoney >= amount then
-                    Bridge.Server.RemoveOfflineBankMoney(bidderId, amount)
-                    success = true
-                end
+                Bridge.Server.Notify(bidder.PlayerData.source, 'Congratulations! Your bid for ' .. p.label .. ' was confirmed!', 'success')
             end
+            SyncPropertyDoor(propertyId)
 
-            if success then
-                ProcessPropertySalePayout(propertyId, amount)
+            MySQL.update.await('UPDATE housing_contracts SET status = ? WHERE property_id = ? AND status = ?', {'declined', propertyId, 'pending'})
 
-                p.owner = bidderId
-                p.auction_data.status = 'ended'
-                if bidder then
-                    Bridge.Server.Notify(bidder.PlayerData.source, 'Congratulations! Your bid for ' .. p.label .. ' was confirmed!', 'success')
-                end
-                SyncPropertyDoor(propertyId)
-
-                MySQL.update.await('UPDATE housing_contracts SET status = ? WHERE property_id = ? AND status = ?', {'declined', propertyId, 'pending'})
-
-                Bridge.Server.Notify(src, 'Sale confirmed for ' .. p.label, 'success')
-            else
-                Bridge.Server.Notify(src, 'Confirmation failed: Bidder does not have enough money!', 'error')
-            end
+            Bridge.Server.Notify(src, 'Sale confirmed for ' .. p.label, 'success')
         end
     end
 

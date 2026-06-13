@@ -179,6 +179,10 @@ local function render()
 
     while zoneCreator.active do
         Wait(0)
+        DisableControlAction(0, 14, true)
+        DisableControlAction(0, 15, true)
+        DisableControlAction(0, 104, true)
+        DisableControlAction(0, 306, true)
 
         zoneCreator.cursor = zoneCreator.drawCursor()
         local height =  #points > 0 and points[1].z + zoneCreator.height or 0
@@ -275,6 +279,9 @@ local function mloDoor()
     lib.showTextUI('[E] - to pick door | [H] cancel')
 
     while true do
+        Wait(0)
+        DisableControlAction(0, 38, true)
+        DisableControlAction(0, 104, true)
         local hit, entity, coords = lib.raycast.cam(1|16)
         local changedEntity = lastEntity ~= entity
 
@@ -320,7 +327,6 @@ local function mloDoor()
 				break
             end
         end
-        Wait(0)
     end
     lib.hideTextUI()
     return doorId

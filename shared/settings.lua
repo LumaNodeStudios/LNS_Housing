@@ -11,7 +11,7 @@ return {
         Command = 'properties',                     -- Command for real estate agents to open properties menu
         OnlyBuyViaContracts = false,                -- If true, players can only buy houses through a signed contract with an agent
         Jobs = { 'realestate', 'luxuryestate' },    -- Jobs allowed to access the real estate agent actions
-        Groups = { 'admin', 'god', 'superadmin' },  -- Admin groups that have full agent permissions
+        Groups = { --[['admin', 'god', 'superadmin']] },  -- Admin groups that have full agent permissions
         Agencies = {
             ['realestate'] = {
                 label = 'Dynasty 8 Real Estate',

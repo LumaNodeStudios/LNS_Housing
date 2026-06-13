@@ -48,6 +48,14 @@ RegisterNetEvent('LNS_Housing:server:saveFurniture', function(propertyId, furnit
 
     local identifier = Bridge.Server.GetIdentifier(src)
     local hasAccess = p.owner == identifier
+    if not hasAccess and p.permissions and p.permissions.manage then
+        for _, cid in ipairs(p.permissions.manage) do
+            if cid == identifier then
+                hasAccess = true
+                break
+            end
+        end
+    end
 
     if not hasAccess then return end
 

@@ -19,6 +19,11 @@ local DB_CONFIG = {
 local db = DB_CONFIG[Bridge.Framework]
 
 function Bridge.Server.GetOfflineBankMoney(identifier)
+    local onlinePlayer = Bridge.Server.IsPlayerOnline(identifier)
+    if onlinePlayer then
+        return Bridge.Server.GetBankMoney(onlinePlayer.PlayerData.source)
+    end
+
     if not db then return 0 end
     local query = string.format('SELECT %s FROM %s WHERE %s = ?', db.column, db.table, db.key)
     local result = MySQL.query.await(query, {identifier})
@@ -31,8 +36,14 @@ end
 
 function Bridge.Server.RemoveOfflineBankMoney(identifier, amount)
     local safeAmount = normalizeAmount(amount)
-    if not db or not safeAmount or safeAmount <= 0 then return false end
+    if not safeAmount or safeAmount <= 0 then return false end
 
+    local onlinePlayer = Bridge.Server.IsPlayerOnline(identifier)
+    if onlinePlayer then
+        return Bridge.Server.RemoveBankMoney(onlinePlayer.PlayerData.source, safeAmount, "Property Transaction")
+    end
+
+    if not db then return false end
     local query = string.format('UPDATE %s SET %s = JSON_SET(%s, "$.bank", JSON_EXTRACT(%s, "$.bank") - ?) WHERE %s = ?', db.table, db.column, db.column, db.column, db.key)
     MySQL.update.await(query, {safeAmount, identifier})
     return true
@@ -40,8 +51,14 @@ end
 
 function Bridge.Server.AddOfflineBankMoney(identifier, amount)
     local safeAmount = normalizeAmount(amount)
-    if not db or not safeAmount or safeAmount <= 0 then return false end
+    if not safeAmount or safeAmount <= 0 then return false end
 
+    local onlinePlayer = Bridge.Server.IsPlayerOnline(identifier)
+    if onlinePlayer then
+        return Bridge.Server.AddBankMoney(onlinePlayer.PlayerData.source, safeAmount, "Property Transaction Payout")
+    end
+
+    if not db then return false end
     local query = string.format('UPDATE %s SET %s = JSON_SET(%s, "$.bank", JSON_EXTRACT(%s, "$.bank") + ?) WHERE %s = ?', db.table, db.column, db.column, db.column, db.key)
     MySQL.update.await(query, {safeAmount, identifier})
     return true
@@ -161,11 +178,7 @@ function Bridge.Server.RemoveBankMoney(source, amount, reason)
     if not safeAmount or safeAmount <= 0 then return false end
 
     if Bridge.Framework == 'qbx' then
-        local player = exports.qbx_core:GetPlayer(source)
-        if player then
-            player.Functions.RemoveMoney('bank', safeAmount, reason or "Property System")
-            return true
-        end
+        return exports.qbx_core:RemoveMoney(source, 'bank', safeAmount, reason or "Property System")
     elseif Bridge.Framework == 'esx' then
         local player = ESX.GetPlayerFromId(source)
         if player then
@@ -181,11 +194,7 @@ function Bridge.Server.RemoveMoney(source, moneyType, amount, reason)
     if not safeAmount or safeAmount <= 0 then return false end
 
     if Bridge.Framework == 'qbx' then
-        local player = exports.qbx_core:GetPlayer(source)
-        if player then
-            player.Functions.RemoveMoney(moneyType, safeAmount, reason or "Property System")
-            return true
-        end
+        return exports.qbx_core:RemoveMoney(source, moneyType, safeAmount, reason or "Property System")
     elseif Bridge.Framework == 'esx' then
         local player = ESX.GetPlayerFromId(source)
         if player then
@@ -209,11 +218,7 @@ function Bridge.Server.AddBankMoney(source, amount, reason)
     if not safeAmount or safeAmount <= 0 then return false end
 
     if Bridge.Framework == 'qbx' then
-        local player = exports.qbx_core:GetPlayer(source)
-        if player then
-            player.Functions.AddMoney('bank', safeAmount, reason or "Property Commission")
-            return true
-        end
+        return exports.qbx_core:AddMoney(source, 'bank', safeAmount, reason or "Property Commission")
     elseif Bridge.Framework == 'esx' then
         local player = ESX.GetPlayerFromId(source)
         if player then
@@ -295,6 +300,40 @@ function Bridge.Server.RegisterPropertyStashes(propertyId, furnitureList)
             Bridge.Server.RegisterStash(propertyId, f.id, itemData.storage, f.label)
         end
     end
+end
+
+function Bridge.Server.SetPlayerJob(identifier, jobName, grade)
+    local onlinePlayer = Bridge.Server.IsPlayerOnline(identifier)
+    if onlinePlayer then
+        local src = onlinePlayer.PlayerData.source
+        if Bridge.Framework == 'qbx' then
+            exports.qbx_core:SetJob(src, jobName, grade)
+            return true
+        elseif Bridge.Framework == 'esx' then
+            local xPlayer = ESX.GetPlayerFromId(src)
+            if xPlayer then
+                xPlayer.setJob(jobName, grade)
+                return true
+            end
+        end
+    end
+
+    -- If offline, update the DB
+    if Bridge.Framework == 'qbx' then
+        local result = MySQL.query.await('SELECT job FROM players WHERE citizenid = ?', {identifier})
+        if result and result[1] then
+            local jobData = json.decode(result[1].job or '{}')
+            jobData.name = jobName
+            jobData.grade = jobData.grade or {}
+            jobData.grade.level = grade
+            local rows = MySQL.update.await('UPDATE players SET job = ? WHERE citizenid = ?', {json.encode(jobData), identifier})
+            return rows > 0
+        end
+    elseif Bridge.Framework == 'esx' then
+        local rows = MySQL.update.await('UPDATE users SET job = ?, job_grade = ? WHERE identifier = ?', {jobName, grade, identifier})
+        return rows > 0
+    end
+    return false
 end
 
 function Bridge.Server.Notify(source, msg, type)

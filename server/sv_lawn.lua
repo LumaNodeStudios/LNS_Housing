@@ -8,10 +8,11 @@ RegisterNetEvent('LNS_Housing:server:finishMowing', function(propertyId, mowedIn
     local now = os.time()
     if not p.lawn_data then p.lawn_data = {} end
 
-    if mowedIndices then
+    if mowedIndices and #mowedIndices > 0 then
         for _, idx in ipairs(mowedIndices) do
             p.lawn_data[tostring(idx)] = now
         end
+        TriggerClientEvent('LNS_Housing:client:syncCutGrass', -1, propertyId, mowedIndices)
     end
 
     if isFullMow then
@@ -19,10 +20,10 @@ RegisterNetEvent('LNS_Housing:server:finishMowing', function(propertyId, mowedIn
     end
 
     SaveProperty(propertyId)
-    TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
+    TriggerClientEvent('LNS_Housing:client:syncLawnUpdate', -1, propertyId, p.lawn_data, p.last_mowed)
 end)
 
-RegisterNetEvent('LNS_Housing:server:saveMowedBlades', function(propertyId, mowedIndices)
+RegisterNetEvent('LNS_Housing:server:saveMowedBlades', function(propertyId, mowedIndices, isEnd)
     local src = source
     local p = Properties[propertyId]
     if not p or not mowedIndices or #mowedIndices == 0 then return end
@@ -34,8 +35,11 @@ RegisterNetEvent('LNS_Housing:server:saveMowedBlades', function(propertyId, mowe
         p.lawn_data[tostring(idx)] = now
     end
 
-    SaveProperty(propertyId)
-    TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
+    TriggerClientEvent('LNS_Housing:client:syncCutGrass', -1, propertyId, mowedIndices)
+
+    if isEnd then
+        SaveProperty(propertyId)
+    end
 end)
 
 lib.callback.register('LNS_Housing:server:getServerTime', function(source)

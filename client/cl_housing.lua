@@ -363,7 +363,7 @@ function RegisterPropertyZones(p)
         
         local doorCoords = GetEntranceCoords(p)
         if doorCoords then
-            local shellCoords = vec3(doorCoords.x, doorCoords.y, doorCoords.z - 35.0)
+            local shellCoords = vec3(doorCoords.x, doorCoords.y, 1500.0)
             PropertyZones[p.id] = lib.zones.box({
                 coords = shellCoords,
                 size = vec3(25.0, 25.0, 10.0),
@@ -1036,7 +1036,7 @@ function EnterShellProperty(propertyId)
         return
     end
 
-    local shellCoords = vec3(doorCoords.x, doorCoords.y, doorCoords.z - 35.0)
+    local shellCoords = vec3(doorCoords.x, doorCoords.y, 1500.0)
 
     DoScreenFadeOut(500)
     while not IsScreenFadedOut() do Wait(0) end

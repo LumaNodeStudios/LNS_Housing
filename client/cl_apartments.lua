@@ -468,7 +468,7 @@ exports('SpawnInProperty', function(type, id)
             if p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
                 local doorCoords = GetEntranceCoords(p)
                 if doorCoords then
-                    local shellCoords = vec3(doorCoords.x, doorCoords.y, doorCoords.z - 35.0)
+                    local shellCoords = vec3(doorCoords.x, doorCoords.y, 1500.0)
                     SpawnShellForProperty(id, p.metadata.shell, shellCoords)
                 end
             end
@@ -480,6 +480,9 @@ exports('SpawnInProperty', function(type, id)
                 
                 SetEntityCoords(ped, coords.x, coords.y, coords.z, false, false, false, false)
                 SetEntityHeading(ped, coords.w)
+                
+                TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', id)
+                LoadFurnitures(id)
                 
                 Wait(500)
                 DoScreenFadeIn(1000)

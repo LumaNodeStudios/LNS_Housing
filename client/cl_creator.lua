@@ -35,6 +35,8 @@ RegisterNUICallback('pickEntranceCoords', function(_, cb)
     local pickedCoords = nil
     while true do
         Wait(0)
+        DisableControlAction(0, 38, true)
+        DisableControlAction(0, 104, true)
         local ped = cache.ped
         local coords = GetEntityCoords(ped)
         local heading = GetEntityHeading(ped)

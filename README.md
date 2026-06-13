@@ -150,18 +150,6 @@ CREATE TABLE IF NOT EXISTS `housing_contracts` (
     `type` VARCHAR(20) NOT NULL,
     `status` VARCHAR(20) DEFAULT 'pending',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`property_id`) REFERENCES `housing_properties`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS `housing_employees` (
-    `id` INT AUTO_INCREMENT PRIMARY KEY,
-    `agency` VARCHAR(50) NOT NULL,
-    `citizenid` VARCHAR(50) NOT NULL,
-    `name` VARCHAR(100) DEFAULT 'Unknown',
-    `commission_rate` INT DEFAULT 10,
-    `permissions` LONGTEXT DEFAULT '{"createHouse": false, "draftContract": true, "manageListings": false, "manageEmployees": false}',
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY `unique_agency_employee` (`agency`, `citizenid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 

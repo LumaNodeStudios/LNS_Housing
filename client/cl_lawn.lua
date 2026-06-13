@@ -334,7 +334,7 @@ function StartMowing(propertyId, isAuto)
                 if veh ~= currentVehicle then
                     StopMowing()
                     if #newlyMowedIndices > 0 then
-                        TriggerServerEvent('LNS_Housing:server:saveMowedBlades', propertyId, newlyMowedIndices)
+                        TriggerServerEvent('LNS_Housing:server:saveMowedBlades', propertyId, newlyMowedIndices, true)
                     end
                     break
                 end
@@ -343,7 +343,7 @@ function StartMowing(propertyId, isAuto)
                 if ActiveYardPropertyId ~= propertyId then
                     StopMowing()
                     if #newlyMowedIndices > 0 then
-                        TriggerServerEvent('LNS_Housing:server:saveMowedBlades', propertyId, newlyMowedIndices)
+                        TriggerServerEvent('LNS_Housing:server:saveMowedBlades', propertyId, newlyMowedIndices, true)
                     end
                     break
                 end
@@ -362,7 +362,7 @@ function StartMowing(propertyId, isAuto)
                     StopMowing()
                     
                     if #newlyMowedIndices > 0 then
-                        TriggerServerEvent('LNS_Housing:server:saveMowedBlades', propertyId, newlyMowedIndices)
+                        TriggerServerEvent('LNS_Housing:server:saveMowedBlades', propertyId, newlyMowedIndices, true)
                     end
                     Bridge.Client.Notify('You put away the mower.', 'inform')
                     break
@@ -425,7 +425,7 @@ function StartMowing(propertyId, isAuto)
                 if cutAny then
                     
                     if #newlyMowedIndices >= 10 then
-                        TriggerServerEvent('LNS_Housing:server:saveMowedBlades', propertyId, newlyMowedIndices)
+                        TriggerServerEvent('LNS_Housing:server:saveMowedBlades', propertyId, newlyMowedIndices, false)
                         newlyMowedIndices = {}
                     end
 
@@ -653,6 +653,40 @@ CreateThread(function()
                     StartMowing(ActiveYardPropertyId, true)
                 end
             end
+        end
+    end
+end)
+
+RegisterNetEvent('LNS_Housing:client:syncCutGrass', function(propertyId, indices)
+    local p = Properties[propertyId]
+    if p then
+        if not p.lawn_data then p.lawn_data = {} end
+        local now = GetServerTime()
+        for _, idx in ipairs(indices) do
+            p.lawn_data[tostring(idx)] = now
+        end
+    end
+
+    for _, idx in ipairs(indices) do
+        for i = 1, #SpawnedGrassProps do
+            local grass = SpawnedGrassProps[i]
+            if grass.propertyId == propertyId and grass.coordIndex == idx and not grass.mowed then
+                grass.mowed = true
+                if DoesEntityExist(grass.entity) then
+                    DeleteEntity(grass.entity)
+                end
+            end
+        end
+    end
+end)
+
+RegisterNetEvent('LNS_Housing:client:syncLawnUpdate', function(propertyId, lawnData, lastMowed)
+    local p = Properties[propertyId]
+    if p then
+        p.lawn_data = lawnData
+        p.last_mowed = lastMowed
+        if ActiveYardPropertyId == propertyId and RefreshYardGrass then
+            RefreshYardGrass(propertyId)
         end
     end
 end)

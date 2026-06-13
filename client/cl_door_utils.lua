@@ -42,8 +42,8 @@ function GetDoorInteractionPoint(model, coords, heading)
         return GetOffsetFromEntityInWorldCoords(entity, centerX, centerY, centerZ), GetEntityHeading(entity)
     end
 
+    lib.requestModel(hash)
     local ok, point, probeHeading = pcall(function()
-        lib.requestModel(hash)
         local probe = CreateObjectNoOffset(hash, coords.x, coords.y, coords.z, false, false, false)
         if probe == 0 then
             return coords, heading or 0.0

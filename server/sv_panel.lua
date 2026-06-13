@@ -305,7 +305,17 @@ lib.callback.register('LNS_Housing:server:deleteListing', function(source, prope
     if not jobPerm or not jobPerm.permissions.manageListings then return false end
 
     local id = tonumber(propertyId)
-    if not Properties[id] then return false end
+    local p = Properties[id]
+    if not p then return false end
+
+    -- Refund highest bidder if they have a bid locked
+    if p.sale_type == 'auction' and p.auction_data and p.auction_data.highest_bidder and p.auction_data.current_bid > 0 then
+        Bridge.Server.AddOfflineBankMoney(p.auction_data.highest_bidder, p.auction_data.current_bid)
+        local onlineBidder = Bridge.Server.IsPlayerOnline(p.auction_data.highest_bidder)
+        if onlineBidder then
+            Bridge.Server.Notify(onlineBidder.PlayerData.source, "The auction for " .. p.label .. " was deleted. Your bid of $" .. p.auction_data.current_bid .. " has been refunded.", "warning")
+        end
+    end
 
     MySQL.update.await('DELETE FROM housing_properties WHERE id = ?', { id })
     Properties[id] = nil

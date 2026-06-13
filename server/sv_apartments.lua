@@ -494,17 +494,39 @@ RegisterNetEvent('LNS_Housing:server:updateApartmentWallColor', function(roomId,
     end
 end)
 
+local function FindManagedApartment(roomId, citizenid)
+    local results = MySQL.query.await('SELECT citizenid, permissions, furniture FROM apartments WHERE room_id = ?', {roomId})
+    if not results then return nil end
+
+    for _, row in ipairs(results) do
+        if row.citizenid == citizenid then
+            return row
+        end
+        if row.permissions then
+            local perms = json.decode(row.permissions)
+            if perms and perms.manage then
+                for _, cid in ipairs(perms.manage) do
+                    if cid == citizenid then
+                        return row
+                    end
+                end
+            end
+        end
+    end
+    return nil
+end
+
 RegisterNetEvent('LNS_Housing:server:saveApartmentFurniture', function(roomId, furnitureData)
     local src = source
     local citizenid = Bridge.Server.GetIdentifier(src)
     if not citizenid then return end
 
-    local result = MySQL.single.await('SELECT citizenid FROM apartments WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
+    local result = FindManagedApartment(roomId, citizenid)
     if result then
         MySQL.update.await('UPDATE apartments SET furniture = ? WHERE room_id = ? AND citizenid = ?', {
             json.encode(furnitureData),
             roomId,
-            citizenid
+            result.citizenid
         })
 
         if Bridge.Server.RegisterPropertyStashes then
@@ -537,80 +559,74 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
         return
     end
 
-    local okSelect, result = pcall(function()
-        return MySQL.single.await('SELECT citizenid, furniture FROM apartments WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
-    end)
-
-    if not okSelect then
-        print(('[LNS_Housing] buyApartmentFurniture SELECT failed for %s/%s: %s'):format(tostring(citizenid), tostring(roomId), tostring(result)))
-        Bridge.Server.Notify(src, 'Database error while loading apartment data.', 'error')
+    local result = FindManagedApartment(roomId, citizenid)
+    if not result then
+        Bridge.Server.Notify(src, 'You do not have management access to this apartment.', 'error')
         return
     end
 
-    if result then
-        local payType = paymentMethod == 'cash' and 'cash' or 'bank'
-        local money = Bridge.Server.GetMoney(src, payType)
-        if price > 0 then
-            if money < price then
-                local targetAccountName = payType == 'cash' and 'cash' or 'bank account'
-                Bridge.Server.Notify(src, 'Not enough money in your ' .. targetAccountName .. '!', 'error')
-                return
-            end
-
-            local removed = Bridge.Server.RemoveMoney(src, payType, price, "Bought furniture for apartment #" .. roomId)
-            if not removed then
-                local targetAccountName = payType == 'cash' and 'cash' or 'bank'
-                Bridge.Server.Notify(src, 'Could not process ' .. targetAccountName .. ' payment.', 'error')
-                return
-            end
-        end
-
-        local currentFurniture = {}
-        if result.furniture and result.furniture ~= '' then
-            local okDecode, decoded = pcall(function()
-                return json.decode(result.furniture)
-            end)
-
-            if okDecode and type(decoded) == 'table' then
-                currentFurniture = decoded
-            else
-                print(('[LNS_Housing] buyApartmentFurniture decode failed for %s/%s, resetting furniture list'):format(tostring(citizenid), tostring(roomId)))
-            end
-        end
-
-        for _, item in ipairs(items) do
-            table.insert(currentFurniture, item)
-        end
-
-        local okEncode, furnitureJson = pcall(function()
-            return json.encode(currentFurniture)
-        end)
-        if not okEncode then
-            print(('[LNS_Housing] buyApartmentFurniture encode failed for %s/%s: %s'):format(tostring(citizenid), tostring(roomId), tostring(furnitureJson)))
-            Bridge.Server.Notify(src, 'Could not process furniture data.', 'error')
+    local payType = paymentMethod == 'cash' and 'cash' or 'bank'
+    local money = Bridge.Server.GetMoney(src, payType)
+    if price > 0 then
+        if money < price then
+            local targetAccountName = payType == 'cash' and 'cash' or 'bank account'
+            Bridge.Server.Notify(src, 'Not enough money in your ' .. targetAccountName .. '!', 'error')
             return
         end
 
-        local okUpdate, updateResult = pcall(function()
-            return MySQL.update.await('UPDATE apartments SET furniture = ? WHERE room_id = ? AND citizenid = ?', {
-                furnitureJson,
-                roomId,
-                citizenid
-            })
-        end)
-        if not okUpdate then
-            print(('[LNS_Housing] buyApartmentFurniture UPDATE failed for %s/%s: %s'):format(tostring(citizenid), tostring(roomId), tostring(updateResult)))
-            Bridge.Server.Notify(src, 'Database error while saving furniture.', 'error')
+        local removed = Bridge.Server.RemoveMoney(src, payType, price, "Bought furniture for apartment #" .. roomId)
+        if not removed then
+            local targetAccountName = payType == 'cash' and 'cash' or 'bank'
+            Bridge.Server.Notify(src, 'Could not process ' .. targetAccountName .. ' payment.', 'error')
             return
         end
-
-        if Bridge.Server.RegisterPropertyStashes then
-            Bridge.Server.RegisterPropertyStashes(roomId, currentFurniture)
-        end
-
-        TriggerClientEvent('LNS_Housing:client:updateApartmentFurniture', -1, roomId, currentFurniture)
-        Bridge.Server.Notify(src, 'Furniture bought successfully!', 'success')
     end
+
+    local currentFurniture = {}
+    if result.furniture and result.furniture ~= '' then
+        local okDecode, decoded = pcall(function()
+            return json.decode(result.furniture)
+        end)
+
+        if okDecode and type(decoded) == 'table' then
+            currentFurniture = decoded
+        else
+            print(('[LNS_Housing] buyApartmentFurniture decode failed for %s/%s, resetting furniture list'):format(tostring(result.citizenid), tostring(roomId)))
+        end
+    end
+
+    for _, item in ipairs(items) do
+        table.insert(currentFurniture, item)
+    end
+
+    local okEncode, furnitureJson = pcall(function()
+        return json.encode(currentFurniture)
+    end)
+    if not okEncode then
+        print(('[LNS_Housing] buyApartmentFurniture encode failed for %s/%s: %s'):format(tostring(result.citizenid), tostring(roomId), tostring(furnitureJson)))
+        Bridge.Server.Notify(src, 'Could not process furniture data.', 'error')
+        return
+    end
+
+    local okUpdate, updateResult = pcall(function()
+        return MySQL.update.await('UPDATE apartments SET furniture = ? WHERE room_id = ? AND citizenid = ?', {
+            furnitureJson,
+            roomId,
+            result.citizenid
+        })
+    end)
+    if not okUpdate then
+        print(('[LNS_Housing] buyApartmentFurniture UPDATE failed for %s/%s: %s'):format(tostring(result.citizenid), tostring(roomId), tostring(updateResult)))
+        Bridge.Server.Notify(src, 'Database error while saving furniture.', 'error')
+        return
+    end
+
+    if Bridge.Server.RegisterPropertyStashes then
+        Bridge.Server.RegisterPropertyStashes(roomId, currentFurniture)
+    end
+
+    TriggerClientEvent('LNS_Housing:client:updateApartmentFurniture', -1, roomId, currentFurniture)
+    Bridge.Server.Notify(src, 'Furniture bought successfully!', 'success')
 end)
 
 local function GetPropertyCoords(p)
@@ -620,20 +636,8 @@ local function GetPropertyCoords(p)
         local sp = p.metadata.spawn
         return vector4(sp.x, sp.y, sp.z, sp.h or sp.w or 0.0)
     end
-
-    if resolvedCoords then
-        if not p.metadata then p.metadata = {} end
-        p.metadata.spawn = {
-            x = resolvedCoords.x,
-            y = resolvedCoords.y,
-            z = resolvedCoords.z,
-            h = resolvedCoords.w
-        }
-        SaveProperty(p.id)
-        TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
-    end
     
-    return resolvedCoords
+    return nil
 end
 
 
