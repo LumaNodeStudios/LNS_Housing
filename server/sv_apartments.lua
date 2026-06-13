@@ -407,7 +407,7 @@ lib.callback.register('LNS_Housing:server:hasApartmentAccess', function(source, 
     local citizenid = Bridge.Server.GetIdentifier(source)
     if not citizenid then return false end
 
-    -- Check temporary access (lockpicked or breached)
+    
     if type == 'storage' or type == 'stash' then
         if TemporaryAccess.stashes[roomId] and TemporaryAccess.stashes[roomId][citizenid] then
             return true
@@ -641,7 +641,7 @@ local function GetPlayerSpawnsServer(source)
     local spawns = {}
 
     if Settings.Apartments and Settings.Apartments.Enabled then
-        local citizenid = GetIdentifier(source)
+        local citizenid = Bridge.Server.GetIdentifier(source)
         if citizenid then
             local roomId = playerRooms[citizenid]
             if not roomId then
@@ -663,7 +663,7 @@ local function GetPlayerSpawnsServer(source)
         end
     end
 
-    local citizenid = GetIdentifier(source)
+    local citizenid = Bridge.Server.GetIdentifier(source)
     if citizenid then
         for id, p in pairs(Properties) do
             local hasAccess = false

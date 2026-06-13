@@ -3,7 +3,7 @@ local Settings = lib.load('shared.settings')
 RegisterNetEvent('LNS_Housing:server:updatePermissions', function(propertyId, permissions)
     local src = source
     local p = Properties[propertyId]
-    if not p or p.owner ~= GetIdentifier(src) then return end
+    if not p or p.owner ~= Bridge.Server.GetIdentifier(src) then return end
 
     p.permissions = permissions
     SaveProperty(propertyId)
@@ -13,7 +13,7 @@ end)
 RegisterNetEvent('LNS_Housing:server:updateWallColor', function(propertyId, color)
     local src = source
     local p = Properties[propertyId]
-    if not p or p.owner ~= GetIdentifier(src) then return end
+    if not p or p.owner ~= Bridge.Server.GetIdentifier(src) then return end
 
     p.metadata.wall_color = color
     SaveProperty(propertyId)
@@ -24,7 +24,7 @@ RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgr
     local p = Properties[propertyId]
     if not p then return end
 
-    local identifier = GetIdentifier(src)
+    local identifier = Bridge.Server.GetIdentifier(src)
     if p.owner ~= identifier then return end
 
     local currentLevel = p.metadata.security_level or 0
@@ -52,7 +52,7 @@ RegisterNetEvent('LNS_Housing:server:payRent', function(propertyId)
     local p = Properties[propertyId]
     if not p or p.sale_type ~= 'rent' then return end
 
-    local cid = GetIdentifier(src)
+    local cid = Bridge.Server.GetIdentifier(src)
     if p.owner ~= cid then return end
 
     local rentAmount = p.metadata.rent_amount or p.price or 1000
@@ -90,7 +90,7 @@ RegisterNetEvent('LNS_Housing:server:payRent', function(propertyId)
 end)
 
 lib.callback.register('LNS_Housing:server:getPendingContracts', function(source)
-    local cid = GetIdentifier(source)
+    local cid = Bridge.Server.GetIdentifier(source)
     local results = MySQL.query.await([[
         SELECT c.*, p.label as property_label, p.image as property_image
         FROM housing_contracts c
@@ -144,14 +144,14 @@ RegisterNetEvent('LNS_Housing:server:createContract', function(data)
         return
     end
 
-    local clientCid = GetIdentifier(targetId)
+    local clientCid = Bridge.Server.GetIdentifier(targetId)
     if not clientCid then
         Bridge.Server.Notify(src, "Invalid target player.", "error")
         return
     end
 
     local clientName = Bridge.Server.GetPlayerName(targetId)
-    local agentCid = GetIdentifier(src)
+    local agentCid = Bridge.Server.GetIdentifier(src)
     local agentName = Bridge.Server.GetPlayerName(src)
 
     local contractId = MySQL.insert.await([[
@@ -179,7 +179,7 @@ end)
 
 lib.callback.register('LNS_Housing:server:respondToContract', function(source, contractId, action)
     local src = source
-    local clientCid = GetIdentifier(src)
+    local clientCid = Bridge.Server.GetIdentifier(src)
 
     local contracts = MySQL.query.await('SELECT * FROM housing_contracts WHERE id = ? AND client_cid = ? AND status = ?', {contractId, clientCid, 'pending'})
     if not contracts or not contracts[1] then return false end
@@ -340,7 +340,7 @@ lib.callback.register('LNS_Housing:server:terminateOwnLease', function(source, p
     local p = Properties[id]
     if not p or not p.owner or p.sale_type ~= 'rent' then return false end
 
-    local cid = GetIdentifier(source)
+    local cid = Bridge.Server.GetIdentifier(source)
     if p.owner ~= cid then return false end
 
     p.owner = nil
@@ -359,7 +359,7 @@ lib.callback.register('LNS_Housing:server:updateSpawnPoint', function(source, pr
     local p = Properties[propertyId]
     if not p then return false end
 
-    local identifier = GetIdentifier(src)
+    local identifier = Bridge.Server.GetIdentifier(src)
     local hasAccess = p.owner == identifier
     if not hasAccess and p.permissions and p.permissions.manage then
         for _, cid in ipairs(p.permissions.manage) do

@@ -42,6 +42,6 @@ lib.callback.register('LNS_Housing:server:getServerTime', function(source)
     return os.time()
 end)
 
-Bridge.Server.CreateUseableItem(Settings.Lawn.RequireItem, function(source)
+Bridge.Server.CreateUseableItem(Settings.Housing.Lawn.RequireItem, function(source)
     TriggerClientEvent('LNS_Housing:client:useMower', source)
 end)

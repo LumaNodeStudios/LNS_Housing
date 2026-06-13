@@ -1,14 +1,14 @@
 local Settings = lib.load('shared.settings')
 
--- NUI Callback to pick a nearby door from ox_doorlock (Interactive)
+
 RegisterNUICallback('pickDoor', function(_, cb)
     SendNUIMessage({ action = 'toggleVisibility', data = { visible = false } })
-    SetNuiFocus(false, false) -- Hide UI while picking
+    SetNuiFocus(false, false) 
     
     local doorId = exports.LNS_Housing:DoorPicker()
     
     SendNUIMessage({ action = 'toggleVisibility', data = { visible = true } })
-    SetNuiFocus(true, true) -- Show UI again
+    SetNuiFocus(true, true) 
     
     if doorId then
         SendNUIMessage({
@@ -24,10 +24,10 @@ RegisterNUICallback('pickDoor', function(_, cb)
     cb('ok')
 end)
 
--- NUI Callback to pick a standing coordinate/heading for the entrance
+
 RegisterNUICallback('pickEntranceCoords', function(_, cb)
     SendNUIMessage({ action = 'toggleVisibility', data = { visible = false } })
-    SetNuiFocus(false, false) -- Hide UI while picking
+    SetNuiFocus(false, false) 
     
     Wait(500)
     lib.showTextUI('[E] - Confirm standing location | [H] Cancel')
@@ -39,11 +39,11 @@ RegisterNUICallback('pickEntranceCoords', function(_, cb)
         local coords = GetEntityCoords(ped)
         local heading = GetEntityHeading(ped)
         
-        -- Draw marker on floor and arrow pointer
+        
         DrawMarker(1, coords.x, coords.y, coords.z - 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.2, 1.2, 0.2, 0, 255, 0, 100, false, false, 2, false, nil, nil, false)
         DrawMarker(2, coords.x, coords.y, coords.z + 0.2, 0.0, 0.0, 0.0, 180.0, 0.0, 0.0, 0.3, 0.3, 0.3, 0, 255, 0, 150, true, true, 2, nil, nil, false)
         
-        if IsDisabledControlJustPressed(0, 38) then -- E
+        if IsDisabledControlJustPressed(0, 38) then 
             pickedCoords = {
                 x = coords.x,
                 y = coords.y,
@@ -53,14 +53,14 @@ RegisterNUICallback('pickEntranceCoords', function(_, cb)
             break
         end
         
-        if IsDisabledControlJustPressed(0, 104) then -- H
+        if IsDisabledControlJustPressed(0, 104) then 
             break
         end
     end
     
     lib.hideTextUI()
     SendNUIMessage({ action = 'toggleVisibility', data = { visible = true } })
-    SetNuiFocus(true, true) -- Show UI again
+    SetNuiFocus(true, true) 
     
     if pickedCoords then
         Bridge.Client.Notify('Entrance coordinates registered at standing location.', 'success')
@@ -70,18 +70,18 @@ RegisterNUICallback('pickEntranceCoords', function(_, cb)
     end
 end)
 
--- NUI Callback to trigger the zone creator
+
 RegisterNUICallback('createZone', function(_, cb)
     SendNUIMessage({ action = 'toggleVisibility', data = { visible = false } })
-    SetNuiFocus(false, false) -- Hide UI while creating zone
+    SetNuiFocus(false, false) 
     
     local zoneData = exports.LNS_Housing:PolyCreator()
     
     SendNUIMessage({ action = 'toggleVisibility', data = { visible = true } })
-    SetNuiFocus(true, true) -- Show UI again
+    SetNuiFocus(true, true) 
     
     if zoneData then
-        -- Convert points to simple table for JSON
+        
         local simplePoints = {}
         for i, p in ipairs(zoneData.points) do
             simplePoints[i] = {x = p.x, y = p.y, z = p.z}
@@ -98,15 +98,15 @@ end)
 
 RegisterNUICallback('createYardZone', function(_, cb)
     SendNUIMessage({ action = 'toggleVisibility', data = { visible = false } })
-    SetNuiFocus(false, false) -- Hide UI while creating zone
+    SetNuiFocus(false, false) 
     
     local zoneData = exports.LNS_Housing:PolyCreator()
     
     SendNUIMessage({ action = 'toggleVisibility', data = { visible = true } })
-    SetNuiFocus(true, true) -- Show UI again
+    SetNuiFocus(true, true) 
     
     if zoneData then
-        -- Convert points to simple table for JSON
+        
         local simplePoints = {}
         for i, p in ipairs(zoneData.points) do
             simplePoints[i] = {x = p.x, y = p.y, z = p.z}

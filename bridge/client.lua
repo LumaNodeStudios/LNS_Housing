@@ -2,7 +2,7 @@ Bridge.Client = {}
 
 local ESX = Bridge.Framework == 'esx' and exports['es_extended']:getSharedObject() or nil
 
--- Framework Functions
+
 
 function Bridge.Client.GetIdentifier()
     if Bridge.Framework == 'qbx' then
@@ -59,7 +59,7 @@ function Bridge.Client.GetPlayerJob()
     return nil
 end
 
--- Appearance / Wardrobe Function
+
 
 function Bridge.Client.OpenWardrobe(propertyId, furnitureId)
     if GetResourceState('illenium-appearance') == 'started' then
@@ -69,7 +69,7 @@ function Bridge.Client.OpenWardrobe(propertyId, furnitureId)
     end
 end
 
--- Inventory / Stash Function
+
 
 function Bridge.Client.OpenStash(propertyId, furnitureId)
     if GetResourceState('ox_inventory') == 'started' then
@@ -80,7 +80,7 @@ function Bridge.Client.OpenStash(propertyId, furnitureId)
     end
 end
 
--- Notify Function
+
 
 function Bridge.Client.Notify(msg, type)
     lib.notify({

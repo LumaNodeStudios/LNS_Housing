@@ -204,21 +204,21 @@ local function render()
             DrawPoly(d.x, d.y, d.z, c.x, c.y, height, b.x, b.y, b.z, DEBUG_COLOUR.r,  DEBUG_COLOUR.g,  DEBUG_COLOUR.b,  DEBUG_COLOUR.a)
         end
 
-        if IsDisabledControlJustPressed(0, 14) then -- Scroll Down
+        if IsDisabledControlJustPressed(0, 14) then 
             zoneCreator.height = math.max(0.5, zoneCreator.height - 0.5)
         end
 
-        if IsDisabledControlJustPressed(0, 15) then -- Scroll Up
+        if IsDisabledControlJustPressed(0, 15) then 
             zoneCreator.height = zoneCreator.height + 0.5
         end
 
-        if IsDisabledControlJustPressed(0, 104) then -- H
+        if IsDisabledControlJustPressed(0, 104) then 
             zoneCreator.active = false
             zoneCreator.freecamMode(false)
             return {points = points, thickness = zoneCreator.height}
         end
 
-        if IsDisabledControlJustPressed(0, 306) and zoneCreator.editIndex then -- N
+        if IsDisabledControlJustPressed(0, 306) and zoneCreator.editIndex then 
             zoneCreator.editIndex = nil
             lib.hideTextUI()
             lib.showTextUI(polyText)
@@ -255,7 +255,7 @@ local function polyCreator()
     zoneCreator.height = DEFAULT_HEIGHT
     zoneCreator.freecamMode(true)
 
-    Wait(500) -- Allow freecam and NUI focus transition to settle
+    Wait(500) 
     lib.showTextUI(polyText)
     
     local result = render()
@@ -271,7 +271,7 @@ local function mloDoor()
 	local lastEntity = 0
     local doorId = nil
 
-    Wait(500) -- Allow NUI focus transition to settle
+    Wait(500) 
     lib.showTextUI('[E] - to pick door | [H] cancel')
 
     while true do
@@ -295,7 +295,7 @@ local function mloDoor()
                 doorId = exports.ox_doorlock:getDoorIdFromEntity(entity)
                 
                 if not doorId then
-                    -- If not registered, return the door data
+                    
                     local model = GetEntityModel(entity)
                     local coords = GetEntityCoords(entity)
                     local heading = GetEntityHeading(entity)
@@ -313,7 +313,7 @@ local function mloDoor()
                 break
 			end
 
-			if IsDisabledControlJustPressed(0, 104) then -- H
+			if IsDisabledControlJustPressed(0, 104) then 
                 if lastEntity then
                     SetEntityDrawOutline(lastEntity, false)
                 end

@@ -5,7 +5,7 @@ RegisterNetEvent('LNS_Housing:server:buyFurniture', function(propertyId, items, 
     local p = Properties[propertyId]
     if not p then return end
 
-    local identifier = GetIdentifier(src)
+    local identifier = Bridge.Server.GetIdentifier(src)
     local payType = paymentMethod == 'cash' and 'cash' or 'bank'
     local money = Bridge.Server.GetMoney(src, payType)
 
@@ -46,7 +46,7 @@ RegisterNetEvent('LNS_Housing:server:saveFurniture', function(propertyId, furnit
     local p = Properties[propertyId]
     if not p then return end
 
-    local identifier = GetIdentifier(src)
+    local identifier = Bridge.Server.GetIdentifier(src)
     local hasAccess = p.owner == identifier
 
     if not hasAccess then return end

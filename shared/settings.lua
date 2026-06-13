@@ -1,129 +1,71 @@
 return {
-    -- General & Core Settings --
+    -- Debugging options to toggle print logs and visible boundaries/draw zones
     Debug = {
-        BuyHouses = true, -- Set to true to allow buying houses via ox_target on doors
-        LawnGrowth = true, -- Set to true for 5 min growth (300s), false for 7 days (604800s)
-        Zones = true -- Seto to true for zone boxes, false to hide zone boxes
+        BuyHouses = true, 
+        LawnGrowth = true, 
+        Zones = true 
     },
 
-    Creator = {
-        Command = 'createhouse',
-        Group = 'admin'
-    },
-
-    ApartmentCreator = {
-        Command = 'createapartment',
-        Group = 'admin'
-    },
-
+    -- Real estate job and agency management settings
     RealEstate = {
-        Command = 'properties',
-        OnlyBuyViaContracts = false, -- If true, players cannot buy direct-sale properties directly and must purchase via an agent contract
-        Jobs = { 'realestate', 'luxuryestate' },
-        Groups = { 'admin', 'god', 'superadmin' },
+        Command = 'properties',                     -- Command for real estate agents to open properties menu
+        OnlyBuyViaContracts = false,                -- If true, players can only buy houses through a signed contract with an agent
+        Jobs = { 'realestate', 'luxuryestate' },    -- Jobs allowed to access the real estate agent actions
+        Groups = { 'admin', 'god', 'superadmin' },  -- Admin groups that have full agent permissions
         Agencies = {
             ['realestate'] = {
                 label = 'Dynasty 8 Real Estate',
-                society = 'realestate',
-                defaultCommission = 10 -- 10% commission
+                society = 'realestate',             -- Society account name for deposits/payments
+                defaultCommission = 10              -- Default commission percentage for sales
             },
             ['luxuryestate'] = {
                 label = 'Luxury Real Estate',
                 society = 'luxuryestate',
-                defaultCommission = 15 -- 15% commission
+                defaultCommission = 15 
             }
         },
+        -- Permission ranks required for specific real estate actions
         Permissions = {
-            CreateHouse = 2,       -- Minimum grade to create houses
-            DraftContract = 1,     -- Minimum grade to create/draft contracts
-            ManageListings = 3,    -- Minimum grade to edit details or delete listings
-            ManageEmployees = 4,   -- Minimum grade to manage employee options
+            CreateHouse = 2,       
+            DraftContract = 1,     
+            ManageListings = 3,    
+            ManageEmployees = 4,   
         }
     },
 
-    -- Housing --
+    -- Default properties for the personal stash/storage in houses
     Stash = {
-        label = 'Property Storage',
-        slots = 50,
-        weight = 100000 -- 100kg
+        label = 'Property Storage', -- Display label when opening the stash
+        slots = 50,                 -- Number of storage slots
+        weight = 100000             -- Maximum weight capacity of the stash (e.g., in grams)
     },
 
+    -- Security, burglary, and property raid settings
     Security = {
-        LockpickItem = 'lockpic2k',
-        RaidItem = 'lockpick', -- Item required for police raids
-        RaidDuration = 50000,         -- Time in ms for progressbar
-        RaidStorageDuration = 10000,         -- Time in ms for progressbar
-        MaxLevel = 5,
+        LockpickItem = 'lockpic2k',   -- Item needed for ordinary house lockpicking
+        RaidItem = 'lockpick',        -- Item needed by police/authorized factions to raid properties
+        RaidDuration = 50000,         -- Time in milliseconds required to break open a door during a raid
+        RaidStorageDuration = 10000,  -- Time in milliseconds to break open a property stash
+        MaxLevel = 5,                 -- Maximum upgradable lock level for houses
+        -- Lockpicking minigame difficulty settings based on security/lock levels
         Difficulty = {
-            [0] = { rounds = 1, speed = 1.0, area = 40 }, -- Level 0 (Default)
+            [0] = { rounds = 1, speed = 1.0, area = 40 }, -- Level 0: 1 round, normal speed, large target area
             [1] = { rounds = 2, speed = 1.2, area = 35 },
             [2] = { rounds = 3, speed = 1.4, area = 30 },
             [3] = { rounds = 4, speed = 1.6, area = 25 },
             [4] = { rounds = 5, speed = 1.8, area = 20 },
-            [5] = { rounds = 6, speed = 2.0, area = 15 },
+            [5] = { rounds = 6, speed = 2.0, area = 15 }, -- Level 5: 6 rounds, fast speed, small target area
         }
     },
 
-    Lawn = {
-        Enabled = true,
-        GrowthTime = 120, -- time in seconds for grass to grow 100% (2 hours)
-        MaxSink = 0.25,    -- maximum depth (in meters) the grass starts underground and grows up from
-        Spacing = 1.5,     -- spacing distance between grass spawn points
-        RenderDistance = 80.0, -- distance (in units) from yard center to start rendering grass props
-        Models = {
-            { model = 'prop_veg_grass_01_a', zOffset = 0.0 },
-            { model = 'prop_grass_dry_02',   zOffset = -0.3 },
-            { model = 'prop_veg_grass_01_c', zOffset = 0.0 },
-        },
-        MowerProp = 'prop_lawnmower_01',
-        CutDistance = 1,  -- distance to cut a grass prop
-        RequireItem = 'lawnmower', -- require this inventory item to mow
-        MowerVehicles = { 'mower' }, -- Drivable mower vehicle models
-        VehicleCutDistance = 3.0,    -- Cut distance when in a vehicle (wider area)
-    },
+    MaxKeys = 5, -- Maximum number of physical keys/copies that can be shared per property
 
-    -- Blips Settings --
-    Blips = {
-        ReadyToBuy = {
-            Enabled = true,
-            Sprite = 350, -- Standard house blip
-            Color = 2, -- Green
-            Scale = 0.5,
-            Label = "Proeprty For Sale"
-        },
-        Owned = {
-            Enabled = true,
-            ShowOnlyMyOwned = true, -- If true, players will only see blips for houses they own. If false, they see all owned houses.
-            Sprite = 40, -- Safehouse blip
-            Color = 3, -- Blue
-            Scale = 0.5,
-            Label = "Owned Property"
-        }
-    },
-
-    -- Apartments --
-    Apartments = {
-        Enabled = true, -- Set to false to disable starting apartments completely
-    },
-
-    ApartmentBuilding = {
-        sprite = 475,
-        color = 3,
-        scale = 0.8,
-        label = "WIWANG Apartments",
-        coords = vec3(-826.53, -700.2, 27.06),
-        postal = '8083'
-    },
-
-    MaxKeys = 5,
-
-    Furniture = lib.load('shared.furniture'),
-
+    -- Shell/Interior template configurations (interiors spawned under the map)
     Shells = {
         ["Standard Motel"] = {
             label = "Standard Motel",
             hash = "standardmotel_shell",
-            doorOffset = { x = -0.5, y = -2.3, z = 0.0, h = 90.0, width = 1.5 }
+            doorOffset = { x = -0.5, y = -2.3, z = 0.0, h = 90.0, width = 1.5 } -- Exit door offset from the shell origin
         },
         ["Modern Hotel"] = {
             label = "Modern Hotel",
@@ -202,6 +144,72 @@ return {
         }
     },
 
-    -- Ignore --
+    -- Placeholder for dynamic custom room configurations
     Rooms = {},
+
+    -- Housing specific settings
+    Housing = {
+        Creator = {
+            Command = 'createhouse', -- Command to initiate house creation
+            Group = 'admin'          -- User group permitted to run this command
+        },
+
+        -- Lawn mowing and grass growth simulation settings
+        Lawn = {
+            Enabled = true,
+            GrowthTime = 120,      -- Time (in minutes) for grass to fully grow
+            MaxSink = 0.25,        -- Maximum distance grass models can sink into the ground
+            Spacing = 1.5,         -- Distance spacing between individual grass props
+            RenderDistance = 80.0, -- Distance (in meters) at which grass props will render for players
+            Models = {             -- Grass prop models spawned on unmaintained lawns
+                { model = 'prop_veg_grass_01_a', zOffset = 0.0 },
+                { model = 'prop_grass_dry_02',   zOffset = -0.3 },
+                { model = 'prop_veg_grass_01_c', zOffset = 0.0 },
+            },
+            MowerProp = 'prop_lawnmower_01',    -- Prop model of the push lawnmower
+            CutDistance = 1,                    -- Radius in meters for cutting grass with push mower
+            RequireItem = 'lawnmower',          -- Inventory item required to use a push mower
+            MowerVehicles = { 'mower' },        -- Vehicle models categorized as lawnmowers
+            VehicleCutDistance = 3.0,           -- Cutting radius in meters when using a lawnmower vehicle
+        },
+
+        -- Map blips/icons for properties
+        Blips = {
+            ReadyToBuy = {
+                Enabled = true,
+                Sprite = 350,   -- Blip icon ID (350 is house icon)
+                Color = 2,      -- Blip color ID (2 is green)
+                Scale = 0.5,    -- Size of the blip icon
+                Label = "Property For Sale"
+            },
+            Owned = {
+                Enabled = true,
+                ShowOnlyMyOwned = true, -- Only display owned properties belonging to the local player
+                Sprite = 40,    -- Blip icon ID (40 is safehouse icon)
+                Color = 3,      -- Blip color ID (3 is blue)
+                Scale = 0.5,
+                Label = "Owned Property"
+            }
+        }
+    },
+
+    -- Apartment specific settings
+    Apartments = {
+        Enabled = true, -- Toggle for enabling or disabling apartment system
+
+        Creator = {
+            Command = 'createapartment', -- Command to initiate apartment creation
+            Group = 'admin'              -- User group permitted to run this command
+        },
+
+        -- Configuration for the main apartment building lobby/reception
+        Building = {
+            sprite = 475,               -- Blip icon ID for apartments
+            color = 3,                  -- Blip color ID
+            scale = 0.8,
+            label = "WIWANG Apartments",
+            coords = vec3(-826.53, -700.2, 27.06), -- Entrance vector coordinate
+            postal = '8083'             -- Postal map code
+        }
+    }
 }

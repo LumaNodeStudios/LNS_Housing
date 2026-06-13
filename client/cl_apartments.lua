@@ -16,14 +16,14 @@ local function CreateApartmentBlip()
         RemoveBlip(apartmentBlip)
     end
 
-    apartmentBlip = AddBlipForCoord(Settings.ApartmentBuilding.coords.x, Settings.ApartmentBuilding.coords.y, Settings.ApartmentBuilding.coords.z)
-    SetBlipSprite(apartmentBlip, Settings.ApartmentBuilding.sprite)
+    apartmentBlip = AddBlipForCoord(Settings.Apartments.Building.coords.x, Settings.Apartments.Building.coords.y, Settings.Apartments.Building.coords.z)
+    SetBlipSprite(apartmentBlip, Settings.Apartments.Building.sprite)
     SetBlipDisplay(apartmentBlip, 4)
-    SetBlipScale(apartmentBlip, Settings.ApartmentBuilding.scale)
-    SetBlipColour(apartmentBlip, Settings.ApartmentBuilding.color)
+    SetBlipScale(apartmentBlip, Settings.Apartments.Building.scale)
+    SetBlipColour(apartmentBlip, Settings.Apartments.Building.color)
     SetBlipAsShortRange(apartmentBlip, true)
     BeginTextCommandSetBlipName("STRING")
-    AddTextComponentString(Settings.ApartmentBuilding.label)
+    AddTextComponentString(Settings.Apartments.Building.label)
     EndTextCommandSetBlipName(apartmentBlip)
 end
 
@@ -294,7 +294,7 @@ exports('SpawnInStarterApartment', function()
 end)
 
 local function RegisterApartmentCreatorCommands()
-    local cmd = Settings.ApartmentCreator and Settings.ApartmentCreator.Command or 'createapartment'
+    local cmd = Settings.Apartments.Creator and Settings.Apartments.Creator.Command or 'createapartment'
     
     RegisterCommand(cmd, function()
         local isAdmin = lib.callback.await('LNS_Housing:server:isApartmentAdmin', false)
@@ -322,8 +322,8 @@ CreateThread(function()
 
     RegisterApartmentCreatorCommands()
 
-    -- Police Raid Target Registration for Apartments (optimized: sequential run inside unified startup thread)
-    Wait(1500) -- Wait briefly for doorlocks to initialize
+    
+    Wait(1500) 
     if Settings.Rooms then
         for _, room in ipairs(Settings.Rooms) do
             if room.doorCoords then
@@ -623,6 +623,3 @@ RegisterNUICallback('createApartment', function(data, cb)
     SendNUIMessage({ action = 'closeUI' })
     cb('ok')
 end)
-
-
-

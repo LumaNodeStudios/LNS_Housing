@@ -21,8 +21,8 @@ Modeler = {
         local property = Properties[propertyId]
         if not property then return end
         
-        -- Logic to determine shell position (for relative placement)
-        -- If it's an MLO, we might use the door position or a predefined center
+        
+        
         self.shellPos = property.door_id and exports.ox_doorlock:getDoor(property.door_id).coords or GetEntityCoords(cache.ped)
         
         self.property_id = propertyId
@@ -102,12 +102,12 @@ Modeler = {
         if hit and entity ~= 0 then
             local item = self:GetFurnitureFromEntity(entity)
             if item then
-                -- Trigger placement for this item
+                
                 local data = table.clone(item)
                 data.entity = entity
                 self:StartPlacement(data)
                 
-                -- Notify UI that we selected something
+                
                 SendNUIMessage({
                     action = "selectFurniture",
                     data = item
@@ -121,9 +121,9 @@ Modeler = {
     StartSelectionThread = function(self)
         CreateThread(function()
             while self.MenuOpen do
-                -- Only allow selecting when NOT already placing something
-                -- This is a fallback for when NUI doesn't have focus or handles it differently
-                if not self.CurrentObject and not self.IsFreecamMode and IsDisabledControlJustPressed(0, 24) then -- Left Click
+                
+                
+                if not self.CurrentObject and not self.IsFreecamMode and IsDisabledControlJustPressed(0, 24) then 
                     self:SelectAtCursor()
                 end
                 Wait(0)
@@ -135,7 +135,7 @@ Modeler = {
         local camRot = self.IsFreecamMode and Freecam:GetRotation() or GetGameplayCamRot(2)
         local camPos = self.IsFreecamMode and Freecam:GetPosition() or GetGameplayCamCoord()
         local forward = self:RotationToDirection(camRot)
-        local target = camPos + (forward * 50.0) -- 50m range
+        local target = camPos + (forward * 50.0) 
         
         local ray = StartShapeTestRay(camPos.x, camPos.y, camPos.z, target.x, target.y, target.z, 16, cache.ped, 0)
         local _, hit, endCoords, surfaceNormal, entityHit = GetShapeTestResult(ray)
@@ -196,12 +196,12 @@ Modeler = {
     ConstrainCamera = function(self, camPos, lastCamPos)
         local isInside = true
         
-        -- Check regular housing zone
+        
         if IsCoordsInsidePropertyZone then
             isInside = IsCoordsInsidePropertyZone(self.property_id, camPos)
         end
         
-        -- Check apartment zone
+        
         if isInside and insideApartment and apartmentZone and apartmentZone.contains then
             isInside = apartmentZone:contains(camPos)
         end
@@ -247,7 +247,7 @@ Modeler = {
                         }
                     })
                 end
-                Wait(33) -- Sleep for ~30 FPS instead of checking every tick/frame!
+                Wait(33) 
             end
             self.FreecamThreadActive = false
         end)
@@ -268,7 +268,7 @@ Modeler = {
             objectPos = GetEntityCoords(curObject)
             objectRot = GetEntityRotation(curObject, 2)
             
-            -- Store original data for reverting if cancelled
+            
             self.PlacingData = {
                 id = data.id,
                 isOwned = true,
@@ -300,7 +300,7 @@ Modeler = {
 
         self.CurrentObject = curObject
         
-        -- Send initial state to NUI for 3D Gizmo
+        
         SendNUIMessage({ 
             action = "setupModel",
             data = {
@@ -313,7 +313,7 @@ Modeler = {
             }
         })
 
-        -- Start placement thread for follow camera or precise controls
+        
         self:StartPlacementThread()
     end,
 
@@ -331,7 +331,7 @@ Modeler = {
                 
                 camPos = self:ConstrainCamera(camPos, lastCamPos)
 
-                -- Only send if the camera has actually moved
+                
                 if not lastCamPos or #(lastCamPos - camPos) > 0.001 or #(lastCamTarget - camTarget) > 0.001 then
                     lastCamPos = camPos
                     lastCamTarget = camTarget
@@ -345,7 +345,7 @@ Modeler = {
                         }
                     })
                 end
-                Wait(33) -- Sleep for ~30 FPS instead of checking every single tick
+                Wait(33) 
             end
             self.PlacementThreadActive = false
         end)
@@ -385,15 +385,15 @@ Modeler = {
         
         if options.save then
             if data.isOwned then
-                -- Update existing furniture
+                
                 self:UpdateFurniture(data.id, GetEntityCoords(self.CurrentObject), GetEntityRotation(self.CurrentObject, 2))
             else
-                -- This is handled by AddToCart in the UI, but we ensure it's clean here
+                
             end
         else
-            -- Cancelled
+            
             if data.isOwned then
-                -- Revert to original position
+                
                 SetEntityCoords(self.CurrentObject, data.originalPos.x, data.originalPos.y, data.originalPos.z)
                 SetEntityRotation(self.CurrentObject, data.originalRot.x, data.originalRot.y, data.originalRot.z, 2, true)
             else
@@ -529,7 +529,7 @@ Modeler = {
             data = item
         })
 
-        self.CurrentObject = nil -- Keep entity but stop controlling it
+        self.CurrentObject = nil 
     end,
 
     RemoveCartItem = function(self, data)
@@ -581,7 +581,7 @@ Modeler = {
         local hash = GetHashKey(data.model)
         lib.requestModel(hash)
         
-        -- If a new hover session was started while we were yielding/requesting the model, discard this one
+        
         if currentSession ~= self.HoverSession then
             return
         end
@@ -604,7 +604,7 @@ Modeler = {
     end,
 
     HoverOut = function(self)
-        self.HoverSession = self.HoverSession + 1 -- Invalidate any yielding model requests
+        self.HoverSession = self.HoverSession + 1 
         if self.HoverObject then
             DeleteEntity(self.HoverObject)
             self.HoverObject = nil
@@ -665,7 +665,7 @@ Modeler = {
     end
 }
 
--- NUI Callbacks
+
 RegisterNUICallback("previewFurniture", function(data, cb)
 	Modeler:StartPlacement(data)
 	cb("ok")
@@ -769,23 +769,23 @@ RegisterNetEvent('LNS_Housing:client:openFurnitureMenu', function(propertyId)
     Modeler:OpenMenu(propertyId)
 end)
 
--- Key listener for freecam exit and cursor toggle
+
 CreateThread(function()
     while true do
         local sleep = 500
         if Modeler.IsMenuActive then
             sleep = 0
             
-            -- Always disable Left Alt (19) when the menu is active to prevent conflicts with character selector/eye-target
+            
             DisableControlAction(0, 19, true)
 
             if not IsNuiFocused() then
-                -- When NUI focus is lost (freecam mode is active), check if Left Alt was released to exit freecam mode
+                
                 if IsDisabledControlJustReleased(0, 19) then
                     Modeler:FreecamMode(false)
                 end
 
-                -- If in freecam mode, also handle Backspace/ESC to exit freecam mode
+                
                 if Modeler.IsFreecamMode then
                     DisableControlAction(0, 177, true)
                     if IsDisabledControlJustReleased(0, 177) then

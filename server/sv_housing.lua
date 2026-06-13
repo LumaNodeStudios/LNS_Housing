@@ -5,16 +5,13 @@ TemporaryAccess = {
     stashes = {}
 }
 
-function GetIdentifier(source)
-    return Bridge.Server.GetIdentifier(source)
-end
 
 function IsRentOverdue(p)
     if not p or p.sale_type ~= 'rent' or not p.owner then return false end
     local lastPaid = p.metadata.last_rent_paid or 0
     if lastPaid == 0 then return false end
-    local rentPeriod = 604800 -- 7 days
-    local gracePeriod = 86400 -- 1 day
+    local rentPeriod = 604800 
+    local gracePeriod = 86400 
     return (os.time() - lastPaid) > (rentPeriod + gracePeriod)
 end
 
@@ -104,7 +101,7 @@ lib.callback.register('LNS_Housing:server:hasAccess', function(source, propertyI
     local p = Properties[propertyId]
     if not p then return false end
 
-    local identifier = GetIdentifier(source)
+    local identifier = Bridge.Server.GetIdentifier(source)
 
     if not IsRentOverdue(p) then
         if p.owner == identifier then return true end
@@ -131,7 +128,7 @@ end)
 
 RegisterNetEvent('LNS_Housing:server:lockpickSuccess', function(propertyId, type, stashId)
     local src = source
-    local identifier = GetIdentifier(src)
+    local identifier = Bridge.Server.GetIdentifier(src)
     local p = Properties[propertyId]
     if not p then return end
 
@@ -181,19 +178,19 @@ RegisterNetEvent('LNS_Housing:server:policeRaidDoor', function(propertyId, prope
     if doorId and doorId ~= 0 then
         exports.ox_doorlock:setDoorState(doorId, 0)
 
-        local identifier = GetIdentifier(src)
+        local identifier = Bridge.Server.GetIdentifier(src)
         if not TemporaryAccess.doors[propertyId] then TemporaryAccess.doors[propertyId] = {} end
         TemporaryAccess.doors[propertyId][identifier] = true
 
         Bridge.Server.Notify(src, 'Door breached successfully!', 'success')
     else
-        -- Coordinate entrance!
+        
         local p = Properties[propertyId]
         if p and p.metadata and p.metadata.entrance then
             p.metadata.locked = false
             SaveProperty(propertyId)
 
-            local identifier = GetIdentifier(src)
+            local identifier = Bridge.Server.GetIdentifier(src)
             if not TemporaryAccess.doors[propertyId] then TemporaryAccess.doors[propertyId] = {} end
             TemporaryAccess.doors[propertyId][identifier] = true
 
@@ -217,7 +214,7 @@ RegisterNetEvent('LNS_Housing:server:policeRaidStash', function(propertyId)
         return
     end
 
-    local identifier = GetIdentifier(src)
+    local identifier = Bridge.Server.GetIdentifier(src)
     if not TemporaryAccess.stashes[propertyId] then TemporaryAccess.stashes[propertyId] = {} end
     TemporaryAccess.stashes[propertyId][identifier] = true
 
@@ -240,7 +237,7 @@ lib.callback.register('LNS_Housing:server:buyHouse', function(source, propertyId
 
         ProcessPropertySalePayout(propertyId, p.price)
 
-        p.owner = GetIdentifier(source)
+        p.owner = Bridge.Server.GetIdentifier(source)
         SaveProperty(propertyId)
         SyncPropertyDoor(propertyId)
 
@@ -289,9 +286,9 @@ RegisterNetEvent('LNS_Housing:server:toggleLock', function(propertyId)
     local p = Properties[propertyId]
     if not p then return end
 
-    -- Verify access (owner or manager)
+    
     local hasAccess = false
-    local identifier = GetIdentifier(src)
+    local identifier = Bridge.Server.GetIdentifier(src)
     
     if p.owner == identifier then
         hasAccess = true

@@ -7,8 +7,8 @@ local CurrentInterior = 0
 local PropertyBlips = {}
 local ClearPropertyBlips, UpdatePropertyBlips
 
--- Open Creator UI
-RegisterCommand(Settings.Creator.Command, function(source, args, rawCommand)
+
+RegisterCommand(Settings.Housing.Creator.Command, function(source, args, rawCommand)
     local hasPermission = lib.callback.await('LNS_Housing:server:getRealEstatePermission', false)
     if not hasPermission then
         Bridge.Client.Notify('You do not have permission to use this command.', 'error')
@@ -28,7 +28,7 @@ RegisterCommand(Settings.Creator.Command, function(source, args, rawCommand)
     SetNuiFocus(true, true)
 end, false)
 
--- NUI Callbacks
+
 RegisterNUICallback('createHouse', function(data, cb)
     SetNuiFocus(false, false)
     local success = lib.callback.await('LNS_Housing:server:createHouse', false, data)
@@ -115,7 +115,7 @@ function LockpickDoor(propertyId)
             Bridge.Client.Notify('You successfully picked the lock!', 'success')
         else
             Bridge.Client.Notify('You failed to pick the lock.', 'error')
-            -- Optional: break lockpick item logic here
+            
         end
     end
 end
@@ -191,7 +191,7 @@ function LoadFurnitures(propertyId)
         if f.textureVariation then
             SetObjectTextureVariation(obj, tonumber(f.textureVariation))
         end
-        -- Add target for storage items
+        
         local itemData = nil
         for _, cat in ipairs(Furniture) do
             for _, item in ipairs(cat.items) do
@@ -244,7 +244,7 @@ function LoadFurnitures(propertyId)
                         local job = Bridge.Client.GetPlayerJob()
                         if not job or job.name ~= 'police' then return false end
                         
-                        -- Enforce door breach requirement first!
+                        
                         local isDoorBreached = lib.callback.await('LNS_Housing:server:isDoorBreached', false, propertyId)
                         if not isDoorBreached then return false end
                         
@@ -360,7 +360,7 @@ function RegisterPropertyZones(p)
     if PropertyZones[p.id] then return end
     
     if p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
-        -- Shell Property Zone
+        
         local doorCoords = GetEntranceCoords(p)
         if doorCoords then
             local shellCoords = vec3(doorCoords.x, doorCoords.y, doorCoords.z - 35.0)
@@ -369,7 +369,7 @@ function RegisterPropertyZones(p)
                 size = vec3(25.0, 25.0, 10.0),
                 debug = Settings.Debug.Zones,
                 onEnter = function()
-                    -- Ensure shell is spawned locally (for crash/relog support)
+                    
                     local shellName = p.metadata.shell or 'Standard Motel'
                     SpawnShellForProperty(p.id, shellName, shellCoords)
 
@@ -394,7 +394,7 @@ function RegisterPropertyZones(p)
                 end
             })
         end
-    -- If zone_data exists (Polyzone), use lib.zones
+    
     elseif p.zone_data and p.zone_data.points and #p.zone_data.points >= 3 then
         local thickness = p.zone_data.thickness or 10.0
         local points = {}
@@ -426,7 +426,7 @@ function RegisterPropertyZones(p)
             end
         })
     else
-        -- Fallback to distance-based loading using lib.points
+        
         local door = p.door_id and GetOxDoorlockDoor(p.door_id)
         if door and door.coords then
             local doorCoords = vec3(door.coords.x, door.coords.y, door.coords.z)
@@ -459,7 +459,7 @@ function RegisterPropertyEntranceTargets(p)
     if not p then return end
     local id = p.id
     
-    -- Clean up existing entrance target if registered
+    
     if EntranceTargets[id] then
         exports.ox_target:removeZone(EntranceTargets[id])
         EntranceTargets[id] = nil
@@ -502,7 +502,7 @@ function RegisterPropertyEntranceTargets(p)
                     })
                 end
 
-                -- Register lockpick target for buyable houses
+                
                 if Settings.Debug and Settings.Debug.BuyHouses then
                     exports.ox_target:addSphereZone({
                         coords = targetCoords,
@@ -524,7 +524,7 @@ function RegisterPropertyEntranceTargets(p)
                     })
                 end
 
-                -- Register Police Raid target
+                
                 exports.ox_target:addBoxZone({
                     coords = targetCoords,
                     size = vec3(1.0, 1.5, 2.0),
@@ -548,7 +548,7 @@ function RegisterPropertyEntranceTargets(p)
             end
         end
     else
-        -- Coordinate based entrance target registration!
+        
         local isShell = p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo'
         local entranceCoords = p.metadata and p.metadata.entrance
         if isShell and entranceCoords then
@@ -615,16 +615,16 @@ function RegisterPropertyEntranceTargets(p)
 end
 
 function CleanUpHousingSession()
-    -- Hide any active TextUI
+    
     lib.hideTextUI()
 
-    -- Remove radial menu item
+    
     lib.removeRadialItem('housing_furniture')
 
-    -- Reset NUI Focus
+    
     SetNuiFocus(false, false)
 
-    -- Clean up active Modeler objects (if Modeler is loaded)
+    
     if Modeler then
         if Modeler.CurrentObject and DoesEntityExist(Modeler.CurrentObject) then
             DeleteEntity(Modeler.CurrentObject)
@@ -646,14 +646,14 @@ function CleanUpHousingSession()
         end
     end
 
-    -- Clean up all spawned housing furniture
+    
     if LoadedFurniture then
         for propertyId, _ in pairs(LoadedFurniture) do
             UnloadFurnitures(propertyId)
         end
     end
 
-    -- Clean up property zones/points
+    
     if PropertyZones then
         for id, zone in pairs(PropertyZones) do
             if zone and zone.remove then
@@ -665,7 +665,7 @@ function CleanUpHousingSession()
         PropertyZones = {}
     end
 
-    -- Restore wall color/tint of current interior if set
+    
     if CurrentInterior and CurrentInterior ~= 0 then
         DeactivateInteriorEntitySet(CurrentInterior, "wall_tint")
         RefreshInterior(CurrentInterior)
@@ -675,7 +675,7 @@ function CleanUpHousingSession()
         CleanUpLawn()
     end
 
-    -- Clean up spawned shells
+    
     for propertyId, entity in pairs(SpawnedShells) do
         if DoesEntityExist(entity) then
             DeleteEntity(entity)
@@ -701,7 +701,7 @@ function CleanUpHousingSession()
 end
 
 function InitializeHousing()
-    -- Clean up first to prevent duplicates
+    
     CleanUpHousingSession()
 
     Properties = lib.callback.await('LNS_Housing:server:getProperties', false)
@@ -709,20 +709,20 @@ function InitializeHousing()
     if Properties then
         UpdatePropertyBlips()
 
-        -- 1. Register property zones
+        
         for id, p in pairs(Properties) do
             RegisterPropertyZones(p)
         end
 
-        -- 2. Target integration for houses
-        Wait(1500) -- Wait briefly for doorlocks/targets to load
+        
+        Wait(1500) 
         for id, p in pairs(Properties) do
             RegisterPropertyEntranceTargets(p)
         end
     end
 end
 
--- Sync properties from server and register zones (optimized unified initialization thread)
+
 CreateThread(function()
     while not NetworkIsPlayerActive(PlayerId()) do
         Wait(100)
@@ -735,7 +735,7 @@ CreateThread(function()
     end
 end)
 
--- Framework Event Handlers for Player Load / Unload
+
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
     InitializeHousing()
 end)
@@ -752,7 +752,7 @@ RegisterNetEvent('esx:onPlayerLogout', function()
     CleanUpHousingSession()
 end)
 
--- Monitor interior changes only for wall colors now
+
 CreateThread(function()
     while true do
         local ped = cache.ped
@@ -762,7 +762,7 @@ CreateThread(function()
             CurrentInterior = interiorId
             
             if interiorId ~= 0 then
-                -- Check if this interior belongs to a property (for wall color)
+                
                 for id, p in pairs(Properties) do
                     local door = p.door_id and GetOxDoorlockDoor(p.door_id)
                     if door and door.coords and #(GetEntityCoords(ped) - vec3(door.coords.x, door.coords.y, door.coords.z)) < 30.0 then
@@ -782,7 +782,7 @@ RegisterNetEvent('LNS_Housing:client:updateFurniture', function(propertyId, furn
     if Properties[propertyId] then
         Properties[propertyId].furniture = furniture
         
-        -- If the furniture is currently loaded (meaning we are inside/near the property), refresh it
+        
         if LoadedFurniture[propertyId] then
             UnloadFurnitures(propertyId)
             LoadFurnitures(propertyId)
@@ -795,7 +795,7 @@ RegisterNetEvent('LNS_Housing:client:updateFurniture', function(propertyId, furn
 end)
 
 RegisterNetEvent('LNS_Housing:client:updateProperties', function(allProperties)
-    -- Update in-place to keep references for closures
+    
     for k, v in pairs(allProperties) do
         local isNew = Properties[k] == nil
         Properties[k] = v
@@ -809,7 +809,7 @@ RegisterNetEvent('LNS_Housing:client:updateProperties', function(allProperties)
             end
         end
     end
-    -- Remove deleted properties if any
+    
     for k, v in pairs(Properties) do
         if not allProperties[k] then
             if EntranceTargets[k] then
@@ -876,7 +876,7 @@ function StartPoliceStashRaid(propertyId, stashId)
     end
 end
 
--- Shell Spawning and Entrance/Exit Mechanics
+
 SpawnedShells = {}
 ExitTargets = {}
 
@@ -926,7 +926,7 @@ end
 function UpdatePropertyBlips()
     ClearPropertyBlips()
 
-    if not Settings.Blips then return end
+    if not Settings.Housing.Blips then return end
 
     local playerIdentifier = Bridge.Client.GetIdentifier()
 
@@ -939,9 +939,9 @@ function UpdatePropertyBlips()
                 
                 local blipConfig = nil
                 if isOwned then
-                    blipConfig = Settings.Blips.Owned
+                    blipConfig = Settings.Housing.Blips.Owned
                 else
-                    blipConfig = Settings.Blips.ReadyToBuy
+                    blipConfig = Settings.Housing.Blips.ReadyToBuy
                 end
 
                 if blipConfig and blipConfig.Enabled then

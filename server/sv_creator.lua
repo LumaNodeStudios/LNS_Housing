@@ -5,10 +5,33 @@ function GetRealEstatePermission(source)
     local isAllowed = false
     local jobName = nil
     local gradeLevel = 0
+    local isAdmin = false
+
+    local allowedGroups = Settings.RealEstate.Groups
+    if Bridge.Framework == 'qbx' then
+        for _, group in ipairs(allowedGroups) do
+            if IsPlayerAceAllowed(tostring(source), 'group.' .. group) or IsPlayerAceAllowed(tostring(source), group) then
+                isAdmin = true
+                break
+            end
+        end
+    elseif Bridge.Framework == 'esx' then
+        local ESX = exports['es_extended']:getSharedObject()
+        local p = ESX.GetPlayerFromId(source)
+        local playerGroup = p and p.getGroup()
+        if playerGroup then
+            for _, group in ipairs(allowedGroups) do
+                if playerGroup == group then
+                    isAdmin = true
+                    break
+                end
+            end
+        end
+    end
 
     local playerJob = Bridge.Server.GetPlayerJob(source)
     if playerJob then
-        local allowedJobs = Settings.RealEstate.Jobs or { 'realestate', 'luxuryestate' }
+        local allowedJobs = Settings.RealEstate.Jobs
         for _, job in ipairs(allowedJobs) do
             if playerJob.name == job then
                 isAllowed = true
@@ -19,51 +42,30 @@ function GetRealEstatePermission(source)
         end
     end
 
-    if not isAllowed then
-        local allowedGroups = Settings.RealEstate.Groups or { 'admin', 'god', 'superadmin' }
-        local playerGroup = nil
-        if Bridge.Framework == 'qbx' then
-            local p = exports.qbx_core:GetPlayer(source)
-            playerGroup = p and p.PlayerData.group
-        elseif Bridge.Framework == 'esx' then
-            local ESX = exports['es_extended']:getSharedObject()
-            local p = ESX.GetPlayerFromId(source)
-            playerGroup = p and p.getGroup()
+    if isAdmin then
+        isAllowed = true
+        if not jobName then
+            jobName = 'admin'
         end
-
-        if playerGroup then
-            for _, group in ipairs(allowedGroups) do
-                if playerGroup == group then
-                    isAllowed = true
-                    jobName = 'admin'
-                    gradeLevel = 4
-                    break
-                end
-            end
-        end
+        gradeLevel = 100
     end
 
     if isAllowed then
-        local permConfig = Settings.RealEstate.Permissions or {
-            CreateHouse = 2,
-            DraftContract = 1,
-            ManageListings = 3,
-            ManageEmployees = 4
-        }
+        local permConfig = Settings.RealEstate.Permissions
         local agencyConfig = Settings.RealEstate.Agencies and Settings.RealEstate.Agencies[jobName]
 
         local societyBalance = 0
-        if gradeLevel >= (permConfig.ManageEmployees or 4) and jobName ~= 'admin' then
+        if gradeLevel >= (permConfig.ManageEmployees) and jobName ~= 'admin' then
             local societyName = agencyConfig and agencyConfig.society or jobName
             societyBalance = Bridge.Server.GetSocietyMoney(societyName) or 0
         end
 
-        local citizenid = GetIdentifier(source)
+        local citizenid = Bridge.Server.GetIdentifier(source)
 
-        local createHouse = gradeLevel >= (permConfig.CreateHouse or 2)
-        local draftContract = gradeLevel >= (permConfig.DraftContract or 1)
-        local manageListings = gradeLevel >= (permConfig.ManageListings or 3)
-        local manageEmployees = gradeLevel >= (permConfig.ManageEmployees or 4)
+        local createHouse = gradeLevel >= (permConfig.CreateHouse)
+        local draftContract = gradeLevel >= (permConfig.DraftContract)
+        local manageListings = gradeLevel >= (permConfig.ManageListings)
+        local manageEmployees = gradeLevel >= (permConfig.ManageEmployees)
         local commissionRate = agencyConfig and agencyConfig.defaultCommission or 10
 
         return {
@@ -85,7 +87,7 @@ function GetRealEstatePermission(source)
 
     return {
         allowed = false,
-        citizenid = GetIdentifier(source)
+        citizenid = Bridge.Server.GetIdentifier(source)
     }
 end
 
@@ -119,7 +121,7 @@ end)
 
 lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
     local playerJob = Bridge.Server.GetPlayerJob(source)
-    local citizenid = GetIdentifier(source)
+    local citizenid = Bridge.Server.GetIdentifier(source)
 
     if playerJob then
         data.agency = playerJob.name
@@ -212,7 +214,7 @@ RegisterNetEvent('LNS_Housing:server:placeBid', function(data)
     end
 
     p.auction_data.current_bid = amount
-    p.auction_data.highest_bidder = GetIdentifier(src)
+    p.auction_data.highest_bidder = Bridge.Server.GetIdentifier(src)
 
     SaveProperty(propertyId)
     TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)

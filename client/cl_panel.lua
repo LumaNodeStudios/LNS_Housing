@@ -8,13 +8,13 @@ RegisterNetEvent('LNS_Housing:client:openPanel', function(propertyData)
     
     propertyData.playerName = Bridge.Client.GetPlayerName()
     if propertyData.owner then
-        -- This might need a callback to get owner name if not current player
+        
         if propertyData.owner == Bridge.Client.GetIdentifier() then
             propertyData.ownerName = propertyData.playerName
         end
     end
 
-    -- Get street name and zone from player's current location
+    
     local coords = GetEntityCoords(cache.ped)
     local streetHash, crossingHash = GetStreetNameAtCoord(coords.x, coords.y, coords.z)
     propertyData.streetName = GetStreetNameFromHashKey(streetHash)
@@ -57,7 +57,7 @@ RegisterNUICallback('changeWallColor', function(data, cb)
     cb('ok')
 end)
 
--- Real Estate Panel
+
 RegisterCommand(Settings.RealEstate.Command, function()
     local properties = lib.callback.await('LNS_Housing:server:getProperties', false)
     local hasPermission = lib.callback.await('LNS_Housing:server:getRealEstatePermission', false)
@@ -91,7 +91,7 @@ RegisterNUICallback('buyProperty', function(data, cb)
     local success = lib.callback.await('LNS_Housing:server:buyHouse', false, data.id)
     if success then
         Bridge.Client.Notify('You bought ' .. data.label .. '!', 'success')
-        -- Update the UI state locally or re-fetch
+        
         local properties = lib.callback.await('LNS_Housing:server:getProperties', false)
         SendNUIMessage({
             action = 'updateProperties',
@@ -132,7 +132,7 @@ RegisterNUICallback('payRent', function(data, cb)
     cb('ok')
 end)
 
--- Real Estate Employee Callbacks
+
 RegisterNUICallback('getEmployees', function(data, cb)
     local employees = lib.callback.await('LNS_Housing:server:getEmployees', false)
     cb(employees or {})
@@ -164,7 +164,7 @@ RegisterNUICallback('updateEmployee', function(data, cb)
     cb(success)
 end)
 
--- Real Estate Listings & Eviction Callbacks
+
 RegisterNUICallback('updateListingDetails', function(data, cb)
     local success = lib.callback.await('LNS_Housing:server:updateListingDetails', false, data)
     if success then
@@ -210,4 +210,3 @@ RegisterNUICallback('updateSpawnPoint', function(data, cb)
     end
     cb(success)
 end)
-

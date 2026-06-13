@@ -4,16 +4,12 @@ local Settings = lib.load('shared.settings')
 local Furniture = lib.load('shared.furniture')
 local ESX = Bridge.Framework == 'esx' and exports['es_extended']:getSharedObject() or nil
 
--- Helper Function
-
 local function normalizeAmount(amount)
     local parsed = tonumber(amount)
     if not parsed or parsed ~= parsed then return nil end
     parsed = math.floor(parsed + 0.0)
     return parsed >= 0 and parsed or nil
 end
-
--- Database Functions
 
 local DB_CONFIG = {
     qbx = { table = 'players', column = 'money', key = 'citizenid' },
@@ -50,8 +46,6 @@ function Bridge.Server.AddOfflineBankMoney(identifier, amount)
     MySQL.update.await(query, {safeAmount, identifier})
     return true
 end
-
--- Framework Functions
 
 function Bridge.Server.GetIdentifier(source)
     if Bridge.Framework == 'qbx' then
@@ -230,8 +224,6 @@ function Bridge.Server.AddBankMoney(source, amount, reason)
     return false
 end
 
--- Society Banking Functions
-
 local function handleSocietyMoney(job, amount, action)
     if GetResourceState('Renewed-Banking') == 'started' then
         if action == 'add' then
@@ -273,8 +265,6 @@ function Bridge.Server.GetSocietyMoney(job)
     return handleSocietyMoney(job, nil, 'get')
 end
 
--- Inventory & Stash Functions
-
 function Bridge.Server.RegisterStash(propertyId, furnitureId, storageConfig, label)
     if GetResourceState('ox_inventory') == 'started' then
         local stashId = string.format('housing_%d_%s', propertyId, furnitureId)
@@ -306,8 +296,6 @@ function Bridge.Server.RegisterPropertyStashes(propertyId, furnitureList)
         end
     end
 end
-
--- Notify Function
 
 function Bridge.Server.Notify(source, msg, type)
     lib.notify(source, {

@@ -1,5 +1,5 @@
 local Settings = lib.load('shared.settings')
-Settings.Lawn.GrowthTime = Settings.Debug.LawnGrowth and 300 or 604800
+Settings.Housing.Lawn.GrowthTime = Settings.Debug.LawnGrowth and 300 or 604800
 
 local ServerTimeOffset = 0
 local LastGrassUpdate = {}
@@ -77,11 +77,11 @@ local function SpawnYardGrass(propertyId)
     if not p or not p.yard_zone_data or not p.yard_zone_data.points or #p.yard_zone_data.points < 3 then return end
 
     local now = GetServerTime()
-    -- lawn_data is a table of coordIndex (string key) -> mowed_at (unix timestamp)
-    -- If a blade was never mowed, it uses last_mowed as fallback (legacy / global mow)
+    
+    
     local lawnData = p.lawn_data or {}
 
-    local coords = GetYardGridCoords(propertyId, p.yard_zone_data.points, Settings.Lawn.Spacing)
+    local coords = GetYardGridCoords(propertyId, p.yard_zone_data.points, Settings.Housing.Lawn.Spacing)
 
     local maxProps = 100
     local step = 1
@@ -91,15 +91,15 @@ local function SpawnYardGrass(propertyId)
 
     CreateThread(function()
         for i = 1, #coords, step do
-            -- Determine this blade's individual mowed_at time
-            -- lawn_data keys are stored as strings (JSON limitation)
+            
+            
             local keyStr = tostring(i)
             local bladeMowedAt = lawnData[keyStr] or lawnData[i] or p.last_mowed or 0
 
             local timePassed = now - bladeMowedAt
-            local growth = math.min(1.0, timePassed / Settings.Lawn.GrowthTime)
+            local growth = math.min(1.0, timePassed / Settings.Housing.Lawn.GrowthTime)
 
-            -- Find if already spawned
+            
             local grassObj = nil
             for j = 1, #SpawnedGrassProps do
                 local grass = SpawnedGrassProps[j]
@@ -110,10 +110,10 @@ local function SpawnYardGrass(propertyId)
             end
 
             if growth < 0.1 then
-                -- This blade is freshly mowed — delete if it exists
+                
                 if grassObj and DoesEntityExist(grassObj.entity) then
                     DeleteEntity(grassObj.entity)
-                    -- Remove from SpawnedGrassProps
+                    
                     for j = #SpawnedGrassProps, 1, -1 do
                         if SpawnedGrassProps[j].propertyId == propertyId and SpawnedGrassProps[j].coordIndex == i then
                             table.remove(SpawnedGrassProps, j)
@@ -128,16 +128,16 @@ local function SpawnYardGrass(propertyId)
             local randVal = deterministicRandom(coord.x, coord.y)
 
             if grassObj then
-                -- Update existing blade height
+                
                 if DoesEntityExist(grassObj.entity) then
                     local range = 1.0 - randVal
                     if range < 0.05 then range = 0.05 end
                     local propGrowth = math.min(1.0, (growth - randVal) / range)
-                    local modelCount = #Settings.Lawn.Models
+                    local modelCount = #Settings.Housing.Lawn.Models
                     local modelIndex = (math.floor(randVal * modelCount) % modelCount) + 1
-                    local modelData = Settings.Lawn.Models[modelIndex]
+                    local modelData = Settings.Housing.Lawn.Models[modelIndex]
                     local zOffset = modelData.zOffset or 0.0
-                    local maxSink = Settings.Lawn.MaxSink or 0.25
+                    local maxSink = Settings.Housing.Lawn.MaxSink or 0.25
                     local currentZOffset = zOffset - (1.0 - propGrowth) * maxSink
                     local currentCoords = GetEntityCoords(grassObj.entity)
                     local baseGroundZ = grassObj.groundZ or currentCoords.z
@@ -150,11 +150,11 @@ local function SpawnYardGrass(propertyId)
                 goto continue
             end
 
-            -- Spawn new blade
+            
             if randVal <= growth then
-                local modelCount = #Settings.Lawn.Models
+                local modelCount = #Settings.Housing.Lawn.Models
                 local modelIndex = (math.floor(randVal * modelCount) % modelCount) + 1
-                local modelData = Settings.Lawn.Models[modelIndex]
+                local modelData = Settings.Housing.Lawn.Models[modelIndex]
                 local modelName = modelData.model
                 local zOffset = modelData.zOffset or 0.0
                 if not modelName then goto continue end
@@ -204,7 +204,7 @@ local function SpawnYardGrass(propertyId)
                 local range = 1.0 - randVal
                 if range < 0.05 then range = 0.05 end
                 local propGrowth = math.min(1.0, (growth - randVal) / range)
-                local maxSink = Settings.Lawn.MaxSink or 0.25
+                local maxSink = Settings.Housing.Lawn.MaxSink or 0.25
                 local currentZOffset = zOffset - (1.0 - propGrowth) * maxSink
 
                 SetEntityCoords(obj, coord.x, coord.y, baseGroundZ + currentZOffset, false, false, false, false)
@@ -256,15 +256,15 @@ function StartMowing(propertyId, isAuto)
         return
     end
 
-    -- Check if there's anything left to mow (any blade with growth >= 0.1)
+    
     local now = GetServerTime()
     local lawnData = p.lawn_data or {}
-    local coords = GetYardGridCoords(propertyId, p.yard_zone_data.points, Settings.Lawn.Spacing)
+    local coords = GetYardGridCoords(propertyId, p.yard_zone_data.points, Settings.Housing.Lawn.Spacing)
     local hasGrowth = false
     for i = 1, #coords do
         local keyStr = tostring(i)
         local bladeMowedAt = lawnData[keyStr] or lawnData[i] or p.last_mowed or 0
-        local growth = math.min(1.0, (now - bladeMowedAt) / Settings.Lawn.GrowthTime)
+        local growth = math.min(1.0, (now - bladeMowedAt) / Settings.Housing.Lawn.GrowthTime)
         if growth >= 0.1 then
             hasGrowth = true
             break
@@ -283,7 +283,7 @@ function StartMowing(propertyId, isAuto)
     local isVehicleMower = false
     if currentVehicle ~= 0 then
         local model = GetEntityModel(currentVehicle)
-        local mowerVehs = Settings.Lawn.MowerVehicles or { 'mower' }
+        local mowerVehs = Settings.Housing.Lawn.MowerVehicles or { 'mower' }
         for _, name in ipairs(mowerVehs) do
             if model == GetHashKey(name) then
                 isVehicleMower = true
@@ -295,13 +295,13 @@ function StartMowing(propertyId, isAuto)
     MowingActive = true
 
     if not isAuto then
-        Wait(500) -- Allow inventory close transition to settle
+        Wait(500) 
     end
 
     if isVehicleMower then
         lib.showTextUI('Mowing Lawn - Drive over long grass', { position = 'right-center' })
     else
-        local modelHash = GetHashKey(Settings.Lawn.MowerProp)
+        local modelHash = GetHashKey(Settings.Housing.Lawn.MowerProp)
         lib.requestModel(modelHash)
 
         local coords2 = GetEntityCoords(ped)
@@ -318,7 +318,7 @@ function StartMowing(propertyId, isAuto)
         RemoveAnimDict(animDict)
     end
 
-    -- Collect newly mowed indices this session
+    
     local newlyMowedIndices = {}
 
     CreateThread(function()
@@ -329,7 +329,7 @@ function StartMowing(propertyId, isAuto)
             local playerPed = cache.ped
 
             if isVehicleMower then
-                -- Check if player exited the vehicle
+                
                 local veh = GetVehiclePedIsIn(playerPed, false)
                 if veh ~= currentVehicle then
                     StopMowing()
@@ -339,7 +339,7 @@ function StartMowing(propertyId, isAuto)
                     break
                 end
 
-                -- Check if player left the yard
+                
                 if ActiveYardPropertyId ~= propertyId then
                     StopMowing()
                     if #newlyMowedIndices > 0 then
@@ -360,7 +360,7 @@ function StartMowing(propertyId, isAuto)
 
                 if IsDisabledControlJustPressed(0, 38) then
                     StopMowing()
-                    -- Save partial mow even if player stops early
+                    
                     if #newlyMowedIndices > 0 then
                         TriggerServerEvent('LNS_Housing:server:saveMowedBlades', propertyId, newlyMowedIndices)
                     end
@@ -374,14 +374,14 @@ function StartMowing(propertyId, isAuto)
                 lastCheckTime = currentTime
 
                 local mowerCoords
-                local cutDistance = Settings.Lawn.CutDistance or 1.0
+                local cutDistance = Settings.Housing.Lawn.CutDistance or 1.0
 
                 if isVehicleMower then
                     mowerCoords = GetEntityCoords(currentVehicle)
-                    cutDistance = Settings.Lawn.VehicleCutDistance or 3.0
+                    cutDistance = Settings.Housing.Lawn.VehicleCutDistance or 3.0
                 else
                     if not MowerPropHandle or not DoesEntityExist(MowerPropHandle) then
-                        local modelHash = GetHashKey(Settings.Lawn.MowerProp)
+                        local modelHash = GetHashKey(Settings.Housing.Lawn.MowerProp)
                         local newCoords = GetEntityCoords(playerPed)
                         local newProp = CreateObject(modelHash, newCoords.x, newCoords.y, newCoords.z, true, false, false)
                         SetEntityCollision(newProp, false, false)
@@ -403,7 +403,7 @@ function StartMowing(propertyId, isAuto)
                             elseif GetGameTimer() - grass.nearSince > (isVehicleMower and 0 or 600) then
                                 grass.mowed = true
                                 cutAny = true
-                                -- Track which index was mowed
+                                
                                 newlyMowedIndices[#newlyMowedIndices + 1] = grass.coordIndex
 
                                 if DoesEntityExist(grass.entity) then
@@ -423,13 +423,13 @@ function StartMowing(propertyId, isAuto)
                 end
 
                 if cutAny then
-                    -- Periodically flush mowed indices to server (every 10 new blades)
+                    
                     if #newlyMowedIndices >= 10 then
                         TriggerServerEvent('LNS_Housing:server:saveMowedBlades', propertyId, newlyMowedIndices)
                         newlyMowedIndices = {}
                     end
 
-                    -- Check for full mow completion (90%+ of all spawned blades for this property)
+                    
                     local total = 0
                     local cut = 0
                     for i = 1, #SpawnedGrassProps do
@@ -440,7 +440,7 @@ function StartMowing(propertyId, isAuto)
                     end
 
                     if total > 0 and (cut / total) >= 0.90 then
-                        -- Send remaining indices and mark full mow
+                        
                         TriggerServerEvent('LNS_Housing:server:finishMowing', propertyId, newlyMowedIndices, true)
                         newlyMowedIndices = {}
                         Bridge.Client.Notify('Lawn successfully mowed! It will grow back over time.', 'success')
@@ -473,15 +473,15 @@ function OpenYardMenu(propertyId)
 
     local now = GetServerTime()
     local lawnData = p.lawn_data or {}
-    local coords = GetYardGridCoords(propertyId, p.yard_zone_data and p.yard_zone_data.points or {}, Settings.Lawn.Spacing)
+    local coords = GetYardGridCoords(propertyId, p.yard_zone_data and p.yard_zone_data.points or {}, Settings.Housing.Lawn.Spacing)
 
-    -- Average growth across all blades
+    
     local totalGrowth = 0
     local count = math.max(1, #coords)
     for i = 1, #coords do
         local keyStr = tostring(i)
         local bladeMowedAt = lawnData[keyStr] or lawnData[i] or p.last_mowed or 0
-        totalGrowth = totalGrowth + math.min(1.0, (now - bladeMowedAt) / Settings.Lawn.GrowthTime)
+        totalGrowth = totalGrowth + math.min(1.0, (now - bladeMowedAt) / Settings.Housing.Lawn.GrowthTime)
     end
     local growth = math.min(100, math.floor((totalGrowth / count) * 100))
 
@@ -547,7 +547,7 @@ local function UnloadGrassForProperty(propertyId)
 end
 
 function RegisterYardZone(p)
-    if not Settings.Lawn or not Settings.Lawn.Enabled then return end
+    if not Settings.Housing.Lawn or not Settings.Housing.Lawn.Enabled then return end
     if YardZones[p.id] then return end
     if not p.yard_zone_data or not p.yard_zone_data.points or #p.yard_zone_data.points < 3 then return end
 
@@ -578,10 +578,10 @@ end
 CreateThread(function()
     while true do
         Wait(2000)
-        if not Settings.Lawn or not Settings.Lawn.Enabled then goto skip end
+        if not Settings.Housing.Lawn or not Settings.Housing.Lawn.Enabled then goto skip end
 
         local playerCoords = GetEntityCoords(cache.ped)
-        local renderDist = Settings.Lawn.RenderDistance or 80.0
+        local renderDist = Settings.Housing.Lawn.RenderDistance or 80.0
 
         for propertyId, center in pairs(YardCenters) do
             local dist = #(playerCoords - center)
@@ -635,13 +635,13 @@ end
 CreateThread(function()
     while true do
         Wait(1000)
-        if Settings.Lawn and Settings.Lawn.Enabled and ActiveYardPropertyId and not MowingActive then
+        if Settings.Housing.Lawn and Settings.Housing.Lawn.Enabled and ActiveYardPropertyId and not MowingActive then
             local ped = cache.ped
             local vehicle = GetVehiclePedIsIn(ped, false)
             if vehicle ~= 0 then
                 local model = GetEntityModel(vehicle)
                 local isVehicleMower = false
-                local mowerVehs = Settings.Lawn.MowerVehicles or { 'mower' }
+                local mowerVehs = Settings.Housing.Lawn.MowerVehicles or { 'mower' }
                 for _, name in ipairs(mowerVehs) do
                     if model == GetHashKey(name) then
                         isVehicleMower = true

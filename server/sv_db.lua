@@ -21,7 +21,7 @@ function LoadProperties()
             v.agent_cid = v.agent_cid or nil
             v.commission_rate = tonumber(v.commission_rate) or 10
             
-            -- Backwards compatibility
+            
             if not v.doors or #v.doors == 0 then
                 if v.door_id and v.door_id ~= 0 then
                     v.doors = { v.door_id }
@@ -175,7 +175,7 @@ MySQL.ready(function()
             )
         ]])
 
-        -- Safe migrations for existing player_apartments tables (license -> citizenid, unique_room drop, is_new add)
+        
         pcall(function()
             MySQL.query.await("ALTER TABLE player_apartments DROP INDEX unique_license")
         end)
