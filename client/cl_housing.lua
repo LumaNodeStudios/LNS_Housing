@@ -9,7 +9,7 @@ local ClearPropertyBlips, UpdatePropertyBlips
 
 
 RegisterCommand(Settings.Housing.Creator.Command, function(source, args, rawCommand)
-    local hasPermission = lib.callback.await('LNS_Housing:server:getRealEstatePermission', false)
+    local hasPermission = lib.callback.await('LNS_Housing:server:checkPermission', false, 'realestate')
     if not hasPermission then
         Bridge.Client.Notify('You do not have permission to use this command.', 'error')
         return
@@ -97,53 +97,107 @@ function LockpickDoor(propertyId)
     local p = Properties[propertyId]
     if not p then return end
 
+    if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'entry') then
+        Bridge.Client.Notify('You already have access to this property.', 'error')
+        return
+    end
+
     local securityLevel = p.metadata and p.metadata.security_level or 0
     local config = Settings.Security.Difficulty[securityLevel] or Settings.Security.Difficulty[0]
 
-    if lib.progressBar({
-        duration = 5000,
-        label = 'Attempting to pick lock...',
-        useWhileDead = false,
-        canCancel = true,
-        disable = { car = true, move = true },
-        anim = { dict = 'anim@amb@clubhouse@tutorial@bkr_tut_ig3@', clip = 'ig_3_con_loop' }
-    }) then
-        local success = lib.skillCheck(table.create(config.rounds, 0), { 'w', 'a', 's', 'd' })
-        
-        if success then
-            TriggerServerEvent('LNS_Housing:server:lockpickSuccess', propertyId, 'door')
-            Bridge.Client.Notify('You successfully picked the lock!', 'success')
-        else
-            Bridge.Client.Notify('You failed to pick the lock.', 'error')
-            
+    lib.requestAnimDict('anim@amb@clubhouse@tutorial@bkr_tut_ig3@')
+    TaskPlayAnim(cache.ped, 'anim@amb@clubhouse@tutorial@bkr_tut_ig3@', 'ig_3_con_loop', 8.0, -8.0, -1, 49, 0, false, false, false)
+
+    local rounds = {}
+    for i = 1, config.rounds do
+        rounds[i] = { areaSize = config.area, speedMultiplier = config.speed }
+    end
+    local success = lib.skillCheck(rounds, { 'w', 'a', 's', 'd' })
+    
+    ClearPedTasks(cache.ped)
+
+    if success then
+        TriggerServerEvent('LNS_Housing:server:lockpickSuccess', propertyId, 'door')
+        Bridge.Client.Notify('You successfully picked the lock!', 'success')
+    else
+        TriggerServerEvent('LNS_Housing:server:lockpickFailed', propertyId)
+        Bridge.Client.Notify('You failed to pick the lock.', 'error')
+    end
+end
+
+function OpenBelongingsRetrieval(propertyId)
+    local p = Properties[propertyId]
+    if not p or not p.furniture then return end
+
+    local options = {}
+    for _, f in ipairs(p.furniture) do
+        local itemData = nil
+        for _, cat in ipairs(Furniture) do
+            for _, item in ipairs(cat.items) do
+                if (tonumber(item.model) or GetHashKey(item.model)) == (tonumber(f.model) or GetHashKey(f.model)) then
+                    itemData = item
+                    break
+                end
+            end
+            if itemData then break end
+        end
+
+        if itemData and itemData.isStorage then
+            table.insert(options, {
+                title = f.label or itemData.label or 'Storage Unit',
+                description = 'Retrieve items from this storage unit',
+                icon = 'box',
+                arrow = true,
+                onSelect = function()
+                    Bridge.Client.OpenStash(propertyId, f.id)
+                end
+            })
         end
     end
+
+    if #options == 0 then
+        Bridge.Client.Notify('No stashes found in this property.', 'error')
+        return
+    end
+
+    lib.registerContext({
+        id = 'housing_belongings_retrieval',
+        title = 'Retrieve Belongings - ' .. p.label,
+        options = options
+    })
+    lib.showContext('housing_belongings_retrieval')
 end
 
 function LockpickStash(propertyId, stashId)
     local p = Properties[propertyId]
     if not p then return end
 
+    if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'storage') then
+        Bridge.Client.Notify('You already have access to this storage.', 'error')
+        return
+    end
+
     local securityLevel = p.metadata and p.metadata.security_level or 0
     local config = Settings.Security.Difficulty[securityLevel] or Settings.Security.Difficulty[0]
 
-    if lib.progressBar({
-        duration = 8000,
-        label = 'Attempting to pick stash lock...',
-        useWhileDead = false,
-        canCancel = true,
-        disable = { car = true, move = true },
-        anim = { dict = 'anim@amb@prop_human_atm@interior@male@enter', clip = 'enter' }
-    }) then
-        local success = lib.skillCheck(table.create(config.rounds + 1, 0), { 'w', 'a', 's', 'd' })
-        
-        if success then
-            TriggerServerEvent('LNS_Housing:server:lockpickSuccess', propertyId, 'stash', stashId)
-            Bridge.Client.Notify('You successfully picked the stash lock!', 'success')
-            exports.ox_inventory:openInventory('stash', stashId)
-        else
-            Bridge.Client.Notify('You failed to pick the stash lock.', 'error')
-        end
+    lib.requestAnimDict('anim@amb@prop_human_atm@interior@male@enter')
+    TaskPlayAnim(cache.ped, 'anim@amb@prop_human_atm@interior@male@enter', 'enter', 8.0, -8.0, -1, 49, 0, false, false, false)
+
+    local rounds = {}
+    local totalRounds = config.rounds + 1
+    for i = 1, totalRounds do
+        rounds[i] = { areaSize = config.area, speedMultiplier = config.speed }
+    end
+    local success = lib.skillCheck(rounds, { 'w', 'a', 's', 'd' })
+    
+    ClearPedTasks(cache.ped)
+
+    if success then
+        TriggerServerEvent('LNS_Housing:server:lockpickSuccess', propertyId, 'stash', stashId)
+        Bridge.Client.Notify('You successfully picked the stash lock!', 'success')
+        exports.ox_inventory:openInventory('stash', stashId)
+    else
+        Bridge.Client.Notify('You failed to pick the stash lock.', 'error')
     end
 end
 
@@ -184,6 +238,10 @@ function LoadFurnitures(propertyId)
         local hash = tonumber(f.model) or GetHashKey(f.model)
         lib.requestModel(hash)
         
+        if not LoadedFurniture[propertyId] then
+            break
+        end
+        
         local obj = CreateObjectNoOffset(hash, f.position.x, f.position.y, f.position.z, false, false, false)
         SetEntityRotation(obj, f.rotation.x, f.rotation.y, f.rotation.z, 2, true)
         FreezeEntityPosition(obj, true)
@@ -214,11 +272,7 @@ function LoadFurnitures(propertyId)
                         Bridge.Client.OpenStash(propertyId, f.id)
                     end,
                     canInteract = function()
-                        if p.isApartment then
-                            return lib.callback.await('LNS_Housing:server:hasApartmentAccess', false, propertyId, 'storage')
-                        else
-                            return lib.callback.await('LNS_Housing:server:hasAccess', false, propertyId, 'storage')
-                        end
+                        return lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'storage')
                     end
                 },
                 {
@@ -230,7 +284,7 @@ function LoadFurnitures(propertyId)
                     end,
                     canInteract = function()
                         if p.isApartment then return false end
-                        return Properties[propertyId].owner and not lib.callback.await('LNS_Housing:server:hasAccess', false, propertyId, 'storage')
+                        return Properties[propertyId].owner and not lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'storage')
                     end
                 },
                 {
@@ -248,12 +302,7 @@ function LoadFurnitures(propertyId)
                         local isDoorBreached = lib.callback.await('LNS_Housing:server:isDoorBreached', false, propertyId)
                         if not isDoorBreached then return false end
                         
-                        local hasAccess
-                        if p.isApartment then
-                            hasAccess = lib.callback.await('LNS_Housing:server:hasApartmentAccess', false, propertyId, 'storage')
-                        else
-                            hasAccess = lib.callback.await('LNS_Housing:server:hasAccess', false, propertyId, 'storage')
-                        end
+                        local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'storage')
                         return not hasAccess
                     end
                 }
@@ -270,11 +319,7 @@ function LoadFurnitures(propertyId)
                         Bridge.Client.OpenWardrobe(propertyId, f.id)
                     end,
                     canInteract = function()
-                        if p.isApartment then
-                            return lib.callback.await('LNS_Housing:server:hasApartmentAccess', false, propertyId, 'wardrobe')
-                        else
-                            return lib.callback.await('LNS_Housing:server:hasAccess', false, propertyId, 'wardrobe')
-                        end
+                        return lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'wardrobe')
                     end
                 }
             })
@@ -302,11 +347,7 @@ function LoadFurnitures(propertyId)
                         end
                     end,
                     canInteract = function()
-                        if p.isApartment then
-                            return lib.callback.await('LNS_Housing:server:hasApartmentAccess', false, propertyId, 'entry')
-                        else
-                            return lib.callback.await('LNS_Housing:server:hasAccess', false, propertyId, 'entry')
-                        end
+                        return lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'entry')
                     end
                 }
             })
@@ -325,13 +366,8 @@ function LoadFurnitures(propertyId)
                         end
                     end,
                     canInteract = function()
-                        if p.isApartment then
-                            return Properties[propertyId] and Properties[propertyId].owner and 
-                                lib.callback.await('LNS_Housing:server:hasApartmentAccess', false, propertyId, 'manage')
-                        else
-                            return Properties[propertyId] and Properties[propertyId].owner and 
-                                lib.callback.await('LNS_Housing:server:hasAccess', false, propertyId, 'manage')
-                        end
+                        return Properties[propertyId] and Properties[propertyId].owner and 
+                            lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'manage')
                     end
                 }
             })
@@ -376,7 +412,7 @@ function RegisterPropertyZones(p)
                     LoadFurnitures(p.id)
                     TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', p.id)
 
-                    if lib.callback.await('LNS_Housing:server:hasAccess', false, p.id, 'manage') then
+                    if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'manage') then
                         lib.addRadialItem({
                             id = 'housing_furniture',
                             icon = 'couch',
@@ -409,7 +445,7 @@ function RegisterPropertyZones(p)
             debug = Settings.Debug.Zones,
             onEnter = function()
                 LoadFurnitures(p.id)
-                if lib.callback.await('LNS_Housing:server:hasAccess', false, p.id, 'manage') then
+                if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'manage') then
                     lib.addRadialItem({
                         id = 'housing_furniture',
                         icon = 'couch',
@@ -435,7 +471,7 @@ function RegisterPropertyZones(p)
                 distance = 40,
                 onEnter = function()
                     LoadFurnitures(p.id)
-                    if lib.callback.await('LNS_Housing:server:hasAccess', false, p.id, 'manage') then
+                    if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'manage') then
                         lib.addRadialItem({
                             id = 'housing_furniture',
                             icon = 'couch',
@@ -492,10 +528,38 @@ function RegisterPropertyEntranceTargets(p)
                                     local doorState = exports.ox_doorlock:getDoor(doorId).state
                                     local isUnlocked = doorState == 0
                                     if isUnlocked then return true end
-                                    return lib.callback.await('LNS_Housing:server:hasAccess', false, id, 'entry')
+                                    return lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry')
                                 end,
                                 onSelect = function()
                                     EnterShellProperty(id)
+                                end
+                            },
+                            --[[{
+                                label = 'Pay Rent / Debt',
+                                icon = 'fas fa-dollar-sign',
+                                canInteract = function()
+                                    local prop = Properties[id]
+                                    if not prop or prop.sale_type ~= 'rent' or prop.owner ~= Bridge.Client.GetIdentifier() then return false end
+                                    local hasDebt = (prop.metadata.rent_debt and prop.metadata.rent_debt > 0) or (prop.metadata.last_rent_paid and (GetCloudTimeAsInt() - prop.metadata.last_rent_paid > (Settings.Rent and Settings.Rent.RentPeriod or 604800)))
+                                    return hasDebt
+                                end,
+                                onSelect = function()
+                                    local prop = Properties[id]
+                                    prop.focusTab = 'rent'
+                                    TriggerEvent('LNS_Housing:client:openPanel', prop)
+                                end
+                            },]]
+                            {
+                                label = 'Retrieve Belongings',
+                                icon = 'fas fa-box-open',
+                                canInteract = function()
+                                    local prop = Properties[id]
+                                    if not prop or prop.sale_type ~= 'rent' or prop.owner ~= Bridge.Client.GetIdentifier() then return false end
+                                    local isOverdue = prop.metadata and prop.metadata.due_by and (GetCloudTimeAsInt() > prop.metadata.due_by)
+                                    return isOverdue
+                                end,
+                                onSelect = function()
+                                    OpenBelongingsRetrieval(id)
                                 end
                             }
                         }
@@ -514,7 +578,8 @@ function RegisterPropertyEntranceTargets(p)
                                 icon = 'fas fa-mask',
                                 items = Settings.Security.LockpickItem,
                                 canInteract = function()
-                                    return Properties[id].owner and Properties[id].owner ~= Bridge.Client.GetIdentifier()
+                                    if not Properties[id].owner or Properties[id].owner == Bridge.Client.GetIdentifier() then return false end
+                                    return not lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry')
                                 end,
                                 onSelect = function()
                                     LockpickDoor(id)
@@ -567,17 +632,45 @@ function RegisterPropertyEntranceTargets(p)
                         canInteract = function()
                             local isLocked = p.metadata.locked ~= false
                             if not isLocked then return true end
-                            return lib.callback.await('LNS_Housing:server:hasAccess', false, id, 'entry')
+                            return lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry')
                         end,
                         onSelect = function()
                             EnterShellProperty(id)
                         end
                     },
                     {
+                        label = 'Pay Rent / Debt',
+                        icon = 'fas fa-dollar-sign',
+                        canInteract = function()
+                            local prop = Properties[id]
+                            if not prop or prop.sale_type ~= 'rent' or prop.owner ~= Bridge.Client.GetIdentifier() then return false end
+                            local hasDebt = (prop.metadata.rent_debt and prop.metadata.rent_debt > 0) or (prop.metadata.last_rent_paid and (GetCloudTimeAsInt() - prop.metadata.last_rent_paid > (Settings.Rent and Settings.Rent.RentPeriod or 604800)))
+                            return hasDebt
+                        end,
+                        onSelect = function()
+                            local prop = Properties[id]
+                            prop.focusTab = 'rent'
+                            TriggerEvent('LNS_Housing:client:openPanel', prop)
+                        end
+                    },
+                    {
+                        label = 'Retrieve Belongings',
+                        icon = 'fas fa-box-open',
+                        canInteract = function()
+                            local prop = Properties[id]
+                            if not prop or prop.sale_type ~= 'rent' or prop.owner ~= Bridge.Client.GetIdentifier() then return false end
+                            local isOverdue = prop.metadata and prop.metadata.due_by and (GetCloudTimeAsInt() > prop.metadata.due_by)
+                            return isOverdue
+                        end,
+                        onSelect = function()
+                            OpenBelongingsRetrieval(id)
+                        end
+                    },
+                    {
                         label = 'Lock/Unlock ' .. p.label,
                         icon = 'fas fa-key',
                         canInteract = function()
-                            return lib.callback.await('LNS_Housing:server:hasAccess', false, id, 'manage')
+                            return lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry') or lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'manage')
                         end,
                         onSelect = function()
                             TriggerServerEvent('LNS_Housing:server:toggleLock', id)
@@ -590,7 +683,8 @@ function RegisterPropertyEntranceTargets(p)
                         canInteract = function()
                             local isLocked = p.metadata.locked ~= false
                             if not isLocked then return false end
-                            return Properties[id].owner and Properties[id].owner ~= Bridge.Client.GetIdentifier()
+                            if not Properties[id].owner or Properties[id].owner == Bridge.Client.GetIdentifier() then return false end
+                            return not lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry')
                         end,
                         onSelect = function()
                             LockpickDoor(id)
@@ -1005,7 +1099,7 @@ function SpawnShellForProperty(propertyId, shellName, shellCoords)
                 label = 'Lock/Unlock Property',
                 icon = 'fas fa-key',
                 canInteract = function()
-                    return lib.callback.await('LNS_Housing:server:hasAccess', false, propertyId, 'manage')
+                    return lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'entry') or lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'manage')
                 end,
                 onSelect = function()
                     TriggerServerEvent('LNS_Housing:server:toggleLock', propertyId)
@@ -1079,3 +1173,23 @@ function LeaveShellProperty(propertyId)
     Wait(500)
     DoScreenFadeIn(1000)
 end
+
+RegisterNetEvent('LNS_Housing:client:triggerHouseAlarm', function(coords, durationMs)
+    local alarmCoords = vec3(coords.x, coords.y, coords.z)
+    local shellCoords = vec3(coords.x, coords.y, 1500.0)
+    
+    RequestScriptAudioBank("DLC_H3_FM_FIB_Raid_Sounds", false, -1)
+    
+    local outsideSoundId = GetSoundId()
+    PlaySoundFromCoord(outsideSoundId, "Alarm_Exterior", alarmCoords.x, alarmCoords.y, alarmCoords.z, "DLC_H3_FM_FIB_Raid_Sounds", false, 10.0, false)
+    
+    local insideSoundId = GetSoundId()
+    PlaySoundFromCoord(insideSoundId, "Alarm_Exterior", shellCoords.x, shellCoords.y, shellCoords.z, "DLC_H3_FM_FIB_Raid_Sounds", false, 10.0, false)
+    
+    SetTimeout(durationMs or 30000, function()
+        StopSound(outsideSoundId)
+        ReleaseSoundId(outsideSoundId)
+        StopSound(insideSoundId)
+        ReleaseSoundId(insideSoundId)
+    end)
+end)

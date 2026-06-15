@@ -8,6 +8,7 @@ RegisterNetEvent('LNS_Housing:server:updatePermissions', function(propertyId, pe
     p.permissions = permissions
     SaveProperty(propertyId)
     SyncPropertyDoor(propertyId)
+    TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
 end)
 
 RegisterNetEvent('LNS_Housing:server:updateWallColor', function(propertyId, color)
@@ -34,7 +35,14 @@ RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgr
     end
 
     local nextLevel = currentLevel + 1
-    local price = 10000 * nextLevel
+    local price = 10000
+    if type(Settings.Security.UpgradePrice) == 'table' then
+        price = Settings.Security.UpgradePrice[nextLevel] or 10000
+    elseif type(Settings.Security.UpgradePrice) == 'number' then
+        price = Settings.Security.UpgradePrice * nextLevel
+    else
+        price = 10000 * nextLevel
+    end
 
     if Bridge.Server.GetBankMoney(src) >= price then
         Bridge.Server.RemoveBankMoney(src, price, "Security Upgrade: " .. p.label)
@@ -47,23 +55,42 @@ RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgr
     end
 end)
 
-RegisterNetEvent('LNS_Housing:server:payRent', function(propertyId)
+RegisterNetEvent('LNS_Housing:server:payRent', function(propertyId, payAmount)
     local src = source
-    local p = Properties[propertyId]
-    if not p or p.sale_type ~= 'rent' then return end
+    local id = tonumber(propertyId)
+    local p = Properties[id]
+    
+    if not p then return end
+    
+    if p.sale_type ~= 'rent' then return end
 
     local cid = Bridge.Server.GetIdentifier(src)
     if p.owner ~= cid then return end
 
+    if not p.metadata then p.metadata = {} end
+    if p.metadata.rent_debt == nil then p.metadata.rent_debt = 0 end
+    if p.metadata.missed_payments == nil then p.metadata.missed_payments = 0 end
+    if p.metadata.partial_payment == nil then p.metadata.partial_payment = 0 end
+
     local rentAmount = p.metadata.rent_amount or p.price or 1000
+    local currentDebt = p.metadata.rent_debt or 0
+    
+    local defaultPay = currentDebt > 0 and currentDebt or rentAmount
+    payAmount = tonumber(payAmount) or defaultPay
+    if payAmount <= 0 then return end
+
     local money = Bridge.Server.GetBankMoney(src)
+    if money < payAmount then
+        Bridge.Server.Notify(src, "Not enough money in bank to pay rent!", "error")
+        return
+    end
 
-    if money >= rentAmount then
-        Bridge.Server.RemoveBankMoney(src, rentAmount, "Paid Rent for: " .. p.label)
-
+    if Bridge.Server.RemoveBankMoney(src, payAmount, "Paid Rent for: " .. p.label) then
+        local originalPayAmount = payAmount
+        
         local commissionRate = tonumber(p.commission_rate) or 10
-        local commission = math.floor(rentAmount * (commissionRate / 100))
-        local remainder = rentAmount - commission
+        local commission = math.floor(originalPayAmount * (commissionRate / 100))
+        local remainder = originalPayAmount - commission
 
         if p.agent_cid then
             local agent = Bridge.Server.IsPlayerOnline(p.agent_cid)
@@ -79,13 +106,43 @@ RegisterNetEvent('LNS_Housing:server:payRent', function(propertyId)
         local societyName = agencyConfig and agencyConfig.society or p.agency
         Bridge.Server.AddSocietyMoney(societyName, remainder)
 
-        p.metadata.last_rent_paid = os.time()
-        SaveProperty(propertyId)
+        -- Handle debt first
+        if currentDebt > 0 then
+            local debtPaid = math.min(payAmount, currentDebt)
+            p.metadata.rent_debt = currentDebt - debtPaid
+            payAmount = payAmount - debtPaid
+            
+            if p.metadata.rent_debt <= 0 then
+                p.metadata.rent_debt = 0
+                p.metadata.missed_payments = 0
+                p.metadata.due_by = nil
+                SyncPropertyDoor(id)
+            end
+        end
 
+        -- Leftover goes to advance the next rent cycle using partial_payment accumulation
+        if payAmount > 0 then
+            local rentPeriod = Settings.Rent and Settings.Rent.RentPeriod or 604800
+            p.metadata.partial_payment = (p.metadata.partial_payment or 0) + payAmount
+            
+            while p.metadata.partial_payment >= rentAmount do
+                p.metadata.partial_payment = p.metadata.partial_payment - rentAmount
+                p.metadata.last_rent_paid = (p.metadata.last_rent_paid or os.time()) + rentPeriod
+            end
+        end
+
+        p.metadata.rent_history = p.metadata.rent_history or {}
+        table.insert(p.metadata.rent_history, 1, {
+            id = math.random(10000, 99999),
+            date = os.date("%d/%m/%Y"),
+            type = "Rent Payment",
+            amount = originalPayAmount,
+            status = "Paid"
+        })
+
+        SaveProperty(id)
         TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
-        Bridge.Server.Notify(src, string.format("You successfully paid $%s rent for %s.", rentAmount, p.label), "success")
-    else
-        Bridge.Server.Notify(src, "Not enough money in bank to pay rent!", "error")
+        Bridge.Server.Notify(src, string.format("Successfully paid $%s for %s.", originalPayAmount, p.label), "success")
     end
 end)
 
@@ -150,6 +207,14 @@ RegisterNetEvent('LNS_Housing:server:createContract', function(data)
         return
     end
 
+    if contractType == 'rent' then
+        local isBlacklisted = MySQL.query.await('SELECT 1 FROM housing_blacklist WHERE citizenid = ?', {clientCid})
+        if isBlacklisted and isBlacklisted[1] then
+            Bridge.Server.Notify(src, "This player is blacklisted from renting properties!", "error")
+            return
+        end
+    end
+
     local clientName = Bridge.Server.GetPlayerName(targetId)
     local agentCid = Bridge.Server.GetIdentifier(src)
     local agentName = Bridge.Server.GetPlayerName(src)
@@ -197,6 +262,14 @@ lib.callback.register('LNS_Housing:server:respondToContract', function(source, c
         end
         return true
     elseif action == 'accept' then
+        if contract.type == 'rent' then
+            local isBlacklisted = MySQL.query.await('SELECT 1 FROM housing_blacklist WHERE citizenid = ?', {clientCid})
+            if isBlacklisted and isBlacklisted[1] then
+                Bridge.Server.Notify(src, "You are blacklisted from renting properties!", "error")
+                return false
+            end
+        end
+
         local price = contract.price
         local bankMoney = Bridge.Server.GetBankMoney(src)
 
@@ -227,15 +300,36 @@ lib.callback.register('LNS_Housing:server:respondToContract', function(source, c
         MySQL.update.await('UPDATE housing_contracts SET status = ? WHERE id = ?', {'accepted', contractId})
         MySQL.update.await('UPDATE housing_contracts SET status = ? WHERE property_id = ? AND id != ? AND status = ?', {'declined', propertyId, contractId, 'pending'})
 
+        if not p.metadata then p.metadata = {} end
+        p.owner = clientCid
         if contract.type == 'rent' then
-            p.owner = clientCid
             p.sale_type = 'rent'
             p.price = price
             p.metadata.last_rent_paid = os.time()
             p.metadata.rent_amount = price
+            p.metadata.rent_debt = 0
+            p.metadata.missed_payments = 0
+            p.metadata.due_by = nil
+            p.metadata.auto_pay = true
+            p.metadata.partial_payment = 0
+            p.metadata.tenant_history = p.metadata.tenant_history or {}
+            table.insert(p.metadata.tenant_history, 1, {
+                date = os.date("%d/%m/%Y %H:%M"),
+                type = "Leased",
+                tenant = contract.client_name,
+                citizenid = clientCid,
+                price = price
+            })
         else
-            p.owner = clientCid
             p.sale_type = 'direct'
+            p.metadata.tenant_history = p.metadata.tenant_history or {}
+            table.insert(p.metadata.tenant_history, 1, {
+                date = os.date("%d/%m/%Y %H:%M"),
+                type = "Sold",
+                tenant = contract.client_name,
+                citizenid = clientCid,
+                price = price
+            })
         end
 
         SaveProperty(propertyId)
@@ -332,12 +426,24 @@ lib.callback.register('LNS_Housing:server:evictTenant', function(source, propert
     local p = Properties[id]
     if not p or not p.owner then return false end
 
-    p.owner = nil
-    if p.sale_type == 'rent' then
-        p.sale_type = 'direct'
-        p.metadata.last_rent_paid = nil
-        p.metadata.rent_amount = nil
+    local oldOwner = p.owner
+    local tenantName = "Resident"
+    local tenant = Bridge.Server.IsPlayerOnline(oldOwner)
+    if tenant then
+        tenantName = tenant.PlayerData.charinfo and (tenant.PlayerData.charinfo.firstname .. ' ' .. tenant.PlayerData.charinfo.lastname) or tenantName
+        Bridge.Server.Notify(tenant.PlayerData.source, "You have been evicted from " .. p.label .. " by an agent!", "error")
     end
+
+    ResetPropertyOwnershipData(id)
+
+    p.metadata.tenant_history = p.metadata.tenant_history or {}
+    table.insert(p.metadata.tenant_history, 1, {
+        date = os.date("%d/%m/%Y %H:%M"),
+        type = "Evicted",
+        tenant = tenantName,
+        citizenid = oldOwner,
+        reason = "Evicted by Agent: " .. Bridge.Server.GetPlayerName(source)
+    })
 
     SaveProperty(id)
     SyncPropertyDoor(id)
@@ -353,10 +459,18 @@ lib.callback.register('LNS_Housing:server:terminateOwnLease', function(source, p
     local cid = Bridge.Server.GetIdentifier(source)
     if p.owner ~= cid then return false end
 
-    p.owner = nil
-    p.sale_type = 'direct'
-    p.metadata.last_rent_paid = nil
-    p.metadata.rent_amount = nil
+    local tenantName = Bridge.Server.GetPlayerName(source)
+
+    ResetPropertyOwnershipData(id)
+
+    p.metadata.tenant_history = p.metadata.tenant_history or {}
+    table.insert(p.metadata.tenant_history, 1, {
+        date = os.date("%d/%m/%Y %H:%M"),
+        type = "Terminated",
+        tenant = tenantName,
+        citizenid = cid,
+        reason = "Lease terminated by tenant"
+    })
 
     SaveProperty(id)
     SyncPropertyDoor(id)
@@ -364,22 +478,64 @@ lib.callback.register('LNS_Housing:server:terminateOwnLease', function(source, p
     return true
 end)
 
+lib.callback.register('LNS_Housing:server:getBlacklist', function(source)
+    local results = MySQL.query.await('SELECT * FROM housing_blacklist ORDER BY created_at DESC')
+    return results or {}
+end)
+
+RegisterNetEvent('LNS_Housing:server:addBlacklist', function(citizenid, name, reason)
+    local src = source
+    local jobPerm = GetRealEstatePermission(src)
+    if not jobPerm or not jobPerm.permissions.manageListings then return end
+
+    local agentName = Bridge.Server.GetPlayerName(src)
+
+    local success = MySQL.insert.await([[
+        INSERT INTO housing_blacklist (citizenid, name, reason, blacklisted_by)
+        VALUES (?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE reason = ?, blacklisted_by = ?
+    ]], { citizenid, name, reason, agentName, reason, agentName })
+
+    if success then
+        Bridge.Server.Notify(src, "Successfully blacklisted " .. name .. " (" .. citizenid .. ")", "success")
+    else
+        Bridge.Server.Notify(src, "Failed to blacklist player.", "error")
+    end
+end)
+
+RegisterNetEvent('LNS_Housing:server:removeBlacklist', function(citizenid)
+    local src = source
+    local jobPerm = GetRealEstatePermission(src)
+    if not jobPerm or not jobPerm.permissions.manageListings then return end
+
+    local affectedRows = MySQL.update.await('DELETE FROM housing_blacklist WHERE citizenid = ?', { citizenid })
+    if affectedRows > 0 then
+        Bridge.Server.Notify(src, "Removed " .. citizenid .. " from blacklist.", "success")
+    else
+        Bridge.Server.Notify(src, "Failed to remove player from blacklist.", "error")
+    end
+end)
+
+RegisterNetEvent('LNS_Housing:server:toggleAutoPay', function(propertyId, enabled)
+    local src = source
+    local id = tonumber(propertyId)
+    local p = Properties[id]
+    if not p or p.owner ~= Bridge.Server.GetIdentifier(src) then return end
+
+    p.metadata.auto_pay = enabled
+    SaveProperty(id)
+    TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
+    local stateText = enabled and "enabled" or "disabled"
+    Bridge.Server.Notify(src, "Rent auto-pay " .. stateText .. ".", "success")
+end)
+
 lib.callback.register('LNS_Housing:server:updateSpawnPoint', function(source, propertyId, spawnCoords)
     local src = source
-    local p = Properties[propertyId]
+    local id = tonumber(propertyId)
+    local p = Properties[id]
     if not p then return false end
 
-    local identifier = Bridge.Server.GetIdentifier(src)
-    local hasAccess = p.owner == identifier
-    if not hasAccess and p.permissions and p.permissions.manage then
-        for _, cid in ipairs(p.permissions.manage) do
-            if cid == identifier then
-                hasAccess = true
-                break
-            end
-        end
-    end
-
+    local hasAccess = CheckPermission(src, 'house', id, 'manage')
     if not hasAccess then
         return false
     end
@@ -392,7 +548,7 @@ lib.callback.register('LNS_Housing:server:updateSpawnPoint', function(source, pr
         h = spawnCoords.w
     }
 
-    SaveProperty(propertyId)
+    SaveProperty(id)
     TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
     return true
 end)

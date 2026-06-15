@@ -6,7 +6,17 @@ function LoadProperties()
     if result then
         for _, v in ipairs(result) do
             v.permissions = json.decode(v.permissions)
+            if not v.permissions then v.permissions = { entry = {}, storage = {}, wardrobe = {}, manage = {} } end
             v.metadata = json.decode(v.metadata)
+            if not v.metadata then v.metadata = {} end
+            if v.metadata.rent_debt == nil then v.metadata.rent_debt = 0 end
+            if v.metadata.missed_payments == nil then v.metadata.missed_payments = 0 end
+            if v.metadata.due_by == nil then v.metadata.due_by = nil end
+            if v.metadata.auto_pay == nil then v.metadata.auto_pay = true end
+            if v.metadata.tenant_history == nil then v.metadata.tenant_history = {} end
+            if v.metadata.rent_history == nil then v.metadata.rent_history = {} end
+            if v.metadata.partial_payment == nil then v.metadata.partial_payment = 0 end
+            
             v.furniture = json.decode(v.furniture)
             v.zone_data = json.decode(v.zone_data or '[]')
             v.doors = json.decode(v.doors or '[]')
@@ -29,8 +39,13 @@ function LoadProperties()
                     v.doors = {}
                 end
             end
-            
             Properties[v.id] = v
+
+            if v.owner and v.sale_type == 'rent' and (not v.metadata or not v.metadata.last_rent_paid or v.metadata.last_rent_paid == 0) then
+                v.metadata = v.metadata or {}
+                v.metadata.last_rent_paid = os.time()
+                SaveProperty(v.id)
+            end
 
             if Bridge and Bridge.Server and Bridge.Server.RegisterPropertyStashes then
                 Bridge.Server.RegisterPropertyStashes(v.id, v.furniture)
@@ -289,6 +304,41 @@ MySQL.ready(function()
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ]])
 
+    MySQL.query.await([[
+        CREATE TABLE IF NOT EXISTS `housing_blacklist` (
+            `citizenid` VARCHAR(50) PRIMARY KEY,
+            `name` VARCHAR(100) NOT NULL,
+            `reason` VARCHAR(255) DEFAULT NULL,
+            `blacklisted_by` VARCHAR(100) NOT NULL,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ]])
 
     LoadProperties()
 end)
+
+function ResetPropertyOwnershipData(id)
+    local p = Properties[id]
+    if not p then return end
+
+    p.owner = nil
+    p.permissions = { entry = {}, storage = {}, wardrobe = {}, manage = {} }
+    p.furniture = {}
+    
+    if not p.metadata then p.metadata = {} end
+    p.metadata.security_level = 0
+    p.metadata.wall_color = 0
+    p.metadata.locked = true
+    p.metadata.rent_debt = nil
+    p.metadata.missed_payments = nil
+    p.metadata.due_by = nil
+    p.metadata.last_rent_paid = nil
+    p.metadata.rent_amount = nil
+    p.metadata.auto_pay = nil
+    p.metadata.partial_payment = nil
+    p.metadata.rent_history = {}
+
+    if Bridge and Bridge.Server and Bridge.Server.RegisterPropertyStashes then
+        Bridge.Server.RegisterPropertyStashes(id, p.furniture)
+    end
+end

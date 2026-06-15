@@ -318,7 +318,6 @@ function Bridge.Server.SetPlayerJob(identifier, jobName, grade)
         end
     end
 
-    -- If offline, update the DB
     if Bridge.Framework == 'qbx' then
         local result = MySQL.query.await('SELECT job FROM players WHERE citizenid = ?', {identifier})
         if result and result[1] then

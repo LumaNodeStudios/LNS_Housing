@@ -14,7 +14,8 @@ RegisterNetEvent('LNS_Housing:client:openPanel', function(propertyData)
         end
     end
 
-    
+    propertyData.securityUpgradePrice = Settings.Security.UpgradePrice
+
     local coords = GetEntityCoords(cache.ped)
     local streetHash, crossingHash = GetStreetNameAtCoord(coords.x, coords.y, coords.z)
     propertyData.streetName = GetStreetNameFromHashKey(streetHash)
@@ -28,7 +29,6 @@ RegisterNetEvent('LNS_Housing:client:openPanel', function(propertyData)
 end)
 
 RegisterNUICallback('updateProperty', function(data, cb)
-    SetNuiFocus(false, false)
     if insideApartment and MyApartmentId == data.id then
         TriggerServerEvent('LNS_Housing:server:updateApartmentPermissions', data.id, data.permissions)
     else
@@ -59,7 +59,7 @@ end)
 
 RegisterCommand(Settings.RealEstate.Command, function()
     local properties = lib.callback.await('LNS_Housing:server:getProperties', false)
-    local hasPermission = lib.callback.await('LNS_Housing:server:getRealEstatePermission', false)
+    local hasPermission = lib.callback.await('LNS_Housing:server:checkPermission', false, 'realestate')
     SendNUIMessage({
         action = 'openRealEstate',
         data = {
@@ -73,7 +73,7 @@ end, false)
 
 RegisterCommand('contracts', function()
     local properties = lib.callback.await('LNS_Housing:server:getProperties', false)
-    local hasPermission = lib.callback.await('LNS_Housing:server:getRealEstatePermission', false)
+    local hasPermission = lib.callback.await('LNS_Housing:server:checkPermission', false, 'realestate')
     SendNUIMessage({
         action = 'openRealEstate',
         data = {
@@ -127,7 +127,27 @@ RegisterNUICallback('upgradeSecurity', function(data, cb)
 end)
 
 RegisterNUICallback('payRent', function(data, cb)
-    TriggerServerEvent('LNS_Housing:server:payRent', data.propertyId)
+    TriggerServerEvent('LNS_Housing:server:payRent', data.propertyId, data.amount)
+    cb('ok')
+end)
+
+RegisterNUICallback('toggleAutoPay', function(data, cb)
+    TriggerServerEvent('LNS_Housing:server:toggleAutoPay', data.propertyId, data.enabled)
+    cb('ok')
+end)
+
+RegisterNUICallback('getBlacklist', function(_, cb)
+    local blacklist = lib.callback.await('LNS_Housing:server:getBlacklist', false)
+    cb(blacklist or {})
+end)
+
+RegisterNUICallback('addBlacklist', function(data, cb)
+    TriggerServerEvent('LNS_Housing:server:addBlacklist', data.citizenid, data.name, data.reason)
+    cb('ok')
+end)
+
+RegisterNUICallback('removeBlacklist', function(data, cb)
+    TriggerServerEvent('LNS_Housing:server:removeBlacklist', data.citizenid)
     cb('ok')
 end)
 

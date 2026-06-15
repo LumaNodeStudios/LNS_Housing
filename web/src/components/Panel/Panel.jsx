@@ -27,6 +27,7 @@ const Panel = ({ data: initialData }) => {
   const [lockNotifications, setLockNotifications] = useState(true);
   const [privacyMode, setPrivacyMode] = useState(false);
   const [securityHistory, setSecurityHistory] = useState([]);
+  const [roommates, setRoommates] = useState([]);
 
   const WALL_COLORS = [
     { id: 0, name: 'White', hex: '#F1F1F1' },
@@ -63,6 +64,21 @@ const Panel = ({ data: initialData }) => {
     { id: 31, name: 'Light Purple', hex: '#AE4BFF' },
   ];
 
+  const [customPayAmount, setCustomPayAmount] = useState('');
+  const [autoPay, setAutoPay] = useState(true);
+  const [rentHistory, setRentHistory] = useState([]);
+
+  const isLockedOutTab = propertyData.focusTab === 'rent';
+  const tabs = isLockedOutTab ? [
+    { id: 'rent', label: 'Rent Due' }
+  ] : [
+    { id: 'home', label: 'Home' },
+    ...(!propertyData.isApartment ? [{ id: 'security', label: 'Security' }] : []),
+    { id: 'access', label: 'Access' },
+    ...(propertyData.sale_type === 'rent' ? [{ id: 'rent', label: 'Rent' }] : []),
+    ...(!propertyData.isApartment ? [{ id: 'settings', label: 'Settings' }] : [])
+  ];
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -88,14 +104,6 @@ const Panel = ({ data: initialData }) => {
     }).format(date);
   };
 
-  const tabs = [
-    { id: 'home', label: 'Home' },
-    ...(!propertyData.isApartment ? [{ id: 'security', label: 'Security' }] : []),
-    { id: 'access', label: 'Access' },
-    ...(!propertyData.isApartment ? [{ id: 'rent', label: 'Rent' }] : []),
-    ...(!propertyData.isApartment ? [{ id: 'settings', label: 'Settings' }] : [])
-  ];
-
   const handleClose = () => {
     fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/closeUI`, {
       method: 'POST',
@@ -103,15 +111,27 @@ const Panel = ({ data: initialData }) => {
     });
   };
 
-  const processPropertyData = (data) => {
+  const updateActivePropertyData = (data) => {
     if (!data) return;
     setPropertyData(data);
     if (data.wallColor !== undefined) {
       setSelectedWallColor(data.wallColor);
     }
 
-    if (data.security_log) setSecurityHistory(data.security_log);
-    if (data.rent_history) setRentHistory(data.rent_history);
+    if (data.metadata?.security_log) {
+      setSecurityHistory(data.metadata.security_log);
+    } else if (data.security_log) {
+      setSecurityHistory(data.security_log);
+    }
+    if (data.metadata?.rent_history) {
+      setRentHistory(data.metadata.rent_history);
+    } else if (data.rent_history) {
+      setRentHistory(data.rent_history);
+    }
+
+    if (data.metadata?.auto_pay !== undefined) {
+      setAutoPay(data.metadata.auto_pay !== false);
+    }
 
     if (data.permissions) {
       const allCids = new Set([
@@ -136,9 +156,23 @@ const Panel = ({ data: initialData }) => {
       }));
       setRoommates(residentList);
     }
-
-    setActiveTab('home');
   };
+
+  const processPropertyData = (data) => {
+    if (!data) return;
+    updateActivePropertyData(data);
+
+    if (data.focusTab) {
+      setActiveTab(data.focusTab);
+    } else {
+      setActiveTab('home');
+    }
+  };
+
+  const propertyDataRef = React.useRef(propertyData);
+  useEffect(() => {
+    propertyDataRef.current = propertyData;
+  }, [propertyData]);
 
   useEffect(() => {
     if (initialData) {
@@ -151,6 +185,15 @@ const Panel = ({ data: initialData }) => {
       const { action, data } = event.data;
       if (action === 'openPanel') {
         processPropertyData(data);
+      } else if (action === 'updateProperties') {
+        const currentProp = propertyDataRef.current;
+        if (currentProp && currentProp.id) {
+          const propList = Array.isArray(data) ? data : (data ? Object.values(data) : []);
+          const updated = propList.find(p => p && p.id === currentProp.id);
+          if (updated) {
+            updateActivePropertyData(updated);
+          }
+        }
       }
     };
 
@@ -165,10 +208,20 @@ const Panel = ({ data: initialData }) => {
     });
   };
 
-  const handlePayRent = () => {
+  const handlePayRent = (amount) => {
     fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/payRent`, {
       method: 'POST',
-      body: JSON.stringify({ propertyId: propertyData.id })
+      body: JSON.stringify({ propertyId: propertyData.id, amount })
+    });
+    setCustomPayAmount('');
+  };
+
+  const handleToggleAutoPay = () => {
+    const toggle = !autoPay;
+    setAutoPay(toggle);
+    fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/toggleAutoPay`, {
+      method: 'POST',
+      body: JSON.stringify({ propertyId: propertyData.id, enabled: toggle })
     });
   };
 
@@ -190,16 +243,12 @@ const Panel = ({ data: initialData }) => {
     });
   };
 
-
-
-  const [roommates, setRoommates] = useState([]);
-
   const infoBoxes = [
     ...(!propertyData.isApartment ? [
       {
         id: 'protection',
         title: 'Protection',
-        desc: 'Easily monitor your house locks and get notified when someone tries to lockpick your lock.',
+        desc: 'Easily monitor locks and get notified of lockpicking attempts.',
         icon: Shield,
         actionLabel: 'Upgrade',
         targetTab: 'security'
@@ -207,14 +256,14 @@ const Panel = ({ data: initialData }) => {
       {
         id: 'parking',
         title: 'Parking Spots',
-        number: '2',
+        number: propertyData.garage ? propertyData.garage.toString() : '2',
         desc: 'This is how many parking spots you have outside of your house.',
         icon: Car
       }
     ] : []),
     {
       id: 'roommates',
-      title: 'Manage your roommates',
+      title: 'Manage Residents',
       number: roommates.filter(r => !r.isOwner).length.toString(),
       desc: 'See who has access to your house and manage their permissions.',
       icon: Users,
@@ -227,16 +276,17 @@ const Panel = ({ data: initialData }) => {
     {
       id: 'security',
       title: 'Security System',
-      desc: 'Upgrade your locks and install reinforced door frames to deter intruders.',
+      desc: 'Upgrade locks and reinforced door frames to deter intruders.',
       icon: Shield,
       level: propertyData.metadata?.security_level || 0,
       maxLevel: 5,
-      price: 10000 * ((propertyData.metadata?.security_level || 0) + 1)
+      price: propertyData.securityUpgradePrice
+        ? (typeof propertyData.securityUpgradePrice === 'object'
+            ? (propertyData.securityUpgradePrice[(propertyData.metadata?.security_level || 0) + 1] || 10000)
+            : Number(propertyData.securityUpgradePrice) * ((propertyData.metadata?.security_level || 0) + 1))
+        : 10000 * ((propertyData.metadata?.security_level || 0) + 1)
     }
   ];
-
-  const [autoPay, setAutoPay] = useState(true);
-  const [rentHistory, setRentHistory] = useState([]);
 
   const syncPermissions = (updatedRoommates) => {
     const entry = updatedRoommates.filter(r => r.permissions.doors).map(r => r.citizenid);
@@ -252,11 +302,6 @@ const Panel = ({ data: initialData }) => {
       })
     });
   };
-
-  const rentStats = [
-    { label: 'Weekly Rent', value: '$1,250', icon: DollarSign, color: '#10b981' },
-    { label: 'Next Payment', value: '18/05/2026', icon: CalendarCheck, color: '#3b82f6' },
-  ];
 
   const handleDeleteRoommate = (id) => {
     setRoommates(prev => {
@@ -315,12 +360,14 @@ const Panel = ({ data: initialData }) => {
 
   return (
     <motion.div
-      className="panel-container main-glass"
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
+      className="panel-container"
+      initial={{ opacity: 0, scale: 0.97, y: 15 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.97, y: 15 }}
+      transition={{ duration: 0.25, ease: 'easeOut' }}
     >
       <div className="panel-header">
-        <div className="tabs-container glass-heavy">
+        <div className="tabs-container">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -333,7 +380,9 @@ const Panel = ({ data: initialData }) => {
         </div>
         <div className="header-actions">
           <span className="close-text">Close</span>
-          <button className="header-icon-btn" onClick={handleClose}><Power size={20} /></button>
+          <button className="header-icon-btn" onClick={handleClose}>
+            <Power size={18} />
+          </button>
         </div>
       </div>
 
@@ -346,29 +395,30 @@ const Panel = ({ data: initialData }) => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.15 }}
             >
               <div className="home-hero-section">
                 <div className="hero-content">
                   <div className="location-badge">
-                    <MapPin size={14} />
+                    <MapPin size={12} />
                     <span>{propertyData.streetName || propertyData.label || 'Unknown'}, {propertyData.zoneName || 'Los Santos'}</span>
                   </div>
                   <h1 className="welcome-text">
                     Good evening, <br />
                     <span>{propertyData.playerName || 'Resident'}</span>
                   </h1>
-                  <p className="property-type-label">{propertyData.isApartment ? 'Apartment Room' : 'Residential Property'} • ID #{propertyData.id}</p>
+                  <p className="property-type-label">{propertyData.isApartment ? 'Apartment Unit' : 'Residential Property'} • ID #{propertyData.id}</p>
                 </div>
                 <div className="hero-stats">
                   <div className="hero-stat-item">
-                    <Clock size={20} />
+                    <Clock size={18} />
                     <div className="stat-details">
                       <span className="s-label">Current Time</span>
                       <span className="s-value">{formatTime(currentTime)}</span>
                     </div>
                   </div>
                   <div className="hero-stat-item">
-                    <Calendar size={20} />
+                    <Calendar size={18} />
                     <div className="stat-details">
                       <span className="s-label">Current Date</span>
                       <span className="s-value">{formatDate(currentTime)}</span>
@@ -380,9 +430,9 @@ const Panel = ({ data: initialData }) => {
               <div className="home-grid-layout">
                 <div className="info-cards-grid">
                   {infoBoxes.map((box) => (
-                    <div key={box.id} className="modern-info-card glass-heavy">
+                    <div key={box.id} className="modern-info-card">
                       <div className="card-icon-wrapper">
-                        <box.icon size={24} />
+                        <box.icon size={20} />
                         {box.number && <span className="card-badge">{box.number}</span>}
                       </div>
                       <div className="card-body">
@@ -411,20 +461,21 @@ const Panel = ({ data: initialData }) => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.15 }}
             >
               <div className="tab-header-block">
                 <h1 className="tab-title">Security & Protection</h1>
-                <p className="tab-subtitle">Monitor and upgrade your property's defensive systems.</p>
+                <p className="tab-subtitle">Monitor and upgrade your property's security systems.</p>
               </div>
 
               <div className="security-main-grid">
                 <div className="security-upgrades-col">
                   <h3 className="sub-section-title">System Upgrades</h3>
-                  <div className="upgrades-list">
+                  <div className="upgrades-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {upgrades.map((upgrade) => (
-                      <div key={upgrade.id} className="upgrade-card-new glass-heavy">
+                      <div key={upgrade.id} className="upgrade-card-new">
                         <div className="upgrade-icon-box">
-                          <upgrade.icon size={24} />
+                          <upgrade.icon size={20} />
                         </div>
                         <div className="upgrade-content">
                           <div className="upgrade-top-row">
@@ -448,33 +499,39 @@ const Panel = ({ data: initialData }) => {
                   </div>
                 </div>
 
-                <div className="security-history-col glass-heavy">
+                <div className="security-history-col">
                   <div className="history-header">
-                    <History size={18} />
+                    <History size={16} />
                     <h3>Security Log</h3>
                   </div>
                   <div className="history-scroll-list">
-                    {securityHistory.map((event) => (
-                      <div key={event.id} className="history-log-item">
-                        <div className="log-icon-box" style={{ backgroundColor: `${event.color}15`, color: event.color }}>
-                          <event.icon size={18} />
-                        </div>
-                        <div className="log-details">
-                          <div className="log-row">
-                            <span className="log-title">{event.title}</span>
-                            <span className="log-date">{event.date}</span>
+                    {securityHistory.length > 0 ? (
+                      securityHistory.map((event, idx) => (
+                        <div key={event.id || idx} className="history-log-item">
+                          <div className="log-icon-box" style={{ backgroundColor: `${event.color || '#3b82f6'}15`, color: event.color || '#3b82f6' }}>
+                            {event.icon ? <event.icon size={16} /> : <Shield size={16} />}
                           </div>
-                          <p className="log-desc">{event.desc}</p>
-                          <span className="log-time">{event.time}</span>
+                          <div className="log-details">
+                            <div className="log-row">
+                              <span className="log-title">{event.title || 'Security Event'}</span>
+                              <span className="log-date">{event.date}</span>
+                            </div>
+                            <p className="log-desc">{event.desc}</p>
+                            {event.time && <span className="log-time">{event.time}</span>}
+                          </div>
                         </div>
+                      ))
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', opacity: 0.4, gap: '8px' }}>
+                        <ShieldCheck size={32} />
+                        <span style={{ fontSize: '11px' }}>System fully secured</span>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               </div>
             </motion.div>
           )}
-
 
           {activeTab === 'access' && (
             <motion.div
@@ -483,6 +540,7 @@ const Panel = ({ data: initialData }) => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.15 }}
             >
               <div className="access-header-new">
                 <div className="tab-header-block">
@@ -493,21 +551,21 @@ const Panel = ({ data: initialData }) => {
                   className="add-resident-btn"
                   onClick={() => setShowAddModal(true)}
                 >
-                  <UserPlus size={16} /> <span>Add Resident</span>
+                  <UserPlus size={14} /> <span>Add Resident</span>
                 </button>
               </div>
 
               <div className="residents-grid">
                 {roommates.map((person) => (
-                  <div key={person.id} className="resident-card glass-heavy">
+                  <div key={person.id} className="resident-card">
                     <div className="resident-top">
                       <div className="resident-avatar">
-                        <Users size={20} />
+                        <Users size={16} />
                       </div>
                       <div className="resident-main">
                         <div className="name-row">
                           <span className="resident-name">{person.name}</span>
-                          {person.isOwner && <span className="owner-badge"><Crown size={10} /> OWNER</span>}
+                          {person.isOwner && <span className="owner-badge"><Crown size={8} /> OWNER</span>}
                         </div>
                         <span className="resident-cid">{person.citizenid}</span>
                       </div>
@@ -516,7 +574,7 @@ const Panel = ({ data: initialData }) => {
                           className="remove-resident-btn"
                           onClick={() => handleDeleteRoommate(person.id)}
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={14} />
                         </button>
                       )}
                     </div>
@@ -529,28 +587,28 @@ const Panel = ({ data: initialData }) => {
                           onClick={() => handleTogglePermission(person.id, 'doors')}
                           disabled={person.isOwner}
                         >
-                          <Key size={14} /> Doors
+                          <Key size={12} /> Doors
                         </button>
                         <button
                           className={`perm-toggle-btn ${person.permissions.storage ? 'active' : ''}`}
                           onClick={() => handleTogglePermission(person.id, 'storage')}
                           disabled={person.isOwner}
                         >
-                          <Package size={14} /> Storage
+                          <Package size={12} /> Storage
                         </button>
                         <button
                           className={`perm-toggle-btn ${person.permissions.wardrobe ? 'active' : ''}`}
                           onClick={() => handleTogglePermission(person.id, 'wardrobe')}
                           disabled={person.isOwner}
                         >
-                          <Shirt size={14} /> Wardrobe
+                          <Shirt size={12} /> Wardrobe
                         </button>
                         <button
                           className={`perm-toggle-btn ${person.permissions.panel ? 'active' : ''}`}
                           onClick={() => handleTogglePermission(person.id, 'panel')}
                           disabled={person.isOwner}
                         >
-                          <Settings size={14} /> Panel
+                          <Settings size={12} /> Panel
                         </button>
                       </div>
                     </div>
@@ -567,6 +625,7 @@ const Panel = ({ data: initialData }) => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.15 }}
             >
               <div className="tab-header-block">
                 <h1 className="tab-title">Rental & Finance</h1>
@@ -575,50 +634,92 @@ const Panel = ({ data: initialData }) => {
 
               <div className="rent-content-new">
                 <div className="rent-summary-side">
-                  <div className="rent-overview-card glass-heavy">
+                  {propertyData.metadata?.rent_debt > 0 && (
+                    <div className="rent-debt-alert">
+                      <h4 style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>Outstanding Debt: ${propertyData.metadata.rent_debt.toLocaleString()}</h4>
+                      <p style={{ margin: '4px 0 0 0', fontSize: '11px', opacity: 0.85 }}>
+                        Missed payments: {propertyData.metadata.missed_payments || 0}. Lockout: {propertyData.metadata.due_by ? (Math.floor(Date.now() / 1000) > propertyData.metadata.due_by ? "ACTIVE" : new Date(propertyData.metadata.due_by * 1000).toLocaleDateString()) : "Pending"}.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="rent-overview-card">
                     <div className="overview-header">
-                      <CreditCard size={20} />
+                      <CreditCard size={16} />
                       <h3>Payment Overview</h3>
                     </div>
                     <div className="overview-stats">
                       <div className="o-stat">
-                        <span className="o-label">Weekly Rent</span>
-                        <span className="o-value">$1,250</span>
+                        <span className="o-label">Rent Amount</span>
+                        <span className="o-value">${(propertyData.metadata?.rent_amount || propertyData.price || 1000).toLocaleString()}</span>
                       </div>
                       <div className="o-stat highlight">
-                        <span className="o-label">Next Due Date</span>
-                        <span className="o-value">18/05/2026</span>
+                        <span className="o-label">{propertyData.metadata?.rent_debt > 0 ? "Debt Due" : "Next Cycle Due"}</span>
+                        <span className="o-value" style={{ color: propertyData.metadata?.rent_debt > 0 ? 'var(--danger)' : 'var(--primary)' }}>
+                          {propertyData.metadata?.due_by 
+                            ? new Date(propertyData.metadata.due_by * 1000).toLocaleDateString()
+                            : (propertyData.metadata?.last_rent_paid 
+                              ? new Date((propertyData.metadata.last_rent_paid + 604800) * 1000).toLocaleDateString()
+                              : 'Pending'
+                            )
+                          }
+                        </span>
+                      </div>
+                      <div className="o-stat">
+                        <span className="o-label">Total Paid to Date</span>
+                        <span className="o-value" style={{ color: 'var(--success)' }}>
+                          ${rentHistory.filter(h => h.status === 'Paid').reduce((sum, h) => sum + (h.amount || 0), 0).toLocaleString()}
+                        </span>
                       </div>
                     </div>
                     <div className="auto-pay-row">
                       <div className="auto-pay-info">
                         <h4>Bank Auto-Pay</h4>
-                        <p>Deduct rent automatically</p>
+                        <p>Rent auto-deducted weekly</p>
                       </div>
                       <button
                         className={`modern-toggle ${autoPay ? 'active' : ''}`}
-                        onClick={() => setAutoPay(!autoPay)}
+                        onClick={handleToggleAutoPay}
                       >
                         <div className="toggle-thumb" />
                       </button>
                     </div>
-                    <button className="pay-now-btn-new" onClick={handlePayRent}>
-                      Pay Total Balance
+                    <button 
+                      className="pay-now-btn-new" 
+                      onClick={() => handlePayRent(propertyData.metadata?.rent_debt > 0 ? propertyData.metadata.rent_debt : (propertyData.metadata?.rent_amount || propertyData.price || 1000))}
+                    >
+                      {propertyData.metadata?.rent_debt > 0 ? "Pay Total Debt" : "Pay Next Cycle"}
                     </button>
-                  </div>
 
-                  <div className="rent-info-card-new glass-heavy">
-                    <DollarSign size={20} />
-                    <div className="info-text">
-                      <h4>Total Paid</h4>
-                      <p>$4,600.00 to date</p>
+                    <div className="custom-pay-section" style={{ marginTop: '0px', borderTop: '1px solid var(--border-dim)', paddingTop: '8px' }}>
+                      <label style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Custom Payment Amount</label>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <div style={{ position: 'relative', flex: 1 }}>
+                          <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: '11px', fontWeight: '700' }}>$</span>
+                          <input
+                            type="number"
+                            placeholder="Amount"
+                            value={customPayAmount}
+                            onChange={(e) => setCustomPayAmount(e.target.value)}
+                            style={{ width: '100%', padding: '6px 8px 6px 20px', borderRadius: '6px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-dim)', color: '#fff', fontSize: '11px', outline: 'none' }}
+                          />
+                        </div>
+                        <button
+                          onClick={() => handlePayRent(parseFloat(customPayAmount))}
+                          disabled={!customPayAmount || isNaN(customPayAmount) || parseFloat(customPayAmount) <= 0}
+                          className="pay-now-btn-new"
+                          style={{ margin: 0, padding: '6px 10px', fontSize: '11px', width: 'auto', flexShrink: 0 }}
+                        >
+                          Pay
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="rent-history-side glass-heavy">
+                <div className="rent-history-side">
                   <div className="history-header-new">
-                    <History size={18} />
+                    <History size={16} />
                     <h3>Transaction History</h3>
                   </div>
                   <div className="history-table-wrapper">
@@ -632,18 +733,28 @@ const Panel = ({ data: initialData }) => {
                         </tr>
                       </thead>
                       <tbody>
-                        {rentHistory.map((item) => (
-                          <tr key={item.id}>
-                            <td>{item.date}</td>
-                            <td>{item.type}</td>
-                            <td className="amount">${item.amount.toLocaleString()}</td>
-                            <td>
-                              <span className={`status-pill ${item.status.toLowerCase()}`}>
-                                {item.status}
-                              </span>
+                        {rentHistory.length > 0 ? (
+                          rentHistory.map((item, idx) => (
+                            <tr key={item.id || idx}>
+                              <td>{item.date}</td>
+                              <td>{item.type}</td>
+                              <td className="amount" style={{ color: item.status === 'Paid' ? 'var(--success)' : 'var(--danger)' }}>
+                                ${item.amount.toLocaleString()}
+                              </td>
+                              <td>
+                                <span className={`status-pill ${item.status === 'Paid' ? 'live' : 'ended'}`} style={{ fontSize: '9px', padding: '2px 6px', textTransform: 'uppercase' }}>
+                                  {item.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="4" style={{ textAlign: 'center', opacity: 0.4, padding: '24px', fontSize: '11px' }}>
+                              No transactions on record.
                             </td>
                           </tr>
-                        ))}
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -659,6 +770,7 @@ const Panel = ({ data: initialData }) => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.15 }}
             >
               <div className="tab-header-block">
                 <h1 className="tab-title">Property Settings</h1>
@@ -667,18 +779,19 @@ const Panel = ({ data: initialData }) => {
 
               <div className="settings-grid">
                 <div className="settings-left-col">
-                  <div className="settings-section glass-heavy">
+                  <div className="settings-section">
                     <div className="section-header-row">
+                      <Shield size={16} />
                       <h3>Security & Privacy</h3>
                     </div>
 
                     <div className="settings-list">
                       <div className="setting-item">
                         <div className="setting-info">
-                          <BellRing size={16} />
+                          <BellRing size={14} />
                           <div>
                             <h4>Lock Notifications</h4>
-                            <p>Get alerted when someone interacts with your locks.</p>
+                            <p>Get alerted when someone locks or unlocks your doors.</p>
                           </div>
                         </div>
                         <button
@@ -692,18 +805,18 @@ const Panel = ({ data: initialData }) => {
                   </div>
 
                   {!propertyData.isApartment && (
-                    <div className="settings-section glass-heavy" style={{ marginTop: '20px' }}>
+                    <div className="settings-section">
                       <div className="section-header-row">
-                        <MapPin size={18} className="section-icon" />
+                        <MapPin size={16} />
                         <h3>Spawn Point</h3>
                       </div>
                       <div className="settings-list">
-                        <div className="setting-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '10px' }}>
+                        <div className="setting-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '12px' }}>
                           <div className="setting-info" style={{ width: '100%' }}>
-                            <Navigation size={16} />
+                            <Navigation size={14} />
                             <div>
                               <h4>Custom Spawn Location</h4>
-                              <p>Set the spawn location to your current position and heading.</p>
+                              <p>Set where you spawn inside this property boundary.</p>
                             </div>
                           </div>
                           <button
@@ -711,7 +824,7 @@ const Panel = ({ data: initialData }) => {
                             className="spawn-point-btn"
                             onClick={handleUpdateSpawnPoint}
                           >
-                            <MapPin size={16} /> Set Spawn Point Here
+                            <MapPin size={12} /> Set Spawn Point Here
                           </button>
                         </div>
                       </div>
@@ -721,9 +834,9 @@ const Panel = ({ data: initialData }) => {
 
                 <div className="settings-right-col">
                   {propertyData.allowWallColors && (
-                    <div className="settings-section glass-heavy design-section">
+                    <div className="settings-section design-section">
                       <div className="section-header-row">
-                        <Palette size={18} className="section-icon" />
+                        <Palette size={16} />
                         <h3>Interior Design</h3>
                       </div>
 
@@ -731,7 +844,7 @@ const Panel = ({ data: initialData }) => {
                         <div className="picker-header">
                           <label>Wall Tint Color</label>
                           <span className="selected-color-name">
-                            {WALL_COLORS.find(c => c.id === selectedWallColor)?.name}
+                            {WALL_COLORS.find(c => c.id === selectedWallColor)?.name || 'Default'}
                           </span>
                         </div>
 
@@ -744,7 +857,7 @@ const Panel = ({ data: initialData }) => {
                               title={color.name}
                               onClick={() => handleWallColorChange(color.id)}
                             >
-                              {selectedWallColor === color.id && <Check size={12} />}
+                              {selectedWallColor === color.id && <Check size={10} />}
                             </button>
                           ))}
                         </div>
@@ -752,7 +865,7 @@ const Panel = ({ data: initialData }) => {
 
                       <div className="design-footer">
                         <p>Changes are applied immediately to all interior walls.</p>
-                        <button className="apply-btn">Reset Defaults</button>
+                        <button className="apply-btn" onClick={() => handleWallColorChange(0)}>Reset Defaults</button>
                       </div>
                     </div>
                   )}
@@ -762,6 +875,7 @@ const Panel = ({ data: initialData }) => {
           )}
         </AnimatePresence>
       </div>
+
       <AnimatePresence>
         {showAddModal && (
           <motion.div
@@ -771,17 +885,20 @@ const Panel = ({ data: initialData }) => {
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="modal-container glass-heavy"
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="modal-container"
+              initial={{ scale: 0.95, opacity: 0, y: 15 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              exit={{ scale: 0.95, opacity: 0, y: 15 }}
+              transition={{ type: 'spring', duration: 0.35 }}
             >
               <div className="modal-header">
-                <h3>Add New Roommate</h3>
-                <button className="close-modal" onClick={() => setShowAddModal(false)}><X size={18} /></button>
+                <h3>Add New Resident</h3>
+                <button className="close-modal" onClick={() => setShowAddModal(false)}>
+                  <X size={16} />
+                </button>
               </div>
               <div className="modal-body">
-                <p>Enter the Citizen ID of the person you want to add to your property.</p>
+                <p>Enter the Citizen ID of the resident you wish to grant property permissions to.</p>
                 <div className="modal-input-group">
                   <label>Citizen ID</label>
                   <input
@@ -792,38 +909,38 @@ const Panel = ({ data: initialData }) => {
                   />
                 </div>
                 <div className="permissions-selector">
-                  <label>Initial Permissions</label>
+                  <label>Permissions Profile</label>
                   <div className="perms-grid">
                     <div
                       className={`perm-toggle ${initialPermissions.doors ? 'active' : ''}`}
                       onClick={() => setInitialPermissions(prev => ({ ...prev, doors: !prev.doors }))}
                     >
-                      <Key size={14} /> Doors
+                      <Key size={12} /> Doors
                     </div>
                     <div
                       className={`perm-toggle ${initialPermissions.storage ? 'active' : ''}`}
                       onClick={() => setInitialPermissions(prev => ({ ...prev, storage: !prev.storage }))}
                     >
-                      <Package size={14} /> Storage
+                      <Package size={12} /> Storage
                     </div>
                     <div
                       className={`perm-toggle ${initialPermissions.wardrobe ? 'active' : ''}`}
                       onClick={() => setInitialPermissions(prev => ({ ...prev, wardrobe: !prev.wardrobe }))}
                     >
-                      <Shirt size={14} /> Wardrobe
+                      <Shirt size={12} /> Wardrobe
                     </div>
                     <div
                       className={`perm-toggle ${initialPermissions.panel ? 'active' : ''}`}
                       onClick={() => setInitialPermissions(prev => ({ ...prev, panel: !prev.panel }))}
                     >
-                      <Settings size={14} /> Panel
+                      <Settings size={12} /> Panel
                     </div>
                   </div>
                 </div>
               </div>
               <div className="modal-footer">
                 <button className="btn-cancel" onClick={() => setShowAddModal(false)}>Cancel</button>
-                <button className="btn-confirm" onClick={handleAddRoommate}>Confirm & Add</button>
+                <button className="btn-confirm" onClick={handleAddRoommate}>Add Resident</button>
               </div>
             </motion.div>
           </motion.div>

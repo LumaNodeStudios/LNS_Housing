@@ -47,14 +47,21 @@ function App() {
           break;
         case 'openRealEstate':
           closeAll();
-          setAllProperties(data.properties || data);
+          const rawProps = data.properties || data;
+          const normalizedProps = Array.isArray(rawProps)
+            ? rawProps.reduce((acc, p) => { if (p && p.id !== undefined) acc[p.id] = p; return acc; }, {})
+            : rawProps;
+          setAllProperties(normalizedProps);
           setHasPermission(data.hasPermission ?? true);
           setInitialTab(data.activeTab || 'browse');
           setOnlyBuyViaContracts(data.onlyBuyViaContracts || false);
           setShowRealEstate(true);
           break;
         case 'updateProperties':
-          setAllProperties(data);
+          const normalized = Array.isArray(data)
+            ? data.reduce((acc, p) => { if (p && p.id !== undefined) acc[p.id] = p; return acc; }, {})
+            : data;
+          setAllProperties(normalized);
           break;
         case 'setVisible':
           if (data) {

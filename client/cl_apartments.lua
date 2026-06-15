@@ -129,7 +129,7 @@ local function createApartmentZone(roomData)
                 LoadFurnitures(MyApartmentId)
             end
 
-            local hasManageAccess = lib.callback.await('LNS_Housing:server:hasApartmentAccess', false, MyApartmentId, 'manage')
+            local hasManageAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', MyApartmentId, 'manage')
             if hasManageAccess then
                 lib.addRadialItem({
                     id = 'housing_furniture',
@@ -297,7 +297,7 @@ local function RegisterApartmentCreatorCommands()
     local cmd = Settings.Apartments.Creator and Settings.Apartments.Creator.Command or 'createapartment'
     
     RegisterCommand(cmd, function()
-        local isAdmin = lib.callback.await('LNS_Housing:server:isApartmentAdmin', false)
+        local isAdmin = lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartmentAdmin')
         if not isAdmin then
             Bridge.Client.Notify('You do not have permission to use this command.', 'error')
             return

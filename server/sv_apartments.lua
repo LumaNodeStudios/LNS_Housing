@@ -3,7 +3,6 @@ local Settings = lib.load('shared.settings')
 if not Settings.Apartments or not Settings.Apartments.Enabled then
     lib.callback.register('LNS_Housing:server:getMyApartment', function(source) return nil end)
     lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, roomId) return nil end)
-    lib.callback.register('LNS_Housing:server:hasApartmentAccess', function(source, roomId, type) return false end)
     lib.callback.register('LNS_Housing:server:claimNewCharacterSpawn', function(source) return { shouldSpawn = false } end)
     return
 end
@@ -396,41 +395,7 @@ lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, ro
     return nil
 end)
 
-lib.callback.register('LNS_Housing:server:hasApartmentAccess', function(source, roomId, type)
-    local playerJob = Bridge.Server.GetPlayerJob(source)
-    if playerJob and playerJob.name == 'police' then
-        if type ~= 'storage' and type ~= 'stash' then
-            return true
-        end
-    end
 
-    local citizenid = Bridge.Server.GetIdentifier(source)
-    if not citizenid then return false end
-
-    
-    if type == 'storage' or type == 'stash' then
-        if TemporaryAccess.stashes[roomId] and TemporaryAccess.stashes[roomId][citizenid] then
-            return true
-        end
-    elseif type == 'entry' or type == 'doors' then
-        if TemporaryAccess.doors[roomId] and TemporaryAccess.doors[roomId][citizenid] then
-            return true
-        end
-    end
-
-    local result = MySQL.single.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ?', {roomId})
-    if result then
-        if result.citizenid == citizenid then return true end
-        
-        local permissions = json.decode(result.permissions or '{"entry":[], "storage":[], "wardrobe":[], "manage":[]}')
-        if permissions[type] then
-            for _, cid in ipairs(permissions[type]) do
-                if cid == citizenid then return true end
-            end
-        end
-    end
-    return false
-end)
 
 RegisterNetEvent('LNS_Housing:server:updateApartmentPermissions', function(roomId, permissions)
     local src = source
@@ -590,8 +555,6 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
 
         if okDecode and type(decoded) == 'table' then
             currentFurniture = decoded
-        else
-            print(('[LNS_Housing] buyApartmentFurniture decode failed for %s/%s, resetting furniture list'):format(tostring(result.citizenid), tostring(roomId)))
         end
     end
 
@@ -603,7 +566,6 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
         return json.encode(currentFurniture)
     end)
     if not okEncode then
-        print(('[LNS_Housing] buyApartmentFurniture encode failed for %s/%s: %s'):format(tostring(result.citizenid), tostring(roomId), tostring(furnitureJson)))
         Bridge.Server.Notify(src, 'Could not process furniture data.', 'error')
         return
     end
@@ -616,7 +578,6 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
         })
     end)
     if not okUpdate then
-        print(('[LNS_Housing] buyApartmentFurniture UPDATE failed for %s/%s: %s'):format(tostring(result.citizenid), tostring(roomId), tostring(updateResult)))
         Bridge.Server.Notify(src, 'Database error while saving furniture.', 'error')
         return
     end
@@ -712,25 +673,9 @@ exports('GetPlayerSpawns', function(source)
     return spawns
 end)
 
-local function IsApartmentAdmin(source)
-    if Bridge.Framework == 'qbx' then
-        if IsPlayerAceAllowed(source, 'admin') then
-            return true
-        end
-    elseif Bridge.Framework == 'esx' then
-        local ESX = exports['es_extended']:getSharedObject()
-        local player = ESX.GetPlayerFromId(source)
-        if player then
-            local group = player.getGroup()
-            return group == 'admin' or group == 'superadmin'
-        end
-    end
-    return false
+function IsApartmentAdmin(source)
+    return CheckPermission(source, 'apartmentAdmin')
 end
-
-lib.callback.register('LNS_Housing:server:isApartmentAdmin', function(source)
-    return IsApartmentAdmin(source)
-end)
 
 lib.callback.register('LNS_Housing:server:doesApartmentExist', function(source, roomId)
     for _, room in ipairs(Settings.Rooms) do

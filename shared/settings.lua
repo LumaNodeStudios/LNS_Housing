@@ -40,21 +40,47 @@ return {
         weight = 100000             -- Maximum weight capacity of the stash (e.g., in grams)
     },
 
+    -- Rent system, grace periods, late fees, and eviction settings
+    Rent = {
+        RentPeriod = 604800,        -- 7 days (in seconds)
+        GracePeriod = 259200,       -- 3 days to pay after cycle due before lockout (in seconds)
+        RetrievalPeriod = 604800,   -- 7 days of temporary stash retrieval after lockout (in seconds)
+        LateFee = 250,              -- Flat late fee added to debt on missed payment
+        MaxMissedPayments = 3,      -- Max missed payments threshold for eviction
+        AutoEvict = true,           -- Auto evict player after retrieval period expires
+    },
+
     -- Security, burglary, and property raid settings
     Security = {
-        LockpickItem = 'lockpic2k',   -- Item needed for ordinary house lockpicking
-        RaidItem = 'lockpick',        -- Item needed by police/authorized factions to raid properties
+        LockpickItem = 'lockpick',   -- Item needed for ordinary house lockpicking
+        RaidItem = 'police_ram',        -- Item needed by police/authorized factions to raid properties
         RaidDuration = 50000,         -- Time in milliseconds required to break open a door during a raid
         RaidStorageDuration = 10000,  -- Time in milliseconds to break open a property stash
         MaxLevel = 5,                 -- Maximum upgradable lock level for houses
+        UpgradePrice = {             -- Upgrade price for each security level
+            [1] = 10000,
+            [2] = 20000,
+            [3] = 30000,
+            [4] = 40000,
+            [5] = 50000
+        },
+        AlarmDuration = 30000,        -- Duration of burglar alarm in milliseconds (30 seconds)
+        AlarmFailThreshold = {        -- Number of failed attempts allowed before alarm triggers
+            [0] = 999, -- Level 0: No alarm
+            [1] = 4,   -- Level 1: alarm triggers on 4th fail
+            [2] = 3,   -- Level 2: alarm triggers on 3rd fail
+            [3] = 2,   -- Level 3: alarm triggers on 2nd fail
+            [4] = 2,   -- Level 4: alarm triggers on 2nd fail
+            [5] = 1,   -- Level 5 (max): alarm triggers on 1st fail
+        },
         -- Lockpicking minigame difficulty settings based on security/lock levels
         Difficulty = {
-            [0] = { rounds = 1, speed = 1.0, area = 40 }, -- Level 0: 1 round, normal speed, large target area
-            [1] = { rounds = 2, speed = 1.2, area = 35 },
-            [2] = { rounds = 3, speed = 1.4, area = 30 },
-            [3] = { rounds = 4, speed = 1.6, area = 25 },
-            [4] = { rounds = 5, speed = 1.8, area = 20 },
-            [5] = { rounds = 6, speed = 2.0, area = 15 }, -- Level 5: 6 rounds, fast speed, small target area
+            [0] = { rounds = 1, speed = 1.0, area = 50 }, -- Level 0: 1 round, normal speed, very large target area
+            [1] = { rounds = 2, speed = 1.1, area = 40 }, -- Level 1: 2 rounds, slightly faster, large target area
+            [2] = { rounds = 3, speed = 1.2, area = 35 }, -- Level 2: 3 rounds, medium speed, medium-large area
+            [3] = { rounds = 3, speed = 1.3, area = 30 }, -- Level 3: 3 rounds, faster, medium area
+            [4] = { rounds = 4, speed = 1.4, area = 25 }, -- Level 4: 4 rounds, medium-fast speed, medium-small area
+            [5] = { rounds = 4, speed = 1.4, area = 25 }, -- Level 5: 4 rounds, fast speed, small area
         }
     },
 

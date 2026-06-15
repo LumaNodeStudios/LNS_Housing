@@ -208,7 +208,7 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
 end)
 
 RegisterCommand('takeshots', function(source, args, raw)
-    local hasPermission = lib.callback.await('LNS_Housing:server:getScreenshotPermission', false)
+    local hasPermission = lib.callback.await('LNS_Housing:server:checkPermission', false, 'screenshot')
     if not hasPermission then
         Bridge.Client.Notify('You do not have permission to use this command.', 'error')
         return

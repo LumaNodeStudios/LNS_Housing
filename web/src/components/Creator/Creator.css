@@ -25,7 +25,6 @@
 
 .header-icon {
   color: var(--primary);
-  filter: drop-shadow(0 0 8px rgba(0, 242, 255, 0.4));
 }
 
 .title-texts h1 {
@@ -177,9 +176,6 @@
   transition: var(--transition-smooth);
 }
 
-.pick-btn:hover {
-  filter: brightness(1.2);
-}
 
 .zone-status {
   flex: 1;
@@ -193,8 +189,8 @@
 }
 
 .zone-status.defined {
-  color: #10b981;
-  border-color: #10b981;
+  color: var(--success);
+  border-color: var(--success);
 }
 
 .doors-list-container {
@@ -293,7 +289,6 @@
 
 .remove-photo-btn:hover {
   background: rgb(220, 38, 38);
-  transform: scale(1.05);
 }
 
 .photo-placeholder {

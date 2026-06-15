@@ -39,6 +39,7 @@ server_scripts {
     '@oxmysql/lib/MySQL.lua',
     'bridge/server.lua',
     'server/sv_db.lua',
+    'server/sv_permissions.lua',
     'server/sv_housing.lua',
     'server/sv_creator.lua',
     'server/sv_furniture.lua',

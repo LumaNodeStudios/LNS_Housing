@@ -31,7 +31,6 @@
 
 .header-icon {
     color: var(--primary);
-    filter: drop-shadow(0 0 8px rgba(110, 211, 243, 0.3));
 }
 
 .apt-close-btn {
@@ -92,7 +91,7 @@
 .apt-input:focus {
     border-color: var(--primary);
     background: rgba(0, 0, 0, 0.45);
-    box-shadow: 0 0 0 2px rgba(110, 211, 243, 0.15);
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.15);
 }
 
 .apt-input::-webkit-outer-spin-button,
@@ -124,8 +123,8 @@
 }
 
 .apt-setup-card.defined {
-    border-color: rgba(16, 185, 129, 0.2);
-    background: rgba(16, 185, 129, 0.03);
+    border-color: rgba(var(--success-rgb), 0.2);
+    background: rgba(var(--success-rgb), 0.03);
 }
 
 .setup-card-info {
@@ -148,10 +147,9 @@
 }
 
 .apt-setup-card.defined .setup-card-icon-wrapper {
-    background: rgba(16, 185, 129, 0.1);
-    border-color: rgba(16, 185, 129, 0.2);
-    color: #34d399;
-    filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.2));
+    background: rgba(var(--success-rgb), 0.1);
+    border-color: rgba(var(--success-rgb), 0.2);
+    color: var(--success);
 }
 
 .setup-card-text {
@@ -196,20 +194,19 @@
     background: var(--primary);
     border-color: var(--primary);
     color: var(--bg-main);
-    box-shadow: 0 0 10px rgba(110, 211, 243, 0.3);
 }
 
 .setup-btn.defined {
-    background: rgba(16, 185, 129, 0.15);
-    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(var(--success-rgb), 0.15);
+    border-color: rgba(var(--success-rgb), 0.3);
     color: #a7f3d0;
     cursor: default;
 }
 
 .setup-btn.defined:hover {
     filter: none;
-    background: rgba(16, 185, 129, 0.15);
-    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(var(--success-rgb), 0.15);
+    border-color: rgba(var(--success-rgb), 0.3);
     color: #a7f3d0;
     box-shadow: none;
 }
@@ -238,17 +235,12 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    box-shadow: 0 4px 15px rgba(110, 211, 243, 0.2);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     transition: var(--transition-smooth);
 }
 
 .apt-submit-btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(110, 211, 243, 0.35);
-}
-
-.apt-submit-btn:active:not(:disabled) {
-    transform: translateY(0);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.45);
 }
 
 .apt-submit-btn:disabled {

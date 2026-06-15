@@ -6,16 +6,40 @@
   --bg-panel: #0f0f10;
   --bg-card: #1a1a1a;
   --border-dim: #262626;
+  
+  /* Primary Theme Color & Glow */
   --primary: #6ed3f3;
   --primary-dark: #4fbfdf;
   --primary-text: #000000;
+  --primary-rgb: 110, 211, 243;
+  --primary-glow: rgba(var(--primary-rgb), 0.15);
+
+  /* Hover & State configurations */
+  --bg-card-hover: rgba(255, 255, 255, 0.02);
+  --border-hover: var(--primary);
+  
+  /* Status Colors */
+  --success: #10b981;
+  --success-rgb: 16, 185, 129;
+  --success-glow: rgba(var(--success-rgb), 0.15);
+  --warning: #fbbf24;
+  --warning-rgb: 251, 191, 36;
+  --warning-glow: rgba(var(--warning-rgb), 0.15);
+  --danger: #f43f5e;
+  --danger-rgb: 244, 63, 94;
+  --danger-glow: rgba(var(--danger-rgb), 0.12);
+
+  /* Layout Blends */
   --bg-glass: rgba(15, 15, 16, 0.85);
   --bg-glass-heavy: rgba(26, 26, 26, 0.9);
   --border-glass: var(--border-dim);
   --text-main: #ffffff;
   --text-muted: rgba(255, 255, 255, 0.5);
+  
+  /* Shared Transitions & Shadows */
   --shadow-main: 0 8px 32px 0 rgba(0, 0, 0, 0.9);
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -68,7 +92,7 @@ button {
 }
 
 button:hover {
-  filter: brightness(1.2);
+  filter: brightness(0.9);
 }
 
 ::-webkit-scrollbar {
