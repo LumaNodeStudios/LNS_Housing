@@ -590,8 +590,65 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
     Bridge.Server.Notify(src, 'Furniture bought successfully!', 'success')
 end)
 
+local function GetEntranceCoordsServer(p)
+    if not p then return nil end
+
+    if p.metadata and p.metadata.entrance then
+        local ent = p.metadata.entrance
+        return vec3(ent.x, ent.y, ent.z)
+    end
+
+    local doorId = p.door_id
+    if (not doorId or doorId == 0) and p.doors and #p.doors > 0 then
+        doorId = p.doors[1]
+    end
+
+    if doorId and doorId ~= 0 then
+        local door = nil
+        if exports.ox_doorlock and exports.ox_doorlock.getDoor then
+            pcall(function() door = exports.ox_doorlock:getDoor(doorId) end)
+        elseif exports.ox_doorlock and exports.ox_doorlock.getDoorData then
+            pcall(function() door = exports.ox_doorlock:getDoorData(doorId) end)
+        end
+        if door and door.coords then
+            return vec3(door.coords.x, door.coords.y, door.coords.z)
+        end
+    end
+
+    if p.zone_data and p.zone_data.points and #p.zone_data.points > 0 then
+        local sumX, sumY, sumZ = 0, 0, 0
+        local count = #p.zone_data.points
+        for _, pt in ipairs(p.zone_data.points) do
+            sumX = sumX + pt.x
+            sumY = sumY + pt.y
+            sumZ = sumZ + pt.z
+        end
+        return vec3(sumX / count, sumY / count, sumZ / count)
+    end
+
+    return nil
+end
+
 local function GetPropertyCoords(p)
     if not p then return nil end
+
+    if p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
+        local shellName = p.metadata.shell or 'Standard Motel'
+        local shellData = Settings.Shells[shellName]
+        if shellData then
+            local doorCoords = GetEntranceCoordsServer(p)
+            if doorCoords then
+                local shellCoords = vec3(doorCoords.x, doorCoords.y, 1500.0)
+                local doorOffset = shellData.doorOffset
+                return vector4(
+                    shellCoords.x + doorOffset.x,
+                    shellCoords.y + doorOffset.y,
+                    shellCoords.z + doorOffset.z,
+                    doorOffset.h or 0.0
+                )
+            end
+        end
+    end
 
     if p.metadata and p.metadata.spawn then
         local sp = p.metadata.spawn
