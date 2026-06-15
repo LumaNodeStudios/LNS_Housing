@@ -389,46 +389,64 @@ function UnloadFurnitures(propertyId)
     LoadedFurniture[propertyId] = nil
 end
 
-function RegisterPropertyZones(p)
+function RegisterPropertyZones(p, forceShell)
     if RegisterYardZone then
         RegisterYardZone(p)
     end
     if PropertyZones[p.id] then return end
     
     if p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
-        
         local doorCoords = GetEntranceCoords(p)
         if doorCoords then
             local shellCoords = vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0)
-            PropertyZones[p.id] = lib.zones.box({
-                coords = shellCoords,
-                size = vec3(25.0, 25.0, 10.0),
-                debug = Settings.Debug.Zones,
-                onEnter = function()
-                    
-                    local shellName = p.metadata.shell or 'Standard Motel'
-                    SpawnShellForProperty(p.id, shellName, shellCoords)
-
-                    LoadFurnitures(p.id)
-                    TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', p.id)
-
-                    if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'manage') then
-                        lib.addRadialItem({
-                            id = 'housing_furniture',
-                            icon = 'couch',
-                            label = 'Furniture Menu',
-                            onSelect = function()
-                                TriggerEvent('LNS_Housing:client:openFurnitureMenu', p.id)
-                            end
-                        })
-                    end
-                end,
-                onExit = function()
-                    UnloadFurnitures(p.id)
-                    lib.removeRadialItem('housing_furniture')
-                    TriggerServerEvent('LNS_Housing:server:leavePropertyBucket')
+            local shouldRegister = forceShell
+            if not shouldRegister then
+                local playerCoords = GetEntityCoords(cache.ped or PlayerPedId())
+                if #(playerCoords - shellCoords) < 35.0 then
+                    shouldRegister = true
                 end
-            })
+            end
+
+            if shouldRegister then
+                PropertyZones[p.id] = lib.zones.box({
+                    coords = shellCoords,
+                    size = vec3(25.0, 25.0, 10.0),
+                    debug = Settings.Debug.Zones,
+                    onEnter = function()
+                        local shellName = p.metadata.shell or 'Standard Motel'
+                        SpawnShellForProperty(p.id, shellName, shellCoords)
+
+                        LoadFurnitures(p.id)
+                        TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', p.id)
+
+                        if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'manage') then
+                            lib.addRadialItem({
+                                id = 'housing_furniture',
+                                icon = 'couch',
+                                label = 'Furniture Menu',
+                                onSelect = function()
+                                    TriggerEvent('LNS_Housing:client:openFurnitureMenu', p.id)
+                                end
+                            })
+                        end
+                    end,
+                    onExit = function()
+                        UnloadFurnitures(p.id)
+                        lib.removeRadialItem('housing_furniture')
+                        TriggerServerEvent('LNS_Housing:server:leavePropertyBucket')
+                        
+                        SetTimeout(0, function()
+                            if PropertyZones[p.id] then
+                                local zone = PropertyZones[p.id]
+                                PropertyZones[p.id] = nil
+                                pcall(function()
+                                    zone:remove()
+                                end)
+                            end
+                        end)
+                    end
+                })
+            end
         end
     
     elseif p.zone_data and p.zone_data.points and #p.zone_data.points >= 3 then
@@ -1134,6 +1152,8 @@ function EnterShellProperty(propertyId)
 
     DoScreenFadeOut(500)
     while not IsScreenFadedOut() do Wait(0) end
+
+    RegisterPropertyZones(p, true)
 
     local shellEntity, spawnCoords, heading = SpawnShellForProperty(propertyId, shellName, shellCoords)
 

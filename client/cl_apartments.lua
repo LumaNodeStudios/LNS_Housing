@@ -561,7 +561,7 @@ exports('SpawnInProperty', function(type, id)
         end
         local p = Properties[id]
         if p then
-            RegisterPropertyZones(p)
+            RegisterPropertyZones(p, true)
 
             if p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
                 local doorCoords = GetEntranceCoords(p)
