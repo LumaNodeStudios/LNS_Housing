@@ -87,6 +87,7 @@ return {
     MaxKeys = 5, -- Maximum number of physical keys/copies that can be shared per property
 
     -- Shell/Interior template configurations (interiors spawned under the map)
+    ShellSpawningZ = -100.0, -- Z coordinate to spawn shells
     Shells = {
         ["Standard Motel"] = {
             label = "Standard Motel",

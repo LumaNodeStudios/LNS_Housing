@@ -638,7 +638,7 @@ local function GetPropertyCoords(p)
         if shellData then
             local doorCoords = GetEntranceCoordsServer(p)
             if doorCoords then
-                local shellCoords = vec3(doorCoords.x, doorCoords.y, 1500.0)
+                local shellCoords = vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0)
                 local doorOffset = shellData.doorOffset
                 return vector4(
                     shellCoords.x + doorOffset.x,

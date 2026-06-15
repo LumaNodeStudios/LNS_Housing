@@ -470,7 +470,7 @@ local function GetPropertyInsideCoords(p)
         if shellData then
             local doorCoords = GetEntranceCoords(p)
             if doorCoords then
-                local shellCoords = vec3(doorCoords.x, doorCoords.y, 1500.0)
+                local shellCoords = vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0)
                 local doorOffset = shellData.doorOffset
                 return vector4(
                     shellCoords.x + doorOffset.x,
@@ -566,7 +566,7 @@ exports('SpawnInProperty', function(type, id)
             if p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
                 local doorCoords = GetEntranceCoords(p)
                 if doorCoords then
-                    local shellCoords = vec3(doorCoords.x, doorCoords.y, 1500.0)
+                    local shellCoords = vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0)
                     SpawnShellForProperty(id, p.metadata.shell, shellCoords)
                 end
             end
