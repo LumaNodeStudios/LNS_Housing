@@ -169,12 +169,24 @@ local function teleportToStarterApartment()
         DoScreenFadeOut(500)
         while not IsScreenFadedOut() do Wait(0) end
         
+        FreezeEntityPosition(ped, true)
         SetEntityCoords(ped, coords.x, coords.y, coords.z, false, false, false, false)
         SetEntityHeading(ped, coords.w)
         
         TriggerEvent('LNS_Housing:client:setApartmentData', assignedRoom.roomId, assignedRoom.roomData)
         
+        -- Temp fix for 50/50 chance to fall thru
+        RequestCollisionAtCoord(coords.x, coords.y, coords.z)
+        local start = GetGameTimer()
+        while not HasCollisionLoadedAroundEntity(ped) and (GetGameTimer() - start) < 3000 do
+            Wait(50)
+            RequestCollisionAtCoord(coords.x, coords.y, coords.z)
+        end
         Wait(500)
+        
+        SetEntityCoords(ped, coords.x, coords.y, coords.z, false, false, false, false)
+        FreezeEntityPosition(ped, false)
+        
         DoScreenFadeIn(1000)
         
         lib.notify({
@@ -546,12 +558,24 @@ exports('SpawnInProperty', function(type, id)
             DoScreenFadeOut(500)
             while not IsScreenFadedOut() do Wait(0) end
             
+            FreezeEntityPosition(ped, true)
             SetEntityCoords(ped, roomData.spawn.x, roomData.spawn.y, roomData.spawn.z, false, false, false, false)
             SetEntityHeading(ped, roomData.spawn.w)
             
             TriggerEvent('LNS_Housing:client:setApartmentData', id, roomData)
             
+            -- Temp fix for 50/50 chance to fall thru
+            RequestCollisionAtCoord(roomData.spawn.x, roomData.spawn.y, roomData.spawn.z)
+            local start = GetGameTimer()
+            while not HasCollisionLoadedAroundEntity(ped) and (GetGameTimer() - start) < 3000 do
+                Wait(50)
+                RequestCollisionAtCoord(roomData.spawn.x, roomData.spawn.y, roomData.spawn.z)
+            end
             Wait(500)
+            
+            SetEntityCoords(ped, roomData.spawn.x, roomData.spawn.y, roomData.spawn.z, false, false, false, false)
+            FreezeEntityPosition(ped, false)
+            
             DoScreenFadeIn(1000)
             return true
         end
@@ -576,13 +600,25 @@ exports('SpawnInProperty', function(type, id)
                 DoScreenFadeOut(500)
                 while not IsScreenFadedOut() do Wait(0) end
                 
+                FreezeEntityPosition(ped, true)
                 SetEntityCoords(ped, coords.x, coords.y, coords.z, false, false, false, false)
                 SetEntityHeading(ped, coords.w)
                 
                 TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', id)
                 LoadFurnitures(id)
                 
+                -- Temp fix for 50/50 chance to fall thru
+                RequestCollisionAtCoord(coords.x, coords.y, coords.z)
+                local start = GetGameTimer()
+                while not HasCollisionLoadedAroundEntity(ped) and (GetGameTimer() - start) < 3000 do
+                    Wait(50)
+                    RequestCollisionAtCoord(coords.x, coords.y, coords.z)
+                end
                 Wait(500)
+                
+                SetEntityCoords(ped, coords.x, coords.y, coords.z, false, false, false, false)
+                FreezeEntityPosition(ped, false)
+                
                 DoScreenFadeIn(1000)
                 return true
             end

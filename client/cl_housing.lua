@@ -401,7 +401,7 @@ function RegisterPropertyZones(p, forceShell)
             local shellCoords = vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0)
             local shouldRegister = forceShell
             if not shouldRegister then
-                local playerCoords = GetEntityCoords(cache.ped or PlayerPedId())
+                local playerCoords = GetEntityCoords(cache.ped)
                 if #(playerCoords - shellCoords) < 35.0 then
                     shouldRegister = true
                 end
@@ -819,15 +819,20 @@ function CleanUpHousingSession()
 end
 
 function InitializeHousing()
-    
     CleanUpHousingSession()
+
+    local ped = PlayerPedId()
+    local playerCoords = GetEntityCoords(ped)
+    local isSpawningInShell = playerCoords.z < -70.0
+    if isSpawningInShell then
+        FreezeEntityPosition(ped, true)
+    end
 
     Properties = lib.callback.await('LNS_Housing:server:getProperties', false)
     
     if Properties then
         UpdatePropertyBlips()
 
-        
         for id, p in pairs(Properties) do
             RegisterPropertyZones(p)
             if p.metadata and p.metadata.garage_data then
@@ -835,11 +840,51 @@ function InitializeHousing()
             end
         end
 
-        
         Wait(1500) 
         for id, p in pairs(Properties) do
             RegisterPropertyEntranceTargets(p)
         end
+    end
+
+    if isSpawningInShell then
+        local currentPropId = nil
+        if Properties then
+            for id, p in pairs(Properties) do
+                if p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
+                    local doorCoords = GetEntranceCoords(p)
+                    if doorCoords then
+                        local shellCoords = vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0)
+                        if #(playerCoords - shellCoords) < 35.0 then
+                            currentPropId = p.id
+                            break
+                        end
+                    end
+                end
+            end
+        end
+
+        if currentPropId then
+            local shellEntity = nil
+            local timeout = 5000
+            local start = GetGameTimer()
+            while (not shellEntity or not DoesEntityExist(shellEntity)) and (GetGameTimer() - start) < timeout do
+                Wait(100)
+                shellEntity = SpawnedShells[currentPropId]
+            end
+
+            if shellEntity and DoesEntityExist(shellEntity) then
+                -- Temp fix for 50/50 chance to fall thru
+                RequestCollisionAtCoord(playerCoords.x, playerCoords.y, playerCoords.z)
+                local startColl = GetGameTimer()
+                while not HasCollisionLoadedAroundEntity(ped) and (GetGameTimer() - startColl) < 3000 do
+                    Wait(50)
+                    RequestCollisionAtCoord(playerCoords.x, playerCoords.y, playerCoords.z)
+                end
+                Wait(500)
+                SetEntityCoords(ped, playerCoords.x, playerCoords.y, playerCoords.z, false, false, false, false)
+            end
+        end
+        FreezeEntityPosition(ped, false)
     end
 end
 
@@ -1175,11 +1220,23 @@ function EnterShellProperty(propertyId)
 
     if spawnCoords then
         local ped = cache.ped
+        FreezeEntityPosition(ped, true)
         SetEntityCoords(ped, spawnCoords.x, spawnCoords.y, spawnCoords.z, false, false, false, false)
         SetEntityHeading(ped, heading)
+
+        -- Temp fix for 50/50 chance to fall thru
+        RequestCollisionAtCoord(spawnCoords.x, spawnCoords.y, spawnCoords.z)
+        local start = GetGameTimer()
+        while not HasCollisionLoadedAroundEntity(ped) and (GetGameTimer() - start) < 3000 do
+            Wait(50)
+            RequestCollisionAtCoord(spawnCoords.x, spawnCoords.y, spawnCoords.z)
+        end
+        Wait(500)
+
+        SetEntityCoords(ped, spawnCoords.x, spawnCoords.y, spawnCoords.z, false, false, false, false)
+        FreezeEntityPosition(ped, false)
     end
 
-    Wait(500)
     DoScreenFadeIn(1000)
 end
 
@@ -1204,9 +1261,21 @@ function LeaveShellProperty(propertyId)
     end
 
     local ped = cache.ped
+    FreezeEntityPosition(ped, true)
     SetEntityCoords(ped, doorCoords.x, doorCoords.y, doorCoords.z, false, false, false, false)
 
+    -- Temp fix for 50/50 chance to fall thru
+    RequestCollisionAtCoord(doorCoords.x, doorCoords.y, doorCoords.z)
+    local start = GetGameTimer()
+    while not HasCollisionLoadedAroundEntity(ped) and (GetGameTimer() - start) < 3000 do
+        Wait(50)
+        RequestCollisionAtCoord(doorCoords.x, doorCoords.y, doorCoords.z)
+    end
     Wait(500)
+
+    SetEntityCoords(ped, doorCoords.x, doorCoords.y, doorCoords.z, false, false, false, false)
+    FreezeEntityPosition(ped, false)
+
     DoScreenFadeIn(1000)
 end
 
