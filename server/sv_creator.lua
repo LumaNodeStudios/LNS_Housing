@@ -92,8 +92,27 @@ lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
 
     data.spawn_coords = spawnCoords
 
+    if data.garageCoords then
+        local spawn = data.garageSpawnCoords or data.garageCoords
+        data.garage_data = {
+            x = data.garageCoords.x,
+            y = data.garageCoords.y,
+            z = data.garageCoords.z,
+            h = data.garageCoords.h or 0.0,
+            spawn = {
+                x = spawn.x,
+                y = spawn.y,
+                z = spawn.z,
+                h = spawn.h or 0.0
+            }
+        }
+    end
+
     local newHouse = CreateProperty(data)
     if newHouse then
+        if newHouse.metadata and newHouse.metadata.garage_data then
+            Bridge.Server.RegisterGarage(newHouse.id, newHouse.label, newHouse.metadata.garage_data)
+        end
         TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
         return newHouse
     end

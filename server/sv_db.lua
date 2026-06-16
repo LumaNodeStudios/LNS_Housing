@@ -30,6 +30,7 @@ function LoadProperties()
             v.agency = v.agency or nil
             v.agent_cid = v.agent_cid or nil
             v.commission_rate = tonumber(v.commission_rate) or 10
+            v.garage = tonumber(v.garage) or 2
             
             
             if not v.doors or #v.doors == 0 then
@@ -50,6 +51,12 @@ function LoadProperties()
             if Bridge and Bridge.Server and Bridge.Server.RegisterPropertyStashes then
                 Bridge.Server.RegisterPropertyStashes(v.id, v.furniture)
             end
+
+            if v.metadata and v.metadata.garage_data then
+                if Bridge and Bridge.Server and Bridge.Server.RegisterGarage then
+                    Bridge.Server.RegisterGarage(v.id, v.label, v.metadata.garage_data)
+                end
+            end
         end
         print('^2[Housing] ^7Loaded ' .. #result .. ' properties.')
     end
@@ -66,7 +73,7 @@ function CreateProperty(data)
         }
     end
 
-    local id = MySQL.insert.await('INSERT INTO housing_properties (label, price, doors, image, sale_type, auction_data, zone_data, metadata, yard_zone_data, last_mowed, lawn_data, agency, agent_cid, commission_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', {
+    local id = MySQL.insert.await('INSERT INTO housing_properties (label, price, doors, image, sale_type, auction_data, zone_data, metadata, yard_zone_data, last_mowed, lawn_data, agency, agent_cid, commission_rate, garage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', {
         data.name or data.label, 
         data.price, 
         json.encode(data.doors or {}), 
@@ -87,14 +94,16 @@ function CreateProperty(data)
             spawn = spawnData,
             shell = data.mlo and 'mlo' or (data.shell or 'Standard Motel'),
             entrance = data.entrance,
-            locked = true
+            locked = true,
+            garage_data = data.garage_data or nil
         }),
         json.encode(data.yard_zone_data or nil),
         0,
         json.encode({}),
         data.agency or nil,
         data.agent_cid or nil,
-        data.commission_rate or 10
+        data.commission_rate or 10,
+        tonumber(data.slots) or 2
     })
     
     if id then
@@ -114,7 +123,8 @@ function CreateProperty(data)
                 spawn = spawnData,
                 shell = data.mlo and 'mlo' or (data.shell or 'Standard Motel'),
                 entrance = data.entrance,
-                locked = true
+                locked = true,
+                garage_data = data.garage_data or nil
             },
             image = data.image or nil,
             sale_type = data.saleType or 'direct',
@@ -130,7 +140,8 @@ function CreateProperty(data)
             lawn_data = {},
             agency = data.agency or nil,
             agent_cid = data.agent_cid or nil,
-            commission_rate = data.commission_rate or 10
+            commission_rate = data.commission_rate or 10,
+            garage = tonumber(data.slots) or 2
         }
         return Properties[id]
     end
@@ -141,8 +152,8 @@ function SaveProperty(id)
     local p = Properties[id]
     if not p then return end
     
-    MySQL.update.await('UPDATE housing_properties SET owner = ?, permissions = ?, metadata = ?, furniture = ?, zone_data = ?, doors = ?, image = ?, sale_type = ?, auction_data = ?, yard_zone_data = ?, last_mowed = ?, lawn_data = ?, agency = ?, agent_cid = ?, commission_rate = ? WHERE id = ?', {
-        p.owner, json.encode(p.permissions), json.encode(p.metadata), json.encode(p.furniture), json.encode(p.zone_data or {}), json.encode(p.doors or {}), p.image or nil, p.sale_type or 'direct', json.encode(p.auction_data), json.encode(p.yard_zone_data or nil), p.last_mowed or 0, json.encode(p.lawn_data or {}), p.agency or nil, p.agent_cid or nil, p.commission_rate or 10, id
+    MySQL.update.await('UPDATE housing_properties SET owner = ?, permissions = ?, metadata = ?, furniture = ?, zone_data = ?, doors = ?, image = ?, sale_type = ?, auction_data = ?, yard_zone_data = ?, last_mowed = ?, lawn_data = ?, agency = ?, agent_cid = ?, commission_rate = ?, garage = ? WHERE id = ?', {
+        p.owner, json.encode(p.permissions), json.encode(p.metadata), json.encode(p.furniture), json.encode(p.zone_data or {}), json.encode(p.doors or {}), p.image or nil, p.sale_type or 'direct', json.encode(p.auction_data), json.encode(p.yard_zone_data or nil), p.last_mowed or 0, json.encode(p.lawn_data or {}), p.agency or nil, p.agent_cid or nil, p.commission_rate or 10, p.garage or 2, id
     })
 end
 
@@ -284,6 +295,12 @@ MySQL.ready(function()
         local cols = MySQL.query.await("SHOW COLUMNS FROM `housing_properties` LIKE 'commission_rate'")
         if not cols or #cols == 0 then
             MySQL.query.await("ALTER TABLE `housing_properties` ADD COLUMN `commission_rate` INT DEFAULT 10")
+        end
+    end)
+    pcall(function()
+        local cols = MySQL.query.await("SHOW COLUMNS FROM `housing_properties` LIKE 'garage'")
+        if not cols or #cols == 0 then
+            MySQL.query.await("ALTER TABLE `housing_properties` ADD COLUMN `garage` INT DEFAULT 2")
         end
     end)
 

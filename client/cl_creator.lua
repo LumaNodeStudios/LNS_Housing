@@ -181,3 +181,95 @@ RegisterNUICallback('takePhoto', function(_, cb)
         lib.hideTextUI()
     end)
 end)
+
+RegisterNUICallback('pickGarageCoords', function(_, cb)
+    SendNUIMessage({ action = 'toggleVisibility', data = { visible = false } })
+    SetNuiFocus(false, false) 
+    
+    Wait(500)
+    lib.showTextUI('[E] - Confirm standing location for Garage Menu | [H] Cancel')
+    
+    local pickedCoords = nil
+    while true do
+        Wait(0)
+        DisableControlAction(0, 38, true)
+        DisableControlAction(0, 104, true)
+        local ped = cache.ped
+        local coords = GetEntityCoords(ped)
+        local heading = GetEntityHeading(ped)
+        
+        DrawMarker(1, coords.x, coords.y, coords.z - 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.2, 1.2, 0.2, 0, 255, 0, 100, false, false, 2, false, nil, nil, false)
+        DrawMarker(2, coords.x, coords.y, coords.z + 0.2, 0.0, 0.0, 0.0, 180.0, 0.0, 0.0, 0.3, 0.3, 0.3, 0, 255, 0, 150, true, true, 2, nil, nil, false)
+        
+        if IsDisabledControlJustPressed(0, 38) then 
+            pickedCoords = {
+                x = coords.x,
+                y = coords.y,
+                z = coords.z,
+                h = heading
+            }
+            break
+        end
+        
+        if IsDisabledControlJustPressed(0, 104) then 
+            break
+        end
+    end
+    
+    lib.hideTextUI()
+    SendNUIMessage({ action = 'toggleVisibility', data = { visible = true } })
+    SetNuiFocus(true, true) 
+    
+    if pickedCoords then
+        Bridge.Client.Notify('Garage menu location registered.', 'success')
+        cb(pickedCoords)
+    else
+        cb(nil)
+    end
+end)
+
+RegisterNUICallback('pickGarageSpawnCoords', function(_, cb)
+    SendNUIMessage({ action = 'toggleVisibility', data = { visible = false } })
+    SetNuiFocus(false, false) 
+    
+    Wait(500)
+    lib.showTextUI('[E] - Confirm standing location for Vehicle Spawn | [H] Cancel')
+    
+    local pickedCoords = nil
+    while true do
+        Wait(0)
+        DisableControlAction(0, 38, true)
+        DisableControlAction(0, 104, true)
+        local ped = cache.ped
+        local coords = GetEntityCoords(ped)
+        local heading = GetEntityHeading(ped)
+        
+        DrawMarker(1, coords.x, coords.y, coords.z - 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.2, 1.2, 0.2, 0, 255, 0, 100, false, false, 2, false, nil, nil, false)
+        DrawMarker(2, coords.x, coords.y, coords.z + 0.2, 0.0, 0.0, 0.0, 180.0, 0.0, 0.0, 0.3, 0.3, 0.3, 0, 255, 0, 150, true, true, 2, nil, nil, false)
+        
+        if IsDisabledControlJustPressed(0, 38) then 
+            pickedCoords = {
+                x = coords.x,
+                y = coords.y,
+                z = coords.z,
+                h = heading
+            }
+            break
+        end
+        
+        if IsDisabledControlJustPressed(0, 104) then 
+            break
+        end
+    end
+    
+    lib.hideTextUI()
+    SendNUIMessage({ action = 'toggleVisibility', data = { visible = true } })
+    SetNuiFocus(true, true) 
+    
+    if pickedCoords then
+        Bridge.Client.Notify('Vehicle spawn location registered.', 'success')
+        cb(pickedCoords)
+    else
+        cb(nil)
+    end
+end)

@@ -341,3 +341,29 @@ function Bridge.Server.Notify(source, msg, type)
         type = type or 'inform'
     })
 end
+
+function Bridge.Server.RegisterGarage(propertyId, label, garageData)
+    if Bridge.GarageScript == 'qbx_garages' then
+        local garageName = string.format("property-%s-garage", propertyId)
+        local spawn = garageData.spawn or garageData
+        local config = {
+            label = label or string.format("Property Garage %s", propertyId),
+            type = "car",
+            accessPoints = {
+                {
+                    coords = vector3(garageData.x, garageData.y, garageData.z),
+                    spawn = vector4(spawn.x, spawn.y, spawn.z, spawn.h or 0.0),
+                    dropPoint = vector3(garageData.x, garageData.y, garageData.z)
+                }
+            },
+            canAccess = function(source)
+                return CheckPermission(source, 'house', propertyId, 'entry')
+            end
+        }
+        exports.qbx_garages:RegisterGarage(garageName, config)
+    end
+end
+
+function Bridge.Server.UnregisterGarage(propertyId)
+    -- Reserved for future use
+end

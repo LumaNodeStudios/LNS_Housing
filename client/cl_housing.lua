@@ -807,6 +807,12 @@ function CleanUpHousingSession()
 
     ClearPropertyBlips()
 
+    if Properties then
+        for id, p in pairs(Properties) do
+            Bridge.Client.UnregisterGarage(id)
+        end
+    end
+
     Properties = {}
     CurrentProperty = nil
     CurrentInterior = 0
@@ -824,6 +830,9 @@ function InitializeHousing()
         
         for id, p in pairs(Properties) do
             RegisterPropertyZones(p)
+            if p.metadata and p.metadata.garage_data then
+                Bridge.Client.RegisterGarage(p.id, p.label, p.metadata.garage_data)
+            end
         end
 
         
@@ -920,6 +929,12 @@ RegisterNetEvent('LNS_Housing:client:updateProperties', function(allProperties)
                 RefreshYardGrass(k)
             end
         end
+
+        if v.metadata and v.metadata.garage_data then
+            Bridge.Client.RegisterGarage(v.id, v.label, v.metadata.garage_data)
+        else
+            Bridge.Client.UnregisterGarage(v.id)
+        end
     end
     
     for k, v in pairs(Properties) do
@@ -928,6 +943,7 @@ RegisterNetEvent('LNS_Housing:client:updateProperties', function(allProperties)
                 exports.ox_target:removeZone(EntranceTargets[k])
                 EntranceTargets[k] = nil
             end
+            Bridge.Client.UnregisterGarage(k)
             Properties[k] = nil
         end
     end

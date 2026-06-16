@@ -145,3 +145,57 @@ end
 RegisterNetEvent('LNS_Housing:client:triggerDispatch', function(coords, title, message)
     Bridge.Client.Dispatch(coords, title, message)
 end)
+
+local clientGarageZones = {}
+
+function Bridge.Client.RegisterGarage(propertyId, label, garageData)
+    if GetResourceState('jg-advancedgarages') == 'started' then
+        local garageName = string.format("property-%s-garage", propertyId)
+        if clientGarageZones[propertyId] then
+            clientGarageZones[propertyId]:remove()
+            clientGarageZones[propertyId] = nil
+        end
+        
+        clientGarageZones[propertyId] = lib.zones.box({
+            coords = vector3(garageData.x, garageData.y, garageData.z),
+            size = vector3(5.0, 5.0, 4.0),
+            rotation = garageData.h or 0.0,
+            debug = false,
+            onEnter = function()
+                if cache.ped and IsPedInAnyVehicle(cache.ped, true) then
+                    lib.showTextUI('Press [E] to store vehicle')
+                else
+                    lib.showTextUI('Press [E] to open garage')
+                end
+            end,
+            inside = function()
+                if IsControlJustReleased(0, 38) then
+                    Wait(100)
+                    local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'entry')
+                    if not hasAccess then
+                        Bridge.Client.Notify('You do not have access to this garage.', 'error')
+                        return
+                    end
+                    
+                    if cache.ped and IsPedInAnyVehicle(cache.ped, true) then
+                        TriggerEvent('jg-advancedgarages:client:store-vehicle', garageName, "car")
+                    else
+                        local spawn = garageData.spawn or garageData
+                        local spawnCoords = vector4(spawn.x, spawn.y, spawn.z, spawn.h or 0.0)
+                        TriggerEvent('jg-advancedgarages:client:open-garage', garageName, "car", spawnCoords)
+                    end
+                end
+            end,
+            onExit = function()
+                lib.hideTextUI()
+            end
+        })
+    end
+end
+
+function Bridge.Client.UnregisterGarage(propertyId)
+    if clientGarageZones[propertyId] then
+        clientGarageZones[propertyId]:remove()
+        clientGarageZones[propertyId] = nil
+    end
+end

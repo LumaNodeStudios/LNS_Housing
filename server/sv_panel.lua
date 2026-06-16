@@ -389,7 +389,34 @@ lib.callback.register('LNS_Housing:server:updateListingDetails', function(source
         end
     end
 
+    p.garage = tonumber(data.slots) or p.garage or 2
+
+    if data.garageCoords then
+        local spawn = data.garageSpawnCoords or data.garageCoords
+        p.metadata.garage_data = {
+            x = data.garageCoords.x,
+            y = data.garageCoords.y,
+            z = data.garageCoords.z,
+            h = data.garageCoords.h or 0.0,
+            spawn = {
+                x = spawn.x,
+                y = spawn.y,
+                z = spawn.z,
+                h = spawn.h or 0.0
+            }
+        }
+    else
+        p.metadata.garage_data = nil
+    end
+
     SaveProperty(propertyId)
+
+    if p.metadata.garage_data then
+        Bridge.Server.RegisterGarage(propertyId, p.label, p.metadata.garage_data)
+    else
+        Bridge.Server.UnregisterGarage(propertyId)
+    end
+
     TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
     return true
 end)

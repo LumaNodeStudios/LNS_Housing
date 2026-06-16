@@ -114,7 +114,9 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         hasYard: false,
         image: null,
         entranceType: 'door',
-        entranceCoords: null
+        entranceCoords: null,
+        garageCoords: null,
+        garageSpawnCoords: null
     });
 
     const [draftData, setDraftData] = useState({
@@ -280,7 +282,9 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             hasYard: !!p.hasYard,
             image: p.image || null,
             entranceType: hasEntranceCoords ? 'coords' : 'door',
-            entranceCoords: p.metadata && p.metadata.entrance ? p.metadata.entrance : null
+            entranceCoords: p.metadata && p.metadata.entrance ? p.metadata.entrance : null,
+            garageCoords: p.metadata && p.metadata.garage_data ? { x: p.metadata.garage_data.x, y: p.metadata.garage_data.y, z: p.metadata.garage_data.z, h: p.metadata.garage_data.h } : null,
+            garageSpawnCoords: p.metadata && p.metadata.garage_data && p.metadata.garage_data.spawn ? p.metadata.garage_data.spawn : null
         });
         setActiveTab('creator');
     };
@@ -300,7 +304,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 price: parseFloat(formData.price),
                 sale_type: formData.saleType,
                 type: formData.type,
-                slots: formData.slots,
+                slots: parseInt(formData.slots),
                 allowWallColors: formData.allowWallColors,
                 mlo: formData.mlo,
                 shell: formData.shell,
@@ -310,7 +314,9 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 hasYard: formData.hasYard,
                 image: formData.image,
                 entranceType: formData.entranceType,
-                entranceCoords: formData.entranceCoords
+                entranceCoords: formData.entranceCoords,
+                garageCoords: formData.garageCoords,
+                garageSpawnCoords: formData.garageSpawnCoords
             })
         }).then(() => {
             setEditingPropertyId(null);
@@ -536,6 +542,32 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             });
     };
 
+    const handlePickGarageCoords = () => {
+        fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/pickGarageCoords`, {
+            method: 'POST',
+            body: JSON.stringify({})
+        })
+            .then(resp => resp.json())
+            .then(coords => {
+                if (coords) {
+                    setFormData(prev => ({ ...prev, garageCoords: coords }));
+                }
+            });
+    };
+
+    const handlePickGarageSpawnCoords = () => {
+        fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/pickGarageSpawnCoords`, {
+            method: 'POST',
+            body: JSON.stringify({})
+        })
+            .then(resp => resp.json())
+            .then(coords => {
+                if (coords) {
+                    setFormData(prev => ({ ...prev, garageSpawnCoords: coords }));
+                }
+            });
+    };
+
     const resetCreatorForm = () => {
         setFormData({
             name: 'New Property',
@@ -552,7 +584,9 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             hasYard: false,
             image: null,
             entranceType: 'door',
-            entranceCoords: null
+            entranceCoords: null,
+            garageCoords: null,
+            garageSpawnCoords: null
         });
         setEditingPropertyId(null);
         setCurrentStep(1);
@@ -1369,6 +1403,30 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                 </div>
                                             </>
                                         )}
+
+                                        <div className="re-interactive-row" style={{ marginTop: '10px', borderTop: '1px solid var(--border-dim)', paddingTop: '10px' }}>
+                                            <div className="re-interactive-info">
+                                                <span className="re-interactive-label">Garage Menu Location</span>
+                                                <span className={`re-interactive-status ${formData.garageCoords ? 'active' : ''}`}>
+                                                    {formData.garageCoords ? 'Coordinates Configured' : 'Not Configured (Optional)'}
+                                                </span>
+                                            </div>
+                                            <button className="re-btn-action" type="button" onClick={handlePickGarageCoords}>
+                                                {formData.garageCoords ? 'Reselect' : 'Set Current Position'}
+                                            </button>
+                                        </div>
+
+                                        <div className="re-interactive-row">
+                                            <div className="re-interactive-info">
+                                                <span className="re-interactive-label">Vehicle Spawn Location</span>
+                                                <span className={`re-interactive-status ${formData.garageSpawnCoords ? 'active' : ''}`}>
+                                                    {formData.garageSpawnCoords ? 'Coordinates Configured' : 'Not Configured (Optional)'}
+                                                </span>
+                                            </div>
+                                            <button className="re-btn-action" type="button" onClick={handlePickGarageSpawnCoords}>
+                                                {formData.garageSpawnCoords ? 'Reselect' : 'Set Current Position'}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             )}
