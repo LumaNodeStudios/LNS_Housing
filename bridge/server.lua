@@ -348,7 +348,7 @@ function Bridge.Server.RegisterGarage(propertyId, label, garageData)
         local spawn = garageData.spawn or garageData
         local config = {
             label = label or string.format("Property Garage %s", propertyId),
-            type = "car",
+            vehicleType = "car",
             accessPoints = {
                 {
                     coords = vector3(garageData.x, garageData.y, garageData.z),
