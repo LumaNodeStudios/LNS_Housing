@@ -11,7 +11,7 @@
 
 ## Preview
 
-<img src="https://raw.githubusercontent.com/LumaNodeStudios/LNS_Housing/main/lns_housing_thumbnail.png" alt="LNS Housing Thumbnail" width="100%" style="border-radius: 12px; margin-top: 20px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);"/>
+<img src="https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/lns_housing_thumbnail_1781600469826.png" alt="LNS Housing Thumbnail" width="100%" style="border-radius: 12px; margin-top: 20px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);"/>
 
 ---
 
