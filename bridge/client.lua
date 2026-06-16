@@ -1,6 +1,8 @@
 Bridge.Client = {}
 
+local Settings = lib.load('shared.settings')
 local ESX = Bridge.Framework == 'esx' and exports['es_extended']:getSharedObject() or nil
+local clientGarageZones = {}
 
 function Bridge.Client.GetIdentifier()
     if Bridge.Framework == 'qbx' then
@@ -146,22 +148,24 @@ RegisterNetEvent('LNS_Housing:client:triggerDispatch', function(coords, title, m
     Bridge.Client.Dispatch(coords, title, message)
 end)
 
-local clientGarageZones = {}
-
 function Bridge.Client.RegisterGarage(propertyId, label, garageData)
-    if GetResourceState('jg-advancedgarages') == 'started' then
+    if Bridge.GarageScript == 'jg-advancedgarages' or Bridge.GarageScript == 'cd_garage' or Bridge.GarageScript == 'op-garages' then
         local garageName = string.format("property-%s-garage", propertyId)
         if clientGarageZones[propertyId] then
             clientGarageZones[propertyId]:remove()
             clientGarageZones[propertyId] = nil
         end
         
+        local hasAccess = false
         clientGarageZones[propertyId] = lib.zones.box({
             coords = vector3(garageData.x, garageData.y, garageData.z),
             size = vector3(5.0, 5.0, 4.0),
             rotation = garageData.h or 0.0,
-            debug = false,
+            debug = Settings.Debug.Zones,
             onEnter = function()
+                hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'entry')
+                if not hasAccess then return end
+                
                 if cache.ped and IsPedInAnyVehicle(cache.ped, true) then
                     lib.showTextUI('Press [E] to store vehicle')
                 else
@@ -169,24 +173,34 @@ function Bridge.Client.RegisterGarage(propertyId, label, garageData)
                 end
             end,
             inside = function()
+                if not hasAccess then return end
                 if IsControlJustReleased(0, 38) then
                     Wait(100)
-                    local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'entry')
-                    if not hasAccess then
-                        Bridge.Client.Notify('You do not have access to this garage.', 'error')
-                        return
-                    end
-                    
-                    if cache.ped and IsPedInAnyVehicle(cache.ped, true) then
-                        TriggerEvent('jg-advancedgarages:client:store-vehicle', garageName, "car")
-                    else
+                    if Bridge.GarageScript == 'op-garages' then
                         local spawn = garageData.spawn or garageData
                         local spawnCoords = vector4(spawn.x, spawn.y, spawn.z, spawn.h or 0.0)
-                        TriggerEvent('jg-advancedgarages:client:open-garage', garageName, "car", spawnCoords)
+                        exports['op-garages']:OpenGarageHere(spawnCoords, true)
+                    else
+                        if cache.ped and IsPedInAnyVehicle(cache.ped, true) then
+                            if Bridge.GarageScript == 'jg-advancedgarages' then
+                                TriggerEvent('jg-advancedgarages:client:store-vehicle', garageName, "car")
+                            elseif Bridge.GarageScript == 'cd_garage' then
+                                TriggerEvent('cd_garage:StoreVehicle_Main', 1, false, false)
+                            end
+                        else
+                            if Bridge.GarageScript == 'jg-advancedgarages' then
+                                local spawn = garageData.spawn or garageData
+                                local spawnCoords = vector4(spawn.x, spawn.y, spawn.z, spawn.h or 0.0)
+                                TriggerEvent('jg-advancedgarages:client:open-garage', garageName, "car", spawnCoords)
+                            elseif Bridge.GarageScript == 'cd_garage' then
+                                TriggerEvent('cd_garage:PropertyGarage', 'quick', nil)
+                            end
+                        end
                     end
                 end
             end,
             onExit = function()
+                hasAccess = false
                 lib.hideTextUI()
             end
         })

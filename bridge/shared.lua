@@ -15,4 +15,8 @@ if GetResourceState('qbx_garages') == 'started' then
     Bridge.GarageScript = 'qbx_garages'
 elseif GetResourceState('jg-advancedgarages') == 'started' then
     Bridge.GarageScript = 'jg-advancedgarages'
+elseif GetResourceState('cd_garage') == 'started' then
+    Bridge.GarageScript = 'cd_garage'
+elseif GetResourceState('op-garages') == 'started' or GetResourceState('op_garages') == 'started' then
+    Bridge.GarageScript = 'op-garages'
 end

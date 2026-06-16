@@ -365,5 +365,5 @@ function Bridge.Server.RegisterGarage(propertyId, label, garageData)
 end
 
 function Bridge.Server.UnregisterGarage(propertyId)
-    -- Reserved for future use
+    -- Bomboclat
 end
