@@ -11,7 +11,8 @@ ui_page 'web/dist/index.html'
 files {
     'web/dist/index.html',
     'web/dist/**/*',
-    'stream/[Shells]/*.ytyp'
+    'stream/[Shells]/*.ytyp',
+    'stream/[Walls]/*.ytyp'
 }
 
 shared_scripts {
