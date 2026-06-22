@@ -1246,27 +1246,6 @@
   left: 22px;
 }
 
-.spawn-point-btn {
-  width: 100%;
-  padding: 10px;
-  background: rgba(var(--primary-rgb), 0.08);
-  border: 1px solid rgba(var(--primary-rgb), 0.25);
-  color: var(--primary);
-  border-radius: 8px;
-  font-size: 11.5px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: var(--transition-fast);
-}
-
-.spawn-point-btn:hover {
-  background: rgba(var(--primary-rgb), 0.15);
-  border-color: var(--primary);
-}
-
 /* Wall Tint Picker */
 .color-picker-container {
   display: flex;

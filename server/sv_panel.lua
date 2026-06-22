@@ -555,27 +555,3 @@ RegisterNetEvent('LNS_Housing:server:toggleAutoPay', function(propertyId, enable
     local stateText = enabled and "enabled" or "disabled"
     Bridge.Server.Notify(src, "Rent auto-pay " .. stateText .. ".", "success")
 end)
-
-lib.callback.register('LNS_Housing:server:updateSpawnPoint', function(source, propertyId, spawnCoords)
-    local src = source
-    local id = tonumber(propertyId)
-    local p = Properties[id]
-    if not p then return false end
-
-    local hasAccess = CheckPermission(src, 'house', id, 'manage')
-    if not hasAccess then
-        return false
-    end
-
-    if not p.metadata then p.metadata = {} end
-    p.metadata.spawn = {
-        x = spawnCoords.x,
-        y = spawnCoords.y,
-        z = spawnCoords.z,
-        h = spawnCoords.w
-    }
-
-    SaveProperty(id)
-    TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
-    return true
-end)

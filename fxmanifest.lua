@@ -12,7 +12,9 @@ files {
     'web/dist/index.html',
     'web/dist/**/*',
     'stream/[Shells]/*.ytyp',
-    'stream/[Walls]/*.ytyp'
+    'stream/[Walls]/*.ytyp',
+    'data/lns_data.dat54.rel',
+    'audiodirectory/lns_bank.awc'
 }
 
 shared_scripts {
@@ -65,3 +67,6 @@ data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_red.ytyp'
 data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_wall.ytyp'
 data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_white.ytyp'
 data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_yellow.ytyp'
+
+data_file 'AUDIO_WAVEPACK'  'sound/audiodirectory'
+data_file 'AUDIO_SOUNDDATA' 'sound/data/lns_data.dat'

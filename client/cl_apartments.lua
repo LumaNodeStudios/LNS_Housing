@@ -178,11 +178,11 @@ local function teleportToStarterApartment()
         -- Temp fix for 50/50 chance to fall thru
         RequestCollisionAtCoord(coords.x, coords.y, coords.z)
         local start = GetGameTimer()
-        while not HasCollisionLoadedAroundEntity(PlayerPedId()) and (GetGameTimer() - start) < 3000 do
+        while not HasCollisionLoadedAroundEntity(PlayerPedId()) and (GetGameTimer() - start) < 2000 do
             Wait(50)
             RequestCollisionAtCoord(coords.x, coords.y, coords.z)
         end
-        Wait(500)
+        Wait(150)
         
         SetEntityCoords(PlayerPedId(), coords.x, coords.y, coords.z, false, false, false, false)
         FreezeEntityPosition(PlayerPedId(), false)
@@ -567,11 +567,11 @@ exports('SpawnInProperty', function(type, id)
             -- Temp fix for 50/50 chance to fall thru
             RequestCollisionAtCoord(roomData.spawn.x, roomData.spawn.y, roomData.spawn.z)
             local start = GetGameTimer()
-            while not HasCollisionLoadedAroundEntity(PlayerPedId()) and (GetGameTimer() - start) < 3000 do
+            while not HasCollisionLoadedAroundEntity(PlayerPedId()) and (GetGameTimer() - start) < 2000 do
                 Wait(50)
                 RequestCollisionAtCoord(roomData.spawn.x, roomData.spawn.y, roomData.spawn.z)
             end
-            Wait(500)
+            Wait(150)
             
             SetEntityCoords(PlayerPedId(), roomData.spawn.x, roomData.spawn.y, roomData.spawn.z, false, false, false, false)
             FreezeEntityPosition(PlayerPedId(), false)
@@ -610,11 +610,11 @@ exports('SpawnInProperty', function(type, id)
                 -- Temp fix for 50/50 chance to fall thru
                 RequestCollisionAtCoord(coords.x, coords.y, coords.z)
                 local start = GetGameTimer()
-                while not HasCollisionLoadedAroundEntity(PlayerPedId()) and (GetGameTimer() - start) < 3000 do
+                while not HasCollisionLoadedAroundEntity(PlayerPedId()) and (GetGameTimer() - start) < 2000 do
                     Wait(50)
                     RequestCollisionAtCoord(coords.x, coords.y, coords.z)
                 end
-                Wait(500)
+                Wait(150)
                 
                 SetEntityCoords(PlayerPedId(), coords.x, coords.y, coords.z, false, false, false, false)
                 FreezeEntityPosition(PlayerPedId(), false)

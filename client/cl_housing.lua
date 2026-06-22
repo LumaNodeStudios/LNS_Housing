@@ -1,12 +1,14 @@
 local Settings = lib.load('shared.settings')
 local Furniture = lib.load('shared.furniture')
-Properties = {}
-EntranceTargets = {}
 local CurrentProperty = nil
 local CurrentInterior = 0
 local PropertyBlips = {}
 local ClearPropertyBlips, UpdatePropertyBlips
-
+local PropertyZones = {}
+local activeAlarmsCount = 0
+Properties = {}
+EntranceTargets = {}
+LoadedFurniture = {}
 
 RegisterCommand(Settings.Housing.Creator.Command, function(source, args, rawCommand)
     local hasPermission = lib.callback.await('LNS_Housing:server:checkPermission', false, 'realestate')
@@ -212,9 +214,6 @@ function ApplyWallColor(interiorId, color)
         SetInteriorProbeLength(50.0)
     end)
 end
-
-LoadedFurniture = {}
-local PropertyZones = {}
 
 function IsCoordsInsidePropertyZone(propertyId, coords)
     if not propertyId then return true end
@@ -825,6 +824,7 @@ function InitializeHousing()
     local playerCoords = GetEntityCoords(ped)
     local isSpawningInShell = playerCoords.z < -70.0
     if isSpawningInShell then
+        DoScreenFadeOut(0)
         FreezeEntityPosition(ped, true)
     end
 
@@ -840,10 +840,12 @@ function InitializeHousing()
             end
         end
 
-        Wait(1500) 
-        for id, p in pairs(Properties) do
-            RegisterPropertyEntranceTargets(p)
-        end
+        CreateThread(function()
+            Wait(1500) 
+            for id, p in pairs(Properties) do
+                RegisterPropertyEntranceTargets(p)
+            end
+        end)
     end
 
     if isSpawningInShell then
@@ -864,29 +866,33 @@ function InitializeHousing()
         end
 
         if currentPropId then
-            local shellEntity = nil
-            local timeout = 5000
-            local start = GetGameTimer()
-            while (not shellEntity or not DoesEntityExist(shellEntity)) and (GetGameTimer() - start) < timeout do
-                Wait(100)
-                shellEntity = SpawnedShells[currentPropId]
-            end
+            local p = Properties[currentPropId]
+            local shellName = p.metadata.shell or 'Standard Motel'
+            local doorCoords = GetEntranceCoords(p)
+            local shellCoords = vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0)
+
+            -- Instantly spawn the shell, load furniture, and enter the routing bucket.
+            -- This bypasses the ox_lib zone thread's latency for the initial spawn.
+            local shellEntity, spawnCoords, heading = SpawnShellForProperty(currentPropId, shellName, shellCoords)
+            TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', currentPropId)
+            LoadFurnitures(currentPropId)
 
             if shellEntity and DoesEntityExist(shellEntity) then
                 -- Temp fix for 50/50 chance to fall thru
                 local currentPed = PlayerPedId()
                 RequestCollisionAtCoord(playerCoords.x, playerCoords.y, playerCoords.z)
                 local startColl = GetGameTimer()
-                while not HasCollisionLoadedAroundEntity(currentPed) and (GetGameTimer() - startColl) < 3000 do
+                while not HasCollisionLoadedAroundEntity(currentPed) and (GetGameTimer() - startColl) < 2000 do
                     Wait(50)
                     currentPed = PlayerPedId()
                     RequestCollisionAtCoord(playerCoords.x, playerCoords.y, playerCoords.z)
                 end
-                Wait(500)
+                Wait(150)
                 SetEntityCoords(currentPed, playerCoords.x, playerCoords.y, playerCoords.z, false, false, false, false)
             end
         end
         FreezeEntityPosition(PlayerPedId(), false)
+        DoScreenFadeIn(1000)
     end
 end
 
@@ -1229,11 +1235,11 @@ function EnterShellProperty(propertyId)
         -- Temp fix for 50/50 chance to fall thru
         RequestCollisionAtCoord(spawnCoords.x, spawnCoords.y, spawnCoords.z)
         local start = GetGameTimer()
-        while not HasCollisionLoadedAroundEntity(PlayerPedId()) and (GetGameTimer() - start) < 3000 do
+        while not HasCollisionLoadedAroundEntity(PlayerPedId()) and (GetGameTimer() - start) < 2000 do
             Wait(50)
             RequestCollisionAtCoord(spawnCoords.x, spawnCoords.y, spawnCoords.z)
         end
-        Wait(500)
+        Wait(150)
 
         SetEntityCoords(PlayerPedId(), spawnCoords.x, spawnCoords.y, spawnCoords.z, false, false, false, false)
         FreezeEntityPosition(PlayerPedId(), false)
@@ -1269,11 +1275,11 @@ function LeaveShellProperty(propertyId)
     -- Temp fix for 50/50 chance to fall thru
     RequestCollisionAtCoord(doorCoords.x, doorCoords.y, doorCoords.z)
     local start = GetGameTimer()
-    while not HasCollisionLoadedAroundEntity(PlayerPedId()) and (GetGameTimer() - start) < 3000 do
+    while not HasCollisionLoadedAroundEntity(PlayerPedId()) and (GetGameTimer() - start) < 2000 do
         Wait(50)
         RequestCollisionAtCoord(doorCoords.x, doorCoords.y, doorCoords.z)
     end
-    Wait(500)
+    Wait(150)
 
     SetEntityCoords(PlayerPedId(), doorCoords.x, doorCoords.y, doorCoords.z, false, false, false, false)
     FreezeEntityPosition(PlayerPedId(), false)
@@ -1282,21 +1288,40 @@ function LeaveShellProperty(propertyId)
 end
 
 RegisterNetEvent('LNS_Housing:client:triggerHouseAlarm', function(coords, durationMs)
+    local playerCoords = GetEntityCoords(PlayerPedId())
     local alarmCoords = vec3(coords.x, coords.y, coords.z)
     local shellCoords = vec3(coords.x, coords.y, Settings.ShellSpawningZ or -100.0)
     
-    RequestScriptAudioBank("DLC_H3_FM_FIB_Raid_Sounds", false, -1)
+    local isNearEntrance = #(playerCoords - alarmCoords) < 35.0
+    local isNearShell = #(playerCoords - shellCoords) < 35.0
     
-    local outsideSoundId = GetSoundId()
-    PlaySoundFromCoord(outsideSoundId, "Alarm_Exterior", alarmCoords.x, alarmCoords.y, alarmCoords.z, "DLC_H3_FM_FIB_Raid_Sounds", false, 10.0, false)
-    
-    local insideSoundId = GetSoundId()
-    PlaySoundFromCoord(insideSoundId, "Alarm_Exterior", shellCoords.x, shellCoords.y, shellCoords.z, "DLC_H3_FM_FIB_Raid_Sounds", false, 10.0, false)
-    
-    SetTimeout(durationMs or 30000, function()
-        StopSound(outsideSoundId)
-        ReleaseSoundId(outsideSoundId)
-        StopSound(insideSoundId)
-        ReleaseSoundId(insideSoundId)
-    end)
+    if isNearEntrance or isNearShell then
+        CreateThread(function()
+            activeAlarmsCount = activeAlarmsCount + 1
+            
+            local attempts = 0
+            while not RequestScriptAudioBank("sound/audiodirectory/lns_bank", false) and attempts < 100 do
+                Wait(100)
+                attempts = attempts + 1
+            end
+            
+            local outsideSoundId = GetSoundId()
+            PlaySoundFromCoord(outsideSoundId, "house_alarm", alarmCoords.x, alarmCoords.y, alarmCoords.z, "lns_soundset", false, 15.0, false)
+            
+            local insideSoundId = GetSoundId()
+            PlaySoundFromCoord(insideSoundId, "house_alarm", shellCoords.x, shellCoords.y, shellCoords.z, "lns_soundset", false, 15.0, false)
+            
+            Wait(durationMs or 30000)
+            
+            StopSound(outsideSoundId)
+            ReleaseSoundId(outsideSoundId)
+            StopSound(insideSoundId)
+            ReleaseSoundId(insideSoundId)
+            
+            activeAlarmsCount = activeAlarmsCount - 1
+            if activeAlarmsCount == 0 then
+                ReleaseNamedScriptAudioBank("sound/audiodirectory/lns_bank")
+            end
+        end)
+    end
 end)

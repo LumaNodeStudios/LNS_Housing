@@ -183,17 +183,3 @@ RegisterNUICallback('terminateOwnLease', function(data, cb)
     end
     cb(success)
 end)
-
-RegisterNUICallback('updateSpawnPoint', function(data, cb)
-    local propertyId = data.propertyId
-    local coords = GetEntityCoords(cache.ped)
-    local heading = GetEntityHeading(cache.ped)
-    
-    local success = lib.callback.await('LNS_Housing:server:updateSpawnPoint', false, propertyId, vector4(coords.x, coords.y, coords.z, heading))
-    if success then
-        Bridge.Client.Notify('Spawn point updated successfully to your current position!', 'success')
-    else
-        Bridge.Client.Notify('Failed to update spawn point.', 'error')
-    end
-    cb(success)
-end)

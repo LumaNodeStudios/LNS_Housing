@@ -1,0 +1,31 @@
+<Dat54>
+  <Version value="7314721" />
+  <ContainerPaths>
+    <Item>audiodirectory\lns_bank</Item>
+  </ContainerPaths>
+  <Items>
+    <Item type="SimpleSound">
+      <Name>house_alarm_sp</Name>
+      <Header>
+        <Flags value="0x00008004" />
+        <Volume value="300" />
+        <Category>scripted_louder</Category>
+      </Header>
+      <ContainerName>audiodirectory/lns_bank</ContainerName>
+      <FileName>house_alarm</FileName>
+      <WaveSlotNum value="0" />
+    </Item>
+    <Item type="SoundSet">
+      <Name>lns_soundset</Name>
+      <Header>
+        <Flags value="0xAAAAAAAA" />
+      </Header>
+      <SoundSets>
+        <Item>
+          <ScriptName>house_alarm</ScriptName>
+          <ChildSound>house_alarm_sp</ChildSound>
+        </Item>
+      </SoundSets>
+    </Item>
+  </Items>
+</Dat54>

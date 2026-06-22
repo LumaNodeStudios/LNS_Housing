@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Clock, Calendar, MapPin, Building, Zap, Droplets,
-  Thermometer, Settings, Flame, Droplet, Shield, Car, Users, DollarSign, X, Power, Package, Wrench, Wind, UserPlus, Key, Shirt, Trash2, Check, MoreVertical, Crown, CreditCard, History, CalendarCheck, Palette, EyeOff, BellRing, ShieldCheck, Navigation
+  Thermometer, Settings, Flame, Droplet, Shield, Car, Users, DollarSign, X, Power, Package, Wrench, Wind, UserPlus, Key, Shirt, Trash2, Check, MoreVertical, Crown, CreditCard, History, CalendarCheck, Palette, EyeOff, BellRing, ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './Panel.css';
@@ -233,13 +233,6 @@ const Panel = ({ data: initialData }) => {
         propertyId: propertyData.id,
         color: colorId
       })
-    });
-  };
-
-  const handleUpdateSpawnPoint = () => {
-    fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/updateSpawnPoint`, {
-      method: 'POST',
-      body: JSON.stringify({ propertyId: propertyData.id })
     });
   };
 
@@ -804,32 +797,7 @@ const Panel = ({ data: initialData }) => {
                     </div>
                   </div>
 
-                  {!propertyData.isApartment && (
-                    <div className="settings-section">
-                      <div className="section-header-row">
-                        <MapPin size={16} />
-                        <h3>Spawn Point</h3>
-                      </div>
-                      <div className="settings-list">
-                        <div className="setting-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '12px' }}>
-                          <div className="setting-info" style={{ width: '100%' }}>
-                            <Navigation size={14} />
-                            <div>
-                              <h4>Custom Spawn Location</h4>
-                              <p>Set where you spawn inside this property boundary.</p>
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            className="spawn-point-btn"
-                            onClick={handleUpdateSpawnPoint}
-                          >
-                            <MapPin size={12} /> Set Spawn Point Here
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+
                 </div>
 
                 <div className="settings-right-col">
