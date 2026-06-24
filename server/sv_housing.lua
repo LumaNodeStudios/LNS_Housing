@@ -553,3 +553,63 @@ RegisterNetEvent('LNS_Housing:server:notifyPoliceFallback', function(message)
         end
     end
 end)
+
+exports('ToggleLock', function(propertyId)
+    local p = Properties[propertyId]
+    if not p then return nil end
+    if p.metadata.locked == nil then
+        p.metadata.locked = true
+    end
+    p.metadata.locked = not p.metadata.locked
+    SaveProperty(propertyId)
+    SyncPropertyDoor(propertyId)
+    TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
+    return p.metadata.locked
+end)
+
+exports('GiveKey', function(propertyId, targetIdentifier)
+    local p = Properties[propertyId]
+    if not p then return false end
+    if not p.permissions then
+        p.permissions = { entry = {}, storage = {}, wardrobe = {}, manage = {} }
+    end
+    if not p.permissions.entry then p.permissions.entry = {} end
+
+    -- Check if already has key
+    for _, cid in ipairs(p.permissions.entry) do
+        if cid == targetIdentifier then
+            return true
+        end
+    end
+
+    table.insert(p.permissions.entry, targetIdentifier)
+    SaveProperty(propertyId)
+    SyncPropertyDoor(propertyId)
+    TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
+    return true
+end)
+
+exports('RemoveKey', function(propertyId, targetIdentifier)
+    local p = Properties[propertyId]
+    if not p or not p.permissions then return false end
+
+    local removed = false
+    for category, list in pairs(p.permissions) do
+        if type(list) == 'table' then
+            for i = #list, 1, -1 do
+                if list[i] == targetIdentifier then
+                    table.remove(list, i)
+                    removed = true
+                end
+            end
+        end
+    end
+
+    if removed then
+        SaveProperty(propertyId)
+        SyncPropertyDoor(propertyId)
+        TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
+        return true
+    end
+    return false
+end)
