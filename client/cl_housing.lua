@@ -1291,37 +1291,34 @@ RegisterNetEvent('LNS_Housing:client:triggerHouseAlarm', function(coords, durati
     local playerCoords = GetEntityCoords(PlayerPedId())
     local alarmCoords = vec3(coords.x, coords.y, coords.z)
     local shellCoords = vec3(coords.x, coords.y, Settings.ShellSpawningZ or -100.0)
-    
     local isNearEntrance = #(playerCoords - alarmCoords) < 35.0
     local isNearShell = #(playerCoords - shellCoords) < 35.0
-    
+
     if isNearEntrance or isNearShell then
-        CreateThread(function()
-            activeAlarmsCount = activeAlarmsCount + 1
-            
-            local attempts = 0
-            while not RequestScriptAudioBank("sound/audiodirectory/lns_bank", false) and attempts < 100 do
-                Wait(100)
-                attempts = attempts + 1
-            end
-            
-            local outsideSoundId = GetSoundId()
-            PlaySoundFromCoord(outsideSoundId, "house_alarm", alarmCoords.x, alarmCoords.y, alarmCoords.z, "lns_soundset", false, 15.0, false)
-            
-            local insideSoundId = GetSoundId()
-            PlaySoundFromCoord(insideSoundId, "house_alarm", shellCoords.x, shellCoords.y, shellCoords.z, "lns_soundset", false, 15.0, false)
-            
-            Wait(durationMs or 30000)
-            
-            StopSound(outsideSoundId)
-            ReleaseSoundId(outsideSoundId)
-            StopSound(insideSoundId)
-            ReleaseSoundId(insideSoundId)
-            
-            activeAlarmsCount = activeAlarmsCount - 1
-            if activeAlarmsCount == 0 then
-                ReleaseNamedScriptAudioBank("sound/audiodirectory/lns_bank")
-            end
-        end)
+        activeAlarmsCount = activeAlarmsCount + 1
+
+        local attempts = 0
+        while not RequestScriptAudioBank("sound/audiodirectory/lns_bank", false) and attempts < 100 do
+            Wait(100)
+            attempts = attempts + 1
+        end
+
+        local outsideSoundId = GetSoundId()
+        PlaySoundFromCoord(outsideSoundId, "house_alarm", alarmCoords.x, alarmCoords.y, alarmCoords.z, "lns_soundset", false, 15.0, false)
+
+        local insideSoundId = GetSoundId()
+        PlaySoundFromCoord(insideSoundId, "house_alarm", shellCoords.x, shellCoords.y, shellCoords.z, "lns_soundset", false, 15.0, false)
+
+        Wait(durationMs or 30000)
+
+        StopSound(outsideSoundId)
+        ReleaseSoundId(outsideSoundId)
+        StopSound(insideSoundId)
+        ReleaseSoundId(insideSoundId)
+
+        activeAlarmsCount = activeAlarmsCount - 1
+        if activeAlarmsCount == 0 then
+            ReleaseNamedScriptAudioBank("sound/audiodirectory/lns_bank")
+        end
     end
 end)
