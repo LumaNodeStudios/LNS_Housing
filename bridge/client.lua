@@ -4,6 +4,7 @@ local Settings = lib.load('shared.settings')
 local ESX = Bridge.Framework == 'esx' and exports['es_extended']:getSharedObject() or nil
 local clientGarageZones = {}
 
+-- Player Data Getters
 function Bridge.Client.GetIdentifier()
     if Bridge.Framework == 'qbx' then
         local data = exports.qbx_core:GetPlayerData()
@@ -59,6 +60,7 @@ function Bridge.Client.GetPlayerJob()
     return nil
 end
 
+-- Integrations & Utility Wrappers
 function Bridge.Client.OpenWardrobe(propertyId, furnitureId)
     if GetResourceState('illenium-appearance') == 'started' then
         TriggerEvent('illenium-appearance:client:openOutfitMenu')
@@ -83,6 +85,7 @@ function Bridge.Client.Notify(msg, type)
     })
 end
 
+-- Dispatch Alerts
 function Bridge.Client.Dispatch(coords, title, message)
     if GetResourceState('ps-dispatch') == 'started' then
         exports['ps-dispatch']:CustomAlert({
@@ -139,7 +142,6 @@ function Bridge.Client.Dispatch(coords, title, message)
         return true
     end
 
-    -- Fallback to server side notify
     TriggerServerEvent('LNS_Housing:server:notifyPoliceFallback', message)
     return false
 end
@@ -148,6 +150,7 @@ RegisterNetEvent('LNS_Housing:client:triggerDispatch', function(coords, title, m
     Bridge.Client.Dispatch(coords, title, message)
 end)
 
+-- Garage Zone Management
 function Bridge.Client.RegisterGarage(propertyId, label, garageData)
     if Bridge.GarageScript == 'jg-advancedgarages' or Bridge.GarageScript == 'cd_garage' or Bridge.GarageScript == 'op-garages' then
         local garageName = string.format("property-%s-garage", propertyId)

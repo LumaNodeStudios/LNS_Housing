@@ -18,6 +18,7 @@ local DB_CONFIG = {
 
 local db = DB_CONFIG[Bridge.Framework]
 
+-- Offline Player Money Management
 function Bridge.Server.GetOfflineBankMoney(identifier)
     local onlinePlayer = Bridge.Server.IsPlayerOnline(identifier)
     if onlinePlayer then
@@ -64,6 +65,7 @@ function Bridge.Server.AddOfflineBankMoney(identifier, amount)
     return true
 end
 
+-- Player Data & Framework Getters
 function Bridge.Server.GetIdentifier(source)
     if Bridge.Framework == 'qbx' then
         local player = exports.qbx_core:GetPlayer(source)
@@ -146,6 +148,7 @@ function Bridge.Server.Logout(source)
     end
 end
 
+-- Online Player Money Management
 function Bridge.Server.GetBankMoney(source)
     if Bridge.Framework == 'qbx' then
         return exports.qbx_core:GetMoney(source, 'bank') or 0
@@ -229,6 +232,7 @@ function Bridge.Server.AddBankMoney(source, amount, reason)
     return false
 end
 
+-- Society / Account Management
 local function handleSocietyMoney(job, amount, action)
     if GetResourceState('Renewed-Banking') == 'started' then
         if action == 'add' then
@@ -270,6 +274,7 @@ function Bridge.Server.GetSocietyMoney(job)
     return handleSocietyMoney(job, nil, 'get')
 end
 
+-- Stash / Inventory Integrations
 function Bridge.Server.RegisterStash(propertyId, furnitureId, storageConfig, label)
     if GetResourceState('ox_inventory') == 'started' then
         local stashId = string.format('housing_%d_%s', propertyId, furnitureId)
@@ -302,6 +307,7 @@ function Bridge.Server.RegisterPropertyStashes(propertyId, furnitureList)
     end
 end
 
+-- Job updates (Supports online players & database updates for offline players)
 function Bridge.Server.SetPlayerJob(identifier, jobName, grade)
     local onlinePlayer = Bridge.Server.IsPlayerOnline(identifier)
     if onlinePlayer then
@@ -335,6 +341,7 @@ function Bridge.Server.SetPlayerJob(identifier, jobName, grade)
     return false
 end
 
+-- Server-side Notifications
 function Bridge.Server.Notify(source, msg, type)
     lib.notify(source, {
         description = msg,
@@ -342,6 +349,7 @@ function Bridge.Server.Notify(source, msg, type)
     })
 end
 
+-- Server-side Garage Registration
 function Bridge.Server.RegisterGarage(propertyId, label, garageData)
     if Bridge.GarageScript == 'qbx_garages' then
         local garageName = string.format("property-%s-garage", propertyId)
