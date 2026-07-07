@@ -81,6 +81,7 @@ local function SyncApartmentDoor(roomId)
 end
 
 CreateThread(function()
+    WaitForDb()
     local Rooms = MySQL.query.await('SELECT * FROM apartment_rooms')
     if Rooms then
         for _, r in ipairs(Rooms) do
@@ -244,6 +245,7 @@ local function getPlayerRoom(src, citizenid, isNew)
 end
 
 local function OnPlayerLoaded(src)
+    WaitForDb()
     local citizenid = Bridge.Server.GetIdentifier(src)
     if not citizenid then 
         return 
@@ -298,6 +300,7 @@ AddEventHandler('onResourceStart', function(resourceName)
 end)
 
 lib.callback.register('LNS_Housing:server:getMyApartment', function(source)
+    WaitForDb()
     local citizenid = Bridge.Server.GetIdentifier(source)
     if not citizenid then return nil end
     
@@ -319,6 +322,7 @@ lib.callback.register('LNS_Housing:server:getMyApartment', function(source)
 end)
 
 lib.callback.register('LNS_Housing:server:claimNewCharacterSpawn', function(source)
+    WaitForDb()
     local citizenid = Bridge.Server.GetIdentifier(source)
     if not citizenid then return { shouldSpawn = false } end
 
@@ -360,6 +364,7 @@ lib.callback.register('LNS_Housing:server:claimNewCharacterSpawn', function(sour
 end)
 
 lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, roomId)
+    WaitForDb()
     local citizenid = Bridge.Server.GetIdentifier(source)
     if not citizenid then return nil end
 
@@ -714,6 +719,7 @@ local function GetPlayerSpawnsServer(source)
 end
 
 lib.callback.register('LNS_Housing:server:getPlayerSpawns', function(source)
+    WaitForDb()
     return GetPlayerSpawnsServer(source)
 end)
 
@@ -744,6 +750,7 @@ lib.callback.register('LNS_Housing:server:doesApartmentExist', function(source, 
 end)
 
 lib.callback.register('LNS_Housing:server:getApartmentRooms', function(source)
+    WaitForDb()
     local Rooms = MySQL.query.await('SELECT * FROM apartment_rooms')
     local formatted = {}
     if Rooms then
@@ -772,6 +779,7 @@ lib.callback.register('LNS_Housing:server:getApartmentRooms', function(source)
 end)
 
 lib.callback.register('LNS_Housing:server:createApartment', function(source, data)
+    WaitForDb()
     if not IsApartmentAdmin(source) then return false end
 
     local roomId = tonumber(data.id)

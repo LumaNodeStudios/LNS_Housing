@@ -1,5 +1,12 @@
 local Settings = lib.load('shared.settings')
 Properties = {}
+DbReady = false
+
+function WaitForDb()
+    while not DbReady do
+        Wait(100)
+    end
+end
 
 function LoadProperties()
     local result = MySQL.query.await('SELECT * FROM housing_properties')
@@ -331,7 +338,8 @@ MySQL.ready(function()
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ]])
 
-    LoadProperties()
+    pcall(LoadProperties)
+    DbReady = true
 end)
 
 function ResetPropertyOwnershipData(id)

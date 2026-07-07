@@ -113,6 +113,7 @@ function AddSecurityLog(propertyId, title, desc, color)
 end
 
 lib.callback.register('LNS_Housing:server:getProperties', function(source)
+    WaitForDb()
     return Properties
 end)
 
@@ -240,6 +241,7 @@ RegisterNetEvent('LNS_Housing:server:policeRaidStash', function(propertyId)
 end)
 
 lib.callback.register('LNS_Housing:server:buyHouse', function(source, propertyId)
+    WaitForDb()
     if Settings.RealEstate and Settings.RealEstate.OnlyBuyViaContracts then
         return false
     end
