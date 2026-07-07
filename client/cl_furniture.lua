@@ -1,6 +1,6 @@
 local Settings = lib.load('shared.settings')
 local Furniture = lib.load('shared.furniture')
-local Freecam = exports['fivem-freecam']
+local Freecam = Freecam
 
 Modeler = {
     IsMenuActive = false,

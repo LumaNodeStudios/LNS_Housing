@@ -27,6 +27,10 @@ shared_scripts {
 
 client_scripts {
     'bridge/client.lua',
+    'client/freecam/utils.lua',
+    'client/freecam/camera.lua',
+    'client/freecam/main.lua',
+    'client/freecam/wrapper.lua',
     'client/cl_door_utils.lua',
     'client/cl_housing.lua',
     'client/cl_creator.lua',

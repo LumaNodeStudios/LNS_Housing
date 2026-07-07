@@ -752,7 +752,7 @@ function CleanUpHousingSession()
         end
         if Modeler.IsFreecamMode then
             pcall(function()
-                exports['fivem-freecam']:SetActive(false)
+                Freecam:SetActive(false)
             end)
         end
     end

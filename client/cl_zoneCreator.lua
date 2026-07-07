@@ -1,5 +1,5 @@
 local glm = require 'glm'
-local Freecam = exports['fivem-freecam']
+local Freecam = Freecam
 
 local DEBUG_COLOUR = {r = 255, g = 0, b = 0, a = 150}
 local DEFAULT_HEIGHT = 5
