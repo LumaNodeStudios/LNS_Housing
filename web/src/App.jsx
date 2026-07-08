@@ -94,7 +94,7 @@ function App() {
             isEdit: true,
             rooms: data || []
           });
-          setShowApartmentEditor(true);
+          setShowApartmentEditor(false);
           break;
         case 'closeUI':
           closeAll();
@@ -391,7 +391,7 @@ function App() {
           }
         ]
       });
-      setShowApartmentEditor(true);
+      setShowApartmentEditor(false);
     }
 
     const handleKeyDown = (e) => {

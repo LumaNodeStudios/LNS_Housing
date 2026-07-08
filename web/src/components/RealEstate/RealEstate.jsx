@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './RealEstate.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -6,8 +6,77 @@ import {
     Home, CheckCircle2, Power, Tag, Warehouse,
     Clock, Maximize, Filter, Settings, Gavel, Play, Pause, Square,
     Plus, Database, Save, Trash2, Camera, FileText, Percent,
-    Briefcase, UserCheck, History, UserPlus, UserX, ChevronLeft, ChevronRight, Check
+    Briefcase, UserCheck, History, UserPlus, UserX, ChevronLeft, ChevronRight, Check, ChevronDown, ChevronUp
 } from 'lucide-react';
+
+const CustomSelect = ({ label, icon: Icon, value, options, onChange, name, placeholder = "Select option..." }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (containerRef.current && !containerRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const selectedOption = options.find(opt => String(opt.value) === String(value));
+
+    const handleSelect = (val) => {
+        onChange({
+            target: {
+                name,
+                value: val
+            }
+        });
+        setIsOpen(false);
+    };
+
+    return (
+        <div className="re-custom-select-container" ref={containerRef}>
+            {label && (
+                <label className="re-custom-select-label">
+                    {Icon && <Icon size={12} />} {label}
+                </label>
+            )}
+            <div 
+                className={`re-custom-select-trigger ${isOpen ? 'active' : ''}`}
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <span className="re-custom-select-value">
+                    {selectedOption ? selectedOption.label : placeholder}
+                </span>
+                <ChevronDown size={14} className={`re-custom-select-arrow ${isOpen ? 'open' : ''}`} />
+            </div>
+
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div 
+                        className="re-custom-select-dropdown"
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.12, ease: 'easeOut' }}
+                    >
+                        {options.map((option) => (
+                            <div
+                                key={option.value}
+                                className={`re-custom-select-option ${String(value) === String(option.value) ? 'selected' : ''}`}
+                                onClick={() => handleSelect(option.value)}
+                            >
+                                <span className="option-text">{option.label}</span>
+                                {String(value) === String(option.value) && <Check size={12} className="option-check" />}
+                            </div>
+                        ))}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
 
 const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts }) => {
     const [filter, setFilter] = useState('all');
@@ -779,58 +848,51 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                             <Briefcase size={14} /> Draft New Contract
                                         </div>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                            <div className="re-creator-input-field">
-                                                <label><Home size={12} /> Select Property</label>
-                                                <select
-                                                    required
-                                                    value={draftData.propertyId}
-                                                    onChange={(e) => {
-                                                        const propId = e.target.value;
-                                                        const p = properties && properties[propId];
-                                                        setDraftData(prev => ({
-                                                            ...prev,
-                                                            propertyId: propId,
-                                                            price: p ? p.price : ''
-                                                        }));
-                                                    }}
-                                                >
-                                                    <option value="">-- Choose Available Property --</option>
-                                                    {propertyList.filter(p => !p.owner).map(p => (
-                                                        <option key={p.id} value={p.id}>
-                                                            #{p.id} {p.label} (${(p.price || 0).toLocaleString()})
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
+                                            <CustomSelect
+                                                icon={Home}
+                                                label="Select Property"
+                                                value={draftData.propertyId}
+                                                placeholder="-- Choose Available Property --"
+                                                options={propertyList.filter(p => !p.owner).map(p => ({
+                                                    value: p.id,
+                                                    label: `#${p.id} ${p.label} ($${(p.price || 0).toLocaleString()})`
+                                                }))}
+                                                onChange={(e) => {
+                                                    const propId = e.target.value;
+                                                    const p = properties && properties[propId];
+                                                    setDraftData(prev => ({
+                                                        ...prev,
+                                                        propertyId: propId,
+                                                        price: p ? p.price : ''
+                                                    }));
+                                                }}
+                                            />
 
-                                            <div className="re-creator-input-field">
-                                                <label><Tag size={12} /> Contract Type</label>
-                                                <select
-                                                    value={draftData.type}
-                                                    onChange={(e) => setDraftData(prev => ({ ...prev, type: e.target.value }))}
-                                                >
-                                                    <option value="buy">Outright Sale</option>
-                                                    <option value="rent">Rental Lease</option>
-                                                </select>
-                                            </div>
+                                            <CustomSelect
+                                                icon={Tag}
+                                                label="Contract Type"
+                                                value={draftData.type}
+                                                options={[
+                                                    { value: 'buy', label: 'Outright Sale' },
+                                                    { value: 'rent', label: 'Rental Lease' }
+                                                ]}
+                                                onChange={(e) => setDraftData(prev => ({ ...prev, type: e.target.value }))}
+                                            />
 
-                                            <div className="re-creator-input-field">
-                                                <label><UserCheck size={12} /> Select Client (Nearby)</label>
-                                                <select
-                                                    value={selectedNearbyPlayer}
-                                                    onChange={(e) => {
-                                                        setSelectedNearbyPlayer(e.target.value);
-                                                        if (e.target.value) setManualPlayerId('');
-                                                    }}
-                                                >
-                                                    <option value="">-- Select Online Player --</option>
-                                                    {nearbyPlayers.map(p => (
-                                                        <option key={p.id} value={p.id}>
-                                                            {p.name} (ID: {p.id})
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
+                                            <CustomSelect
+                                                icon={UserCheck}
+                                                label="Select Client (Nearby)"
+                                                value={selectedNearbyPlayer}
+                                                placeholder="-- Select Online Player --"
+                                                options={nearbyPlayers.map(p => ({
+                                                    value: p.id,
+                                                    label: `${p.name} (ID: ${p.id})`
+                                                }))}
+                                                onChange={(e) => {
+                                                    setSelectedNearbyPlayer(e.target.value);
+                                                    if (e.target.value) setManualPlayerId('');
+                                                }}
+                                            />
 
                                             <div className="re-creator-input-field">
                                                 <label><UserPlus size={12} /> Or Enter Client Server ID</label>
@@ -1223,24 +1285,48 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                 autoFocus
                                             />
                                         </div>
-                                        <div className="re-creator-input-field">
-                                            <label><Database size={12} /> Property Category</label>
-                                            <select name="type" value={formData.type} onChange={handleInputChange}>
-                                                <option value="Residential">Residential</option>
-                                                <option value="Commerce">Commerce</option>
-                                                <option value="Industrial">Industrial</option>
-                                                <option value="Apartment">Apartment</option>
-                                            </select>
-                                        </div>
+                                        <CustomSelect
+                                            icon={Database}
+                                            label="Property Category"
+                                            name="type"
+                                            value={formData.type}
+                                            options={[
+                                                { value: 'Residential', label: 'Residential' },
+                                                { value: 'Commerce', label: 'Commerce' },
+                                                { value: 'Industrial', label: 'Industrial' },
+                                                { value: 'Apartment', label: 'Apartment' }
+                                            ]}
+                                            onChange={handleInputChange}
+                                        />
                                         <div className="re-creator-input-field">
                                             <label><Warehouse size={12} /> Outside Parking Slots</label>
-                                            <input
-                                                name="slots"
-                                                type="number"
-                                                value={formData.slots}
-                                                onChange={handleInputChange}
-                                                placeholder="0"
-                                            />
+                                            <div className="re-number-input-wrapper">
+                                                <input
+                                                    name="slots"
+                                                    type="number"
+                                                    value={formData.slots}
+                                                    onChange={handleInputChange}
+                                                    placeholder="0"
+                                                    min="0"
+                                                    className="re-number-input-spinless"
+                                                />
+                                                <div className="re-number-spinners">
+                                                    <button 
+                                                        type="button" 
+                                                        className="spinner-arrow up"
+                                                        onClick={() => handleInputChange({ target: { name: 'slots', value: (parseInt(formData.slots) || 0) + 1 } })}
+                                                    >
+                                                        <ChevronUp size={10} />
+                                                    </button>
+                                                    <button 
+                                                        type="button" 
+                                                        className="spinner-arrow down"
+                                                        onClick={() => handleInputChange({ target: { name: 'slots', value: Math.max(0, (parseInt(formData.slots) || 0) - 1) } })}
+                                                    >
+                                                        <ChevronDown size={10} />
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1252,27 +1338,27 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                         <Database size={14} /> Interior & Bounds Setup
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                        <div className="re-creator-input-field">
-                                            <label><Database size={12} /> Interior Type</label>
-                                            <select
-                                                name="mlo"
-                                                value={formData.mlo ? 'true' : 'false'}
-                                                onChange={(e) => {
-                                                    const isMlo = e.target.value === 'true';
-                                                    setFormData(prev => ({
-                                                        ...prev,
-                                                        mlo: isMlo,
-                                                        shell: isMlo ? 'mlo' : 'Standard Motel',
-                                                        entranceType: isMlo ? 'door' : 'coords',
-                                                        doors: [],
-                                                        entranceCoords: null
-                                                    }));
-                                                }}
-                                            >
-                                                <option value="true">Physical Map (MLO)</option>
-                                                <option value="false">Instanced Shell</option>
-                                            </select>
-                                        </div>
+                                        <CustomSelect
+                                            icon={Database}
+                                            label="Interior Type"
+                                            name="mlo"
+                                            value={formData.mlo ? 'true' : 'false'}
+                                            options={[
+                                                { value: 'true', label: 'Physical Map (MLO)' },
+                                                { value: 'false', label: 'Instanced Shell' }
+                                            ]}
+                                            onChange={(e) => {
+                                                const isMlo = e.target.value === 'true';
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    mlo: isMlo,
+                                                    shell: isMlo ? 'mlo' : 'Standard Motel',
+                                                    entranceType: isMlo ? 'door' : 'coords',
+                                                    doors: [],
+                                                    entranceCoords: null
+                                                }));
+                                            }}
+                                        />
 
                                         {formData.mlo ? (
                                             /* MLO Options */
@@ -1351,31 +1437,31 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                         ) : (
                                             /* Shell Options - Cleaned up to never show doorlock/ox_doorlock */
                                             <>
-                                                <div className="re-creator-input-field">
-                                                    <label><Database size={12} /> Instanced Shell Model</label>
-                                                    <select
-                                                        name="shell"
-                                                        value={formData.shell || 'Standard Motel'}
-                                                        onChange={(e) => setFormData(prev => ({ ...prev, shell: e.target.value }))}
-                                                    >
-                                                        <option value="Standard Motel">Standard Motel</option>
-                                                        <option value="Modern Hotel">Modern Hotel</option>
-                                                        <option value="Apartment Furnished">Apartment Furnished</option>
-                                                        <option value="Apartment Unfurnished">Apartment Unfurnished</option>
-                                                        <option value="Apartment 2 Unfurnished">Apartment 2 Unfurnished</option>
-                                                        <option value="Garage">Garage</option>
-                                                        <option value="Office">Office</option>
-                                                        <option value="Store">Store</option>
-                                                        <option value="Warehouse">Warehouse</option>
-                                                        <option value="Container">Container</option>
-                                                        <option value="2 Floor House">2 Floor House</option>
-                                                        <option value="House 1">House 1</option>
-                                                        <option value="House 2">House 2</option>
-                                                        <option value="House 3">House 3</option>
-                                                        <option value="House 4">House 4</option>
-                                                        <option value="Trailer">Trailer</option>
-                                                    </select>
-                                                </div>
+                                                <CustomSelect
+                                                    icon={Database}
+                                                    label="Instanced Shell Model"
+                                                    name="shell"
+                                                    value={formData.shell || 'Standard Motel'}
+                                                    options={[
+                                                        { value: 'Standard Motel', label: 'Standard Motel' },
+                                                        { value: 'Modern Hotel', label: 'Modern Hotel' },
+                                                        { value: 'Apartment Furnished', label: 'Apartment Furnished' },
+                                                        { value: 'Apartment Unfurnished', label: 'Apartment Unfurnished' },
+                                                        { value: 'Apartment 2 Unfurnished', label: 'Apartment 2 Unfurnished' },
+                                                        { value: 'Garage', label: 'Garage' },
+                                                        { value: 'Office', label: 'Office' },
+                                                        { value: 'Store', label: 'Store' },
+                                                        { value: 'Warehouse', label: 'Warehouse' },
+                                                        { value: 'Container', label: 'Container' },
+                                                        { value: '2 Floor House', label: '2 Floor House' },
+                                                        { value: 'House 1', label: 'House 1' },
+                                                        { value: 'House 2', label: 'House 2' },
+                                                        { value: 'House 3', label: 'House 3' },
+                                                        { value: 'House 4', label: 'House 4' },
+                                                        { value: 'Trailer', label: 'Trailer' }
+                                                    ]}
+                                                    onChange={(e) => setFormData(prev => ({ ...prev, shell: e.target.value }))}
+                                                />
 
                                                 <div className="re-interactive-row">
                                                     <div className="re-interactive-info">
@@ -1439,12 +1525,18 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                         <div className="re-creator-inputs">
                                             <div className="re-creator-input-field">
-                                                <label><Tag size={12} /> Sale Type</label>
-                                                <select name="saleType" value={formData.saleType} onChange={handleInputChange}>
-                                                    <option value="direct">Direct Sale (Bank)</option>
-                                                    <option value="auction">Auction (Bidding)</option>
-                                                    <option value="rent">Rental Lease (Contracts)</option>
-                                                </select>
+                                                <CustomSelect
+                                                    icon={Tag}
+                                                    label="Sale Type"
+                                                    name="saleType"
+                                                    value={formData.saleType}
+                                                    options={[
+                                                        { value: 'direct', label: 'Direct Sale (Bank)' },
+                                                        { value: 'auction', label: 'Auction (Bidding)' },
+                                                        { value: 'rent', label: 'Rental Lease (Contracts)' }
+                                                    ]}
+                                                    onChange={handleInputChange}
+                                                />
                                             </div>
                                             <div className="re-creator-input-field">
                                                 <label>

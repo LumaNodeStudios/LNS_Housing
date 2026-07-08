@@ -841,7 +841,8 @@
   flex: 1;
   height: 2px;
   background: var(--border-dim);
-  margin-bottom: 22px; /* Offset the step label height */
+  margin-bottom: 22px;
+  /* Offset the step label height */
   transition: var(--transition-smooth);
 }
 
@@ -917,8 +918,7 @@
   opacity: 0.8;
 }
 
-.re-creator-input-field input,
-.re-creator-input-field select {
+.re-creator-input-field input {
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid var(--border-dim);
   padding: 10px 12px;
@@ -930,10 +930,45 @@
   transition: var(--transition-fast);
 }
 
-.re-creator-input-field input:focus,
-.re-creator-input-field select:focus {
+.re-creator-input-field select {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-dim);
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 500;
+  outline: none;
+  transition: var(--transition-fast);
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236ed3f3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+.re-creator-input-field select option {
+  background-color: #0f0f10;
+  color: #fff;
+}
+
+.re-creator-input-field input:focus {
   border-color: var(--primary);
   background: rgba(var(--primary-rgb), 0.02);
+}
+
+.re-creator-input-field select:focus {
+  border-color: var(--primary);
+  background-color: rgba(var(--primary-rgb), 0.02);
+  box-shadow: 0 0 8px var(--primary-glow);
+}
+
+.re-creator-input-field select:hover {
+  border-color: rgba(var(--primary-rgb), 0.5);
 }
 
 .re-creator-checkbox-field {
@@ -1409,4 +1444,199 @@
   50% {
     opacity: 1;
   }
+}
+
+/* Custom Dropdown / Select Component Styles */
+.re-custom-select-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  width: 100%;
+}
+
+.re-custom-select-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.re-custom-select-label svg {
+  color: var(--primary);
+  opacity: 0.8;
+}
+
+.re-custom-select-trigger {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-dim);
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--text-main);
+  font-size: 12.5px;
+  font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  transition: var(--transition-fast);
+}
+
+.re-custom-select-trigger:hover {
+  border-color: rgba(var(--primary-rgb), 0.5);
+  background: var(--bg-card-hover);
+}
+
+.re-custom-select-trigger.active {
+  border-color: var(--primary);
+  background: rgba(var(--primary-rgb), 0.02);
+  box-shadow: 0 0 10px var(--primary-glow);
+}
+
+.re-custom-select-value {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90%;
+}
+
+.re-custom-select-arrow {
+  color: var(--primary);
+  transition: transform 0.2s ease;
+  opacity: 0.8;
+  flex-shrink: 0;
+}
+
+.re-custom-select-arrow.open {
+  transform: rotate(180deg);
+}
+
+.re-custom-select-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-radius: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7);
+}
+
+/* Custom Scrollbar for Options Panel */
+.re-custom-select-dropdown::-webkit-scrollbar {
+  width: 5px;
+}
+
+.re-custom-select-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.re-custom-select-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.re-custom-select-dropdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--primary-rgb), 0.4);
+}
+
+.re-custom-select-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  color: var(--text-main);
+  opacity: 0.85;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.re-custom-select-option:last-child {
+  border-bottom: none;
+}
+
+.re-custom-select-option:hover {
+  background: var(--bg-card-hover);
+  opacity: 1;
+  color: var(--text-main);
+}
+
+.re-custom-select-option.selected {
+  background: var(--primary-glow);
+  color: var(--primary);
+  opacity: 1;
+  font-weight: 700;
+}
+
+.re-custom-select-option .option-check {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+/* Custom Number Spinner Styles */
+.re-number-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.re-number-input-spinless {
+  padding-right: 32px !important;
+  width: 100%;
+}
+
+/* Hide default browser spinners */
+.re-number-input-spinless::-webkit-outer-spin-button,
+.re-number-input-spinless::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.re-number-input-spinless {
+  -moz-appearance: textfield;
+}
+
+.re-number-spinners {
+  position: absolute;
+  right: 6px;
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 12px);
+  justify-content: center;
+  gap: 2px;
+  width: 20px;
+}
+
+.spinner-arrow {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(50% - 1px);
+  padding: 0;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.spinner-arrow:hover {
+  background: var(--primary-glow);
+  color: var(--primary);
+  border-color: rgba(var(--primary-rgb), 0.3);
+}
+
+.spinner-arrow svg {
+  stroke-width: 3px;
 }
