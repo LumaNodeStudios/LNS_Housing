@@ -906,3 +906,39 @@ lib.callback.register('LNS_Housing:server:createApartment', function(source, dat
 
     return false
 end)
+
+RegisterNetEvent('LNS_Housing:server:toggleApartmentLock', function(roomId)
+    local src = source
+    local hasAccess = CheckPermission(src, 'apartment', roomId, 'entry') or CheckPermission(src, 'apartment', roomId, 'manage')
+
+    if not hasAccess then
+        Bridge.Server.Notify(src, 'You do not have key access to lock/unlock this apartment.', 'error')
+        return
+    end
+
+    local doorId = roomDoors[roomId]
+    if doorId then
+        local currentState = 1
+        local doorData = nil
+        if exports.ox_doorlock and exports.ox_doorlock.getDoor then
+            pcall(function() doorData = exports.ox_doorlock:getDoor(doorId) end)
+        elseif exports.ox_doorlock and exports.ox_doorlock.getDoorData then
+            pcall(function() doorData = exports.ox_doorlock:getDoorData(doorId) end)
+        end
+        if doorData then
+            currentState = doorData.state
+        end
+
+        local newState = currentState == 1 and 0 or 1
+        exports.ox_doorlock:setDoorState(doorId, newState)
+
+        local stateStr = newState == 1 and 'locked' or 'unlocked'
+        Bridge.Server.Notify(src, 'Apartment is now ' .. stateStr .. '.', 'success')
+    else
+        Bridge.Server.Notify(src, 'Door lock not found for this apartment.', 'error')
+    end
+end)
+
+function GetApartmentDoorId(roomId)
+    return roomDoors[roomId]
+end

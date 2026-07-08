@@ -97,14 +97,33 @@ end)
 
 function LockpickDoor(propertyId)
     local p = Properties[propertyId]
-    if not p then return end
+    local isApartment = false
+    
+    if not p then
+        if Settings.Rooms then
+            for _, room in ipairs(Settings.Rooms) do
+                if room.id == propertyId then
+                    isApartment = true
+                    break
+                end
+            end
+        end
+    else
+        isApartment = p.isApartment
+    end
 
-    if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'entry') then
+    if not p and not isApartment then return end
+
+    local permType = isApartment and 'apartment' or 'house'
+    if lib.callback.await('LNS_Housing:server:checkPermission', false, permType, propertyId, 'entry') then
         Bridge.Client.Notify('You already have access to this property.', 'error')
         return
     end
 
-    local securityLevel = p.metadata and p.metadata.security_level or 0
+    local securityLevel = 0
+    if p and p.metadata then
+        securityLevel = p.metadata.security_level or 0
+    end
     local config = Settings.Security.Difficulty[securityLevel] or Settings.Security.Difficulty[0]
 
     lib.requestAnimDict('anim@amb@clubhouse@tutorial@bkr_tut_ig3@')
@@ -172,14 +191,33 @@ end
 
 function LockpickStash(propertyId, stashId)
     local p = Properties[propertyId]
-    if not p then return end
+    local isApartment = false
+    
+    if not p then
+        if Settings.Rooms then
+            for _, room in ipairs(Settings.Rooms) do
+                if room.id == propertyId then
+                    isApartment = true
+                    break
+                end
+            end
+        end
+    else
+        isApartment = p.isApartment
+    end
 
-    if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'storage') then
+    if not p and not isApartment then return end
+
+    local permType = isApartment and 'apartment' or 'house'
+    if lib.callback.await('LNS_Housing:server:checkPermission', false, permType, propertyId, 'storage') then
         Bridge.Client.Notify('You already have access to this storage.', 'error')
         return
     end
 
-    local securityLevel = p.metadata and p.metadata.security_level or 0
+    local securityLevel = 0
+    if p and p.metadata then
+        securityLevel = p.metadata.security_level or 0
+    end
     local config = Settings.Security.Difficulty[securityLevel] or Settings.Security.Difficulty[0]
 
     lib.requestAnimDict('anim@amb@prop_human_atm@interior@male@enter')
@@ -271,6 +309,19 @@ function LoadFurnitures(propertyId)
                         Bridge.Client.OpenStash(propertyId, f.id)
                     end,
                     canInteract = function()
+                        local isLocked = lib.callback.await('LNS_Housing:server:isStashLocked', false, stashId)
+                        if not isLocked then return true end
+                        return lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'storage')
+                    end
+                },
+                {
+                    label = 'Lock/Unlock Storage',
+                    icon = 'fas fa-key',
+                    debug = Settings.Debug.Zones,
+                    onSelect = function()
+                        TriggerServerEvent('LNS_Housing:server:toggleStashLock', propertyId, stashId)
+                    end,
+                    canInteract = function()
                         return lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'storage')
                     end
                 },
@@ -282,8 +333,13 @@ function LoadFurnitures(propertyId)
                         LockpickStash(propertyId, stashId)
                     end,
                     canInteract = function()
-                        if p.isApartment then return false end
-                        return Properties[propertyId].owner and not lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'storage')
+                        if itemData.canLockpick == false or itemData.canlockpick == false then return false end
+                        if p.isApartment and not Settings.Apartments.CanBreakIn then return false end
+
+                        local isLocked = lib.callback.await('LNS_Housing:server:isStashLocked', false, stashId)
+                        if not isLocked then return false end
+
+                        return lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'lockpickStash')
                     end
                 },
                 {
@@ -595,8 +651,7 @@ function RegisterPropertyEntranceTargets(p)
                                 icon = 'fas fa-mask',
                                 items = Settings.Security.LockpickItem,
                                 canInteract = function()
-                                    if not Properties[id].owner or Properties[id].owner == Bridge.Client.GetIdentifier() then return false end
-                                    return not lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry')
+                                    return lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'lockpick')
                                 end,
                                 onSelect = function()
                                     LockpickDoor(id)
@@ -700,8 +755,7 @@ function RegisterPropertyEntranceTargets(p)
                         canInteract = function()
                             local isLocked = p.metadata.locked ~= false
                             if not isLocked then return false end
-                            if not Properties[id].owner or Properties[id].owner == Bridge.Client.GetIdentifier() then return false end
-                            return not lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry')
+                            return lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'lockpick')
                         end,
                         onSelect = function()
                             LockpickDoor(id)

@@ -137,6 +137,30 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
         local p = Properties[propertyId]
         if not p then return false end
 
+        if accessType == 'lockpick' then
+            local identifier = Bridge.Server.GetIdentifier(source)
+            if not p.owner then return false end
+            if p.owner == identifier then return false end
+            if p.permissions and p.permissions['entry'] then
+                for _, cid in ipairs(p.permissions['entry']) do
+                    if cid == identifier then return false end
+                end
+            end
+            return true
+        end
+
+        if accessType == 'lockpickStash' then
+            local identifier = Bridge.Server.GetIdentifier(source)
+            if not p.owner then return false end
+            if p.owner == identifier then return false end
+            if p.permissions and p.permissions['storage'] then
+                for _, cid in ipairs(p.permissions['storage']) do
+                    if cid == identifier then return false end
+                end
+            end
+            return true
+        end
+
         if not ignoreTemp then
             local playerJob = Bridge.Server.GetPlayerJob(source)
             if playerJob and playerJob.name == 'police' then
@@ -203,6 +227,32 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
 
         local citizenid = Bridge.Server.GetIdentifier(source)
         if not citizenid then return false end
+
+        if accessType == 'lockpick' then
+            local result = MySQL.single.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ?', {roomId})
+            if not result then return false end
+            if result.citizenid == citizenid then return false end
+            local permissions = json.decode(result.permissions or '{"entry":[], "storage":[], "wardrobe":[], "manage":[]}')
+            if permissions['entry'] then
+                for _, cid in ipairs(permissions['entry']) do
+                    if cid == citizenid then return false end
+                end
+            end
+            return true
+        end
+
+        if accessType == 'lockpickStash' then
+            local result = MySQL.single.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ?', {roomId})
+            if not result then return false end
+            if result.citizenid == citizenid then return false end
+            local permissions = json.decode(result.permissions or '{"entry":[], "storage":[], "wardrobe":[], "manage":[]}')
+            if permissions['storage'] then
+                for _, cid in ipairs(permissions['storage']) do
+                    if cid == citizenid then return false end
+                end
+            end
+            return true
+        end
 
         if not ignoreTemp then
             if accessType == 'storage' or accessType == 'stash' then

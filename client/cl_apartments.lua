@@ -110,16 +110,40 @@ local function createApartmentZone(roomData)
             if MyApartmentId then
                 local roomInfo = lib.callback.await('LNS_Housing:server:getApartmentInfo', false, MyApartmentId)
                 if roomInfo then
+                    local roomData = MyRoomData
+                    if not roomData and Settings.Rooms then
+                        for _, r in ipairs(Settings.Rooms) do
+                            if r.id == MyApartmentId then
+                                roomData = r
+                                break
+                            end
+                        end
+                    end
+
+                    local doorId = nil
+                    if GetResourceState('ox_doorlock') == 'started' then
+                        local ok, result = pcall(function()
+                            return exports.ox_doorlock:getDoorFromName("Apartment Room #" .. MyApartmentId)
+                        end)
+                        if ok and result then
+                            doorId = result.id
+                        end
+                    end
+
                     Properties[MyApartmentId] = {
                         id = MyApartmentId,
                         label = "Apartment Room #" .. MyApartmentId,
                         owner = roomInfo.owner,
                         ownerName = roomInfo.ownerName,
                         permissions = roomInfo.permissions,
+                        door_id = doorId,
                         metadata = {
                             wall_color = roomInfo.wallColor or 0,
                             allow_wall_colors = true,
-                            security_level = 0
+                            security_level = 0,
+                            shell = roomData and roomData.shell or 'Apartment Furnished',
+                            entrance = roomData and roomData.doorCoords and { x = roomData.doorCoords.x, y = roomData.doorCoords.y, z = roomData.doorCoords.z, h = roomData.doorHeading or 0.0 } or nil,
+                            spawn = roomData and roomData.spawn and { x = roomData.spawn.x, y = roomData.spawn.y, z = roomData.spawn.z, w = roomData.spawn.w or 0.0 } or nil
                         },
                         furniture = roomInfo.furniture or {},
                         isApartment = true
@@ -140,6 +164,18 @@ local function createApartmentZone(roomData)
                     end
                 })
             end
+
+            local hasEntryAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', MyApartmentId, 'entry') or hasManageAccess
+            if hasEntryAccess then
+                lib.addRadialItem({
+                    id = 'housing_lock',
+                    icon = 'key',
+                    label = 'Lock/Unlock Apartment',
+                    onSelect = function()
+                        TriggerServerEvent('LNS_Housing:server:toggleApartmentLock', MyApartmentId)
+                    end
+                })
+            end
         end,
         onExit = function()
             insideApartment = false
@@ -147,6 +183,7 @@ local function createApartmentZone(roomData)
                 UnloadFurnitures(MyApartmentId)
             end
             lib.removeRadialItem('housing_furniture')
+            lib.removeRadialItem('housing_lock')
         end
     })
 end
@@ -204,16 +241,30 @@ RegisterNetEvent('LNS_Housing:client:setApartmentData', function(roomId, roomDat
 
     local roomInfo = lib.callback.await('LNS_Housing:server:getApartmentInfo', false, roomId)
     if roomInfo then
+        local doorId = nil
+        if GetResourceState('ox_doorlock') == 'started' then
+            local ok, result = pcall(function()
+                return exports.ox_doorlock:getDoorFromName("Apartment Room #" .. roomId)
+            end)
+            if ok and result then
+                doorId = result.id
+            end
+        end
+
         Properties[roomId] = {
             id = roomId,
             label = "Apartment Room #" .. roomId,
             owner = roomInfo.owner,
             ownerName = roomInfo.ownerName,
             permissions = roomInfo.permissions,
+            door_id = doorId,
             metadata = {
                 wall_color = roomInfo.wallColor or 0,
                 allow_wall_colors = true,
-                security_level = 0
+                security_level = 0,
+                shell = roomData and roomData.shell or 'Apartment Furnished',
+                entrance = roomData and roomData.doorCoords and { x = roomData.doorCoords.x, y = roomData.doorCoords.y, z = roomData.doorCoords.z, h = roomData.doorHeading or 0.0 } or nil,
+                spawn = roomData and roomData.spawn and { x = roomData.spawn.x, y = roomData.spawn.y, z = roomData.spawn.z, w = roomData.spawn.w or 0.0 } or nil
             },
             furniture = roomInfo.furniture or {},
             isApartment = true
@@ -356,25 +407,81 @@ CreateThread(function()
                     door
                 )
 
+                local options = {
+                    {
+                        label = 'Raid Apartment',
+                        icon = 'fas fa-shield-halved',
+                        items = Settings.Security.RaidItem,
+                        canInteract = function()
+                            local job = Bridge.Client.GetPlayerJob()
+                            return job and job.name == 'police'
+                        end,
+                        onSelect = function()
+                            StartPoliceRaid(room.id, 'apartment', nil)
+                        end
+                    },
+                    {
+                        label = 'Enter Apartment',
+                        icon = 'fas fa-door-open',
+                        canInteract = function()
+                            local isLocked = true
+                            local doorName = "Apartment Room #" .. room.id
+                            local ok, doorData = pcall(function()
+                                return exports.ox_doorlock:getDoorFromName(doorName)
+                            end)
+                            if ok and doorData then
+                                isLocked = doorData.state == 1
+                            end
+
+                            if not isLocked then return true end
+                            return lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', room.id, 'entry')
+                        end,
+                        onSelect = function()
+                            exports.LNS_Housing:SpawnInProperty('apartment', room.id)
+                        end
+                    },
+                    {
+                        label = 'Lock/Unlock Apartment',
+                        icon = 'fas fa-key',
+                        canInteract = function()
+                            return lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', room.id, 'entry') or lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', room.id, 'manage')
+                        end,
+                        onSelect = function()
+                            TriggerServerEvent('LNS_Housing:server:toggleApartmentLock', room.id)
+                        end
+                    }
+                }
+
+                if Settings.Apartments.CanBreakIn then
+                    table.insert(options, {
+                        label = 'Lockpick Apartment',
+                        icon = 'fas fa-mask',
+                        items = Settings.Security.LockpickItem,
+                        canInteract = function()
+                            local isLocked = true
+                            local doorName = "Apartment Room #" .. room.id
+                            local ok, doorData = pcall(function()
+                                return exports.ox_doorlock:getDoorFromName(doorName)
+                            end)
+                            if ok and doorData then
+                                isLocked = doorData.state == 1
+                            end
+
+                            if not isLocked then return false end
+                            return lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', room.id, 'lockpick')
+                        end,
+                        onSelect = function()
+                            LockpickDoor(room.id)
+                        end
+                    })
+                end
+
                 exports.ox_target:addBoxZone({
                     coords = targetCoords,
                     size = vec3(1.0, 1.5, 2.0),
                     rotation = targetHeading,
                     debug = Settings.Debug.Zones,
-                    options = {
-                        {
-                            label = 'Raid Apartment',
-                            icon = 'fas fa-shield-halved',
-                            items = Settings.Security.RaidItem,
-                            canInteract = function()
-                                local job = Bridge.Client.GetPlayerJob()
-                                return job and job.name == 'police'
-                            end,
-                            onSelect = function()
-                                StartPoliceRaid(room.id, 'apartment', nil)
-                            end
-                        }
-                    }
+                    options = options
                 })
             end
         end

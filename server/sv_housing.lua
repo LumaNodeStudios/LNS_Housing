@@ -131,44 +131,80 @@ end
 RegisterNetEvent('LNS_Housing:server:lockpickSuccess', function(propertyId, type, stashId)
     local src = source
     local identifier = Bridge.Server.GetIdentifier(src)
-    local p = Properties[propertyId]
-    if not p then return end
+    local isApartment = Properties[propertyId] == nil
 
-    if HasPermissionAccess(src, propertyId, type == 'stash' and 'storage' or 'entry') then
-        return
-    end
+    if not isApartment then
+        local p = Properties[propertyId]
+        if not p then return end
 
-    if type == 'door' then
-        if not TemporaryAccess.doors[propertyId] then TemporaryAccess.doors[propertyId] = {} end
-        TemporaryAccess.doors[propertyId][identifier] = true
-
-        FailedAttempts[propertyId] = 0 -- Reset failed attempts on success
-
-        local isShell = p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo'
-        if isShell then
-            p.metadata.locked = false
+        if HasPermissionAccess(src, propertyId, type == 'stash' and 'storage' or 'entry') then
+            return
         end
 
-        local securityLevel = p.metadata and p.metadata.security_level or 0
-        if securityLevel >= 1 then
-            TriggerHouseAlarm(propertyId)
+        if type == 'door' then
+            if not TemporaryAccess.doors[propertyId] then TemporaryAccess.doors[propertyId] = {} end
+            TemporaryAccess.doors[propertyId][identifier] = true
+
+            FailedAttempts[propertyId] = 0 -- Reset failed attempts on success
+
+            local isShell = p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo'
+            if isShell then
+                p.metadata.locked = false
+            end
+
+            local securityLevel = p.metadata and p.metadata.security_level or 0
+            if securityLevel >= 1 then
+                TriggerHouseAlarm(propertyId)
+            end
+            AddSecurityLog(propertyId, "Break-in Detected", "Property door lock successfully bypassed/picked.", "#eab308")
+
+            SetTimeout(60000 * 15, function()
+                if TemporaryAccess.doors[propertyId] then
+                    TemporaryAccess.doors[propertyId][identifier] = nil
+                end
+            end)
+        elseif type == 'stash' then
+            if not TemporaryAccess.stashes[propertyId] then TemporaryAccess.stashes[propertyId] = {} end
+            TemporaryAccess.stashes[propertyId][identifier] = true
+
+            SetTimeout(60000 * 15, function()
+                if TemporaryAccess.stashes[propertyId] then
+                    TemporaryAccess.stashes[propertyId][identifier] = nil
+                end
+            end)
         end
-        AddSecurityLog(propertyId, "Break-in Detected", "Property door lock successfully bypassed/picked.", "#eab308")
+    else
+        -- Apartment lockpicking success
+        if CheckPermission(src, 'apartment', propertyId, type == 'stash' and 'storage' or 'entry') then
+            return
+        end
 
-        SetTimeout(60000 * 15, function()
-            if TemporaryAccess.doors[propertyId] then
-                TemporaryAccess.doors[propertyId][identifier] = nil
-            end
-        end)
-    elseif type == 'stash' then
-        if not TemporaryAccess.stashes[propertyId] then TemporaryAccess.stashes[propertyId] = {} end
-        TemporaryAccess.stashes[propertyId][identifier] = true
+        if type == 'door' then
+            if not TemporaryAccess.doors[propertyId] then TemporaryAccess.doors[propertyId] = {} end
+            TemporaryAccess.doors[propertyId][identifier] = true
 
-        SetTimeout(60000 * 15, function()
-            if TemporaryAccess.stashes[propertyId] then
-                TemporaryAccess.stashes[propertyId][identifier] = nil
+            if GetApartmentDoorId then
+                local doorId = GetApartmentDoorId(propertyId)
+                if doorId then
+                    exports.ox_doorlock:setDoorState(doorId, 0) -- Unlock door lock on success
+                end
             end
-        end)
+
+            SetTimeout(60000 * 15, function()
+                if TemporaryAccess.doors[propertyId] then
+                    TemporaryAccess.doors[propertyId][identifier] = nil
+                end
+            end)
+        elseif type == 'stash' then
+            if not TemporaryAccess.stashes[propertyId] then TemporaryAccess.stashes[propertyId] = {} end
+            TemporaryAccess.stashes[propertyId][identifier] = true
+
+            SetTimeout(60000 * 15, function()
+                if TemporaryAccess.stashes[propertyId] then
+                    TemporaryAccess.stashes[propertyId][identifier] = nil
+                end
+            end)
+        end
     end
 end)
 
@@ -526,6 +562,9 @@ end
 
 RegisterNetEvent('LNS_Housing:server:lockpickFailed', function(propertyId)
     local src = source
+    local isApartment = Properties[propertyId] == nil
+    if isApartment then return end
+
     local p = Properties[propertyId]
     if not p then return end
 
@@ -614,4 +653,28 @@ exports('RemoveKey', function(propertyId, targetIdentifier)
         return true
     end
     return false
+end)
+
+local LockedStashes = {}
+
+RegisterNetEvent('LNS_Housing:server:toggleStashLock', function(propertyId, stashId)
+    local src = source
+    local isApartment = Properties[propertyId] == nil
+    local hasAccess = CheckPermission(src, isApartment and 'apartment' or 'house', propertyId, 'storage')
+
+    if not hasAccess then
+        Bridge.Server.Notify(src, 'You do not have permission to lock/unlock this storage.', 'error')
+        return
+    end
+
+    LockedStashes[stashId] = not LockedStashes[stashId]
+    local state = LockedStashes[stashId] and 'locked' or 'unlocked'
+    Bridge.Server.Notify(src, 'Storage is now ' .. state .. '.', 'success')
+end)
+
+lib.callback.register('LNS_Housing:server:isStashLocked', function(source, stashId)
+    if LockedStashes[stashId] == nil then
+        LockedStashes[stashId] = true
+    end
+    return LockedStashes[stashId]
 end)
