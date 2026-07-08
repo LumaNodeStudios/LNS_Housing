@@ -175,18 +175,6 @@ local function createApartmentZone(roomData)
                     end
                 })
             end
-
-            local hasEntryAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', MyApartmentId, 'entry') or hasManageAccess
-            if hasEntryAccess then
-                lib.addRadialItem({
-                    id = 'housing_lock',
-                    icon = 'key',
-                    label = 'Lock/Unlock Apartment',
-                    onSelect = function()
-                        TriggerServerEvent('LNS_Housing:server:toggleApartmentLock', MyApartmentId)
-                    end
-                })
-            end
         end,
         onExit = function()
             insideApartment = false
@@ -349,14 +337,91 @@ local function initApartmentForPlayer()
     end
 end
 
+local apartmentDoorsRegistered = false
+local function RegisterApartmentDoors()
+    if apartmentDoorsRegistered then return end
+    if not Settings.Rooms then return end
+    apartmentDoorsRegistered = true
+
+    for _, room in ipairs(Settings.Rooms) do
+        if room.doorCoords then
+            local door = nil
+            if GetResourceState('ox_doorlock') == 'started' then
+                local ok, result = pcall(function()
+                    return exports.ox_doorlock:getDoorFromName("Apartment Room #" .. room.id)
+                end)
+                if ok then
+                    door = result
+                end
+            end
+
+            local targetCoords, targetHeading = ResolveDoorTargetPlacement(
+                room.doorModel,
+                room.doorCoords,
+                room.doorHeading,
+                door
+            )
+
+            local options = {
+                {
+                    label = 'Raid Apartment',
+                    icon = 'fas fa-shield-halved',
+                    items = Settings.Security.RaidItem,
+                    canInteract = function()
+                        local job = Bridge.Client.GetPlayerJob()
+                        return job and job.name == 'police'
+                    end,
+                    onSelect = function()
+                        StartPoliceRaid(room.id, 'apartment', nil)
+                    end
+                },
+            }
+
+            if Settings.Apartments.CanBreakIn then
+                table.insert(options, {
+                    label = 'Lockpick Apartment',
+                    icon = 'fas fa-mask',
+                    items = Settings.Security.LockpickItem,
+                    canInteract = function()
+                        local isLocked = true
+                        local doorName = "Apartment Room #" .. room.id
+                        local ok, doorData = pcall(function()
+                            return exports.ox_doorlock:getDoorFromName(doorName)
+                        end)
+                        if ok and doorData then
+                            isLocked = doorData.state == 1
+                        end
+
+                        if not isLocked then return false end
+                        return lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', room.id, 'lockpick')
+                    end,
+                    onSelect = function()
+                        LockpickDoor(room.id)
+                    end
+                })
+            end
+
+            exports.ox_target:addBoxZone({
+                coords = targetCoords,
+                size = vec3(1.0, 1.5, 2.0),
+                rotation = targetHeading,
+                debug = Settings.Debug.Zones,
+                options = options
+            })
+        end
+    end
+end
+
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
     LoadCustomApartments()
     initApartmentForPlayer()
+    RegisterApartmentDoors()
 end)
 
 RegisterNetEvent('esx:playerLoaded', function(xPlayer)
     LoadCustomApartments()
     initApartmentForPlayer()
+    RegisterApartmentDoors()
 end)
 
 RegisterNetEvent('LNS_Housing:client:spawnInStarterApartment', function()
@@ -407,76 +472,8 @@ CreateThread(function()
 
     RegisterApartmentCreatorCommands()
 
-    
-    Wait(1500) 
-    if Settings.Rooms then
-        for _, room in ipairs(Settings.Rooms) do
-            if room.doorCoords then
-                local door = nil
-                if GetResourceState('ox_doorlock') == 'started' then
-                    local ok, result = pcall(function()
-                        return exports.ox_doorlock:getDoorFromName("Apartment Room #" .. room.id)
-                    end)
-                    if ok then
-                        door = result
-                    end
-                end
-
-                local targetCoords, targetHeading = ResolveDoorTargetPlacement(
-                    room.doorModel,
-                    room.doorCoords,
-                    room.doorHeading,
-                    door
-                )
-
-                local options = {
-                    {
-                        label = 'Raid Apartment',
-                        icon = 'fas fa-shield-halved',
-                        items = Settings.Security.RaidItem,
-                        canInteract = function()
-                            local job = Bridge.Client.GetPlayerJob()
-                            return job and job.name == 'police'
-                        end,
-                        onSelect = function()
-                            StartPoliceRaid(room.id, 'apartment', nil)
-                        end
-                    },
-                }
-
-                if Settings.Apartments.CanBreakIn then
-                    table.insert(options, {
-                        label = 'Lockpick Apartment',
-                        icon = 'fas fa-mask',
-                        items = Settings.Security.LockpickItem,
-                        canInteract = function()
-                            local isLocked = true
-                            local doorName = "Apartment Room #" .. room.id
-                            local ok, doorData = pcall(function()
-                                return exports.ox_doorlock:getDoorFromName(doorName)
-                            end)
-                            if ok and doorData then
-                                isLocked = doorData.state == 1
-                            end
-
-                            if not isLocked then return false end
-                            return lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', room.id, 'lockpick')
-                        end,
-                        onSelect = function()
-                            LockpickDoor(room.id)
-                        end
-                    })
-                end
-
-                exports.ox_target:addBoxZone({
-                    coords = targetCoords,
-                    size = vec3(1.0, 1.5, 2.0),
-                    rotation = targetHeading,
-                    debug = Settings.Debug.Zones,
-                    options = options
-                })
-            end
-        end
+    if Bridge.Client.GetIdentifier() then
+        RegisterApartmentDoors()
     end
 end)
 
