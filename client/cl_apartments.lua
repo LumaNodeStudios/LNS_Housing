@@ -60,11 +60,20 @@ local function CreateApartmentPed()
     })
 end
 
-local function OpenApartmentCreatorUI()
-    SendNUIMessage({
-        action = 'openApartmentCreator',
-        data = {}
-    })
+local function OpenApartmentCreatorUI(isEdit)
+    local rooms = nil
+    if isEdit then
+        rooms = lib.callback.await('LNS_Housing:server:getApartmentRooms', false)
+        SendNUIMessage({
+            action = 'openApartmentEditor',
+            data = rooms or {}
+        })
+    else
+        SendNUIMessage({
+            action = 'openApartmentCreator',
+            data = {}
+        })
+    end
     SetNuiFocus(true, true)
 end
 
@@ -359,16 +368,27 @@ exports('SpawnInStarterApartment', function()
 end)
 
 local function RegisterApartmentCreatorCommands()
-    local cmd = Settings.Apartments.Creator and Settings.Apartments.Creator.Command or 'createapartment'
+    local createCmd = Settings.Apartments.Creator and Settings.Apartments.Creator.Command or 'createapartment'
+    local editCmd = Settings.Apartments.Creator and Settings.Apartments.Creator.EditCommand or 'editapartment'
     
-    RegisterCommand(cmd, function()
+    RegisterCommand(createCmd, function()
         local isAdmin = lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartmentAdmin')
         if not isAdmin then
             Bridge.Client.Notify('You do not have permission to use this command.', 'error')
             return
         end
 
-        OpenApartmentCreatorUI()
+        OpenApartmentCreatorUI(false)
+    end, false)
+
+    RegisterCommand(editCmd, function()
+        local isAdmin = lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartmentAdmin')
+        if not isAdmin then
+            Bridge.Client.Notify('You do not have permission to use this command.', 'error')
+            return
+        end
+
+        OpenApartmentCreatorUI(true)
     end, false)
 end
 
@@ -768,6 +788,40 @@ RegisterNetEvent('LNS_Housing:client:addApartmentRoom', function(roomData)
     end
 end)
 
+RegisterNetEvent('LNS_Housing:client:updateApartmentRoom', function(roomData)
+    local foundIndex = nil
+    for idx, room in ipairs(Settings.Rooms) do
+        if room.id == roomData.id then
+            foundIndex = idx
+            break
+        end
+    end
+    
+    local cornersVec = {}
+    for i, c in ipairs(roomData.corners) do
+        cornersVec[i] = vec3(c.x, c.y, c.z)
+    end
+    roomData.corners = cornersVec
+    
+    if roomData.doorCoords then
+        roomData.doorCoords = vec3(roomData.doorCoords.x, roomData.doorCoords.y, roomData.doorCoords.z)
+    end
+    
+    if roomData.spawn then
+        roomData.spawn = vec4(roomData.spawn.x, roomData.spawn.y, roomData.spawn.z, roomData.spawn.w or 0.0)
+    end
+    
+    if foundIndex then
+        Settings.Rooms[foundIndex] = roomData
+    else
+        table.insert(Settings.Rooms, roomData)
+    end
+    
+    if MyApartmentId == roomData.id then
+        createApartmentZone(roomData)
+    end
+end)
+
 RegisterNUICallback('createApartmentZone', function(_, cb)
     SendNUIMessage({ action = 'toggleVisibility', data = { visible = false } })
     SetNuiFocus(false, false)
@@ -865,6 +919,18 @@ RegisterNUICallback('createApartment', function(data, cb)
         Bridge.Client.Notify('Apartment room created successfully!', 'success')
     else
         Bridge.Client.Notify('Failed to create apartment room.', 'error')
+    end
+    SendNUIMessage({ action = 'closeUI' })
+    cb('ok')
+end)
+
+RegisterNUICallback('updateApartment', function(data, cb)
+    SetNuiFocus(false, false)
+    local success = lib.callback.await('LNS_Housing:server:updateApartment', false, data)
+    if success then
+        Bridge.Client.Notify('Apartment room updated successfully!', 'success')
+    else
+        Bridge.Client.Notify('Failed to update apartment room.', 'error')
     end
     SendNUIMessage({ action = 'closeUI' })
     cb('ok')

@@ -907,6 +907,155 @@ lib.callback.register('LNS_Housing:server:createApartment', function(source, dat
     return false
 end)
 
+lib.callback.register('LNS_Housing:server:updateApartment', function(source, data)
+    WaitForDb()
+    if not IsApartmentAdmin(source) then return false end
+
+    local roomId = tonumber(data.id)
+    if not roomId then return false end
+
+    local corners = data.corners
+    local thickness = tonumber(data.thickness) or 3.5
+    local zOffset = tonumber(data.zOffset) or 0.0
+    local door = data.door
+    local spawn = data.spawn
+    local price = tonumber(data.price) or 0
+    local isStarter = data.isStarter ~= nil and (data.isStarter == 1 or data.isStarter == true) or true
+    local doorModel = nil
+    local doorCoords = nil
+    local doorHeading = nil
+
+    if door then
+        if type(door) == 'table' then
+            doorModel = door.model
+            if door.coords then
+                doorCoords = {x = door.coords.x, y = door.coords.y, z = door.coords.z}
+            end
+            doorHeading = door.heading
+        else
+            local doorData = nil
+            if exports.ox_doorlock and exports.ox_doorlock.getDoor then
+                pcall(function() doorData = exports.ox_doorlock:getDoor(door) end)
+            elseif exports.ox_doorlock and exports.ox_doorlock.getDoorData then
+                pcall(function() doorData = exports.ox_doorlock:getDoorData(door) end)
+            end
+            
+            if doorData then
+                doorModel = doorData.model
+                if doorData.coords then
+                    doorCoords = {x = doorData.coords.x, y = doorData.coords.y, z = doorData.coords.z}
+                end
+                doorHeading = doorData.heading
+            end
+        end
+    end
+
+    local success = MySQL.update.await([[
+        UPDATE apartment_rooms 
+        SET corners = ?, thickness = ?, zOffset = ?, door_model = ?, door_coords = ?, door_heading = ?, spawn_coords = ?, price = ?, is_starter = ?
+        WHERE id = ?
+    ]], {
+        json.encode(corners),
+        thickness,
+        zOffset,
+        doorModel,
+        doorCoords and json.encode(doorCoords) or nil,
+        doorHeading,
+        json.encode(spawn),
+        price,
+        isStarter and 1 or 0,
+        roomId
+    })
+
+    if success then
+        local foundIndex = nil
+        for idx, room in ipairs(Settings.Rooms) do
+            if room.id == roomId then
+                foundIndex = idx
+                break
+            end
+        end
+
+        local cornersVec = {}
+        for i, c in ipairs(corners) do
+            cornersVec[i] = vec3(c.x, c.y, c.z)
+        end
+
+        local doorCoordsVec = nil
+        if doorCoords then
+            doorCoordsVec = vec3(doorCoords.x, doorCoords.y, doorCoords.z)
+        end
+
+        local spawnVec = vec4(spawn.x, spawn.y, spawn.z, spawn.w or spawn.h or 0.0)
+
+        local updatedRoom = {
+            id = roomId,
+            corners = cornersVec,
+            thickness = thickness,
+            zOffset = zOffset,
+            doorModel = doorModel,
+            doorCoords = doorCoordsVec,
+            doorHeading = doorHeading,
+            spawn = spawnVec,
+            price = price,
+            isStarter = isStarter
+        }
+
+        if foundIndex then
+            Settings.Rooms[foundIndex] = updatedRoom
+        else
+            table.insert(Settings.Rooms, updatedRoom)
+        end
+
+        if doorCoordsVec and doorModel then
+            local doorName = "Apartment Room #" .. roomId
+            local existingDoor = nil
+
+            pcall(function()
+                existingDoor = exports.ox_doorlock:getDoorFromName(doorName)
+            end)
+
+            if existingDoor then
+                exports.ox_doorlock:editDoor(existingDoor.id, {
+                    model = doorModel,
+                    coords = doorCoordsVec,
+                    heading = doorHeading or 0.0
+                })
+                roomDoors[roomId] = existingDoor.id
+            else
+                local doorId = exports.ox_doorlock:createDoorlock({
+                    name = doorName,
+                    model = doorModel,
+                    coords = doorCoordsVec,
+                    heading = doorHeading or 0.0,
+                    state = 1,
+                    maxDistance = 2.0
+                })
+                roomDoors[roomId] = doorId
+            end
+
+            SyncApartmentDoor(roomId)
+        end
+
+        TriggerClientEvent('LNS_Housing:client:updateApartmentRoom', -1, {
+            id = roomId,
+            corners = corners,
+            thickness = thickness,
+            zOffset = zOffset,
+            doorModel = doorModel,
+            doorCoords = doorCoords,
+            doorHeading = doorHeading,
+            spawn = spawn,
+            price = price,
+            isStarter = isStarter
+        })
+
+        return true
+    end
+
+    return false
+end)
+
 RegisterNetEvent('LNS_Housing:server:toggleApartmentLock', function(roomId)
     local src = source
     local hasAccess = CheckPermission(src, 'apartment', roomId, 'entry') or CheckPermission(src, 'apartment', roomId, 'manage')

@@ -227,6 +227,7 @@ return {
 
         Creator = {
             Command = 'createapartment', -- Command to initiate apartment creation
+            EditCommand = 'editapartment', -- Command to edit existing apartments
             Group = 'admin'              -- User group permitted to run this command
         },
 

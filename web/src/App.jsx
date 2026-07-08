@@ -11,6 +11,7 @@ function App() {
   const [showFurniture, setShowFurniture] = useState(false);
   const [showRealEstate, setShowRealEstate] = useState(false);
   const [showApartmentCreator, setShowApartmentCreator] = useState(false);
+  const [showApartmentEditor, setShowApartmentEditor] = useState(false);
 
   const [isVisible, setIsVisible] = useState(true);
   const [propertyData, setPropertyData] = useState(null);
@@ -20,12 +21,14 @@ function App() {
   const [hasPermission, setHasPermission] = useState(false);
   const [initialTab, setInitialTab] = useState('browse');
   const [onlyBuyViaContracts, setOnlyBuyViaContracts] = useState(false);
+  const [apartmentCreatorData, setApartmentCreatorData] = useState({ isEdit: false, rooms: [] });
 
   const closeAll = () => {
     setShowPanel(false);
     setShowFurniture(false);
     setShowRealEstate(false);
     setShowApartmentCreator(false);
+    setShowApartmentEditor(false);
   };
 
   useEffect(() => {
@@ -79,7 +82,19 @@ function App() {
           break;
         case 'openApartmentCreator':
           closeAll();
+          setApartmentCreatorData({
+            isEdit: false,
+            rooms: []
+          });
           setShowApartmentCreator(true);
+          break;
+        case 'openApartmentEditor':
+          closeAll();
+          setApartmentCreatorData({
+            isEdit: true,
+            rooms: data || []
+          });
+          setShowApartmentEditor(true);
           break;
         case 'closeUI':
           closeAll();
@@ -258,6 +273,125 @@ function App() {
           { action: 'Lock Change', user: 'Admin', date: '2024-03-19 10:00' }
         ]
       });
+
+      setApartmentCreatorData({
+        isEdit: true,
+        rooms: [
+          {
+            id: 101,
+            corners: [
+              { x: -826.63, y: -724.74, z: 42.07 },
+              { x: -826.63, y: -730.64, z: 42.07 },
+              { x: -821.17, y: -730.60, z: 42.07 }
+            ],
+            thickness: 3.5,
+            doorModel: -138454175,
+            doorCoords: { x: -825.87, y: -724.61, z: 41.67 },
+            doorHeading: 359.79,
+            spawn: { x: -823.46, y: -727.60, z: 41.57, w: 77.47 },
+            isStarter: true
+          },
+          {
+            id: 102,
+            corners: [
+              { x: -820.63, y: -724.74, z: 42.07 },
+              { x: -820.63, y: -730.64, z: 42.07 },
+              { x: -815.17, y: -730.60, z: 42.07 }
+            ],
+            thickness: 3.5,
+            doorModel: -138454175,
+            doorCoords: { x: -819.87, y: -724.61, z: 41.67 },
+            doorHeading: 359.79,
+            spawn: { x: -817.46, y: -727.60, z: 41.57, w: 77.47 },
+            isStarter: true
+          },
+          {
+            id: 103,
+            corners: [
+              { x: -810.63, y: -724.74, z: 42.07 },
+              { x: -810.63, y: -730.64, z: 42.07 },
+              { x: -805.17, y: -730.60, z: 42.07 }
+            ],
+            thickness: 3.5,
+            doorModel: -138454175,
+            doorCoords: { x: -809.87, y: -724.61, z: 41.67 },
+            doorHeading: 359.79,
+            spawn: { x: -807.46, y: -727.60, z: 41.57, w: 77.47 },
+            isStarter: true
+          },
+          {
+            id: 104,
+            corners: [{ x: -826.63, y: -724.74, z: 42.07 }],
+            thickness: 3.5,
+            doorModel: -138454175,
+            doorCoords: { x: -825.87, y: -724.61, z: 41.67 },
+            doorHeading: 359.79,
+            spawn: { x: -823.46, y: -727.60, z: 41.57, w: 77.47 },
+            isStarter: true
+          },
+          {
+            id: 105,
+            corners: [{ x: -826.63, y: -724.74, z: 42.07 }],
+            thickness: 3.5,
+            doorModel: -138454175,
+            doorCoords: { x: -825.87, y: -724.61, z: 41.67 },
+            doorHeading: 359.79,
+            spawn: { x: -823.46, y: -727.60, z: 41.57, w: 77.47 },
+            isStarter: true
+          },
+          {
+            id: 106,
+            corners: [{ x: -826.63, y: -724.74, z: 42.07 }],
+            thickness: 3.5,
+            doorModel: -138454175,
+            doorCoords: { x: -825.87, y: -724.61, z: 41.67 },
+            doorHeading: 359.79,
+            spawn: { x: -823.46, y: -727.60, z: 41.57, w: 77.47 },
+            isStarter: true
+          },
+          {
+            id: 107,
+            corners: [{ x: -826.63, y: -724.74, z: 42.07 }],
+            thickness: 3.5,
+            doorModel: -138454175,
+            doorCoords: { x: -825.87, y: -724.61, z: 41.67 },
+            doorHeading: 359.79,
+            spawn: { x: -823.46, y: -727.60, z: 41.57, w: 77.47 },
+            isStarter: true
+          },
+          {
+            id: 108,
+            corners: [{ x: -826.63, y: -724.74, z: 42.07 }],
+            thickness: 3.5,
+            doorModel: -138454175,
+            doorCoords: { x: -825.87, y: -724.61, z: 41.67 },
+            doorHeading: 359.79,
+            spawn: { x: -823.46, y: -727.60, z: 41.57, w: 77.47 },
+            isStarter: true
+          },
+          {
+            id: 109,
+            corners: [{ x: -826.63, y: -724.74, z: 42.07 }],
+            thickness: 3.5,
+            doorModel: -138454175,
+            doorCoords: { x: -825.87, y: -724.61, z: 41.67 },
+            doorHeading: 359.79,
+            spawn: { x: -823.46, y: -727.60, z: 41.57, w: 77.47 },
+            isStarter: true
+          },
+          {
+            id: 110,
+            corners: [{ x: -826.63, y: -724.74, z: 42.07 }],
+            thickness: 3.5,
+            doorModel: -138454175,
+            doorCoords: { x: -825.87, y: -724.61, z: 41.67 },
+            doorHeading: 359.79,
+            spawn: { x: -823.46, y: -727.60, z: 41.57, w: 77.47 },
+            isStarter: true
+          }
+        ]
+      });
+      setShowApartmentEditor(true);
     }
 
     const handleKeyDown = (e) => {
@@ -305,6 +439,25 @@ function App() {
           {showApartmentCreator && (
             <ApartmentCreator
               key="aptcreator"
+              isEdit={false}
+              initialRooms={[]}
+              onClose={() => {
+                if (window.GetParentResourceName) {
+                  fetch(`https://${window.GetParentResourceName()}/closeUI`, {
+                    method: 'POST',
+                    body: JSON.stringify({})
+                  });
+                }
+                closeAll();
+              }}
+            />
+          )}
+
+          {showApartmentEditor && (
+            <ApartmentCreator
+              key="apteditor"
+              isEdit={true}
+              initialRooms={apartmentCreatorData.rooms}
               onClose={() => {
                 if (window.GetParentResourceName) {
                   fetch(`https://${window.GetParentResourceName()}/closeUI`, {
