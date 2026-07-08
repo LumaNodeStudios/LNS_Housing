@@ -4,6 +4,8 @@ if not Settings.Apartments or not Settings.Apartments.Enabled then
     return
 end
 
+ApartmentRooms = Settings.Rooms
+
 local apartmentBlip = nil
 local apartmentPed = nil
 insideApartment = false

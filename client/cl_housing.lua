@@ -49,7 +49,6 @@ RegisterNUICallback('closeUI', function(_, cb)
     cb('ok')
 end)
 
-
 RegisterNUICallback('placeBid', function(data, cb)
     TriggerServerEvent('LNS_Housing:server:placeBid', data)
     cb('ok')
@@ -100,8 +99,8 @@ function LockpickDoor(propertyId)
     local isApartment = false
     
     if not p then
-        if Settings.Rooms then
-            for _, room in ipairs(Settings.Rooms) do
+        if ApartmentRooms then
+            for _, room in ipairs(ApartmentRooms) do
                 if room.id == propertyId then
                     isApartment = true
                     break
@@ -115,8 +114,8 @@ function LockpickDoor(propertyId)
     if not p and not isApartment then return end
 
     local permType = isApartment and 'apartment' or 'house'
-    if lib.callback.await('LNS_Housing:server:checkPermission', false, permType, propertyId, 'entry') then
-        Bridge.Client.Notify('You already have access to this property.', 'error')
+    if not lib.callback.await('LNS_Housing:server:checkPermission', false, permType, propertyId, 'lockpick') then
+        Bridge.Client.Notify('You cannot lockpick this property (either you already have access or it is unowned).', 'error')
         return
     end
 
@@ -194,8 +193,8 @@ function LockpickStash(propertyId, stashId)
     local isApartment = false
     
     if not p then
-        if Settings.Rooms then
-            for _, room in ipairs(Settings.Rooms) do
+        if ApartmentRooms then
+            for _, room in ipairs(ApartmentRooms) do
                 if room.id == propertyId then
                     isApartment = true
                     break
@@ -209,8 +208,8 @@ function LockpickStash(propertyId, stashId)
     if not p and not isApartment then return end
 
     local permType = isApartment and 'apartment' or 'house'
-    if lib.callback.await('LNS_Housing:server:checkPermission', false, permType, propertyId, 'storage') then
-        Bridge.Client.Notify('You already have access to this storage.', 'error')
+    if not lib.callback.await('LNS_Housing:server:checkPermission', false, permType, propertyId, 'lockpickStash') then
+        Bridge.Client.Notify('You cannot lockpick this storage (either you already have access or it is unowned).', 'error')
         return
     end
 
