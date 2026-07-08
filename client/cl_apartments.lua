@@ -344,7 +344,7 @@ local function RegisterApartmentDoors(delay)
 
     CreateThread(function()
         if delay then
-            Wait(4000) -- Allow character spawning and streamer initialization to complete
+            Wait(1000) -- Allow character spawning and streamer initialization to complete
         end
 
         for _, room in ipairs(Settings.Rooms) do
