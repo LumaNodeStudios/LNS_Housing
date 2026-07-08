@@ -442,36 +442,6 @@ CreateThread(function()
                             StartPoliceRaid(room.id, 'apartment', nil)
                         end
                     },
-                    {
-                        label = 'Enter Apartment',
-                        icon = 'fas fa-door-open',
-                        canInteract = function()
-                            local isLocked = true
-                            local doorName = "Apartment Room #" .. room.id
-                            local ok, doorData = pcall(function()
-                                return exports.ox_doorlock:getDoorFromName(doorName)
-                            end)
-                            if ok and doorData then
-                                isLocked = doorData.state == 1
-                            end
-
-                            if not isLocked then return true end
-                            return lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', room.id, 'entry')
-                        end,
-                        onSelect = function()
-                            exports.LNS_Housing:SpawnInProperty('apartment', room.id)
-                        end
-                    },
-                    {
-                        label = 'Lock/Unlock Apartment',
-                        icon = 'fas fa-key',
-                        canInteract = function()
-                            return lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', room.id, 'entry') or lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', room.id, 'manage')
-                        end,
-                        onSelect = function()
-                            TriggerServerEvent('LNS_Housing:server:toggleApartmentLock', room.id)
-                        end
-                    }
                 }
 
                 if Settings.Apartments.CanBreakIn then
