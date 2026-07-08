@@ -906,7 +906,8 @@ return {
                 price = 300,
                 isWardrobe = false,
                 isStorage = true,
-                storage = { slots = 50, weight = 100000 }
+                storage = { slots = 50, weight = 100000 },
+                canLockpick = true
             },
             {
                 id = 'crate_wooden',
@@ -915,7 +916,8 @@ return {
                 price = 150,
                 isWardrobe = false,
                 isStorage = true,
-                storage = { slots = 25, weight = 50000 }
+                storage = { slots = 25, weight = 50000 },
+                canLockpick = false
             },
             {
                 id = 'shelf_wooden',

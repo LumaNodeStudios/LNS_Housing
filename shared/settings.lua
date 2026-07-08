@@ -223,6 +223,7 @@ return {
     -- Apartment specific settings
     Apartments = {
         Enabled = true, -- Toggle for enabling or disabling apartment system
+        CanBreakIn = true, -- If true, apartments can be lockpicked/broken into
 
         Creator = {
             Command = 'createapartment', -- Command to initiate apartment creation
