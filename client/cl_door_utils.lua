@@ -1,3 +1,5 @@
+local Settings = lib.load('shared.settings')
+
 local function ToVec3(coords)
     if not coords then return nil end
     return vec3(coords.x, coords.y, coords.z)
@@ -28,8 +30,17 @@ function GetDoorInteractionPoint(model, coords, heading)
     end
 
     local hash = tonumber(model) or GetHashKey(model)
-    if not IsModelInCdimage(hash) then
-        return coords, heading or 0.0
+
+    local loadedModel = false
+    if not HasModelLoaded(hash) then
+        local ok = pcall(function()
+            lib.requestModel(hash, 3000)
+        end)
+        if ok and HasModelLoaded(hash) then
+            loadedModel = true
+        else
+            return coords, heading or 0.0
+        end
     end
 
     local min, max = GetModelDimensions(hash)
@@ -39,33 +50,27 @@ function GetDoorInteractionPoint(model, coords, heading)
 
     local entity = GetClosestObjectOfType(coords.x, coords.y, coords.z, 3.0, hash, false, false, false)
     if entity ~= 0 then
-        return GetOffsetFromEntityInWorldCoords(entity, centerX, centerY, centerZ), GetEntityHeading(entity)
-    end
-
-    lib.requestModel(hash)
-    local ok, point, probeHeading = pcall(function()
-        local probe = CreateObjectNoOffset(hash, coords.x, coords.y, coords.z, false, false, false)
-        if probe == 0 then
-            return coords, heading or 0.0
+        local resCoords = GetOffsetFromEntityInWorldCoords(entity, centerX, centerY, centerZ)
+        local resHeading = GetEntityHeading(entity)
+        if loadedModel then
+            SetModelAsNoLongerNeeded(hash)
         end
-
-        SetEntityHeading(probe, heading or 0.0)
-        FreezeEntityPosition(probe, true)
-
-        local interactionPoint = GetOffsetFromEntityInWorldCoords(probe, centerX, centerY, centerZ)
-        local resolvedHeading = GetEntityHeading(probe)
-
-        DeleteEntity(probe)
-        SetModelAsNoLongerNeeded(hash)
-
-        return interactionPoint, resolvedHeading
-    end)
-
-    if ok and point then
-        return point, probeHeading or heading or 0.0
+        return resCoords, resHeading
     end
 
-    return coords, heading or 0.0
+    -- Mathematical offset translation fallback when entity is not loaded/spawned
+    local rad = math.rad(-(heading or 0.0))
+    local cosRad = math.cos(rad)
+    local sinRad = math.sin(rad)
+    local rx = centerX * cosRad - centerY * sinRad
+    local ry = centerX * sinRad + centerY * cosRad
+    local interactionPoint = vec3(coords.x + rx, coords.y + ry, coords.z + centerZ)
+
+    if loadedModel then
+        SetModelAsNoLongerNeeded(hash)
+    end
+
+    return interactionPoint, heading or 0.0
 end
 
 function ResolveDoorTargetPlacement(model, coords, heading, door)
@@ -77,9 +82,9 @@ function ResolveDoorTargetPlacement(model, coords, heading, door)
         end
     end
 
-    local resolvedModel = model or (door and door.model)
-    local resolvedCoords = ToVec3(coords) or (door and ToVec3(door.coords))
-    local resolvedHeading = heading or (door and door.heading) or 0.0
+    local resolvedModel = (door and door.model) or model
+    local resolvedCoords = (door and door.coords and ToVec3(door.coords)) or ToVec3(coords)
+    local resolvedHeading = (door and door.heading) or heading or 0.0
 
     if resolvedModel and resolvedCoords then
         return GetDoorInteractionPoint(resolvedModel, resolvedCoords, resolvedHeading)
