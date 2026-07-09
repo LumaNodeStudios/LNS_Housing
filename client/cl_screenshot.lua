@@ -106,7 +106,13 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
     end
 
     isCapturing = true
-    lib.showTextUI('[BACKSPACE] Cancel Screenshots')
+
+    SendNUIMessage({
+        action = 'startScreenshots',
+        data = {
+            total = #itemsToCapture
+        }
+    })
 
     CreateThread(function()
         while isCapturing do
@@ -133,6 +139,14 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
 
     for index, item in ipairs(itemsToCapture) do
         if not isCapturing then break end
+        SendNUIMessage({
+            action = 'updateScreenshotProgress',
+            data = {
+                current = index,
+                total = #itemsToCapture,
+                model = item.model
+            }
+        })
         local hash = tonumber(item.model) or GetHashKey(item.model)
         if LoadModel(hash) then
             local min, max = GetModelDimensions(hash)
@@ -203,7 +217,9 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
     drawingGreenScreen = false
     local wasCancelled = not isCapturing
     isCapturing = false
-    lib.hideTextUI()
+    SendNUIMessage({
+        action = 'endScreenshots'
+    })
     Wait(500)
 
     TriggerServerEvent('LNS_Housing:server:resetScreenshotBucket')

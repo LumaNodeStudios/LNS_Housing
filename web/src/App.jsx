@@ -4,6 +4,7 @@ import Panel from './components/Panel/Panel';
 import FurnitureMenu from './components/Furniture/FurnitureMenu';
 import RealEstate from './components/RealEstate/RealEstate';
 import ApartmentCreator from './components/ApartmentCreator/ApartmentCreator';
+import ScreenshotProgress from './components/ScreenshotProgress/ScreenshotProgress';
 import { AnimatePresence } from 'framer-motion';
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
   const [showRealEstate, setShowRealEstate] = useState(false);
   const [showApartmentCreator, setShowApartmentCreator] = useState(false);
   const [showApartmentEditor, setShowApartmentEditor] = useState(false);
+  const [screenshotProgress, setScreenshotProgress] = useState(null);
 
   const [isVisible, setIsVisible] = useState(true);
   const [propertyData, setPropertyData] = useState(null);
@@ -101,6 +103,25 @@ function App() {
           break;
         case 'toggleVisibility':
           setIsVisible(data.visible);
+          break;
+        case 'startScreenshots':
+          setScreenshotProgress({
+            current: 0,
+            total: data.total || 0,
+            model: ''
+          });
+          setIsVisible(true);
+          break;
+        case 'updateScreenshotProgress':
+          setScreenshotProgress({
+            current: data.current || 0,
+            total: data.total || 0,
+            model: data.model || ''
+          });
+          setIsVisible(true);
+          break;
+        case 'endScreenshots':
+          setScreenshotProgress(null);
           break;
         default:
           break;
@@ -412,6 +433,7 @@ function App() {
 
   return (
     <div className="app-container" style={{ visibility: isVisible ? 'visible' : 'hidden' }}>
+      <ScreenshotProgress progress={screenshotProgress} />
       <div className="ui-wrapper">
         <AnimatePresence mode="wait">
           {showPanel && (
