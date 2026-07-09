@@ -432,3 +432,28 @@
     background: rgba(255, 255, 255, 0.02);
     border-color: rgba(255, 255, 255, 0.04);
 }
+
+.setup-card-actions {
+    display: flex;
+    align-items: center;
+}
+
+.setup-btn-danger {
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+    transition: var(--transition-smooth);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.setup-btn-danger:hover {
+    background: rgba(239, 68, 68, 0.3);
+    border-color: rgba(239, 68, 68, 0.5);
+}

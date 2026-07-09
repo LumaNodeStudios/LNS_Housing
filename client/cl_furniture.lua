@@ -685,12 +685,21 @@ RegisterNUICallback("previewFurniture", function(data, cb)
 end)
 
 RegisterNUICallback("moveObject", function(data, cb)
-    Modeler:MoveObject(data)
+    if TabletPlacement and TabletPlacement.Active and TabletPlacement.Object then
+        local coords = vec3(data.x + 0.0, data.y + 0.0, data.z + 0.0)
+        SetEntityCoords(TabletPlacement.Object, coords)
+    else
+        Modeler:MoveObject(data)
+    end
     cb("ok")
 end)
 
 RegisterNUICallback("rotateObject", function(data, cb)
-    Modeler:RotateObject(data)
+    if TabletPlacement and TabletPlacement.Active and TabletPlacement.Object then
+        SetEntityRotation(TabletPlacement.Object, data.x + 0.0, data.y + 0.0, data.z + 0.0, 2, true)
+    else
+        Modeler:RotateObject(data)
+    end
     cb("ok")
 end)
 
@@ -710,7 +719,49 @@ RegisterNUICallback("clickWorld", function(data, cb)
 end)
 
 RegisterNUICallback("placeOnGround", function(data, cb)
-    Modeler:PlaceOnGround()
+    if TabletPlacement and TabletPlacement.Active and TabletPlacement.Object then
+        local pos = GetEntityCoords(TabletPlacement.Object)
+        local startZ = pos.z + 0.1
+        local targetZ = pos.z
+        local found = false
+        for i = 1, 5 do
+            local startCoords = vector3(pos.x, pos.y, startZ)
+            local endCoords = vector3(pos.x, pos.y, pos.z - 30.0)
+            local ray = StartShapeTestRay(startCoords.x, startCoords.y, startCoords.z, endCoords.x, endCoords.y, endCoords.z, -1, TabletPlacement.Object, 7)
+            local retval, hit, endCoordsResult, surfaceNormal, entityHit = GetShapeTestResult(ray)
+            if hit ~= 0 then
+                if surfaceNormal.z < 0.0 then
+                    startZ = endCoordsResult.z - 0.05
+                    if startZ < pos.z - 30.0 then
+                        break
+                    end
+                else
+                    targetZ = endCoordsResult.z
+                    found = true
+                    break
+                end
+            else
+                break
+            end
+        end
+        if not found then
+            local success, groundZ = GetGroundZFor_3dCoord(pos.x, pos.y, pos.z, false)
+            if success then
+                targetZ = groundZ
+            end
+        end
+        SetEntityCoords(TabletPlacement.Object, pos.x, pos.y, targetZ)
+        local rot = GetEntityRotation(TabletPlacement.Object, 2)
+        SendNUIMessage({
+            action = "syncObjectState",
+            data = {
+                position = { x = pos.x, y = pos.y, z = targetZ },
+                rotation = { x = rot.x, y = rot.y, z = rot.z }
+            }
+        })
+    else
+        Modeler:PlaceOnGround()
+    end
     cb("ok")
 end)
 
@@ -725,7 +776,24 @@ RegisterNUICallback("hideUI", function(data, cb)
 end)
 
 RegisterNUICallback("freecamMode", function(data, cb)
-    Modeler:FreecamMode(data)
+    if TabletPlacement and TabletPlacement.Active then
+        TabletPlacement.IsFreecamMode = data
+        if data then
+            Freecam:SetFrozen(false)
+            SetNuiFocus(false, false)
+            exports.ox_target:disableTargeting(true)
+        else
+            Freecam:SetFrozen(true)
+            exports.ox_target:disableTargeting(false)
+            SetNuiFocus(true, true)
+        end
+        SendNUIMessage({
+            action = "freecamMode",
+            data = data
+        })
+    else
+        Modeler:FreecamMode(data)
+    end
     cb("ok")
 end)
 

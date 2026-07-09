@@ -247,6 +247,6 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
     SetEntityVisible(ped, true, false)
 
     if not wasCancelled then
-        Bridge.Client.Notify('Finished screenshot session. Check web/dist/assets/furniture/ for images.', 'success')
+        Bridge.Client.Notify('Finished screenshot session.', 'success')
     end
 end)-- Command and suggestion are handled on the server using lib.addCommand

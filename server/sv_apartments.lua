@@ -100,6 +100,11 @@ CreateThread(function()
             local sc = json.decode(r.spawn_coords)
             local spawnVec = vec4(sc.x, sc.y, sc.z, sc.w or sc.h or 0.0)
             
+            local tabletCoords = nil
+            if r.tablet_coords then
+                tabletCoords = json.decode(r.tablet_coords)
+            end
+
             table.insert(Settings.Rooms, {
                 id = r.id,
                 corners = cornersVec,
@@ -110,7 +115,8 @@ CreateThread(function()
                 doorHeading = r.door_heading,
                 spawn = spawnVec,
                 price = r.price,
-                isStarter = (r.is_starter == 1 or r.is_starter == true)
+                isStarter = (r.is_starter == 1 or r.is_starter == true),
+                tabletCoords = tabletCoords
             })
         end
     end
@@ -158,6 +164,11 @@ local function getAvailableRoom()
                 local sc = json.decode(r.spawn_coords)
                 local spawnVec = vec4(sc.x, sc.y, sc.z, sc.w or sc.h or 0.0)
                 
+                local tabletCoords = nil
+                if r.tablet_coords then
+                    tabletCoords = json.decode(r.tablet_coords)
+                end
+
                 table.insert(Settings.Rooms, {
                     id = r.id,
                     corners = cornersVec,
@@ -168,7 +179,8 @@ local function getAvailableRoom()
                     doorHeading = r.door_heading,
                     spawn = spawnVec,
                     price = r.price,
-                    isStarter = (r.is_starter == 1 or r.is_starter == true)
+                    isStarter = (r.is_starter == 1 or r.is_starter == true),
+                    tabletCoords = tabletCoords
                 })
             end
 
@@ -257,11 +269,23 @@ local function OnPlayerLoaded(src)
         if roomData then
             local result = MySQL.single.await('SELECT id FROM apartments WHERE citizenid = ? AND room_id = ?', {citizenid, roomId})
             if not result then
+                local initialFurniture = {}
+                if roomData.tabletCoords then
+                    table.insert(initialFurniture, {
+                        id = math.random(100000, 999999),
+                        model = 'reh_prop_reh_tablet_01a',
+                        label = 'Property Panel',
+                        position = roomData.tabletCoords.position,
+                        rotation = roomData.tabletCoords.rotation,
+                        category = 'prerequisites'
+                    })
+                end
+
                 MySQL.insert.await('INSERT INTO apartments (citizenid, room_id, permissions, furniture, wall_color) VALUES (?, ?, ?, ?, ?)', {
                     citizenid,
                     roomId,
                     json.encode({entry = {}, storage = {}, wardrobe = {}, manage = {}}),
-                    json.encode({}),
+                    json.encode(initialFurniture),
                     0
                 })
             end
@@ -761,6 +785,10 @@ lib.callback.register('LNS_Housing:server:getApartmentRooms', function(source)
                 doorCoords = json.decode(r.door_coords)
             end
             local sc = json.decode(r.spawn_coords)
+            local tabletCoords = nil
+            if r.tablet_coords then
+                tabletCoords = json.decode(r.tablet_coords)
+            end
             table.insert(formatted, {
                 id = r.id,
                 corners = corners,
@@ -771,7 +799,8 @@ lib.callback.register('LNS_Housing:server:getApartmentRooms', function(source)
                 doorHeading = r.door_heading,
                 spawn = {x = sc.x, y = sc.y, z = sc.z, w = sc.w or sc.h or 0.0},
                 price = r.price,
-                isStarter = (r.is_starter == 1 or r.is_starter == true)
+                isStarter = (r.is_starter == 1 or r.is_starter == true),
+                tabletCoords = tabletCoords
             })
         end
     end
@@ -819,9 +848,11 @@ lib.callback.register('LNS_Housing:server:createApartment', function(source, dat
         end
     end
 
+    local tabletCoords = data.tabletCoords
+
     local success = MySQL.insert.await([[
-        INSERT INTO apartment_rooms (id, corners, thickness, zOffset, door_model, door_coords, door_heading, spawn_coords, price, is_starter)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO apartment_rooms (id, corners, thickness, zOffset, door_model, door_coords, door_heading, spawn_coords, price, is_starter, tablet_coords)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ]], {
         roomId,
         json.encode(corners),
@@ -832,7 +863,8 @@ lib.callback.register('LNS_Housing:server:createApartment', function(source, dat
         doorHeading,
         json.encode(spawn),
         price,
-        isStarter and 1 or 0
+        isStarter and 1 or 0,
+        tabletCoords and json.encode(tabletCoords) or nil
     })
 
     if success then
@@ -858,7 +890,8 @@ lib.callback.register('LNS_Housing:server:createApartment', function(source, dat
             doorHeading = doorHeading,
             spawn = spawnVec,
             price = price,
-            isStarter = isStarter
+            isStarter = isStarter,
+            tabletCoords = tabletCoords
         }
 
         table.insert(Settings.Rooms, newRoom)
@@ -898,7 +931,8 @@ lib.callback.register('LNS_Housing:server:createApartment', function(source, dat
             doorHeading = doorHeading,
             spawn = spawn,
             price = price,
-            isStarter = isStarter
+            isStarter = isStarter,
+            tabletCoords = tabletCoords
         })
 
         return true
@@ -950,9 +984,11 @@ lib.callback.register('LNS_Housing:server:updateApartment', function(source, dat
         end
     end
 
+    local tabletCoords = data.tabletCoords
+
     local success = MySQL.update.await([[
         UPDATE apartment_rooms 
-        SET corners = ?, thickness = ?, zOffset = ?, door_model = ?, door_coords = ?, door_heading = ?, spawn_coords = ?, price = ?, is_starter = ?
+        SET corners = ?, thickness = ?, zOffset = ?, door_model = ?, door_coords = ?, door_heading = ?, spawn_coords = ?, price = ?, is_starter = ?, tablet_coords = ?
         WHERE id = ?
     ]], {
         json.encode(corners),
@@ -964,6 +1000,7 @@ lib.callback.register('LNS_Housing:server:updateApartment', function(source, dat
         json.encode(spawn),
         price,
         isStarter and 1 or 0,
+        tabletCoords and json.encode(tabletCoords) or nil,
         roomId
     })
 
@@ -998,7 +1035,8 @@ lib.callback.register('LNS_Housing:server:updateApartment', function(source, dat
             doorHeading = doorHeading,
             spawn = spawnVec,
             price = price,
-            isStarter = isStarter
+            isStarter = isStarter,
+            tabletCoords = tabletCoords
         }
 
         if foundIndex then
@@ -1047,7 +1085,8 @@ lib.callback.register('LNS_Housing:server:updateApartment', function(source, dat
             doorHeading = doorHeading,
             spawn = spawn,
             price = price,
-            isStarter = isStarter
+            isStarter = isStarter,
+            tabletCoords = tabletCoords
         })
 
         return true

@@ -263,10 +263,18 @@ MySQL.ready(function()
                 spawn_coords LONGTEXT NOT NULL,
                 price INT NOT NULL DEFAULT 0,
                 is_starter TINYINT(1) DEFAULT 1,
+                tablet_coords LONGTEXT DEFAULT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         ]])
     end
+
+    pcall(function()
+        local cols = MySQL.query.await("SHOW COLUMNS FROM `apartment_rooms` LIKE 'tablet_coords'")
+        if not cols or #cols == 0 then
+            MySQL.query.await("ALTER TABLE `apartment_rooms` ADD COLUMN `tablet_coords` LONGTEXT DEFAULT NULL")
+        end
+    end)
 
     pcall(function()
         local cols = MySQL.query.await("SHOW COLUMNS FROM `housing_properties` LIKE 'yard_zone_data'")

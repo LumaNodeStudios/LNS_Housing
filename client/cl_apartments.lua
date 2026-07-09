@@ -861,6 +861,157 @@ RegisterNUICallback('pickApartmentDoor', function(_, cb)
     end
 end)
 
+TabletPlacement = {
+    Active = false,
+    Object = nil,
+    IsFreecamMode = false,
+    Result = nil
+}
+
+local function FreecamModeTablet(bool)
+    TabletPlacement.IsFreecamMode = bool
+    if bool then
+        Freecam:SetFrozen(false)
+        SetNuiFocus(false, false)
+        exports.ox_target:disableTargeting(true)
+    else
+        Freecam:SetFrozen(true)
+        exports.ox_target:disableTargeting(false)
+        SetNuiFocus(true, true)
+    end
+
+    SendNUIMessage({
+        action = "freecamMode",
+        data = bool
+    })
+end
+
+local function PlaceDefaultTablet()
+    local model = `reh_prop_reh_tablet_01a`
+    lib.requestModel(model)
+    
+    Freecam:SetActive(true)
+    Freecam:SetKeyboardSetting('BASE_MOVE_MULTIPLIER', 0.1)
+    Freecam:SetKeyboardSetting('FAST_MOVE_MULTIPLIER', 2)
+    Freecam:SetKeyboardSetting('SLOW_MOVE_MULTIPLIER', 2)
+    Freecam:SetFov(45.0)
+    Freecam:SetFrozen(true)
+    
+    local camPos = Freecam:GetPosition()
+    local camTarget = Freecam:GetTarget(5.0)
+    
+    local spawnedObj = CreateObjectNoOffset(model, camTarget.x, camTarget.y, camTarget.z, false, false, false)
+    SetEntityCollision(spawnedObj, false, false)
+    SetEntityAlpha(spawnedObj, 200, false)
+    SetEntityDrawOutline(spawnedObj, true)
+    SetEntityDrawOutlineColor(255, 255, 255, 255)
+    FreezeEntityPosition(spawnedObj, true)
+    
+    TabletPlacement.Active = true
+    TabletPlacement.Object = spawnedObj
+    TabletPlacement.IsFreecamMode = false
+    TabletPlacement.Result = nil
+    
+    SendNUIMessage({
+        action = "setupModel",
+        data = {
+            objectPosition = camTarget,
+            objectRotation = GetEntityRotation(spawnedObj, 2),
+            cameraPosition = camPos,
+            cameraLookAt = camTarget,
+            cameraFov = GetGameplayCamFov(),
+            entity = spawnedObj
+        }
+    })
+    
+    CreateThread(function()
+        local lastCamPos = nil
+        local lastCamTarget = nil
+        
+        while TabletPlacement.Active do
+            local currentCamPos = Freecam:GetPosition()
+            local currentCamTarget = Freecam:GetTarget(5.0)
+            
+            if not lastCamPos or #(lastCamPos - currentCamPos) > 0.001 or #(lastCamTarget - currentCamTarget) > 0.001 then
+                lastCamPos = currentCamPos
+                lastCamTarget = currentCamTarget
+                
+                SendNUIMessage({
+                    action = "updateCamera",
+                    data = {
+                        cameraPosition = currentCamPos,
+                        cameraLookAt = currentCamTarget,
+                        cameraFov = GetGameplayCamFov()
+                    }
+                })
+            end
+            Wait(33)
+        end
+    end)
+    
+    CreateThread(function()
+        while TabletPlacement.Active do
+            local sleep = 500
+            DisableControlAction(0, 19, true)
+            if not IsNuiFocused() then
+                sleep = 0
+                if IsDisabledControlJustReleased(0, 19) then
+                    FreecamModeTablet(false)
+                end
+                
+                if TabletPlacement.IsFreecamMode then
+                    DisableControlAction(0, 177, true)
+                    if IsDisabledControlJustReleased(0, 177) then
+                        FreecamModeTablet(false)
+                    end
+                end
+            end
+            Wait(sleep)
+        end
+    end)
+    
+    while TabletPlacement.Active do
+        Wait(100)
+    end
+    
+    DeleteEntity(spawnedObj)
+    Freecam:SetFrozen(false)
+    Freecam:SetActive(false)
+    Freecam:SetKeyboardSetting('BASE_MOVE_MULTIPLIER', 5)
+    Freecam:SetKeyboardSetting('FAST_MOVE_MULTIPLIER', 10)
+    Freecam:SetKeyboardSetting('SLOW_MOVE_MULTIPLIER', 10)
+    
+    local finalResult = TabletPlacement.Result
+    TabletPlacement.Object = nil
+    TabletPlacement.Result = nil
+    return finalResult
+end
+
+RegisterNUICallback('pickApartmentTablet', function(_, cb)
+    local tabletData = PlaceDefaultTablet()
+    if tabletData then
+        cb(tabletData)
+        Bridge.Client.Notify('Tablet placement position saved successfully.', 'success')
+    else
+        cb(nil)
+    end
+end)
+
+RegisterNUICallback('stopPlacementTablet', function(data, cb)
+    if data and data.save then
+        local pos = GetEntityCoords(TabletPlacement.Object)
+        local rot = GetEntityRotation(TabletPlacement.Object, 2)
+        TabletPlacement.Result = {
+            position = { x = pos.x, y = pos.y, z = pos.z },
+            rotation = { x = rot.x, y = rot.y, z = rot.z }
+        }
+    else
+        TabletPlacement.Result = nil
+    end
+    TabletPlacement.Active = false
+    cb("ok")
+end)
+
 RegisterNUICallback('pickApartmentSpawn', function(_, cb)
     SendNUIMessage({ action = 'toggleVisibility', data = { visible = false } })
     SetNuiFocus(false, false)
