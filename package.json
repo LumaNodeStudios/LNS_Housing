@@ -4,6 +4,9 @@
   "description": "LumaNode Studios - Advanced Housing System",
   "main": "server/sv_screenshot.js",
   "dependencies": {
-    "pngjs": "^7.0.0"
+    "pngjs": "^7.0.0",
+    "axios": "^1.6.0",
+    "@aws-sdk/client-s3": "^3.500.0",
+    "form-data": "^4.0.0"
   }
 }

@@ -155,18 +155,29 @@ RegisterNUICallback('takePhoto', function(_, cb)
             if IsDisabledControlJustReleased(0, 191) then
                 uploading = true
 
-                lib.callback('LNS_Housing:server:uploadPhoto', false, function(url)
-                    done = true
-                    SetFollowPedCamViewMode(oldCamMode)
-                    SendNUIMessage({ action = 'toggleVisibility', data = { visible = true } })
-                    SetNuiFocus(true, true)
+                exports.screencapture:requestScreenshot({ encoding = 'png' }, function(data)
+                    if data and data ~= '' then
+                        lib.callback('LNS_Housing:server:uploadPhoto', false, function(url)
+                            done = true
+                            SetFollowPedCamViewMode(oldCamMode)
+                            SendNUIMessage({ action = 'toggleVisibility', data = { visible = true } })
+                            SetNuiFocus(true, true)
 
-                    if url then
-                        cb(url)
-                        Bridge.Client.Notify('Photo uploaded successfully!', 'success')
+                            if url then
+                                cb(url)
+                                Bridge.Client.Notify('Photo uploaded successfully!', 'success')
+                            else
+                                cb(nil)
+                                Bridge.Client.Notify('Failed to upload photo. Check console for errors.', 'error')
+                            end
+                        end, data)
                     else
+                        done = true
+                        SetFollowPedCamViewMode(oldCamMode)
+                        SendNUIMessage({ action = 'toggleVisibility', data = { visible = true } })
+                        SetNuiFocus(true, true)
                         cb(nil)
-                        Bridge.Client.Notify('Failed to upload photo. Check console for errors.', 'error')
+                        Bridge.Client.Notify('Failed to capture property photo.', 'error')
                     end
                 end)
 

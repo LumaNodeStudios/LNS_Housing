@@ -1,6 +1,9 @@
 const path = require('path');
 const fs = require('fs');
 const { PNG } = require('pngjs');
+const FormData = require('form-data');
+const axios = require('axios');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 
 const RESOURCE = GetCurrentResourceName();
 const RES_PATH = GetResourcePath(RESOURCE);
@@ -10,6 +13,85 @@ try {
     if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 } catch (err) {
     console.log('^1[LNS_Housing]^0 Output dir error: ' + err.message);
+}
+
+const MAPPING_PATH = path.resolve(path.join(RES_PATH, 'server/furniture_images.json'));
+let imageMappings = {};
+
+function loadMappings() {
+    try {
+        if (fs.existsSync(MAPPING_PATH)) {
+            const content = fs.readFileSync(MAPPING_PATH, 'utf8');
+            if (content.trim()) {
+                imageMappings = JSON.parse(content);
+            }
+        }
+    } catch (err) {
+        console.log('^1[LNS_Housing]^0 Error loading furniture_images.json: ' + err.message);
+    }
+}
+
+function saveMappingsFile() {
+    try {
+        fs.writeFileSync(MAPPING_PATH, JSON.stringify(imageMappings, null, 2), 'utf8');
+    } catch (err) {
+        console.log('^1[LNS_Housing]^0 Error saving furniture_images.json: ' + err.message);
+    }
+}
+
+function saveMapping(model, url) {
+    imageMappings[model] = url;
+    saveMappingsFile();
+}
+
+loadMappings();
+
+global.exports('GetImageMappings', () => {
+    return imageMappings;
+});
+
+async function uploadToFivemanage(buffer, filename, token, url = 'https://api.fivemanage.com/api/v3/file') {
+    const form = new FormData();
+    form.append('file', buffer, {
+        filename: filename,
+        contentType: 'image/png',
+    });
+
+    const response = await axios.post(url, form, {
+        headers: {
+            ...form.getHeaders(),
+            'Authorization': token
+        }
+    });
+
+    if (response.data) {
+        if (response.data.url) return response.data.url;
+        if (response.data.data && response.data.data.url) return response.data.data.url;
+    }
+    throw new Error('Invalid response from Fivemanage');
+}
+
+async function uploadToR2(buffer, filename, config) {
+    const s3 = new S3Client({
+        region: 'auto',
+        endpoint: `https://${config.AccountId}.r2.cloudflarestorage.com`,
+        credentials: {
+            accessKeyId: config.AccessKeyId,
+            secretAccessKey: config.SecretAccessKey,
+        },
+    });
+
+    const key = config.Folder ? `${config.Folder}/${filename}` : filename;
+
+    await s3.send(new PutObjectCommand({
+        Bucket: config.Bucket,
+        Key: key,
+        Body: buffer,
+        ContentType: 'image/png',
+    }));
+
+    const baseUrl = config.PublicUrl.endsWith('/') ? config.PublicUrl.slice(0, -1) : config.PublicUrl;
+    return `${baseUrl}/${key}`;
 }
 
 function stripDataUri(b64) {
@@ -199,7 +281,7 @@ function resizePNG(pngBuffer, targetW, targetH) {
     return PNG.sync.write(dst, { colorType: 6 });
 }
 
-onNet('LNS_Housing:server:processScreenshot', (payload) => {
+onNet('LNS_Housing:server:processScreenshot', async (payload) => {
     const src = source;
     if (!checkPermission(src)) {
         console.log(`^1[LNS_Housing]^0 Refused screenshot process: Player ${src} lacks permission.`);
@@ -238,14 +320,61 @@ onNet('LNS_Housing:server:processScreenshot', (payload) => {
             console.log('^3[LNS_Housing]^0 Resize failed: ' + e.message);
         }
 
-        const outputPath = path.resolve(path.join(OUTPUT_DIR, modelName + '.png'));
-        if (!outputPath.startsWith(OUTPUT_DIR + path.sep)) {
-            console.log('^1[LNS_Housing]^0 Refused capture: path traversal blocked for ' + modelName);
-            return;
+        let SvSettings = {};
+        try {
+            SvSettings = global.exports[RESOURCE].GetSvSettings();
+        } catch (e) {
+            console.log('^1[LNS_Housing]^0 Failed to get SvSettings: ' + e.message);
         }
 
-        fs.writeFileSync(outputPath, outputData);
-        console.log('^2[LNS_Housing]^0 Saved transparent furniture screenshot: ' + modelName + '.png (' + Math.round(outputData.length / 1024) + ' KB)');
+        const storage = SvSettings.FurnitureImageStorage || { Type: 'local' };
+        const storageType = (storage.Type || 'local').toLowerCase();
+
+        if (storageType === 'local') {
+            const outputPath = path.resolve(path.join(OUTPUT_DIR, modelName + '.png'));
+            if (!outputPath.startsWith(OUTPUT_DIR + path.sep)) {
+                console.log('^1[LNS_Housing]^0 Refused capture: path traversal blocked for ' + modelName);
+                return;
+            }
+
+            fs.writeFileSync(outputPath, outputData);
+            console.log('^2[LNS_Housing]^0 Saved transparent furniture screenshot locally: ' + modelName + '.png (' + Math.round(outputData.length / 1024) + ' KB)');
+
+            if (imageMappings[modelName]) {
+                delete imageMappings[modelName];
+                saveMappingsFile();
+            }
+        } else if (storageType === 'fivemanage') {
+            const config = storage.Fivemanage || {};
+            if (!config.Token) {
+                console.log('^1[LNS_Housing]^0 Fivemanage Token is missing in settings!');
+                return;
+            }
+            console.log(`^3[LNS_Housing]^0 Uploading ${modelName}.png to Fivemanage...`);
+            try {
+                const url = await uploadToFivemanage(outputData, `${modelName}.png`, config.Token, config.Url);
+                saveMapping(modelName, url);
+                console.log(`^2[LNS_Housing]^0 Uploaded successfully to Fivemanage: ${modelName} -> ${url}`);
+            } catch (err) {
+                console.log('^1[LNS_Housing]^0 Fivemanage upload failed: ' + err.message);
+            }
+        } else if (storageType === 'r2') {
+            const config = storage.R2 || {};
+            if (!config.AccountId || !config.AccessKeyId || !config.SecretAccessKey || !config.Bucket || !config.PublicUrl) {
+                console.log('^1[LNS_Housing]^0 Cloudflare R2 configuration is incomplete in settings!');
+                return;
+            }
+            console.log(`^3[LNS_Housing]^0 Uploading ${modelName}.png to Cloudflare R2...`);
+            try {
+                const url = await uploadToR2(outputData, `${modelName}.png`, config);
+                saveMapping(modelName, url);
+                console.log(`^2[LNS_Housing]^0 Uploaded successfully to Cloudflare R2: ${modelName} -> ${url}`);
+            } catch (err) {
+                console.log('^1[LNS_Housing]^0 Cloudflare R2 upload failed: ' + err.message);
+            }
+        } else {
+            console.log('^1[LNS_Housing]^0 Unknown furniture image storage type: ' + storageType);
+        }
     } catch (err) {
         console.log('^1[LNS_Housing]^0 Process error: ' + (err && err.message ? err.message : err));
     }
@@ -263,4 +392,70 @@ onNet('LNS_Housing:server:resetScreenshotBucket', () => {
     if (!checkPermission(src)) return;
     SetPlayerRoutingBucket(src.toString(), 0);
     console.log(`^2[LNS_Housing]^0 Player ${src} reset to routing bucket 0`);
+});
+
+const PROPERTIES_DIR = path.resolve(path.join(RES_PATH, 'web/dist/assets/properties'));
+
+async function uploadPropertyPhoto(base64Data) {
+    let outputData = Buffer.from(stripDataUri(base64Data), 'base64');
+    if (!outputData || outputData.length === 0) {
+        throw new Error('Invalid base64 data');
+    }
+
+    let SvSettings = {};
+    try {
+        SvSettings = global.exports[RESOURCE].GetSvSettings();
+    } catch (e) {
+        console.log('^1[LNS_Housing]^0 Failed to get SvSettings: ' + e.message);
+    }
+
+    const storage = SvSettings.FurnitureImageStorage || { Type: 'local' };
+    const storageType = (storage.Type || 'local').toLowerCase();
+    const filename = `prop_${Date.now()}.png`;
+
+    if (storageType === 'local') {
+        try {
+            if (!fs.existsSync(PROPERTIES_DIR)) fs.mkdirSync(PROPERTIES_DIR, { recursive: true });
+        } catch (err) {
+            console.log('^1[LNS_Housing]^0 Properties dir error: ' + err.message);
+        }
+
+        const outputPath = path.resolve(path.join(PROPERTIES_DIR, filename));
+        fs.writeFileSync(outputPath, outputData);
+        console.log(`^2[LNS_Housing]^0 Saved property photo locally: ${filename}`);
+        return `assets/properties/${filename}`;
+    } else if (storageType === 'fivemanage') {
+        const config = storage.Fivemanage || {};
+        if (!config.Token) {
+            throw new Error('Fivemanage Token is missing in settings');
+        }
+        console.log(`^3[LNS_Housing]^0 Uploading property photo to Fivemanage...`);
+        const url = await uploadToFivemanage(outputData, filename, config.Token, config.Url);
+        return url;
+    } else if (storageType === 'r2') {
+        const config = storage.R2 || {};
+        if (!config.AccountId || !config.AccessKeyId || !config.SecretAccessKey || !config.Bucket || !config.PublicUrl) {
+            throw new Error('Cloudflare R2 configuration is incomplete');
+        }
+        console.log(`^3[LNS_Housing]^0 Uploading property photo to Cloudflare R2...`);
+
+        const r2Config = {
+            ...config,
+            Folder: config.Folder ? `${config.Folder}/properties` : 'properties'
+        };
+        const url = await uploadToR2(outputData, filename, r2Config);
+        return url;
+    } else {
+        throw new Error('Unknown storage type: ' + storageType);
+    }
+}
+
+on('LNS_Housing:server:uploadPropertyPhotoJS', async (base64Data, cb) => {
+    try {
+        const url = await uploadPropertyPhoto(base64Data);
+        cb(url);
+    } catch (err) {
+        console.log('^1[LNS_Housing]^0 Property photo upload failed: ' + err.message);
+        cb(null);
+    }
 });

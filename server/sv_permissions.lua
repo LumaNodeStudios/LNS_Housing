@@ -1,12 +1,5 @@
 local Settings = lib.load('shared.settings')
 
---- Consolidated permission check function
----@param source number Player source ID
----@param permType string 'screenshot' | 'realestate' | 'house' | 'apartment' | 'apartmentAdmin'
----@param targetId any propertyId / roomId (optional)
----@param actionType string 'entry' | 'storage' | 'wardrobe' | 'manage' | 'createHouse' | 'draftContract' | 'manageListings' | 'manageEmployees' (optional)
----@param ignoreTemp boolean If true, ignore temporary/police raid access and only check standard owner/roommate permissions (optional)
----@return any boolean or table depending on permType
 function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
     if permType == 'screenshot' then
         if Bridge.Framework == 'esx' then

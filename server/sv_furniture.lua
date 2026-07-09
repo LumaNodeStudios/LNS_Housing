@@ -59,3 +59,13 @@ RegisterNetEvent('LNS_Housing:server:logoutPlayer', function()
     SetPlayerRoutingBucket(src, 0)
     Bridge.Server.Logout(src)
 end)
+
+lib.callback.register('LNS_Housing:server:getFurnitureImages', function(source)
+    local success, mappings = pcall(function()
+        return exports[GetCurrentResourceName()]:GetImageMappings()
+    end)
+    if success and mappings then
+        return mappings
+    end
+    return {}
+end)

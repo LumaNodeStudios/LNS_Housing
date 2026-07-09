@@ -53,7 +53,6 @@ server_scripts {
     'server/sv_lawn.lua',
     'server/sv_panel.lua',
     'server/sv_apartments.lua',
-    'server/sv_screenshot.lua',
     'server/sv_screenshot.js'
 }
 

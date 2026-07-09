@@ -37,10 +37,23 @@ Modeler = {
             data = true
         })
 
-        SendNUIMessage({
-            action = "setFurnituresData",
-            data = Furniture
-        })
+        lib.callback('LNS_Housing:server:getFurnitureImages', false, function(imageUrls)
+            imageUrls = imageUrls or {}
+            for _, category in ipairs(Furniture) do
+                for _, item in ipairs(category.items) do
+                    if imageUrls[item.model] then
+                        item.imageUrl = imageUrls[item.model]
+                    else
+                        item.imageUrl = nil
+                    end
+                end
+            end
+
+            SendNUIMessage({
+                action = "setFurnituresData",
+                data = Furniture
+            })
+        end)
 
         self:FreecamActive(true)
         self:FreecamMode(false)

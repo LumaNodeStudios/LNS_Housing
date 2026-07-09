@@ -7,12 +7,13 @@ import './FurnitureMenu.css';
 const FurnitureImage = ({ item, ItemIcon }) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
+  const imageUrl = item.imageUrl || `assets/furniture/${item.model}.png`;
 
   return (
     <div className="icon-wrapper">
       {!error && (
         <img
-          src={`assets/furniture/${item.model}.png`}
+          src={imageUrl}
           alt={item.label}
           className="furniture-img"
           onLoad={() => setLoaded(true)}

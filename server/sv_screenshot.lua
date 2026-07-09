@@ -1,1 +1,0 @@
--- Screenshot permission callback consolidated into server/sv_permissions.lua

@@ -606,7 +606,7 @@ function RegisterPropertyEntranceTargets(p)
                                     EnterShellProperty(id)
                                 end
                             },
-                            --[[{
+                            --[[ Idk what i should do ... {
                                 label = 'Pay Rent / Debt',
                                 icon = 'fas fa-dollar-sign',
                                 canInteract = function()
@@ -923,10 +923,8 @@ function InitializeHousing()
             local shellName = p.metadata.shell or 'Standard Motel'
             local doorCoords = GetEntranceCoords(p)
             local shellCoords = vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0)
-
-            -- Instantly spawn the shell, load furniture, and enter the routing bucket.
-            -- This bypasses the ox_lib zone thread's latency for the initial spawn.
             local shellEntity, spawnCoords, heading = SpawnShellForProperty(currentPropId, shellName, shellCoords)
+            
             TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', currentPropId)
             LoadFurnitures(currentPropId)
 

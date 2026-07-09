@@ -1,30 +1,20 @@
 local Settings = lib.load('shared.settings')
 local SvSettings = lib.load('shared.sv_settings')
 
+exports('GetSvSettings', function()
+    return SvSettings
+end)
+
 function GetRealEstatePermission(source)
     return CheckPermission(source, 'realestate')
 end
 
-lib.callback.register('LNS_Housing:server:uploadPhoto', function(source)
+lib.callback.register('LNS_Housing:server:uploadPhoto', function(source, base64Data)
     local promise = promise.new()
     
-    exports.screencapture:remoteUpload(source, SvSettings.ImageUpload.Url, {
-        encoding = 'png',
-        formField = 'file',
-        headers = { ['Authorization'] = SvSettings.ImageUpload.Token }
-    }, function(response)
-        local resp = response
-        if type(resp) == 'string' then
-            resp = json.decode(resp)
-        end
-        
-        if resp and resp.data and resp.data.url then
-            promise:resolve(resp.data.url)
-        else
-            print('^1[LNS_Housing]^0 Photo upload failed: ' .. json.encode(response) .. '^7')
-            promise:resolve(nil)
-        end
-    end, 'blob')
+    TriggerEvent('LNS_Housing:server:uploadPropertyPhotoJS', base64Data, function(url)
+        promise:resolve(url)
+    end)
     
     return Citizen.Await(promise)
 end)
@@ -142,14 +132,12 @@ RegisterNetEvent('LNS_Housing:server:placeBid', function(data)
         return
     end
 
-    -- Deduct bid amount immediately to lock funds
     local removed = Bridge.Server.RemoveBankMoney(src, amount, "Auction Bid: " .. p.label)
     if not removed then
         Bridge.Server.Notify(src, 'Failed to process bid transaction.', 'error')
         return
     end
 
-    -- Refund the previous highest bidder
     local prevBidder = p.auction_data.highest_bidder
     local prevAmount = p.auction_data.current_bid
     if prevBidder and prevAmount > 0 then
@@ -193,7 +181,6 @@ RegisterNetEvent('LNS_Housing:server:controlAuction', function(data)
             local amount = p.auction_data.current_bid
             local bidder = Bridge.Server.IsPlayerOnline(bidderId)
 
-            -- Funds were already collected on bid placement; process the sale directly
             ProcessPropertySalePayout(propertyId, amount)
 
             p.owner = bidderId

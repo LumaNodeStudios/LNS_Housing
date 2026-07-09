@@ -145,7 +145,7 @@ RegisterNetEvent('LNS_Housing:server:lockpickSuccess', function(propertyId, type
             if not TemporaryAccess.doors[propertyId] then TemporaryAccess.doors[propertyId] = {} end
             TemporaryAccess.doors[propertyId][identifier] = true
 
-            FailedAttempts[propertyId] = 0 -- Reset failed attempts on success
+            FailedAttempts[propertyId] = 0
 
             local isShell = p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo'
             if isShell then
@@ -174,7 +174,6 @@ RegisterNetEvent('LNS_Housing:server:lockpickSuccess', function(propertyId, type
             end)
         end
     else
-        -- Apartment lockpicking success
         if CheckPermission(src, 'apartment', propertyId, type == 'stash' and 'storage' or 'entry') then
             return
         end
@@ -186,7 +185,7 @@ RegisterNetEvent('LNS_Housing:server:lockpickSuccess', function(propertyId, type
             if GetApartmentDoorId then
                 local doorId = GetApartmentDoorId(propertyId)
                 if doorId then
-                    exports.ox_doorlock:setDoorState(doorId, 0) -- Unlock door lock on success
+                    exports.ox_doorlock:setDoorState(doorId, 0)
                 end
             end
 
@@ -326,7 +325,6 @@ CreateThread(function()
                     local gracePeriod = rentConf.GracePeriod or 259200
                     local timeSincePaid = now - lastPaid
 
-                    -- If a new billing cycle has reached
                     if timeSincePaid > rentPeriod then
                         local rentAmount = p.metadata.rent_amount or p.price or 1000
                         local autoPayEnabled = p.metadata.auto_pay ~= false
@@ -399,12 +397,11 @@ CreateThread(function()
                         TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
                     end
 
-                    -- Evaluate notifications / lockouts / evictions based on the current state
                     if p.metadata.due_by then
                         local timeSinceDue = now - p.metadata.due_by
 
                         if now > p.metadata.due_by then
-                            SyncPropertyDoor(id) -- Lockout doors
+                            SyncPropertyDoor(id)
 
                             local retrievalPeriod = rentConf.RetrievalPeriod or 604800
                             local maxMissed = rentConf.MaxMissedPayments or 3
@@ -573,13 +570,13 @@ RegisterNetEvent('LNS_Housing:server:lockpickFailed', function(propertyId)
     end
 
     local securityLevel = p.metadata and p.metadata.security_level or 0
-    if securityLevel == 0 then return end -- No security, no alarm
+    if securityLevel == 0 then return end
 
     FailedAttempts[propertyId] = (FailedAttempts[propertyId] or 0) + 1
 
     local threshold = Settings.Security.AlarmFailThreshold and Settings.Security.AlarmFailThreshold[securityLevel] or 3
     if FailedAttempts[propertyId] >= threshold then
-        FailedAttempts[propertyId] = 0 -- Reset counter
+        FailedAttempts[propertyId] = 0
         TriggerHouseAlarm(propertyId)
     end
 end)
@@ -616,7 +613,6 @@ exports('GiveKey', function(propertyId, targetIdentifier)
     end
     if not p.permissions.entry then p.permissions.entry = {} end
 
-    -- Check if already has key
     for _, cid in ipairs(p.permissions.entry) do
         if cid == targetIdentifier then
             return true

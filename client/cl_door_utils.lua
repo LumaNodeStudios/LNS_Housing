@@ -58,7 +58,6 @@ function GetDoorInteractionPoint(model, coords, heading)
         return resCoords, resHeading
     end
 
-    -- Mathematical offset translation fallback when entity is not loaded/spawned
     local rad = math.rad(-(heading or 0.0))
     local cosRad = math.cos(rad)
     local sinRad = math.sin(rad)
