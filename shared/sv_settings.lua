@@ -4,7 +4,7 @@ return {
         -- 'local', (Not Recommended)
         -- 'fivemanage', (Recommended)
         -- 'r2', (Cloudflare - Recommended)
-        Type = 'r2',
+        Type = 'fivemanage',
         
         -- Fivemanage Configuration
         Fivemanage = {

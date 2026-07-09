@@ -1,6 +1,11 @@
 local Settings = lib.load('shared.settings')
 local Furniture = lib.load('shared.furniture')
 local isCapturing = false
+local currentProcessedModel = nil
+
+RegisterNetEvent('LNS_Housing:client:screenshotProcessed', function(model)
+    currentProcessedModel = model
+end)
 
 local function LoadModel(modelHash)
     if not IsModelInCdimage(modelHash) or not IsModelValid(modelHash) then
@@ -172,12 +177,17 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
             end
 
             if base64 and base64 ~= '' then
+                currentProcessedModel = nil
                 TriggerLatentServerEvent('LNS_Housing:server:processScreenshot', 800000, {
                     model = item.model,
                     imageData = base64
                 })
-            else
 
+                local serverTimeout = GetGameTimer() + 15000
+                while currentProcessedModel ~= item.model and isCapturing and GetGameTimer() < serverTimeout do
+                    Wait(100)
+                end
+            else
                 print('^1[LNS_Housing]^0 Failed to screenshot model: ' .. item.model)
             end
 

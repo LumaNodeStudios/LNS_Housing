@@ -15,36 +15,11 @@ try {
     console.log('^1[LNS_Housing]^0 Output dir error: ' + err.message);
 }
 
-const MAPPING_PATH = path.resolve(path.join(RES_PATH, 'server/furniture_images.json'));
 let imageMappings = {};
-
-function loadMappings() {
-    try {
-        if (fs.existsSync(MAPPING_PATH)) {
-            const content = fs.readFileSync(MAPPING_PATH, 'utf8');
-            if (content.trim()) {
-                imageMappings = JSON.parse(content);
-            }
-        }
-    } catch (err) {
-        console.log('^1[LNS_Housing]^0 Error loading furniture_images.json: ' + err.message);
-    }
-}
-
-function saveMappingsFile() {
-    try {
-        fs.writeFileSync(MAPPING_PATH, JSON.stringify(imageMappings, null, 2), 'utf8');
-    } catch (err) {
-        console.log('^1[LNS_Housing]^0 Error saving furniture_images.json: ' + err.message);
-    }
-}
 
 function saveMapping(model, url) {
     imageMappings[model] = url;
-    saveMappingsFile();
 }
-
-loadMappings();
 
 global.exports('GetImageMappings', () => {
     return imageMappings;
@@ -125,8 +100,7 @@ function checkPermission(src) {
     return false;
 }
 
-function removeChromaKey(pngBuffer, mode) {
-    const png = PNG.sync.read(pngBuffer);
+function removeChromaKeyInPlace(png, mode) {
     const d = png.data;
     const w = png.width, h = png.height;
     let removed = 0;
@@ -199,12 +173,15 @@ function removeChromaKey(pngBuffer, mode) {
     }
 
     console.log('^2[LNS_Housing]^0 Chroma key (' + mode + '): ' + removed + '/' + totalPx + ' pixels removed');
-    return PNG.sync.write(png, { colorType: 6 });
 }
 
-function resizePNG(pngBuffer, targetW, targetH) {
-    const src = PNG.sync.read(pngBuffer);
-    if (src.width === targetW && src.height === targetH) return pngBuffer;
+function resizePNGObject(src, targetW, targetH) {
+    if (src.width === targetW && src.height === targetH) {
+        if (src instanceof PNG) return src;
+        const dst = new PNG({ width: targetW, height: targetH });
+        dst.data.set(src.data);
+        return dst;
+    }
 
     const srcAspect = src.width / src.height;
     const dstAspect = targetW / targetH;
@@ -278,7 +255,7 @@ function resizePNG(pngBuffer, targetW, targetH) {
         }
     }
 
-    return PNG.sync.write(dst, { colorType: 6 });
+    return dst;
 }
 
 onNet('LNS_Housing:server:processScreenshot', async (payload) => {
@@ -292,16 +269,16 @@ onNet('LNS_Housing:server:processScreenshot', async (payload) => {
     const modelName = typeof payload.model === 'string' ? payload.model : '';
     const imageData = payload.imageData;
 
-    if (!modelName || modelName.includes('..') || modelName.includes('/') || modelName.includes('\\')) {
-        console.log('^1[LNS_Housing]^0 Refused capture: invalid model name: ' + modelName);
-        return;
-    }
-    if (typeof imageData !== 'string' || imageData.length === 0) {
-        console.log('^1[LNS_Housing]^0 Refused capture: empty image data for ' + modelName);
-        return;
-    }
-
     try {
+        if (!modelName || modelName.includes('..') || modelName.includes('/') || modelName.includes('\\')) {
+            console.log('^1[LNS_Housing]^0 Refused capture: invalid model name: ' + modelName);
+            return;
+        }
+        if (typeof imageData !== 'string' || imageData.length === 0) {
+            console.log('^1[LNS_Housing]^0 Refused capture: empty image data for ' + modelName);
+            return;
+        }
+
         let outputData = Buffer.from(stripDataUri(imageData), 'base64');
         if (!outputData || outputData.length === 0) {
             console.log('^1[LNS_Housing]^0 Refused capture: invalid base64 for ' + modelName);
@@ -309,15 +286,19 @@ onNet('LNS_Housing:server:processScreenshot', async (payload) => {
         }
 
         try {
-            outputData = removeChromaKey(outputData, 'green');
-        } catch (e) {
-            console.log('^3[LNS_Housing]^0 Chroma key failed: ' + e.message);
-        }
+            // Decode once
+            const img = PNG.sync.read(outputData);
 
-        try {
-            outputData = resizePNG(outputData, 256, 256);
+            // Chroma key on raw pixel data
+            removeChromaKeyInPlace(img, 'green');
+
+            // Resize raw pixel data
+            const resizedImg = resizePNGObject(img, 256, 256);
+
+            // Encode once
+            outputData = PNG.sync.write(resizedImg, { colorType: 6 });
         } catch (e) {
-            console.log('^3[LNS_Housing]^0 Resize failed: ' + e.message);
+            console.log('^3[LNS_Housing]^0 Image processing failed: ' + e.message);
         }
 
         let SvSettings = {};
@@ -342,7 +323,6 @@ onNet('LNS_Housing:server:processScreenshot', async (payload) => {
 
             if (imageMappings[modelName]) {
                 delete imageMappings[modelName];
-                saveMappingsFile();
             }
         } else if (storageType === 'fivemanage') {
             const config = storage.Fivemanage || {};
@@ -377,6 +357,8 @@ onNet('LNS_Housing:server:processScreenshot', async (payload) => {
         }
     } catch (err) {
         console.log('^1[LNS_Housing]^0 Process error: ' + (err && err.message ? err.message : err));
+    } finally {
+        TriggerClientEvent('LNS_Housing:client:screenshotProcessed', src, modelName);
     }
 });
 
