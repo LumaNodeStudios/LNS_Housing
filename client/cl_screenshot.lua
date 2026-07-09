@@ -80,18 +80,36 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
     SetEntityVisible(ped, false, false)
     SetEntityCoordsNoOffset(ped, 0.0, 0.0, -150.0, false, false, false)
 
+    if targetModel and targetModel ~= "" then
+        targetModel = string.lower(targetModel:gsub("%s+", ""))
+    else
+        targetModel = nil
+    end
+
     local itemsToCapture = {}
     local seenModels = {}
     for _, category in ipairs(Furniture) do
         for _, item in ipairs(category.items) do
             if item.model and item.model ~= "" then
-                if not targetModel or item.model == targetModel then
-                    if not seenModels[item.model] then
-                        seenModels[item.model] = true
+                local itemModelLower = string.lower(item.model)
+                if not targetModel or itemModelLower == targetModel then
+                    if not seenModels[itemModelLower] then
+                        seenModels[itemModelLower] = true
                         table.insert(itemsToCapture, item)
                     end
                 end
             end
+        end
+    end
+
+    if #itemsToCapture == 0 and targetModel then
+        local hash = tonumber(targetModel) or GetHashKey(targetModel)
+        if IsModelInCdimage(hash) and IsModelValid(hash) then
+            table.insert(itemsToCapture, {
+                model = targetModel,
+                label = targetModel,
+                price = 0
+            })
         end
     end
 
@@ -231,15 +249,4 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
     if not wasCancelled then
         Bridge.Client.Notify('Finished screenshot session. Check web/dist/assets/furniture/ for images.', 'success')
     end
-end)
-
-RegisterCommand('takeshots', function(source, args, raw)
-    local hasPermission = lib.callback.await('LNS_Housing:server:checkPermission', false, 'screenshot')
-    if not hasPermission then
-        Bridge.Client.Notify('You do not have permission to use this command.', 'error')
-        return
-    end
-
-    local modelName = args[1]
-    TriggerEvent('LNS_Housing:client:startScreenshots', modelName)
-end, false)
+end)-- Command and suggestion are handled on the server using lib.addCommand
