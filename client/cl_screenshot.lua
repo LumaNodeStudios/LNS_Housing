@@ -2,9 +2,15 @@ local Settings = lib.load('shared.settings')
 local Furniture = lib.load('shared.furniture')
 local isCapturing = false
 local currentProcessedModel = nil
+local activeUploads = {}
+local activeUploadCount = 0
 
 RegisterNetEvent('LNS_Housing:client:screenshotProcessed', function(model)
     currentProcessedModel = model
+    if activeUploads[model] then
+        activeUploads[model] = nil
+        activeUploadCount = math.max(0, activeUploadCount - 1)
+    end
 end)
 
 local function LoadModel(modelHash)
@@ -124,6 +130,8 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
     end
 
     isCapturing = true
+    activeUploads = {}
+    activeUploadCount = 0
 
     SendNUIMessage({
         action = 'startScreenshots',
@@ -154,6 +162,9 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
             Wait(0)
         end
     end)
+
+    local cam = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
+    RenderScriptCams(true, false, 0, true, true)
 
     for index, item in ipairs(itemsToCapture) do
         if not isCapturing then break end
@@ -188,13 +199,12 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
             local camX = lookAt.x + dist * math.cos(angleV) * math.sin(angleH)
             local camY = lookAt.y - dist * math.cos(angleV) * math.cos(angleH)
             local camZ = lookAt.z + dist * math.sin(angleV)
-            local cam = CreateCamWithParams('DEFAULT_SCRIPTED_CAMERA', camX, camY, camZ, 0.0, 0.0, 0.0, 35.0, false, 0)
 
+            SetCamCoord(cam, camX, camY, camZ)
             PointCamAtCoord(cam, lookAt.x, lookAt.y, lookAt.z)
-            SetCamActive(cam, true)
-            RenderScriptCams(true, false, 0, true, true)
+            SetCamFov(cam, 35.0)
 
-            Wait(800)
+            Wait(250)
 
             local done = false
             local base64 = nil
@@ -209,27 +219,28 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
             end
 
             if base64 and base64 ~= '' then
-                currentProcessedModel = nil
+                activeUploads[item.model] = true
+                activeUploadCount = activeUploadCount + 1
+
                 TriggerLatentServerEvent('LNS_Housing:server:processScreenshot', 800000, {
                     model = item.model,
                     imageData = base64
                 })
 
-                local serverTimeout = GetGameTimer() + 15000
-                while currentProcessedModel ~= item.model and isCapturing and GetGameTimer() < serverTimeout do
-                    Wait(100)
+                local maxActiveUploads = 4
+                local uploadTimeout = GetGameTimer() + 20000
+                while activeUploadCount >= maxActiveUploads and isCapturing and GetGameTimer() < uploadTimeout do
+                    Wait(50)
                 end
             else
                 print('^1[LNS_Housing]^0 Failed to screenshot model: ' .. item.model)
             end
 
-            DestroyCam(cam, false)
-            RenderScriptCams(false, false, 0, true, true)
             DeleteEntity(obj)
         else
             print('^1[LNS_Housing]^0 Model load timeout: ' .. item.model)
         end
-        Wait(200)
+        Wait(50)
     end
 
     drawingGreenScreen = false
@@ -240,11 +251,19 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
     })
     Wait(500)
 
+    RenderScriptCams(false, false, 0, true, true)
+    if cam and DoesCamExist(cam) then
+        DestroyCam(cam, false)
+    end
+
     TriggerServerEvent('LNS_Housing:server:resetScreenshotBucket')
     SetEntityCoords(ped, originalCoords.x, originalCoords.y, originalCoords.z, false, false, false, false)
     SetEntityHeading(ped, originalHeading)
     FreezeEntityPosition(ped, false)
     SetEntityVisible(ped, true, false)
+
+    activeUploads = {}
+    activeUploadCount = 0
 
     if not wasCancelled then
         Bridge.Client.Notify('Finished screenshot session.', 'success')
