@@ -202,10 +202,9 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
     };
 
     const handlePickTablet = () => {
-        setIsPlacingTablet(true);
-        setFreecamMode(false);
-
         if (!window.GetParentResourceName) {
+            setIsPlacingTablet(true);
+            setFreecamMode(false);
             setTimeout(() => {
                 window.dispatchEvent(new MessageEvent('message', {
                     data: {
@@ -232,10 +231,6 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                 if (data) {
                     setTabletData(data);
                 }
-                setIsPlacingTablet(false);
-            })
-            .catch(() => {
-                setIsPlacingTablet(false);
             });
     };
 

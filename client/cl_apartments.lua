@@ -887,20 +887,25 @@ local function FreecamModeTablet(bool)
 end
 
 local function PlaceDefaultTablet()
+    SendNUIMessage({ action = 'toggleVisibility', data = { visible = false } })
+    SetNuiFocus(false, false)
+
     local model = `reh_prop_reh_tablet_01a`
     lib.requestModel(model)
     
-    Freecam:SetActive(true)
-    Freecam:SetKeyboardSetting('BASE_MOVE_MULTIPLIER', 0.1)
-    Freecam:SetKeyboardSetting('FAST_MOVE_MULTIPLIER', 2)
-    Freecam:SetKeyboardSetting('SLOW_MOVE_MULTIPLIER', 2)
-    Freecam:SetFov(45.0)
-    Freecam:SetFrozen(true)
+    local ped = cache.ped
+    local playerCoords = GetEntityCoords(ped)
+    local playerHeading = GetEntityHeading(ped)
+    local yawRad = math.rad(playerHeading)
+    local forwardX = -math.sin(yawRad)
+    local forwardY = math.cos(yawRad)
+    local initialPos = vector3(playerCoords.x + forwardX * 2.0, playerCoords.y + forwardY * 2.0, playerCoords.z + 0.5)
+    local rotX = 0.0
+    local rotY = -90.0
+    local camRot = GetGameplayCamRot(2)
+    local rotZ = (camRot.z + 90.0) % 360.0
+    local spawnedObj = CreateObjectNoOffset(model, initialPos.x, initialPos.y, initialPos.z, false, false, false)
     
-    local camPos = Freecam:GetPosition()
-    local camTarget = Freecam:GetTarget(5.0)
-    
-    local spawnedObj = CreateObjectNoOffset(model, camTarget.x, camTarget.y, camTarget.z, false, false, false)
     SetEntityCollision(spawnedObj, false, false)
     SetEntityAlpha(spawnedObj, 200, false)
     SetEntityDrawOutline(spawnedObj, true)
@@ -911,75 +916,64 @@ local function PlaceDefaultTablet()
     TabletPlacement.Object = spawnedObj
     TabletPlacement.IsFreecamMode = false
     TabletPlacement.Result = nil
+
+    local tabletPos = initialPos
     
-    SendNUIMessage({
-        action = "setupModel",
-        data = {
-            objectPosition = camTarget,
-            objectRotation = GetEntityRotation(spawnedObj, 2),
-            cameraPosition = camPos,
-            cameraLookAt = camTarget,
-            cameraFov = GetGameplayCamFov(),
-            entity = spawnedObj
-        }
-    })
-    
-    CreateThread(function()
-        local lastCamPos = nil
-        local lastCamTarget = nil
-        
-        while TabletPlacement.Active do
-            local currentCamPos = Freecam:GetPosition()
-            local currentCamTarget = Freecam:GetTarget(5.0)
-            
-            if not lastCamPos or #(lastCamPos - currentCamPos) > 0.001 or #(lastCamTarget - currentCamTarget) > 0.001 then
-                lastCamPos = currentCamPos
-                lastCamTarget = currentCamTarget
-                
-                SendNUIMessage({
-                    action = "updateCamera",
-                    data = {
-                        cameraPosition = currentCamPos,
-                        cameraLookAt = currentCamTarget,
-                        cameraFov = GetGameplayCamFov()
-                    }
-                })
-            end
-            Wait(33)
-        end
-    end)
-    
-    CreateThread(function()
-        while TabletPlacement.Active do
-            local sleep = 500
-            DisableControlAction(0, 19, true)
-            if not IsNuiFocused() then
-                sleep = 0
-                if IsDisabledControlJustReleased(0, 19) then
-                    FreecamModeTablet(false)
-                end
-                
-                if TabletPlacement.IsFreecamMode then
-                    DisableControlAction(0, 177, true)
-                    if IsDisabledControlJustReleased(0, 177) then
-                        FreecamModeTablet(false)
-                    end
-                end
-            end
-            Wait(sleep)
-        end
-    end)
+    lib.showTextUI('[Scroll] Rotate Left/Right\n[E] Confirm | [H] Cancel')
     
     while TabletPlacement.Active do
-        Wait(100)
+        Wait(0)
+        
+        -- Disable controls
+        DisableControlAction(0, 172, true) -- Arrow Up
+        DisableControlAction(0, 173, true) -- Arrow Down
+        DisableControlAction(0, 174, true) -- Arrow Left
+        DisableControlAction(0, 175, true) -- Arrow Right
+        DisableControlAction(0, 38, true)  -- E (Confirm)
+        DisableControlAction(0, 104, true) -- H (Cancel)
+        DisableControlAction(0, 74, true)  -- H (Cancel alternative)
+        DisableControlAction(0, 241, true) -- Scroll Up
+        DisableControlAction(0, 242, true) -- Scroll Down
+
+        local hit, entityHit, coords, surfaceNormal = lib.raycast.cam(-1, spawnedObj, 15.0)
+        if hit then
+            tabletPos = coords + (surfaceNormal * 0.02)
+        else
+            local camCoords = GetGameplayCamCoord()
+            local cRot = GetGameplayCamRot(2)
+            local pitch = math.rad(cRot.x)
+            local yaw = math.rad(cRot.z)
+            local num = math.abs(math.cos(pitch))
+            local dir = vector3(-math.sin(yaw) * num, math.cos(yaw) * num, math.sin(pitch))
+            tabletPos = camCoords + dir * 5.0
+        end
+
+        if IsDisabledControlPressed(0, 241) then -- Scroll Up
+            rotZ = (rotZ + 3.0) % 360.0
+        elseif IsDisabledControlPressed(0, 242) then -- Scroll Down
+            rotZ = (rotZ - 3.0) % 360.0
+        end
+        
+        SetEntityCoords(spawnedObj, tabletPos.x, tabletPos.y, tabletPos.z, false, false, false, false)
+        SetEntityRotation(spawnedObj, rotX, rotY, rotZ, 2, true)
+        
+        if IsDisabledControlJustPressed(0, 38) or IsDisabledControlJustReleased(0, 38) then -- E
+            TabletPlacement.Result = {
+                position = { x = tabletPos.x, y = tabletPos.y, z = tabletPos.z },
+                rotation = { x = rotX, y = rotY, z = rotZ }
+            }
+            TabletPlacement.Active = false
+        elseif IsDisabledControlJustPressed(0, 104) or IsDisabledControlJustReleased(0, 104) or IsDisabledControlJustPressed(0, 74) or IsDisabledControlJustReleased(0, 74) then -- H
+            TabletPlacement.Result = nil
+            TabletPlacement.Active = false
+        end
     end
     
+    lib.hideTextUI()
     DeleteEntity(spawnedObj)
-    Freecam:SetFrozen(false)
-    Freecam:SetActive(false)
-    Freecam:SetKeyboardSetting('BASE_MOVE_MULTIPLIER', 5)
-    Freecam:SetKeyboardSetting('FAST_MOVE_MULTIPLIER', 10)
-    Freecam:SetKeyboardSetting('SLOW_MOVE_MULTIPLIER', 10)
+    
+    SendNUIMessage({ action = 'toggleVisibility', data = { visible = true } })
+    SetNuiFocus(true, true)
     
     local finalResult = TabletPlacement.Result
     TabletPlacement.Object = nil
