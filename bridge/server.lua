@@ -242,6 +242,14 @@ local function handleSocietyMoney(job, amount, action)
         elseif action == 'get' then
             return exports['Renewed-Banking']:getAccountMoney(job) or 0
         end
+    elseif GetResourceState('oneclub_banking') == 'started' then
+        if action == 'add' then
+            exports.oneclub_banking:PayIntoSocietyFund(job, amount)
+        elseif action == 'remove' then
+            exports.oneclub_banking:RemoveFromSocietyFund(job, amount)
+        elseif action == 'get' then
+            -- Idk yet
+        end
     elseif Bridge.Framework == 'esx' then
         local val = 0
         TriggerEvent('esx_addonaccount:getSharedAccount', 'society_' .. job, function(account)

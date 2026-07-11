@@ -15,22 +15,56 @@ try {
     console.log('^1[LNS_Housing]^0 Output dir error: ' + err.message);
 }
 
-let imageMappings = {};
+const KVP_PREFIX = 'furniture_img_';
+
+// In-memory cache — built once at startup, updated on each new upload.
+const imageMappings = {};
+
+// Seed cache from KVP (CDN URLs) and local folder (local storage type).
+try {
+    let handle = StartFindKvp(KVP_PREFIX);
+    if (handle !== -1) {
+        let key;
+        while ((key = FindKvp(handle)) !== null) {
+            const url = GetResourceKvpString(key);
+            if (url) imageMappings[key.slice(KVP_PREFIX.length)] = url;
+        }
+        EndFindKvp(handle);
+    }
+} catch (err) {
+    console.log('^3[LNS_Housing]^0 Could not read KVP image mappings: ' + err.message);
+}
+try {
+    if (fs.existsSync(OUTPUT_DIR)) {
+        for (const file of fs.readdirSync(OUTPUT_DIR)) {
+            if (file.endsWith('.png')) {
+                const modelName = file.slice(0, -4);
+                if (!imageMappings[modelName]) {
+                    imageMappings[modelName] = `nui://${RESOURCE}/web/dist/assets/furniture/${file}`;
+                }
+            }
+        }
+    }
+} catch (err) {
+    console.log('^3[LNS_Housing]^0 Could not scan local furniture images: ' + err.message);
+}
+console.log(`^2[LNS_Housing]^0 Loaded ${Object.keys(imageMappings).length} furniture image mapping(s).`);
 
 function saveMapping(model, url) {
     imageMappings[model] = url;
+    try { SetResourceKvp(KVP_PREFIX + model, url); } catch (_) {}
 }
 
-global.exports('GetImageMappings', () => {
-    return imageMappings;
-});
+global.exports('GetImageMappings', () => imageMappings);
 
-async function uploadToFivemanage(buffer, filename, token, url = 'https://api.fivemanage.com/api/v3/file') {
+async function uploadToFivemanage(buffer, filename, token, url = 'https://api.fivemanage.com/api/v3/file', folder = null) {
     const form = new FormData();
     form.append('file', buffer, {
         filename: filename,
         contentType: 'image/png',
     });
+    form.append('filename', filename);
+    if (folder) form.append('path', folder);
 
     const response = await axios.post(url, form, {
         headers: {
@@ -321,9 +355,9 @@ onNet('LNS_Housing:server:processScreenshot', async (payload) => {
             fs.writeFileSync(outputPath, outputData);
             console.log('^2[LNS_Housing]^0 Saved transparent furniture screenshot locally: ' + modelName + '.png (' + Math.round(outputData.length / 1024) + ' KB)');
 
-            if (imageMappings[modelName]) {
-                delete imageMappings[modelName];
-            }
+            // Update cache and remove any stale CDN entry for this model.
+            imageMappings[modelName] = `nui://${RESOURCE}/web/dist/assets/furniture/${modelName}.png`;
+            try { DeleteResourceKvp(KVP_PREFIX + modelName); } catch (_) {}
         } else if (storageType === 'fivemanage') {
             const config = storage.Fivemanage || {};
             if (!config.Token) {
@@ -332,7 +366,7 @@ onNet('LNS_Housing:server:processScreenshot', async (payload) => {
             }
             console.log(`^3[LNS_Housing]^0 Uploading ${modelName}.png to Fivemanage...`);
             try {
-                const url = await uploadToFivemanage(outputData, `${modelName}.png`, config.Token, config.Url);
+                const url = await uploadToFivemanage(outputData, `${modelName}.png`, config.Token, config.Url, config.Folder || null);
                 saveMapping(modelName, url);
                 console.log(`^2[LNS_Housing]^0 Uploaded successfully to Fivemanage: ${modelName} -> ${url}`);
             } catch (err) {
