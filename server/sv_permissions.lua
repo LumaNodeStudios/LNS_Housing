@@ -221,10 +221,23 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
         local citizenid = Bridge.Server.GetIdentifier(source)
         if not citizenid then return false end
 
+        local license = GetPlayerIdentifierByType(source, 'license2')
+        if not license or license == '' then
+            license = GetPlayerIdentifierByType(source, 'license')
+        end
+
+        local isOwner = false
+        if license then
+            local checkOwner = MySQL.single.await('SELECT room_id FROM player_apartments WHERE license = ?', {license})
+            if checkOwner and checkOwner.room_id == roomId then
+                isOwner = true
+            end
+        end
+
         if accessType == 'lockpick' then
+            if isOwner then return false end
             local result = MySQL.single.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ?', {roomId})
             if not result then return false end
-            if result.citizenid == citizenid then return false end
             local permissions = json.decode(result.permissions or '{"entry":[], "storage":[], "wardrobe":[], "manage":[]}')
             if permissions['entry'] then
                 for _, cid in ipairs(permissions['entry']) do
@@ -235,9 +248,9 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
         end
 
         if accessType == 'lockpickStash' then
+            if isOwner then return false end
             local result = MySQL.single.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ?', {roomId})
             if not result then return false end
-            if result.citizenid == citizenid then return false end
             local permissions = json.decode(result.permissions or '{"entry":[], "storage":[], "wardrobe":[], "manage":[]}')
             if permissions['storage'] then
                 for _, cid in ipairs(permissions['storage']) do
@@ -259,7 +272,7 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
             end
         end
 
-        local result = MySQL.single.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ?', {roomId})
+        local result = MySQL.single.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
         if result then
             if result.citizenid == citizenid then return true end
             

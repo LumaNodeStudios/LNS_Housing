@@ -200,17 +200,23 @@ MySQL.ready(function()
         MySQL.query.await([[
             CREATE TABLE IF NOT EXISTS player_apartments (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                citizenid VARCHAR(50) NOT NULL,
+                license VARCHAR(50) NOT NULL,
                 room_id INT NOT NULL,
                 is_new TINYINT(1) DEFAULT 1,
                 assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE KEY unique_citizen (citizenid)
+                UNIQUE KEY unique_license (license)
             )
         ]])
 
-        
         pcall(function()
-            MySQL.query.await("ALTER TABLE player_apartments DROP INDEX unique_license")
+            local cols = MySQL.query.await("SHOW COLUMNS FROM player_apartments LIKE 'citizenid'")
+            if cols and #cols > 0 then
+                MySQL.query.await("ALTER TABLE player_apartments CHANGE COLUMN citizenid license VARCHAR(50) NOT NULL")
+            end
+        end)
+
+        pcall(function()
+            MySQL.query.await("ALTER TABLE player_apartments DROP INDEX unique_citizen")
         end)
 
         pcall(function()
@@ -218,9 +224,29 @@ MySQL.ready(function()
         end)
 
         pcall(function()
-            local cols = MySQL.query.await("SHOW COLUMNS FROM player_apartments LIKE 'license'")
-            if cols and #cols > 0 then
-                MySQL.query.await("ALTER TABLE player_apartments CHANGE COLUMN license citizenid VARCHAR(50) NOT NULL")
+            local Framework = Bridge and Bridge.Framework or 'qbx'
+            if Framework == 'qbx' then
+                MySQL.query.await([[
+                    UPDATE player_apartments pa
+                    JOIN players p ON pa.license = p.citizenid
+                    SET pa.license = p.license
+                    WHERE pa.license NOT LIKE 'license:%'
+                ]])
+            end
+        end)
+
+        pcall(function()
+            MySQL.query.await([[
+                DELETE t1 FROM player_apartments t1
+                INNER JOIN player_apartments t2 
+                WHERE t1.id < t2.id AND t1.license = t2.license
+            ]])
+        end)
+
+        pcall(function()
+            local indexes = MySQL.query.await("SHOW INDEX FROM player_apartments WHERE Key_name = 'unique_license'")
+            if not indexes or #indexes == 0 then
+                MySQL.query.await("ALTER TABLE player_apartments ADD UNIQUE KEY unique_license (license)")
             end
         end)
 
@@ -228,13 +254,6 @@ MySQL.ready(function()
             local cols = MySQL.query.await("SHOW COLUMNS FROM player_apartments LIKE 'is_new'")
             if not cols or #cols == 0 then
                 MySQL.query.await("ALTER TABLE player_apartments ADD COLUMN is_new TINYINT(1) DEFAULT 1")
-            end
-        end)
-
-        pcall(function()
-            local indexes = MySQL.query.await("SHOW INDEX FROM player_apartments WHERE Key_name = 'unique_citizen'")
-            if not indexes or #indexes == 0 then
-                MySQL.query.await("ALTER TABLE player_apartments ADD UNIQUE KEY unique_citizen (citizenid)")
             end
         end)
 
@@ -246,10 +265,18 @@ MySQL.ready(function()
                 permissions LONGTEXT DEFAULT '{"entry":[], "storage":[], "wardrobe":[], "manage":[]}',
                 furniture LONGTEXT DEFAULT '[]',
                 wall_color INT DEFAULT 0,
+                is_new TINYINT(1) DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE KEY unique_citizen_room (citizenid, room_id)
             )
         ]])
+
+        pcall(function()
+            local cols = MySQL.query.await("SHOW COLUMNS FROM apartments LIKE 'is_new'")
+            if not cols or #cols == 0 then
+                MySQL.query.await("ALTER TABLE apartments ADD COLUMN is_new TINYINT(1) DEFAULT 1")
+            end
+        end)
 
         MySQL.query.await([[
             CREATE TABLE IF NOT EXISTS apartment_rooms (

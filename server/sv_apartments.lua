@@ -121,10 +121,10 @@ CreateThread(function()
         end
     end
 
-    local result = MySQL.query.await('SELECT citizenid, room_id FROM player_apartments')
+    local result = MySQL.query.await('SELECT license, room_id FROM player_apartments')
     if result then
         for _, row in ipairs(result) do
-            playerRooms[row.citizenid] = row.room_id
+            playerRooms[row.license] = row.room_id
         end
         print('^2[Apartments] ^7Loaded ' .. #result .. ' apartments.')
     end
@@ -203,30 +203,17 @@ local function getAvailableRoom()
 end
 
 local function getPlayerRoom(src, citizenid, isNew)
-    if not citizenid then return nil end
-
-    if playerRooms[citizenid] then
-        return playerRooms[citizenid]
-    end
-
-    local result = MySQL.single.await('SELECT room_id FROM player_apartments WHERE citizenid = ?', {citizenid})
-    if result then
-        playerRooms[citizenid] = result.room_id
-        return result.room_id
-    end
-
     local license = GetPlayerLicense(src)
-    if license then
-        local resultOld = MySQL.single.await('SELECT room_id FROM player_apartments WHERE citizenid = ?', {license})
-        if resultOld then
-            pcall(function()
-                MySQL.update.await('UPDATE player_apartments SET citizenid = ? WHERE citizenid = ?', {citizenid, license})
-            end)
-            playerRooms[citizenid] = resultOld.room_id
-            playerRooms[license] = nil
-            SyncApartmentDoor(resultOld.room_id)
-            return resultOld.room_id
-        end
+    if not license then return nil end
+
+    if playerRooms[license] then
+        return playerRooms[license]
+    end
+
+    local result = MySQL.single.await('SELECT room_id FROM player_apartments WHERE license = ?', {license})
+    if result then
+        playerRooms[license] = result.room_id
+        return result.room_id
     end
 
     local room = getAvailableRoom()
@@ -234,21 +221,21 @@ local function getPlayerRoom(src, citizenid, isNew)
         local isNewChar = not not isNew
 
         local insertSuccess = pcall(function()
-            MySQL.insert.await('INSERT INTO player_apartments (citizenid, room_id, is_new) VALUES (?, ?, ?)', {
-                citizenid,
+            MySQL.insert.await('INSERT INTO player_apartments (license, room_id, is_new) VALUES (?, ?, ?)', {
+                license,
                 room.id,
                 isNewChar and 1 or 0
             })
         end)
 
         if insertSuccess then
-            playerRooms[citizenid] = room.id
+            playerRooms[license] = room.id
             SyncApartmentDoor(room.id)
             return room.id
         else
-            local r = MySQL.single.await('SELECT room_id FROM player_apartments WHERE citizenid = ?', {citizenid})
+            local r = MySQL.single.await('SELECT room_id FROM player_apartments WHERE license = ?', {license})
             if r then
-                playerRooms[citizenid] = r.room_id
+                playerRooms[license] = r.room_id
                 return r.room_id
             end
         end
@@ -328,16 +315,7 @@ lib.callback.register('LNS_Housing:server:getMyApartment', function(source)
     local citizenid = Bridge.Server.GetIdentifier(source)
     if not citizenid then return nil end
     
-    local roomId = playerRooms[citizenid]
-    if not roomId then
-        roomId = getPlayerRoom(source, citizenid, true)
-    end
-    
-    if not roomId then
-        local license = GetPlayerLicense(source)
-        roomId = license and playerRooms[license]
-    end
-    
+    local roomId = getPlayerRoom(source, citizenid, true)
     if roomId then
         local roomData = getRoomDataById(roomId)
         return { roomId = roomId, roomData = roomData }
@@ -350,30 +328,38 @@ lib.callback.register('LNS_Housing:server:claimNewCharacterSpawn', function(sour
     local citizenid = Bridge.Server.GetIdentifier(source)
     if not citizenid then return { shouldSpawn = false } end
 
-    local result = MySQL.single.await('SELECT room_id, is_new FROM player_apartments WHERE citizenid = ?', {citizenid})
+    local roomId = getPlayerRoom(source, citizenid, false)
+    if not roomId then return { shouldSpawn = false } end
+
+    local result = MySQL.single.await('SELECT is_new FROM apartments WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
     if not result then
-        local license = GetPlayerLicense(source)
-        if license then
-            result = MySQL.single.await('SELECT room_id, is_new FROM player_apartments WHERE citizenid = ?', {license})
+        local roomData = getRoomDataById(roomId)
+        local initialFurniture = {}
+        if roomData and roomData.tabletCoords then
+            table.insert(initialFurniture, {
+                id = math.random(100000, 999999),
+                model = 'reh_prop_reh_tablet_01a',
+                label = 'Property Panel',
+                position = roomData.tabletCoords.position,
+                rotation = roomData.tabletCoords.rotation,
+                category = 'prerequisites'
+            })
         end
+
+        MySQL.insert.await('INSERT INTO apartments (citizenid, room_id, permissions, furniture, wall_color, is_new) VALUES (?, ?, ?, ?, ?, ?)', {
+            citizenid,
+            roomId,
+            json.encode({entry = {}, storage = {}, wardrobe = {}, manage = {}}),
+            json.encode(initialFurniture),
+            0,
+            1
+        })
+        result = { is_new = 1 }
     end
 
     if result and result.is_new == 1 then
-        local searchId = citizenid
-        local check = MySQL.single.await('SELECT id FROM player_apartments WHERE citizenid = ?', {citizenid})
-        if not check then
-            local license = GetPlayerLicense(source)
-            if license then
-                local checkLicense = MySQL.single.await('SELECT id FROM player_apartments WHERE citizenid = ?', {license})
-                if checkLicense then
-                    searchId = license
-                end
-            end
-        end
-
-        MySQL.update.await('UPDATE player_apartments SET is_new = 0 WHERE citizenid = ?', {searchId})
+        MySQL.update.await('UPDATE apartments SET is_new = 0 WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
         
-        local roomId = result.room_id
         local roomData = getRoomDataById(roomId)
         if roomData then
             return {
