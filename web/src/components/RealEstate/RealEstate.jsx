@@ -83,6 +83,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     const [search, setSearch] = useState('');
     const [sortBy, setSortBy] = useState('none');
     const [activeTab, setActiveTab] = useState(initialTab || 'browse');
+    const [contractsTab, setContractsTab] = useState('agent');
     const [selectedProperty, setSelectedProperty] = useState(null);
     const [bidAmount, setBidAmount] = useState(0);
     const [confirmModal, setConfirmModal] = useState(null);
@@ -198,6 +199,11 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     useEffect(() => {
         if (initialTab) {
             setActiveTab(initialTab);
+            if (initialTab === 'contracts') {
+                setContractsTab('personal');
+            } else {
+                setContractsTab('agent');
+            }
         }
     }, [initialTab]);
 
@@ -839,308 +845,328 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
 
             case 'contracts':
                 return (
-                    <div className="re-contracts-wrapper">
-                        {isAgent ? (
-                            <>
-                                <div className="re-creator-col">
-                                    <form className="re-creator-card" onSubmit={handleDraftContract}>
-                                        <div className="re-creator-card-title">
-                                            <Briefcase size={14} /> Draft New Contract
-                                        </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                            <CustomSelect
-                                                icon={Home}
-                                                label="Select Property"
-                                                value={draftData.propertyId}
-                                                placeholder="-- Choose Available Property --"
-                                                options={propertyList.filter(p => !p.owner).map(p => ({
-                                                    value: p.id,
-                                                    label: `#${p.id} ${p.label} ($${(p.price || 0).toLocaleString()})`
-                                                }))}
-                                                onChange={(e) => {
-                                                    const propId = e.target.value;
-                                                    const p = properties && properties[propId];
-                                                    setDraftData(prev => ({
-                                                        ...prev,
-                                                        propertyId: propId,
-                                                        price: p ? p.price : ''
-                                                    }));
-                                                }}
-                                            />
+                    <div className="contracts-tab-container">
+                        {isAgent && (
+                            <div className="re-sub-tabs-v4">
+                                <button
+                                    type="button"
+                                    className={`sub-tab-v4 ${contractsTab === 'agent' ? 'active' : ''}`}
+                                    onClick={() => setContractsTab('agent')}
+                                >
+                                    <Briefcase size={12} /> Agent Panel
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`sub-tab-v4 ${contractsTab === 'personal' ? 'active' : ''}`}
+                                    onClick={() => setContractsTab('personal')}
+                                >
+                                    <UserCheck size={12} /> My Contracts & Leases
+                                </button>
+                            </div>
+                        )}
+                        <div className="contracts-tab-content">
+                            {(!isAgent || contractsTab === 'personal') ? (
+                                <div className="player-contracts-container">
+                                    {(() => {
+                                        const myActiveLeases = propertyList.filter(p => p.owner && p.owner === hasPermission?.citizenid && p.sale_type === 'rent');
+                                        if (myActiveLeases.length === 0) return null;
+                                        return (
+                                            <div style={{ marginBottom: '24px' }}>
+                                                <div className="section-title">
+                                                    <Home size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} /> ACTIVE LEASES
+                                                </div>
+                                                <div className="contracts-list">
+                                                    {myActiveLeases.map(p => {
+                                                        const lastPaid = p.metadata?.last_rent_paid || 0;
+                                                        const rentPeriod = 604800;
+                                                        const timeRemaining = lastPaid > 0 ? (lastPaid + rentPeriod) - Math.floor(Date.now() / 1000) : 0;
+                                                        const hoursRemaining = Math.max(0, Math.ceil(timeRemaining / 3600));
+                                                        const daysRemaining = Math.max(0, Math.ceil(hoursRemaining / 24));
+                                                        const isDelinquent = timeRemaining < -86400;
 
-                                            <CustomSelect
-                                                icon={Tag}
-                                                label="Contract Type"
-                                                value={draftData.type}
-                                                options={[
-                                                    { value: 'buy', label: 'Outright Sale' },
-                                                    { value: 'rent', label: 'Rental Lease' }
-                                                ]}
-                                                onChange={(e) => setDraftData(prev => ({ ...prev, type: e.target.value }))}
-                                            />
+                                                        return (
+                                                            <motion.div
+                                                                key={p.id}
+                                                                className={`contract-card rental-lease-card ${isDelinquent ? 'delinquent' : ''}`}
+                                                                initial={{ opacity: 0, scale: 0.98 }}
+                                                                animate={{ opacity: 1, scale: 1 }}
+                                                            >
+                                                                <div className="contract-card-image">
+                                                                    {p.image ? (
+                                                                        <img src={p.image} alt={p.label} />
+                                                                    ) : (
+                                                                        <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                                            <Building size={32} opacity={0.15} />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="contract-card-details">
+                                                                    <div className="contract-title-row">
+                                                                        <h3>{p.label}</h3>
+                                                                        <span className={`contract-badge rent ${isDelinquent ? 'delinquent' : ''}`}>
+                                                                            {isDelinquent ? 'RENT OVERDUE' : 'ACTIVE LEASE'}
+                                                                        </span>
+                                                                    </div>
+                                                                    <p className="contract-meta">
+                                                                        Property ID: <strong>#{p.id}</strong> | Cycle: <strong>7 Days</strong>
+                                                                    </p>
+                                                                    <div style={{ display: 'flex', gap: '16px', marginTop: '6px' }}>
+                                                                        <div className="financial-box">
+                                                                            <span className="fin-label">Rent Amount</span>
+                                                                            <span className="fin-val" style={{ fontSize: '13.5px' }}>${(p.price || 0).toLocaleString()}</span>
+                                                                        </div>
+                                                                        <div className="financial-box">
+                                                                            <span className="fin-label">Time Remaining</span>
+                                                                            <span className="fin-val" style={{ fontSize: '13.5px', color: isDelinquent ? 'var(--danger)' : (daysRemaining <= 1 ? 'var(--warning)' : 'var(--primary)') }}>
+                                                                                {isDelinquent ? 'Overdue lockout' : (lastPaid > 0 ? (daysRemaining > 1 ? `${daysRemaining} days` : `${hoursRemaining} hours`) : 'Pending')}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="contract-actions">
+                                                                        <button className="decline-btn" onClick={() => handleTerminateOwnLease(p.id)}>
+                                                                            TERMINATE LEASE
+                                                                        </button>
+                                                                        <button className="accept-btn" onClick={() => {
+                                                                            if (!window.GetParentResourceName) {
+                                                                                alert('Rent paid locally!');
+                                                                                return;
+                                                                            }
+                                                                            fetch(`https://${window.GetParentResourceName()}/payRent`, {
+                                                                                method: 'POST',
+                                                                                body: JSON.stringify({ propertyId: p.id })
+                                                                            });
+                                                                        }}>
+                                                                            PAY RENT
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </motion.div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
 
-                                            <CustomSelect
-                                                icon={UserCheck}
-                                                label="Select Client (Nearby)"
-                                                value={selectedNearbyPlayer}
-                                                placeholder="-- Select Online Player --"
-                                                options={nearbyPlayers.map(p => ({
-                                                    value: p.id,
-                                                    label: `${p.name} (ID: ${p.id})`
-                                                }))}
-                                                onChange={(e) => {
-                                                    setSelectedNearbyPlayer(e.target.value);
-                                                    if (e.target.value) setManualPlayerId('');
-                                                }}
-                                            />
-
-                                            <div className="re-creator-input-field">
-                                                <label><UserPlus size={12} /> Or Enter Client Server ID</label>
-                                                <input
-                                                    type="number"
-                                                    placeholder="Manual Player ID"
-                                                    value={manualPlayerId}
+                                    <div className="section-title">
+                                        <FileText size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} /> PENDING LEASES & OFFERS
+                                    </div>
+                                    <div className="contracts-list">
+                                        {pendingContracts.map(c => (
+                                            <motion.div
+                                                key={c.id}
+                                                className="contract-card"
+                                                initial={{ opacity: 0, scale: 0.95 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                            >
+                                                <div className="contract-card-image">
+                                                    {c.property_image ? (
+                                                        <img src={c.property_image} alt={c.property_label} />
+                                                    ) : (
+                                                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                            <Building size={32} opacity={0.15} />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="contract-card-details">
+                                                    <div className="contract-title-row">
+                                                        <h3>{c.property_label}</h3>
+                                                        <span className={`contract-badge ${c.type}`}>
+                                                            {c.type === 'rent' ? 'LEASE OFFER' : 'DIRECT PURCHASE'}
+                                                        </span>
+                                                    </div>
+                                                    <p className="contract-meta">
+                                                        Drafted by agent <strong>{c.agent_name}</strong>
+                                                    </p>
+                                                    <div className="contract-financials">
+                                                        <div className="financial-box">
+                                                            <span className="fin-label">Agreed Cost</span>
+                                                            <span className="fin-val">${(c.price || 0).toLocaleString()}{c.type === 'rent' && '/period'}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="contract-actions">
+                                                        <button className="decline-btn" onClick={() => handleContractResponse(c.id, 'decline')}>
+                                                            DECLINE
+                                                        </button>
+                                                        <button className="accept-btn" onClick={() => handleContractResponse(c.id, 'accept')}>
+                                                            ACCEPT & SIGN
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                        {pendingContracts.length === 0 && (
+                                            <div className="re-empty-state">
+                                                <FileText size={32} opacity={0.25} />
+                                                <p>No pending contract offers</p>
+                                                <span style={{ fontSize: '11px', opacity: 0.5 }}>Ask a realtor to draft a property offer for you.</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="re-contracts-wrapper">
+                                    <div className="re-creator-col">
+                                        <form className="re-creator-card" onSubmit={handleDraftContract}>
+                                            <div className="re-creator-card-title">
+                                                <Briefcase size={14} /> Draft New Contract
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                                <CustomSelect
+                                                    icon={Home}
+                                                    label="Select Property"
+                                                    value={draftData.propertyId}
+                                                    placeholder="-- Choose Available Property --"
+                                                    options={propertyList.filter(p => !p.owner).map(p => ({
+                                                        value: p.id,
+                                                        label: `#${p.id} ${p.label} ($${(p.price || 0).toLocaleString()})`
+                                                    }))}
                                                     onChange={(e) => {
-                                                        setManualPlayerId(e.target.value);
-                                                        if (e.target.value) setSelectedNearbyPlayer('');
+                                                        const propId = e.target.value;
+                                                        const p = properties && properties[propId];
+                                                        setDraftData(prev => ({
+                                                            ...prev,
+                                                            propertyId: propId,
+                                                            price: p ? p.price : ''
+                                                        }));
                                                     }}
                                                 />
-                                            </div>
 
-                                            <div className="re-creator-input-field">
-                                                <label><DollarSign size={12} /> Contract Value ($)</label>
-                                                <input
-                                                    required
-                                                    type="number"
-                                                    placeholder="Agreed price amount"
-                                                    value={draftData.price}
-                                                    onChange={(e) => setDraftData(prev => ({ ...prev, price: e.target.value }))}
+                                                <CustomSelect
+                                                    icon={Tag}
+                                                    label="Contract Type"
+                                                    value={draftData.type}
+                                                    options={[
+                                                        { value: 'buy', label: 'Outright Sale' },
+                                                        { value: 'rent', label: 'Rental Lease' }
+                                                    ]}
+                                                    onChange={(e) => setDraftData(prev => ({ ...prev, type: e.target.value }))}
                                                 />
+
+                                                <CustomSelect
+                                                    icon={UserCheck}
+                                                    label="Select Client (Nearby)"
+                                                    value={selectedNearbyPlayer}
+                                                    placeholder="-- Select Online Player --"
+                                                    options={nearbyPlayers.map(p => ({
+                                                        value: p.id,
+                                                        label: `${p.name} (ID: ${p.id})`
+                                                    }))}
+                                                    onChange={(e) => {
+                                                        setSelectedNearbyPlayer(e.target.value);
+                                                        if (e.target.value) setManualPlayerId('');
+                                                    }}
+                                                />
+
+                                                <div className="re-creator-input-field">
+                                                    <label><UserPlus size={12} /> Or Enter Client Server ID</label>
+                                                    <input
+                                                        type="number"
+                                                        placeholder="Manual Player ID"
+                                                        value={manualPlayerId}
+                                                        onChange={(e) => {
+                                                            setManualPlayerId(e.target.value);
+                                                            if (e.target.value) setSelectedNearbyPlayer('');
+                                                        }}
+                                                    />
+                                                </div>
+
+                                                <div className="re-creator-input-field">
+                                                    <label><DollarSign size={12} /> Contract Value ($)</label>
+                                                    <input
+                                                        required
+                                                        type="number"
+                                                        placeholder="Agreed price amount"
+                                                        value={draftData.price}
+                                                        onChange={(e) => setDraftData(prev => ({ ...prev, price: e.target.value }))}
+                                                    />
+                                                </div>
+
+                                                {canDraft && (
+                                                    <div className="re-creator-input-field">
+                                                        <label><Percent size={12} /> Commission Rate ({draftData.commissionRate}%)</label>
+                                                        <div className="slider-wrapper">
+                                                            <input
+                                                                type="range"
+                                                                min="5"
+                                                                max="50"
+                                                                value={draftData.commissionRate}
+                                                                onChange={(e) => setDraftData(prev => ({ ...prev, commissionRate: parseInt(e.target.value) }))}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            {canDraft && (
-                                                <div className="re-creator-input-field">
-                                                    <label><Percent size={12} /> Commission Rate ({draftData.commissionRate}%)</label>
-                                                    <div className="slider-wrapper">
-                                                        <input
-                                                            type="range"
-                                                            min="5"
-                                                            max="50"
-                                                            value={draftData.commissionRate}
-                                                            onChange={(e) => setDraftData(prev => ({ ...prev, commissionRate: parseInt(e.target.value) }))}
-                                                        />
+                                            {draftData.propertyId && draftData.price && (
+                                                <div className="re-creator-card" style={{ marginTop: '12px', padding: '12px', background: 'rgba(0,0,0,0.2)' }}>
+                                                    <div style={{ fontWeight: '700', fontSize: '11.5px', marginBottom: '8px', opacity: 0.85 }}>Payout Breakdown</div>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '11px' }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                            <span>Client Cost:</span>
+                                                            <span style={{ fontWeight: '700' }}>${parseInt(draftData.price).toLocaleString()}</span>
+                                                        </div>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                            <span>Agent Commission ({draftData.commissionRate}%):</span>
+                                                            <span className="price-green" style={{ fontWeight: '700' }}>${Math.floor(parseInt(draftData.price) * (draftData.commissionRate / 100)).toLocaleString()}</span>
+                                                        </div>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-dim)', paddingTop: '6px', marginTop: '2px' }}>
+                                                            <span>Agency Deposit:</span>
+                                                            <span style={{ fontWeight: '700' }}>${(parseInt(draftData.price) - Math.floor(parseInt(draftData.price) * (draftData.commissionRate / 100))).toLocaleString()}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}
-                                        </div>
 
-                                        {draftData.propertyId && draftData.price && (
-                                            <div className="re-creator-card" style={{ marginTop: '12px', padding: '12px', background: 'rgba(0,0,0,0.2)' }}>
-                                                <div style={{ fontWeight: '700', fontSize: '11.5px', marginBottom: '8px', opacity: 0.85 }}>Payout Breakdown</div>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '11px' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                        <span>Client Cost:</span>
-                                                        <span style={{ fontWeight: '700' }}>${parseInt(draftData.price).toLocaleString()}</span>
-                                                    </div>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                        <span>Agent Commission ({draftData.commissionRate}%):</span>
-                                                        <span className="price-green" style={{ fontWeight: '700' }}>${Math.floor(parseInt(draftData.price) * (draftData.commissionRate / 100)).toLocaleString()}</span>
-                                                    </div>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-dim)', paddingTop: '6px', marginTop: '2px' }}>
-                                                        <span>Agency Deposit:</span>
-                                                        <span style={{ fontWeight: '700' }}>${(parseInt(draftData.price) - Math.floor(parseInt(draftData.price) * (draftData.commissionRate / 100))).toLocaleString()}</span>
-                                                    </div>
-                                                </div>
+                                            <button type="submit" className="re-btn-primary" style={{ marginTop: '12px', width: '100%' }} disabled={!canDraft}>
+                                                <Save size={14} /> Send Contract
+                                            </button>
+                                        </form>
+                                    </div>
+
+                                    <div className="re-creator-col">
+                                        <div className="re-creator-card" style={{ maxHeight: '520px', overflowY: 'auto' }}>
+                                            <div className="re-creator-card-title">
+                                                <History size={14} /> Agency Contract History
                                             </div>
-                                        )}
-
-                                        <button type="submit" className="re-btn-primary" style={{ marginTop: '12px', width: '100%' }} disabled={!canDraft}>
-                                            <Save size={14} /> Send Contract
-                                        </button>
-                                    </form>
-                                </div>
-
-                                <div className="re-creator-col">
-                                    <div className="re-creator-card" style={{ maxHeight: '520px', overflowY: 'auto' }}>
-                                        <div className="re-creator-card-title">
-                                            <History size={14} /> Agency Contract History
-                                        </div>
-                                        <table className="management-table" style={{ fontSize: '11px' }}>
-                                            <thead>
-                                                <tr>
-                                                    <th>Property</th>
-                                                    <th>Client</th>
-                                                    <th>Type</th>
-                                                    <th>Price</th>
-                                                    <th>Status</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {agencyContracts.map(c => (
-                                                    <tr key={c.id}>
-                                                        <td>{c.property_label}</td>
-                                                        <td>{c.client_name}</td>
-                                                        <td>{c.type.toUpperCase()}</td>
-                                                        <td>${(c.price || 0).toLocaleString()}</td>
-                                                        <td>
-                                                            <span className={`status-pill ${c.status}`}>
-                                                                {c.status.toUpperCase()}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                                {agencyContracts.length === 0 && (
+                                            <table className="management-table" style={{ fontSize: '11px' }}>
+                                                <thead>
                                                     <tr>
-                                                        <td colSpan="5" style={{ textAlign: 'center', padding: '16px', opacity: 0.4 }}>
-                                                            No contract history
-                                                        </td>
+                                                        <th>Property</th>
+                                                        <th>Client</th>
+                                                        <th>Type</th>
+                                                        <th>Price</th>
+                                                        <th>Status</th>
                                                     </tr>
-                                                )}
-                                            </tbody>
-                                        </table>
+                                                </thead>
+                                                <tbody>
+                                                    {agencyContracts.map(c => (
+                                                        <tr key={c.id}>
+                                                            <td>{c.property_label}</td>
+                                                            <td>{c.client_name}</td>
+                                                            <td>{c.type.toUpperCase()}</td>
+                                                            <td>${(c.price || 0).toLocaleString()}</td>
+                                                            <td>
+                                                                <span className={`status-pill ${c.status}`}>
+                                                                    {c.status.toUpperCase()}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                    {agencyContracts.length === 0 && (
+                                                        <tr>
+                                                            <td colSpan="5" style={{ textAlign: 'center', padding: '16px', opacity: 0.4 }}>
+                                                                No contract history
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
-                            </>
-                        ) : (
-                            <div className="player-contracts-container">
-                                {(() => {
-                                    const myActiveLeases = propertyList.filter(p => p.owner && p.owner === hasPermission?.citizenid && p.sale_type === 'rent');
-                                    if (myActiveLeases.length === 0) return null;
-                                    return (
-                                        <div style={{ marginBottom: '24px' }}>
-                                            <div className="section-title">
-                                                <Home size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} /> ACTIVE LEASES
-                                            </div>
-                                            <div className="contracts-list">
-                                                {myActiveLeases.map(p => {
-                                                    const lastPaid = p.metadata?.last_rent_paid || 0;
-                                                    const rentPeriod = 604800;
-                                                    const timeRemaining = lastPaid > 0 ? (lastPaid + rentPeriod) - Math.floor(Date.now() / 1000) : 0;
-                                                    const hoursRemaining = Math.max(0, Math.ceil(timeRemaining / 3600));
-                                                    const daysRemaining = Math.max(0, Math.ceil(hoursRemaining / 24));
-                                                    const isDelinquent = timeRemaining < -86400;
-
-                                                    return (
-                                                        <motion.div
-                                                            key={p.id}
-                                                            className={`contract-card rental-lease-card ${isDelinquent ? 'delinquent' : ''}`}
-                                                            initial={{ opacity: 0, scale: 0.98 }}
-                                                            animate={{ opacity: 1, scale: 1 }}
-                                                        >
-                                                            <div className="contract-card-image">
-                                                                {p.image ? (
-                                                                    <img src={p.image} alt={p.label} />
-                                                                ) : (
-                                                                    <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                                        <Building size={32} opacity={0.15} />
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            <div className="contract-card-details">
-                                                                <div className="contract-title-row">
-                                                                    <h3>{p.label}</h3>
-                                                                    <span className={`contract-badge rent ${isDelinquent ? 'delinquent' : ''}`}>
-                                                                        {isDelinquent ? 'RENT OVERDUE' : 'ACTIVE LEASE'}
-                                                                    </span>
-                                                                </div>
-                                                                <p className="contract-meta">
-                                                                    Property ID: <strong>#{p.id}</strong> | Cycle: <strong>7 Days</strong>
-                                                                </p>
-                                                                <div style={{ display: 'flex', gap: '16px', marginTop: '6px' }}>
-                                                                    <div className="financial-box">
-                                                                        <span className="fin-label">Rent Amount</span>
-                                                                        <span className="fin-val" style={{ fontSize: '13.5px' }}>${(p.price || 0).toLocaleString()}</span>
-                                                                    </div>
-                                                                    <div className="financial-box">
-                                                                        <span className="fin-label">Time Remaining</span>
-                                                                        <span className="fin-val" style={{ fontSize: '13.5px', color: isDelinquent ? 'var(--danger)' : (daysRemaining <= 1 ? 'var(--warning)' : 'var(--primary)') }}>
-                                                                            {isDelinquent ? 'Overdue lockout' : (lastPaid > 0 ? (daysRemaining > 1 ? `${daysRemaining} days` : `${hoursRemaining} hours`) : 'Pending')}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                                <div className="contract-actions">
-                                                                    <button className="decline-btn" onClick={() => handleTerminateOwnLease(p.id)}>
-                                                                        TERMINATE LEASE
-                                                                    </button>
-                                                                    <button className="accept-btn" onClick={() => {
-                                                                        if (!window.GetParentResourceName) {
-                                                                            alert('Rent paid locally!');
-                                                                            return;
-                                                                        }
-                                                                        fetch(`https://${window.GetParentResourceName()}/payRent`, {
-                                                                            method: 'POST',
-                                                                            body: JSON.stringify({ propertyId: p.id })
-                                                                        });
-                                                                    }}>
-                                                                        PAY RENT
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        </motion.div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    );
-                                })()}
-
-                                <div className="section-title">
-                                    <FileText size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} /> PENDING LEASES & OFFERS
-                                </div>
-                                <div className="contracts-list">
-                                    {pendingContracts.map(c => (
-                                        <motion.div
-                                            key={c.id}
-                                            className="contract-card"
-                                            initial={{ opacity: 0, scale: 0.95 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                        >
-                                            <div className="contract-card-image">
-                                                {c.property_image ? (
-                                                    <img src={c.property_image} alt={c.property_label} />
-                                                ) : (
-                                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                        <Building size={32} opacity={0.15} />
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="contract-card-details">
-                                                <div className="contract-title-row">
-                                                    <h3>{c.property_label}</h3>
-                                                    <span className={`contract-badge ${c.type}`}>
-                                                        {c.type === 'rent' ? 'LEASE OFFER' : 'DIRECT PURCHASE'}
-                                                    </span>
-                                                </div>
-                                                <p className="contract-meta">
-                                                    Drafted by agent <strong>{c.agent_name}</strong>
-                                                </p>
-                                                <div className="contract-financials">
-                                                    <div className="financial-box">
-                                                        <span className="fin-label">Agreed Cost</span>
-                                                        <span className="fin-val">${(c.price || 0).toLocaleString()}{c.type === 'rent' && '/period'}</span>
-                                                    </div>
-                                                </div>
-                                                <div className="contract-actions">
-                                                    <button className="decline-btn" onClick={() => handleContractResponse(c.id, 'decline')}>
-                                                        DECLINE
-                                                    </button>
-                                                    <button className="accept-btn" onClick={() => handleContractResponse(c.id, 'accept')}>
-                                                        ACCEPT & SIGN
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                    {pendingContracts.length === 0 && (
-                                        <div className="re-empty-state">
-                                            <FileText size={32} opacity={0.25} />
-                                            <p>No pending contract offers</p>
-                                            <span style={{ fontSize: '11px', opacity: 0.5 }}>Ask a realtor to draft a property offer for you.</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 );
 

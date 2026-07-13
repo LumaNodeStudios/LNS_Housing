@@ -1640,3 +1640,56 @@
 .spinner-arrow svg {
   stroke-width: 3px;
 }
+
+/* Segmented Sub Tabs for Contracts view */
+.contracts-tab-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  grid-column: span 3;
+  height: 100%;
+  overflow: hidden;
+}
+
+.contracts-tab-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.re-sub-tabs-v4 {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border: 1px solid var(--border-dim);
+  width: fit-content;
+}
+
+.sub-tab-v4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  transition: var(--transition-fast);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sub-tab-v4:not(.active):hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.sub-tab-v4.active {
+  background: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary);
+  font-weight: 800;
+}
