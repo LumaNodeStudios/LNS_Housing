@@ -279,8 +279,12 @@ function LoadFurnitures(propertyId)
         end
         
         local obj = CreateObjectNoOffset(hash, f.position.x, f.position.y, f.position.z, false, false, false)
+        SetEntityCollision(obj, false, false)
         SetEntityRotation(obj, f.rotation.x, f.rotation.y, f.rotation.z, 2, true)
         FreezeEntityPosition(obj, true)
+        if hash ~= `reh_prop_reh_tablet_01a` then
+            SetEntityCollision(obj, true, true)
+        end
 
         if f.textureVariation then
             SetObjectTextureVariation(obj, tonumber(f.textureVariation))
