@@ -281,6 +281,13 @@
     overflow-y: auto;
 }
 
+.apt-editor-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 8px;
+}
+
 .apt-search-wrapper {
     position: relative;
     display: flex;
@@ -456,4 +463,75 @@
 .setup-btn-danger:hover {
     background: rgba(239, 68, 68, 0.3);
     border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* Tablet Placement Centering and Alignment Overrides */
+.freecam-hint.apt-creator-placement,
+.placement-controls.apt-creator-placement {
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+}
+
+.freecam-hint.apt-creator-placement.with-placement {
+    bottom: 220px !important;
+}
+
+/* Edit Mode Layout Styles */
+.apt-sidebar-header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.apt-sidebar-header h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.apt-editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding-bottom: 14px;
+}
+
+.apt-editor-header h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.subtitle {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.room-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 1;
+}
+
+.room-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.room-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(var(--primary-rgb), 0.15);
+    color: var(--primary);
+    border: 1px solid rgba(var(--primary-rgb), 0.25);
 }

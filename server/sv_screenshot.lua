@@ -9,7 +9,7 @@ lib.addCommand('takeshots', {
         },
     },
 }, function(source, args, raw)
-    if not CheckPermission(source, 'screenshot') then
+    if not CheckPermission(source, 'admin') then
         Bridge.Server.Notify(source, 'You do not have permission to use this command.', 'error')
         return
     end

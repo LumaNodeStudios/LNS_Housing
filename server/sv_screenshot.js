@@ -48,11 +48,10 @@ try {
 } catch (err) {
     console.log('^3[LNS_Housing]^0 Could not scan local furniture images: ' + err.message);
 }
-console.log(`^2[LNS_Housing]^0 Loaded ${Object.keys(imageMappings).length} furniture image mapping(s).`);
 
 function saveMapping(model, url) {
     imageMappings[model] = url;
-    try { SetResourceKvp(KVP_PREFIX + model, url); } catch (_) {}
+    try { SetResourceKvp(KVP_PREFIX + model, url); } catch (_) { }
 }
 
 global.exports('GetImageMappings', () => imageMappings);
@@ -357,7 +356,7 @@ onNet('LNS_Housing:server:processScreenshot', async (payload) => {
 
             // Update cache and remove any stale CDN entry for this model.
             imageMappings[modelName] = `nui://${RESOURCE}/web/dist/assets/furniture/${modelName}.png`;
-            try { DeleteResourceKvp(KVP_PREFIX + modelName); } catch (_) {}
+            try { DeleteResourceKvp(KVP_PREFIX + modelName); } catch (_) { }
         } else if (storageType === 'fivemanage') {
             const config = storage.Fivemanage || {};
             if (!config.Token) {

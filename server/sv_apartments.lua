@@ -262,8 +262,8 @@ local function OnPlayerLoaded(src)
                         id = math.random(100000, 999999),
                         model = 'reh_prop_reh_tablet_01a',
                         label = 'Property Panel',
-                        position = roomData.tabletCoords.position,
-                        rotation = roomData.tabletCoords.rotation,
+                        position = vec3(roomData.tabletCoords.position.x, roomData.tabletCoords.position.y, roomData.tabletCoords.position.z),
+                        rotation = vec3(roomData.tabletCoords.rotation.x, roomData.tabletCoords.rotation.y, roomData.tabletCoords.rotation.z),
                         category = 'prerequisites'
                     })
                 end
@@ -340,8 +340,8 @@ lib.callback.register('LNS_Housing:server:claimNewCharacterSpawn', function(sour
                 id = math.random(100000, 999999),
                 model = 'reh_prop_reh_tablet_01a',
                 label = 'Property Panel',
-                position = roomData.tabletCoords.position,
-                rotation = roomData.tabletCoords.rotation,
+                position = vec3(roomData.tabletCoords.position.x, roomData.tabletCoords.position.y, roomData.tabletCoords.position.z),
+                rotation = vec3(roomData.tabletCoords.rotation.x, roomData.tabletCoords.rotation.y, roomData.tabletCoords.rotation.z),
                 category = 'prerequisites'
             })
         end
@@ -381,6 +381,48 @@ lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, ro
     local result = MySQL.single.await('SELECT * FROM apartments WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
     if result then
         local furnitureList = json.decode(result.furniture or '[]')
+        local roomData = getRoomDataById(roomId)
+        if roomData and roomData.tabletCoords then
+            local hasTablet = false
+            local changed = false
+            for _, f in ipairs(furnitureList) do
+                if f.model == 'reh_prop_reh_tablet_01a' then
+                    local newPos = vec3(roomData.tabletCoords.position.x, roomData.tabletCoords.position.y, roomData.tabletCoords.position.z)
+                    local newRot = vec3(roomData.tabletCoords.rotation.x, roomData.tabletCoords.rotation.y, roomData.tabletCoords.rotation.z)
+                    local function isClose(v1, v2)
+                        if not v1 or not v2 then return false end
+                        return math.abs((v1.x or v1[1] or 0.0) - (v2.x or 0.0)) < 0.01 and
+                               math.abs((v1.y or v1[2] or 0.0) - (v2.y or 0.0)) < 0.01 and
+                               math.abs((v1.z or v1[3] or 0.0) - (v2.z or 0.0)) < 0.01
+                    end
+                    if not isClose(f.position, newPos) or not isClose(f.rotation, newRot) then
+                        f.position = newPos
+                        f.rotation = newRot
+                        changed = true
+                    end
+                    hasTablet = true
+                    break
+                end
+            end
+            if not hasTablet then
+                table.insert(furnitureList, {
+                    id = math.random(100000, 999999),
+                    model = 'reh_prop_reh_tablet_01a',
+                    label = 'Property Panel',
+                    position = vec3(roomData.tabletCoords.position.x, roomData.tabletCoords.position.y, roomData.tabletCoords.position.z),
+                    rotation = vec3(roomData.tabletCoords.rotation.x, roomData.tabletCoords.rotation.y, roomData.tabletCoords.rotation.z),
+                    category = 'prerequisites'
+                })
+                changed = true
+            end
+            if changed then
+                MySQL.update.await('UPDATE apartments SET furniture = ? WHERE room_id = ? AND citizenid = ?', {
+                    json.encode(furnitureList),
+                    roomId,
+                    result.citizenid
+                })
+            end
+        end
         local permissions = json.decode(result.permissions or '{"entry":[], "storage":[], "wardrobe":[], "manage":[]}')
         local ownerName = 'Unknown'
         local ownerPlayer = Bridge.Server.IsPlayerOnline(result.citizenid)
@@ -747,7 +789,7 @@ exports('GetPlayerSpawns', function(source)
 end)
 
 function IsApartmentAdmin(source)
-    return CheckPermission(source, 'apartmentAdmin')
+    return CheckPermission(source, 'admin')
 end
 
 lib.callback.register('LNS_Housing:server:doesApartmentExist', function(source, roomId)

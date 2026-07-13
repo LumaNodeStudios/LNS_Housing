@@ -775,10 +775,10 @@ RegisterNUICallback("hideUI", function(data, cb)
 	cb("ok")
 end)
 
-RegisterNUICallback("freecamMode", function(data, cb)
+function SetFreecamModeState(bool)
     if TabletPlacement and TabletPlacement.Active then
-        TabletPlacement.IsFreecamMode = data
-        if data then
+        TabletPlacement.IsFreecamMode = bool
+        if bool then
             Freecam:SetFrozen(false)
             SetNuiFocus(false, false)
             exports.ox_target:disableTargeting(true)
@@ -789,11 +789,15 @@ RegisterNUICallback("freecamMode", function(data, cb)
         end
         SendNUIMessage({
             action = "freecamMode",
-            data = data
+            data = bool
         })
     else
-        Modeler:FreecamMode(data)
+        Modeler:FreecamMode(bool)
     end
+end
+
+RegisterNUICallback("freecamMode", function(data, cb)
+    SetFreecamModeState(data)
     cb("ok")
 end)
 
@@ -854,23 +858,23 @@ end)
 CreateThread(function()
     while true do
         local sleep = 500
-        if Modeler.IsMenuActive then
+        local isTabletActive = TabletPlacement and TabletPlacement.Active
+        if Modeler.IsMenuActive or isTabletActive then
             sleep = 0
-            
             
             DisableControlAction(0, 19, true)
 
             if not IsNuiFocused() then
+                local isFreecam = Modeler.IsFreecamMode or (isTabletActive and TabletPlacement.IsFreecamMode)
                 
                 if IsDisabledControlJustReleased(0, 19) then
-                    Modeler:FreecamMode(false)
+                    SetFreecamModeState(false)
                 end
 
-                
-                if Modeler.IsFreecamMode then
+                if isFreecam then
                     DisableControlAction(0, 177, true)
                     if IsDisabledControlJustReleased(0, 177) then
-                        Modeler:FreecamMode(false)
+                        SetFreecamModeState(false)
                     end
                 end
             end

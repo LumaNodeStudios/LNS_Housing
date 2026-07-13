@@ -455,7 +455,7 @@ local function RegisterApartmentCreatorCommands()
     local editCmd = Settings.Apartments.Creator and Settings.Apartments.Creator.EditCommand or 'editapartment'
     
     RegisterCommand(createCmd, function()
-        local isAdmin = lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartmentAdmin')
+        local isAdmin = lib.callback.await('LNS_Housing:server:checkPermission', false, 'admin')
         if not isAdmin then
             Bridge.Client.Notify('You do not have permission to use this command.', 'error')
             return
@@ -465,7 +465,7 @@ local function RegisterApartmentCreatorCommands()
     end, false)
 
     RegisterCommand(editCmd, function()
-        local isAdmin = lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartmentAdmin')
+        local isAdmin = lib.callback.await('LNS_Housing:server:checkPermission', false, 'admin')
         if not isAdmin then
             Bridge.Client.Notify('You do not have permission to use this command.', 'error')
             return
@@ -868,48 +868,31 @@ TabletPlacement = {
     Result = nil
 }
 
-local function FreecamModeTablet(bool)
-    TabletPlacement.IsFreecamMode = bool
-    if bool then
-        Freecam:SetFrozen(false)
-        SetNuiFocus(false, false)
-        exports.ox_target:disableTargeting(true)
-    else
-        Freecam:SetFrozen(true)
-        exports.ox_target:disableTargeting(false)
-        SetNuiFocus(true, true)
-    end
-
-    SendNUIMessage({
-        action = "freecamMode",
-        data = bool
-    })
-end
-
 local function PlaceDefaultTablet()
-    SendNUIMessage({ action = 'toggleVisibility', data = { visible = false } })
-    SetNuiFocus(false, false)
-
     local model = `reh_prop_reh_tablet_01a`
     lib.requestModel(model)
     
     local ped = cache.ped
-    local playerCoords = GetEntityCoords(ped)
-    local playerHeading = GetEntityHeading(ped)
-    local yawRad = math.rad(playerHeading)
-    local forwardX = -math.sin(yawRad)
-    local forwardY = math.cos(yawRad)
-    local initialPos = vector3(playerCoords.x + forwardX * 2.0, playerCoords.y + forwardY * 2.0, playerCoords.z + 0.5)
-    local rotX = 0.0
-    local rotY = -90.0
-    local camRot = GetGameplayCamRot(2)
-    local rotZ = (camRot.z + 90.0) % 360.0
-    local spawnedObj = CreateObjectNoOffset(model, initialPos.x, initialPos.y, initialPos.z, false, false, false)
+    local heading = GetEntityHeading(ped)
+
+    Freecam:SetActive(true)
+    Freecam:SetKeyboardSetting('BASE_MOVE_MULTIPLIER', 0.1)
+    Freecam:SetKeyboardSetting('FAST_MOVE_MULTIPLIER', 2)
+    Freecam:SetKeyboardSetting('SLOW_MOVE_MULTIPLIER', 2)
+    Freecam:SetFov(45.0)
+    Freecam:SetFrozen(true)
     
+    local camPos = Freecam:GetPosition()
+    local camTarget = Freecam:GetTarget(5.0)
+    local spawnCoords = vec3(-824.192383, -724.742065, 41.999229)
+    local rot = vec3(0.000000, -90.000000, 90.000000)
+    
+    local spawnedObj = CreateObjectNoOffset(model, spawnCoords.x, spawnCoords.y, spawnCoords.z, false, false, false)
     SetEntityCollision(spawnedObj, false, false)
     SetEntityAlpha(spawnedObj, 200, false)
     SetEntityDrawOutline(spawnedObj, true)
     SetEntityDrawOutlineColor(255, 255, 255, 255)
+    SetEntityRotation(spawnedObj, rot.x, rot.y, rot.z, 2, true)
     FreezeEntityPosition(spawnedObj, true)
     
     TabletPlacement.Active = true
@@ -917,63 +900,51 @@ local function PlaceDefaultTablet()
     TabletPlacement.IsFreecamMode = false
     TabletPlacement.Result = nil
 
-    local tabletPos = initialPos
+    SendNUIMessage({
+        action = "setupModel",
+        data = {
+            objectPosition = spawnCoords,
+            objectRotation = rot,
+            cameraPosition = camPos,
+            cameraLookAt = spawnCoords,
+            cameraFov = GetGameplayCamFov(),
+        }
+    })
     
-    lib.showTextUI('[Scroll] Rotate Left/Right\n[E] Confirm | [H] Cancel')
+    CreateThread(function()
+        local lastCamPos = nil
+        local lastCamTarget = nil
+        while TabletPlacement.Active do
+            local currentCamPos = Freecam:GetPosition()
+            local currentCamTarget = Freecam:GetTarget(5.0)
+            if not lastCamPos or #(lastCamPos - currentCamPos) > 0.001 or #(lastCamTarget - currentCamTarget) > 0.001 then
+                lastCamPos = currentCamPos
+                lastCamTarget = currentCamTarget
+                SendNUIMessage({
+                    action = "updateCamera",
+                    data = {
+                        cameraPosition = currentCamPos,
+                        cameraLookAt = currentCamTarget,
+                        cameraFov = GetGameplayCamFov(),
+                    }
+                })
+            end
+            Wait(33)
+        end
+    end)
+
+
     
     while TabletPlacement.Active do
-        Wait(0)
-        
-        -- Disable controls
-        DisableControlAction(0, 172, true) -- Arrow Up
-        DisableControlAction(0, 173, true) -- Arrow Down
-        DisableControlAction(0, 174, true) -- Arrow Left
-        DisableControlAction(0, 175, true) -- Arrow Right
-        DisableControlAction(0, 38, true)  -- E (Confirm)
-        DisableControlAction(0, 104, true) -- H (Cancel)
-        DisableControlAction(0, 74, true)  -- H (Cancel alternative)
-        DisableControlAction(0, 241, true) -- Scroll Up
-        DisableControlAction(0, 242, true) -- Scroll Down
-
-        local hit, entityHit, coords, surfaceNormal = lib.raycast.cam(-1, spawnedObj, 15.0)
-        if hit then
-            tabletPos = coords + (surfaceNormal * 0.02)
-        else
-            local camCoords = GetGameplayCamCoord()
-            local cRot = GetGameplayCamRot(2)
-            local pitch = math.rad(cRot.x)
-            local yaw = math.rad(cRot.z)
-            local num = math.abs(math.cos(pitch))
-            local dir = vector3(-math.sin(yaw) * num, math.cos(yaw) * num, math.sin(pitch))
-            tabletPos = camCoords + dir * 5.0
-        end
-
-        if IsDisabledControlPressed(0, 241) then -- Scroll Up
-            rotZ = (rotZ + 3.0) % 360.0
-        elseif IsDisabledControlPressed(0, 242) then -- Scroll Down
-            rotZ = (rotZ - 3.0) % 360.0
-        end
-        
-        SetEntityCoords(spawnedObj, tabletPos.x, tabletPos.y, tabletPos.z, false, false, false, false)
-        SetEntityRotation(spawnedObj, rotX, rotY, rotZ, 2, true)
-        
-        if IsDisabledControlJustPressed(0, 38) or IsDisabledControlJustReleased(0, 38) then -- E
-            TabletPlacement.Result = {
-                position = { x = tabletPos.x, y = tabletPos.y, z = tabletPos.z },
-                rotation = { x = rotX, y = rotY, z = rotZ }
-            }
-            TabletPlacement.Active = false
-        elseif IsDisabledControlJustPressed(0, 104) or IsDisabledControlJustReleased(0, 104) or IsDisabledControlJustPressed(0, 74) or IsDisabledControlJustReleased(0, 74) then -- H
-            TabletPlacement.Result = nil
-            TabletPlacement.Active = false
-        end
+        Wait(100)
     end
     
-    lib.hideTextUI()
-    DeleteEntity(spawnedObj)
+    Freecam:SetActive(false)
+    Freecam:SetKeyboardSetting('BASE_MOVE_MULTIPLIER', 5)
+    Freecam:SetKeyboardSetting('FAST_MOVE_MULTIPLIER', 10)
+    Freecam:SetKeyboardSetting('SLOW_MOVE_MULTIPLIER', 10)
     
-    SendNUIMessage({ action = 'toggleVisibility', data = { visible = true } })
-    SetNuiFocus(true, true)
+    DeleteEntity(spawnedObj)
     
     local finalResult = TabletPlacement.Result
     TabletPlacement.Object = nil

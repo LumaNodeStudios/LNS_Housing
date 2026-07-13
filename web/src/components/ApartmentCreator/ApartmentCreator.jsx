@@ -202,9 +202,10 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
     };
 
     const handlePickTablet = () => {
+        setIsPlacingTablet(true);
+        setFreecamMode(false);
+
         if (!window.GetParentResourceName) {
-            setIsPlacingTablet(true);
-            setFreecamMode(false);
             setTimeout(() => {
                 window.dispatchEvent(new MessageEvent('message', {
                     data: {
@@ -231,6 +232,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                 if (data) {
                     setTabletData(data);
                 }
+                setIsPlacingTablet(false);
             });
     };
 
@@ -326,7 +328,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
             >
                 {isEdit ? (
                     <div className="apt-editor-layout">
-                        <div className="apt-sidebar">
+                        <div className="apt-list-pane">
                             <div className="apt-sidebar-header">
                                 <h3>Apartment Rooms</h3>
                                 <div className="apt-search-wrapper">
@@ -360,7 +362,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                             </div>
                         </div>
 
-                        <div className="apt-main-editor">
+                        <div className="apt-form-pane">
                             <div className="apt-editor-header">
                                 <div>
                                     <h3>Edit Room #{selectedRoom?.id}</h3>
@@ -640,7 +642,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
             </motion.div>
 
             {freecamMode && isPlacingTablet && (
-                <div className="freecam-hint with-placement">
+                <div className="freecam-hint with-placement apt-creator-placement">
                     <span>[LEFT ALT] Exit Cam | [BACKSPACE] Exit Cam</span>
                 </div>
             )}
@@ -662,7 +664,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
             />
 
             {isPlacingTablet && (
-                <div className="placement-controls">
+                <div className="placement-controls apt-creator-placement">
                     <div className="controls-header">
                         <span className="controls-title">Default Tablet Position</span>
                         <div className="controls-actions">

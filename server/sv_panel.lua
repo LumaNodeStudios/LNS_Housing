@@ -106,7 +106,6 @@ RegisterNetEvent('LNS_Housing:server:payRent', function(propertyId, payAmount)
         local societyName = agencyConfig and agencyConfig.society or p.agency
         Bridge.Server.AddSocietyMoney(societyName, remainder)
 
-        -- Handle debt first
         if currentDebt > 0 then
             local debtPaid = math.min(payAmount, currentDebt)
             p.metadata.rent_debt = currentDebt - debtPaid
@@ -120,7 +119,6 @@ RegisterNetEvent('LNS_Housing:server:payRent', function(propertyId, payAmount)
             end
         end
 
-        -- Leftover goes to advance the next rent cycle using partial_payment accumulation
         if payAmount > 0 then
             local rentPeriod = Settings.Rent and Settings.Rent.RentPeriod or 604800
             p.metadata.partial_payment = (p.metadata.partial_payment or 0) + payAmount
@@ -429,7 +427,6 @@ lib.callback.register('LNS_Housing:server:deleteListing', function(source, prope
     local p = Properties[id]
     if not p then return false end
 
-    -- Refund highest bidder if they have a bid locked
     if p.sale_type == 'auction' and p.auction_data and p.auction_data.highest_bidder and p.auction_data.current_bid > 0 then
         Bridge.Server.AddOfflineBankMoney(p.auction_data.highest_bidder, p.auction_data.current_bid)
         local onlineBidder = Bridge.Server.IsPlayerOnline(p.auction_data.highest_bidder)

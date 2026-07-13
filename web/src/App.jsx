@@ -96,7 +96,7 @@ function App() {
             isEdit: true,
             rooms: data || []
           });
-          setShowApartmentEditor(false);
+          setShowApartmentEditor(true);
           break;
         case 'closeUI':
           closeAll();

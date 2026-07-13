@@ -1,7 +1,7 @@
 local Settings = lib.load('shared.settings')
 
 function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
-    if permType == 'screenshot' then
+    if permType == 'admin' then
         if Bridge.Framework == 'esx' then
             local ESX = exports['es_extended']:getSharedObject()
             local player = ESX.GetPlayerFromId(source)
@@ -13,22 +13,6 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
             return IsPlayerAceAllowed(source, 'admin')
         end
         return false
-
-    elseif permType == 'apartmentAdmin' then
-        if Bridge.Framework == 'qbx' then
-            if IsPlayerAceAllowed(source, 'admin') then
-                return true
-            end
-        elseif Bridge.Framework == 'esx' then
-            local ESX = exports['es_extended']:getSharedObject()
-            local player = ESX.GetPlayerFromId(source)
-            if player then
-                local group = player.getGroup()
-                return group == 'admin' or group == 'superadmin'
-            end
-        end
-        return false
-
     elseif permType == 'realestate' then
         local isAllowed = false
         local jobName = nil
@@ -123,7 +107,6 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
         end
 
         return data
-
     elseif permType == 'house' then
         local propertyId = targetId
         local accessType = actionType or 'entry'
@@ -204,7 +187,6 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
         end
 
         return false
-
     elseif permType == 'apartment' then
         local roomId = targetId
         local accessType = actionType or 'entry'

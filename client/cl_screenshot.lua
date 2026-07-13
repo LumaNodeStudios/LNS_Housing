@@ -268,4 +268,4 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
     if not wasCancelled then
         Bridge.Client.Notify('Finished screenshot session.', 'success')
     end
-end)-- Command and suggestion are handled on the server using lib.addCommand
+end)
