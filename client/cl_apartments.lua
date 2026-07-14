@@ -940,6 +940,7 @@ local function PlaceDefaultTablet()
     end
     
     Freecam:SetActive(false)
+    Freecam:SetFrozen(false)
     Freecam:SetKeyboardSetting('BASE_MOVE_MULTIPLIER', 5)
     Freecam:SetKeyboardSetting('FAST_MOVE_MULTIPLIER', 10)
     Freecam:SetKeyboardSetting('SLOW_MOVE_MULTIPLIER', 10)

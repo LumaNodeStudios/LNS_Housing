@@ -94,12 +94,14 @@ end
 function zoneCreator.freecamMode(bool)
     if bool then
         Freecam:SetActive(true)
+        Freecam:SetFrozen(false)
         Freecam:SetKeyboardSetting('BASE_MOVE_MULTIPLIER', 0.1)
         Freecam:SetKeyboardSetting('FAST_MOVE_MULTIPLIER', 2)
         Freecam:SetKeyboardSetting('SLOW_MOVE_MULTIPLIER', 2)
         Freecam:SetFov(45.0)
     else
         Freecam:SetActive(false)
+        Freecam:SetFrozen(false)
         Freecam:SetKeyboardSetting('BASE_MOVE_MULTIPLIER', 5)
         Freecam:SetKeyboardSetting('FAST_MOVE_MULTIPLIER', 10)
         Freecam:SetKeyboardSetting('SLOW_MOVE_MULTIPLIER', 10)
