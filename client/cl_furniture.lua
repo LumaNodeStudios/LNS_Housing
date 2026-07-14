@@ -39,10 +39,15 @@ Modeler = {
 
         lib.callback('LNS_Housing:server:getFurnitureImages', false, function(imageUrls)
             imageUrls = imageUrls or {}
+            local mappings = imageUrls.mappings or {}
+            local baseUrl = imageUrls.baseUrl
+
             for _, category in ipairs(Furniture) do
                 for _, item in ipairs(category.items) do
-                    if imageUrls[item.model] then
-                        item.imageUrl = imageUrls[item.model]
+                    if mappings[item.model] then
+                        item.imageUrl = mappings[item.model]
+                    elseif baseUrl then
+                        item.imageUrl = baseUrl .. item.model .. '.png'
                     else
                         item.imageUrl = nil
                     end

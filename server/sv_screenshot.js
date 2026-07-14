@@ -15,46 +15,46 @@ try {
     console.log('^1[LNS_Housing]^0 Output dir error: ' + err.message);
 }
 
-const KVP_PREFIX = 'furniture_img_';
-
-// In-memory cache — built once at startup, updated on each new upload.
-const imageMappings = {};
-
-// Seed cache from KVP (CDN URLs) and local folder (local storage type).
-try {
-    let handle = StartFindKvp(KVP_PREFIX);
-    if (handle !== -1) {
-        let key;
-        while ((key = FindKvp(handle)) !== null) {
-            const url = GetResourceKvpString(key);
-            if (url) imageMappings[key.slice(KVP_PREFIX.length)] = url;
-        }
-        EndFindKvp(handle);
-    }
-} catch (err) {
-    console.log('^3[LNS_Housing]^0 Could not read KVP image mappings: ' + err.message);
-}
-try {
-    if (fs.existsSync(OUTPUT_DIR)) {
-        for (const file of fs.readdirSync(OUTPUT_DIR)) {
-            if (file.endsWith('.png')) {
-                const modelName = file.slice(0, -4);
-                if (!imageMappings[modelName]) {
-                    imageMappings[modelName] = `nui://${RESOURCE}/web/dist/assets/furniture/${file}`;
-                }
-            }
-        }
-    }
-} catch (err) {
-    console.log('^3[LNS_Housing]^0 Could not scan local furniture images: ' + err.message);
-}
-
 function saveMapping(model, url) {
-    imageMappings[model] = url;
-    try { SetResourceKvp(KVP_PREFIX + model, url); } catch (_) { }
+    // Mappings are not stored or used anymore.
+    // URLs are dynamically derived in NUI from settings.PublicUrl and the model name.
 }
 
-global.exports('GetImageMappings', () => imageMappings);
+global.exports('GetImageMappings', () => {
+    let SvSettings = {};
+    try {
+        SvSettings = global.exports[RESOURCE].GetSvSettings();
+    } catch (e) {
+        console.log('^1[LNS_Housing]^0 Failed to get SvSettings: ' + e.message);
+    }
+    const storage = SvSettings.FurnitureImageStorage || { Type: 'local' };
+    const storageType = (storage.Type || 'local').toLowerCase();
+
+    let baseUrl = '';
+    if (storageType === 'local') {
+        baseUrl = `nui://${RESOURCE}/web/dist/assets/furniture/`;
+    } else if (storageType === 'fivemanage') {
+        const config = storage.Fivemanage || {};
+        baseUrl = config.PublicUrl || '';
+    } else if (storageType === 'r2') {
+        const config = storage.R2 || {};
+        baseUrl = config.PublicUrl || '';
+        if (config.Folder && baseUrl) {
+            const cleanPublicUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+            const cleanFolder = config.Folder.startsWith('/') ? config.Folder.slice(1) : config.Folder;
+            baseUrl = `${cleanPublicUrl}/${cleanFolder}/`;
+        }
+    }
+
+    if (baseUrl && !baseUrl.endsWith('/')) {
+        baseUrl = baseUrl + '/';
+    }
+
+    return {
+        baseUrl: baseUrl,
+        mappings: {}
+    };
+});
 
 async function uploadToFivemanage(buffer, filename, token, url = 'https://api.fivemanage.com/api/v3/file', folder = null) {
     const form = new FormData();
@@ -355,7 +355,7 @@ onNet('LNS_Housing:server:processScreenshot', async (payload) => {
             console.log('^2[LNS_Housing]^0 Saved transparent furniture screenshot locally: ' + modelName + '.png (' + Math.round(outputData.length / 1024) + ' KB)');
 
             // Update cache and remove any stale CDN entry for this model.
-            imageMappings[modelName] = `nui://${RESOURCE}/web/dist/assets/furniture/${modelName}.png`;
+            saveMapping(modelName, `nui://${RESOURCE}/web/dist/assets/furniture/${modelName}.png`);
             try { DeleteResourceKvp(KVP_PREFIX + modelName); } catch (_) { }
         } else if (storageType === 'fivemanage') {
             const config = storage.Fivemanage || {};

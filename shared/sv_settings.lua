@@ -10,6 +10,7 @@ return {
         Fivemanage = {
             Url = 'https://api.fivemanage.com/api/v3/file',
             Token = 'xOSaS3kRrUNyEvNBnWg2FWdxX8uKg2Zp',
+            PublicUrl = 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Furniture', -- Your Fivemanage public URL space/folder
             Folder = 'Furniture' -- Optional: uploads go into this folder on Fivemanage (uses the 'path' API field)
         },
         
