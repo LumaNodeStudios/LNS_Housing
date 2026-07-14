@@ -884,7 +884,9 @@ local function PlaceDefaultTablet()
     
     local camPos = Freecam:GetPosition()
     local camTarget = Freecam:GetTarget(5.0)
-    local spawnCoords = vec3(-824.192383, -724.742065, 41.999229)
+    local playerCoords = GetEntityCoords(ped)
+    local forward = GetEntityForwardVector(ped)
+    local spawnCoords = playerCoords + (forward * 1.5)
     local rot = vec3(0.000000, -90.000000, 90.000000)
     
     local spawnedObj = CreateObjectNoOffset(model, spawnCoords.x, spawnCoords.y, spawnCoords.z, false, false, false)
