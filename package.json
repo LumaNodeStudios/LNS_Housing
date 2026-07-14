@@ -6,7 +6,7 @@
   "dependencies": {
     "pngjs": "^7.0.0",
     "axios": "^1.6.0",
-    "@aws-sdk/client-s3": "^3.500.0",
+    "@aws-sdk/client-s3": "^3.500.0 <3.723.0",
     "form-data": "^4.0.0"
   }
 }
