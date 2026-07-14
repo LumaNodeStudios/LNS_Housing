@@ -141,16 +141,17 @@ const Modeler3D = ({ active, onUpdate }) => {
     onUpdate(data);
   };
 
-  if (!active || !isInitialized) return null;
+  const isVisible = active && isInitialized;
 
   return (
-    <div className="modeler-3d-container">
+    <div className="modeler-3d-container" style={{ display: isVisible ? 'block' : 'none' }}>
       <Canvas
         camera={{ fov: 45.0, near: 0.1, far: 1000 }}
-        style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', pointerEvents: 'auto' }}
+        style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', pointerEvents: isVisible ? 'auto' : 'none' }}
         gl={{ alpha: true, antialias: true }}
+        frameloop={isVisible ? 'always' : 'never'}
         onPointerDown={(e) => {
-          if (e.target.tagName === 'CANVAS') {
+          if (isVisible && e.target.tagName === 'CANVAS') {
             fetch(`https://${window.GetParentResourceName()}/clickWorld`, {
               method: 'POST',
               body: JSON.stringify({})
@@ -158,27 +159,31 @@ const Modeler3D = ({ active, onUpdate }) => {
           }
         }}
       >
-        <Scene
-          cameraData={cameraData}
-          objectPos={position}
-          objectRot={rotation}
-          mode={mode}
-          onUpdate={handleGizmoUpdate}
-          onModeChange={setMode}
-        />
+        {isVisible && (
+          <Scene
+            cameraData={cameraData}
+            objectPos={position}
+            objectRot={rotation}
+            mode={mode}
+            onUpdate={handleGizmoUpdate}
+            onModeChange={setMode}
+          />
+        )}
       </Canvas>
 
-      <div className="placement-mode-controls">
-        <div className={`mode-pill ${mode === 'translate' ? 'active' : ''}`} onClick={() => setMode('translate')}>
-          <kbd>E</kbd>
-          <span>Position (Arrows)</span>
+      {isVisible && (
+        <div className="placement-mode-controls">
+          <div className={`mode-pill ${mode === 'translate' ? 'active' : ''}`} onClick={() => setMode('translate')}>
+            <kbd>E</kbd>
+            <span>Position (Arrows)</span>
+          </div>
+          <div className="mode-divider" />
+          <div className={`mode-pill ${mode === 'rotate' ? 'active' : ''}`} onClick={() => setMode('rotate')}>
+            <kbd>R</kbd>
+            <span>Rotate (Sphere)</span>
+          </div>
         </div>
-        <div className="mode-divider" />
-        <div className={`mode-pill ${mode === 'rotate' ? 'active' : ''}`} onClick={() => setMode('rotate')}>
-          <kbd>R</kbd>
-          <span>Rotate (Sphere)</span>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

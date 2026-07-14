@@ -12,7 +12,6 @@ files {
     'web/dist/index.html',
     'web/dist/**/*',
     'stream/[Shells]/*.ytyp',
-    'stream/[Walls]/*.ytyp',
     'sound/data/lns_data.dat54.rel',
     'sound/audiodirectory/lns_bank.awc'
 }
@@ -62,15 +61,5 @@ dependencies {
 }
 
 data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/starter_shells_k4mb1.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_aqua.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_black.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_green.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_grey.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_purple.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_red.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_wall.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_white.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/ps_wall_yellow.ytyp'
-
 data_file 'AUDIO_WAVEPACK'  'sound/audiodirectory'
 data_file 'AUDIO_SOUNDDATA' 'sound/data/lns_data.dat'
