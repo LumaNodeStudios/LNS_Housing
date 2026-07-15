@@ -24,6 +24,7 @@ function App() {
   const [initialTab, setInitialTab] = useState('browse');
   const [onlyBuyViaContracts, setOnlyBuyViaContracts] = useState(false);
   const [apartmentCreatorData, setApartmentCreatorData] = useState({ isEdit: false, rooms: [] });
+  const [shells, setShells] = useState([]);
 
   const closeAll = () => {
     setShowPanel(false);
@@ -48,6 +49,7 @@ function App() {
           setHasPermission(true);
           setInitialTab('creator');
           setOnlyBuyViaContracts(data?.onlyBuyViaContracts || false);
+          setShells(data?.shells || []);
           setShowRealEstate(true);
           break;
         case 'openRealEstate':
@@ -60,6 +62,7 @@ function App() {
           setHasPermission(data.hasPermission ?? true);
           setInitialTab(data.activeTab || 'browse');
           setOnlyBuyViaContracts(data.onlyBuyViaContracts || false);
+          setShells(data.shells || []);
           setShowRealEstate(true);
           break;
         case 'updateProperties':
@@ -455,6 +458,7 @@ function App() {
               hasPermission={hasPermission}
               initialTab={initialTab}
               onlyBuyViaContracts={onlyBuyViaContracts}
+              shells={shells}
             />
           )}
 

@@ -691,8 +691,11 @@ local function GetPropertyCoords(p)
 
     if p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
         local shellName = p.metadata.shell or 'Standard Motel'
-        local shellData = Settings.Shells[shellName]
+        local shellData = (Settings.IPLs and Settings.IPLs[shellName]) or Settings.Shells[shellName]
         if shellData then
+            if shellData.ipls then
+                return vector4(shellData.coords.x, shellData.coords.y, shellData.coords.z, shellData.coords.w or 0.0)
+            end
             local doorCoords = GetEntranceCoordsServer(p)
             if doorCoords then
                 local shellCoords = vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0)

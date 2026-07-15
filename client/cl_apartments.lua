@@ -598,8 +598,11 @@ local function GetPropertyInsideCoords(p)
 
     if p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
         local shellName = p.metadata.shell or 'Standard Motel'
-        local shellData = Settings.Shells[shellName]
+        local shellData = (Settings.IPLs and Settings.IPLs[shellName]) or Settings.Shells[shellName]
         if shellData then
+            if shellData.ipls then
+                return vector4(shellData.coords.x, shellData.coords.y, shellData.coords.z, shellData.coords.w or 0.0)
+            end
             local doorCoords = GetEntranceCoords(p)
             if doorCoords then
                 local shellCoords = vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0)
@@ -708,9 +711,17 @@ exports('SpawnInProperty', function(type, id)
             RegisterPropertyZones(p, true)
 
             if p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
+                local shellName = p.metadata.shell or 'Standard Motel'
+                local shellData = (Settings.IPLs and Settings.IPLs[shellName]) or Settings.Shells[shellName]
+                local isIpl = shellData and shellData.ipls ~= nil
                 local doorCoords = GetEntranceCoords(p)
-                if doorCoords then
-                    local shellCoords = vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0)
+                if doorCoords or isIpl then
+                    local shellCoords
+                    if isIpl and shellData then
+                        shellCoords = vec3(shellData.coords.x, shellData.coords.y, shellData.coords.z)
+                    else
+                        shellCoords = doorCoords and vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0) or vec3(0,0,0)
+                    end
                     SpawnShellForProperty(id, p.metadata.shell, shellCoords)
                 end
             end

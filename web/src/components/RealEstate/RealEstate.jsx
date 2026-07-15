@@ -78,7 +78,26 @@ const CustomSelect = ({ label, icon: Icon, value, options, onChange, name, place
     );
 };
 
-const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts }) => {
+const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts, shells }) => {
+    const shellOptions = (shells && shells.length > 0) ? shells : [
+        { value: 'Standard Motel', label: 'Standard Motel' },
+        { value: 'Modern Hotel', label: 'Modern Hotel' },
+        { value: 'Apartment Furnished', label: 'Apartment Furnished' },
+        { value: 'Apartment Unfurnished', label: 'Apartment Unfurnished' },
+        { value: 'Apartment 2 Unfurnished', label: 'Apartment 2 Unfurnished' },
+        { value: 'Garage', label: 'Garage' },
+        { value: 'Office', label: 'Office' },
+        { value: 'Store', label: 'Store' },
+        { value: 'Warehouse', label: 'Warehouse' },
+        { value: 'Container', label: 'Container' },
+        { value: '2 Floor House', label: '2 Floor House' },
+        { value: 'House 1', label: 'House 1' },
+        { value: 'House 2', label: 'House 2' },
+        { value: 'House 3', label: 'House 3' },
+        { value: 'House 4', label: 'House 4' },
+        { value: 'Trailer', label: 'Trailer' }
+    ];
+
     const [filter, setFilter] = useState('all');
     const [search, setSearch] = useState('');
     const [sortBy, setSortBy] = useState('none');
@@ -1468,24 +1487,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                     label="Instanced Shell Model"
                                                     name="shell"
                                                     value={formData.shell || 'Standard Motel'}
-                                                    options={[
-                                                        { value: 'Standard Motel', label: 'Standard Motel' },
-                                                        { value: 'Modern Hotel', label: 'Modern Hotel' },
-                                                        { value: 'Apartment Furnished', label: 'Apartment Furnished' },
-                                                        { value: 'Apartment Unfurnished', label: 'Apartment Unfurnished' },
-                                                        { value: 'Apartment 2 Unfurnished', label: 'Apartment 2 Unfurnished' },
-                                                        { value: 'Garage', label: 'Garage' },
-                                                        { value: 'Office', label: 'Office' },
-                                                        { value: 'Store', label: 'Store' },
-                                                        { value: 'Warehouse', label: 'Warehouse' },
-                                                        { value: 'Container', label: 'Container' },
-                                                        { value: '2 Floor House', label: '2 Floor House' },
-                                                        { value: 'House 1', label: 'House 1' },
-                                                        { value: 'House 2', label: 'House 2' },
-                                                        { value: 'House 3', label: 'House 3' },
-                                                        { value: 'House 4', label: 'House 4' },
-                                                        { value: 'Trailer', label: 'Trailer' }
-                                                    ]}
+                                                    options={shellOptions}
                                                     onChange={(e) => setFormData(prev => ({ ...prev, shell: e.target.value }))}
                                                 />
 

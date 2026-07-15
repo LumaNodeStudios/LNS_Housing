@@ -462,21 +462,32 @@ function RegisterPropertyZones(p, forceShell)
     if PropertyZones[p.id] then return end
     
     if p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
+        local shellName = p.metadata.shell or 'Standard Motel'
+        local shellData = (Settings.IPLs and Settings.IPLs[shellName]) or Settings.Shells[shellName]
+        local isIpl = shellData and shellData.ipls ~= nil
+
         local doorCoords = GetEntranceCoords(p)
-        if doorCoords then
-            local shellCoords = vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0)
+        if doorCoords or isIpl then
+            local shellCoords
+            if isIpl then
+                shellCoords = vec3(shellData.coords.x, shellData.coords.y, shellData.coords.z)
+            else
+                shellCoords = vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0)
+            end
+
             local shouldRegister = forceShell
             if not shouldRegister then
                 local playerCoords = GetEntityCoords(cache.ped)
-                if #(playerCoords - shellCoords) < 35.0 then
+                if #(playerCoords - shellCoords) < (isIpl and 60.0 or 35.0) then
                     shouldRegister = true
                 end
             end
 
             if shouldRegister then
+                local zoneSize = isIpl and (shellData.zoneSize or vec3(50.0, 50.0, 20.0)) or vec3(25.0, 25.0, 10.0)
                 PropertyZones[p.id] = lib.zones.box({
                     coords = shellCoords,
-                    size = vec3(25.0, 25.0, 10.0),
+                    size = zoneSize,
                     debug = Settings.Debug.Zones,
                     onEnter = function()
                         local shellName = p.metadata.shell or 'Standard Motel'
@@ -888,6 +899,27 @@ function InitializeHousing()
     local ped = PlayerPedId()
     local playerCoords = GetEntityCoords(ped)
     local isSpawningInShell = playerCoords.z < -70.0
+    if not isSpawningInShell then
+        for _, shellData in pairs(Settings.Shells) do
+            if shellData.ipls and shellData.coords then
+                if #(playerCoords - vec3(shellData.coords.x, shellData.coords.y, shellData.coords.z)) < 35.0 then
+                    isSpawningInShell = true
+                    break
+                end
+            end
+        end
+        if not isSpawningInShell and Settings.IPLs then
+            for _, iplData in pairs(Settings.IPLs) do
+                if iplData.coords then
+                    if #(playerCoords - vec3(iplData.coords.x, iplData.coords.y, iplData.coords.z)) < 35.0 then
+                        isSpawningInShell = true
+                        break
+                    end
+                end
+            end
+        end
+    end
+
     if isSpawningInShell then
         DoScreenFadeOut(0)
         FreezeEntityPosition(ped, true)
@@ -915,14 +947,26 @@ function InitializeHousing()
 
     if isSpawningInShell then
         local currentPropId = nil
+        local foundShellCoords = nil
         if Properties then
             for id, p in pairs(Properties) do
                 if p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
-                    local doorCoords = GetEntranceCoords(p)
-                    if doorCoords then
-                        local shellCoords = vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0)
-                        if #(playerCoords - shellCoords) < 35.0 then
+                    local shellName = p.metadata.shell or 'Standard Motel'
+                    local shellData = (Settings.IPLs and Settings.IPLs[shellName]) or Settings.Shells[shellName]
+                    if shellData then
+                        local shellCoords
+                        if shellData.ipls then
+                            shellCoords = vec3(shellData.coords.x, shellData.coords.y, shellData.coords.z)
+                        else
+                            local doorCoords = GetEntranceCoords(p)
+                            if doorCoords then
+                                shellCoords = vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0)
+                            end
+                        end
+
+                        if shellCoords and #(playerCoords - shellCoords) < 35.0 then
                             currentPropId = p.id
+                            foundShellCoords = shellCoords
                             break
                         end
                     end
@@ -933,26 +977,21 @@ function InitializeHousing()
         if currentPropId then
             local p = Properties[currentPropId]
             local shellName = p.metadata.shell or 'Standard Motel'
-            local doorCoords = GetEntranceCoords(p)
-            local shellCoords = vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0)
-            local shellEntity, spawnCoords, heading = SpawnShellForProperty(currentPropId, shellName, shellCoords)
+            local shellEntity, spawnCoords, heading = SpawnShellForProperty(currentPropId, shellName, foundShellCoords)
             
             TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', currentPropId)
             LoadFurnitures(currentPropId)
 
-            if shellEntity and DoesEntityExist(shellEntity) then
-                -- Temp fix for 50/50 chance to fall thru
-                local currentPed = PlayerPedId()
+            local currentPed = PlayerPedId()
+            RequestCollisionAtCoord(playerCoords.x, playerCoords.y, playerCoords.z)
+            local startColl = GetGameTimer()
+            while not HasCollisionLoadedAroundEntity(currentPed) and (GetGameTimer() - startColl) < 2000 do
+                Wait(50)
+                currentPed = PlayerPedId()
                 RequestCollisionAtCoord(playerCoords.x, playerCoords.y, playerCoords.z)
-                local startColl = GetGameTimer()
-                while not HasCollisionLoadedAroundEntity(currentPed) and (GetGameTimer() - startColl) < 2000 do
-                    Wait(50)
-                    currentPed = PlayerPedId()
-                    RequestCollisionAtCoord(playerCoords.x, playerCoords.y, playerCoords.z)
-                end
-                Wait(150)
-                SetEntityCoords(currentPed, playerCoords.x, playerCoords.y, playerCoords.z, false, false, false, false)
             end
+            Wait(150)
+            SetEntityCoords(currentPed, playerCoords.x, playerCoords.y, playerCoords.z, false, false, false, false)
         end
         FreezeEntityPosition(PlayerPedId(), false)
         DoScreenFadeIn(1000)
@@ -1215,8 +1254,66 @@ function UpdatePropertyBlips()
 end
 
 function SpawnShellForProperty(propertyId, shellName, shellCoords)
-    local shellData = Settings.Shells[shellName]
+    local shellData = (Settings.IPLs and Settings.IPLs[shellName]) or Settings.Shells[shellName]
     if not shellData then return nil end
+
+    if shellData.ipls then
+        if type(shellData.ipls) == 'table' then
+            for _, iplName in ipairs(shellData.ipls) do
+                if not IsIplActive(iplName) then
+                    RequestIpl(iplName)
+                end
+            end
+        elseif type(shellData.ipls) == 'string' then
+            if not IsIplActive(shellData.ipls) then
+                RequestIpl(shellData.ipls)
+            end
+        end
+
+        local spawnCoords = vec3(shellData.coords.x, shellData.coords.y, shellData.coords.z)
+        local heading = shellData.coords.w or 0.0
+
+        if not ExitTargets[propertyId] then
+            local options = {
+                {
+                    label = 'Exit Property',
+                    icon = 'fas fa-door-closed',
+                    onSelect = function()
+                        LeaveShellProperty(propertyId)
+                    end
+                }
+            }
+
+            local p = Properties[propertyId]
+            if p and p.metadata and p.metadata.entrance then
+                table.insert(options, {
+                    label = 'Lock/Unlock Property',
+                    icon = 'fas fa-key',
+                    canInteract = function()
+                        return lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'entry') or lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'manage')
+                    end,
+                    onSelect = function()
+                        TriggerServerEvent('LNS_Housing:server:toggleLock', propertyId)
+                    end
+                })
+            end
+
+            local exitCoords = spawnCoords
+            if shellData.exitCoords then
+                exitCoords = vec3(shellData.exitCoords.x, shellData.exitCoords.y, shellData.exitCoords.z)
+            end
+
+            ExitTargets[propertyId] = exports.ox_target:addBoxZone({
+                coords = exitCoords,
+                size = vec3(1.5, 1.5, 2.0),
+                rotation = heading,
+                debug = Settings.Debug.Zones,
+                options = options
+            })
+        end
+
+        return nil, spawnCoords, heading
+    end
 
     local shellEntity = SpawnedShells[propertyId]
     if not shellEntity or not DoesEntityExist(shellEntity) then
@@ -1329,6 +1426,22 @@ function LeaveShellProperty(propertyId)
     if SpawnedShells[propertyId] and DoesEntityExist(SpawnedShells[propertyId]) then
         DeleteEntity(SpawnedShells[propertyId])
         SpawnedShells[propertyId] = nil
+    end
+
+    local shellName = p.metadata.shell or 'Standard Motel'
+    local shellData = (Settings.IPLs and Settings.IPLs[shellName]) or Settings.Shells[shellName]
+    if shellData and shellData.ipls then
+        if type(shellData.ipls) == 'table' then
+            for _, iplName in ipairs(shellData.ipls) do
+                if IsIplActive(iplName) then
+                    RemoveIpl(iplName)
+                end
+            end
+        elseif type(shellData.ipls) == 'string' then
+            if IsIplActive(shellData.ipls) then
+                RemoveIpl(shellData.ipls)
+            end
+        end
     end
 
     local ped = PlayerPedId()
