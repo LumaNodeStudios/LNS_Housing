@@ -177,21 +177,21 @@ return {
             ipls = { "apa_v_mp_h_01_a" },
             coords = vec4(-786.8663, 315.7642, 217.6385, 270.0),
             exitCoords = vec4(-786.8663, 315.7642, 217.6385, 270.0),
-            zoneSize = vec3(50.0, 50.0, 20.0)
+            zoneSize = vec3(150.0, 150.0, 80.0)
         },
         ["Eclipse Penthouse 2"] = {
             label = "Eclipse Penthouse 2",
             ipls = { "apa_v_mp_h_02_a" },
             coords = vec4(-786.9563, 315.6229, 187.9136, 270.0),
             exitCoords = vec4(-786.9563, 315.6229, 187.9136, 270.0),
-            zoneSize = vec3(50.0, 50.0, 20.0)
+            zoneSize = vec3(150.0, 150.0, 80.0)
         },
         ["Eclipse Penthouse 3"] = {
             label = "Eclipse Penthouse 3",
             ipls = { "apa_v_mp_h_03_a" },
             coords = vec4(-786.8741, 315.7975, 157.9137, 270.0),
             exitCoords = vec4(-786.8741, 315.7975, 157.9137, 270.0),
-            zoneSize = vec3(50.0, 50.0, 20.0)
+            zoneSize = vec3(150.0, 150.0, 80.0)
         }
     },
 

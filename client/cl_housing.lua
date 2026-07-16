@@ -478,13 +478,13 @@ function RegisterPropertyZones(p, forceShell)
             local shouldRegister = forceShell
             if not shouldRegister then
                 local playerCoords = GetEntityCoords(cache.ped)
-                if #(playerCoords - shellCoords) < (isIpl and 60.0 or 35.0) then
+                if #(playerCoords - shellCoords) < (isIpl and 100.0 or 35.0) then
                     shouldRegister = true
                 end
             end
 
             if shouldRegister then
-                local zoneSize = isIpl and (shellData.zoneSize or vec3(50.0, 50.0, 20.0)) or vec3(25.0, 25.0, 10.0)
+                local zoneSize = isIpl and (shellData.zoneSize or vec3(150.0, 150.0, 80.0)) or vec3(25.0, 25.0, 10.0)
                 PropertyZones[p.id] = lib.zones.box({
                     coords = shellCoords,
                     size = zoneSize,
@@ -911,7 +911,7 @@ function InitializeHousing()
         if not isSpawningInShell and Settings.IPLs then
             for _, iplData in pairs(Settings.IPLs) do
                 if iplData.coords then
-                    if #(playerCoords - vec3(iplData.coords.x, iplData.coords.y, iplData.coords.z)) < 35.0 then
+                    if #(playerCoords - vec3(iplData.coords.x, iplData.coords.y, iplData.coords.z)) < 85.0 then
                         isSpawningInShell = true
                         break
                     end
@@ -964,7 +964,8 @@ function InitializeHousing()
                             end
                         end
 
-                        if shellCoords and #(playerCoords - shellCoords) < 35.0 then
+                        local isIpl = shellData.ipls ~= nil
+                        if shellCoords and #(playerCoords - shellCoords) < (isIpl and 85.0 or 35.0) then
                             currentPropId = p.id
                             foundShellCoords = shellCoords
                             break
@@ -1469,6 +1470,17 @@ RegisterNetEvent('LNS_Housing:client:triggerHouseAlarm', function(coords, durati
     local shellCoords = vec3(coords.x, coords.y, Settings.ShellSpawningZ or -100.0)
     local isNearEntrance = #(playerCoords - alarmCoords) < 35.0
     local isNearShell = #(playerCoords - shellCoords) < 35.0
+    if not isNearShell and Settings.IPLs then
+        for _, iplData in pairs(Settings.IPLs) do
+            if iplData.coords then
+                local iplCoords = vec3(iplData.coords.x, iplData.coords.y, iplData.coords.z)
+                if #(playerCoords - iplCoords) < 85.0 then
+                    isNearShell = true
+                    break
+                end
+            end
+        end
+    end
 
     if isNearEntrance or isNearShell then
         activeAlarmsCount = activeAlarmsCount + 1
