@@ -275,3 +275,7 @@ end
 lib.callback.register('LNS_Housing:server:checkPermission', function(source, permType, targetId, actionType, ignoreTemp)
     return CheckPermission(source, permType, targetId, actionType, ignoreTemp)
 end)
+
+exports('CheckPermission', function(source, permType, targetId, actionType, ignoreTemp)
+    return CheckPermission(source, permType, targetId, actionType, ignoreTemp)
+end)
