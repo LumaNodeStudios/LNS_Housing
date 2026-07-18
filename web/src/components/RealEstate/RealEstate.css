@@ -549,18 +549,20 @@
   align-items: center;
   justify-content: center;
   padding: 40px;
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.7);
 }
 
 .re-detail-modal {
   width: 480px;
-  background: rgba(15, 15, 18, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0f0f10;
+  border: 1px solid rgba(var(--primary-rgb), 0.15);
   border-radius: 16px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.9),
+    0 0 30px rgba(var(--primary-rgb), 0.04);
 }
 
 .modal-header {
@@ -568,7 +570,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid var(--border-dim);
+  border-bottom: 1px solid rgba(var(--primary-rgb), 0.12);
+  background: rgba(var(--primary-rgb), 0.02);
 }
 
 .header-text h2 {
@@ -660,6 +663,47 @@
 
 .modal-actions {
   margin-top: 8px;
+}
+
+.modal-actions-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.modal-actions-row .btn-cancel {
+  flex: 1;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-dim);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  text-align: center;
+}
+
+.modal-actions-row .btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.modal-action-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  text-align: center;
+}
+
+.modal-confirm-btn:hover {
+  filter: brightness(1.15);
 }
 
 .bid-controls {
