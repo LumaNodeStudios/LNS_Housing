@@ -1,2 +1,4 @@
 node_modules/
 .yarn.installed
+.agents/AGENTS.md
+.agents/
