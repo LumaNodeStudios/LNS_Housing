@@ -57,10 +57,38 @@ RegisterNUICallback('changeWallColor', function(data, cb)
     cb('ok')
 end)
 
-RegisterCommand(Settings.RealEstate.Command, function()
+if Settings.RealEstate.Command then
+    RegisterCommand(Settings.RealEstate.Command, function()
+        local properties = lib.callback.await('LNS_Housing:server:getProperties', false)
+        local hasPermission = lib.callback.await('LNS_Housing:server:checkPermission', false, 'realestate')
+        
+        local shellList = {}
+        for name, data in pairs(Settings.Shells or {}) do
+            table.insert(shellList, { value = name, label = data.label or name })
+        end
+        for name, data in pairs(Settings.IPLs or {}) do
+            table.insert(shellList, { value = name, label = data.label or name })
+        end
+        table.sort(shellList, function(a, b) return a.label < b.label end)
+
+        SendNUIMessage({
+            action = 'openRealEstate',
+            data = {
+                properties = properties,
+                hasPermission = hasPermission,
+                onlyBuyViaContracts = Settings.RealEstate.OnlyBuyViaContracts,
+                shells = shellList
+            }
+        })
+        SetNuiFocus(true, true)
+    end, false)
+end
+
+-- Triggered by the server when a player uses the real estate item
+RegisterNetEvent('LNS_Housing:client:openRealEstateFromItem', function()
     local properties = lib.callback.await('LNS_Housing:server:getProperties', false)
     local hasPermission = lib.callback.await('LNS_Housing:server:checkPermission', false, 'realestate')
-    
+
     local shellList = {}
     for name, data in pairs(Settings.Shells or {}) do
         table.insert(shellList, { value = name, label = data.label or name })
@@ -80,33 +108,7 @@ RegisterCommand(Settings.RealEstate.Command, function()
         }
     })
     SetNuiFocus(true, true)
-end, false)
-
-RegisterCommand('contracts', function()
-    local properties = lib.callback.await('LNS_Housing:server:getProperties', false)
-    local hasPermission = lib.callback.await('LNS_Housing:server:checkPermission', false, 'realestate')
-    
-    local shellList = {}
-    for name, data in pairs(Settings.Shells or {}) do
-        table.insert(shellList, { value = name, label = data.label or name })
-    end
-    for name, data in pairs(Settings.IPLs or {}) do
-        table.insert(shellList, { value = name, label = data.label or name })
-    end
-    table.sort(shellList, function(a, b) return a.label < b.label end)
-
-    SendNUIMessage({
-        action = 'openRealEstate',
-        data = {
-            properties = properties,
-            hasPermission = hasPermission,
-            activeTab = 'contracts',
-            onlyBuyViaContracts = Settings.RealEstate.OnlyBuyViaContracts,
-            shells = shellList
-        }
-    })
-    SetNuiFocus(true, true)
-end, false)
+end)
 
 RegisterNUICallback('buyProperty', function(data, cb)
     local success = lib.callback.await('LNS_Housing:server:buyHouse', false, data.id)

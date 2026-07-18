@@ -8,7 +8,11 @@ return {
 
     -- Real estate job and agency management settings
     RealEstate = {
-        Command = 'properties',                     -- Command for real estate agents to open properties menu
+        Command = nil,                     -- Command to open the real estate menu (set to nil to disable)
+        Item = {
+            Enabled = true,                        -- If true, players can use the item below to open the real estate menu
+            Name = 'lockpick',           -- Item name that opens the real estate (properties) menu when used
+        },
         OnlyBuyViaContracts = false,                -- If true, players can only buy houses through a signed contract with an agent
         Jobs = { 'realestate', 'luxuryestate' },    -- Jobs allowed to access the real estate agent actions
         Groups = { --[['admin', 'god', 'superadmin']] },  -- Admin groups that have full agent permissions

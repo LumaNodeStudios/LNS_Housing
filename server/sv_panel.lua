@@ -1,5 +1,12 @@
 local Settings = lib.load('shared.settings')
 
+-- Register real estate item if enabled in settings
+if Settings.RealEstate.Item and Settings.RealEstate.Item.Enabled and Settings.RealEstate.Item.Name then
+    Bridge.Server.CreateUseableItem(Settings.RealEstate.Item.Name, function(source)
+        TriggerClientEvent('LNS_Housing:client:openRealEstateFromItem', source)
+    end)
+end
+
 RegisterNetEvent('LNS_Housing:server:updatePermissions', function(propertyId, permissions)
     local src = source
     local p = Properties[propertyId]
@@ -232,7 +239,7 @@ RegisterNetEvent('LNS_Housing:server:createContract', function(data)
         SaveProperty(propertyId)
 
         Bridge.Server.Notify(src, "Contract sent to " .. clientName .. "!", "success")
-        Bridge.Server.Notify(targetId, "You received a new real estate contract! Use /contracts to view.", "inform")
+        Bridge.Server.Notify(targetId, "You received a new real estate contract!", "inform")
 
         TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
     else
