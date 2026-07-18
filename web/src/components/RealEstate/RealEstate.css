@@ -555,14 +555,12 @@
 .re-detail-modal {
   width: 480px;
   background: #0f0f10;
-  border: 1px solid rgba(var(--primary-rgb), 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow:
-    0 25px 50px -12px rgba(0, 0, 0, 0.9),
-    0 0 30px rgba(var(--primary-rgb), 0.04);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9);
 }
 
 .modal-header {
@@ -570,8 +568,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(var(--primary-rgb), 0.12);
-  background: rgba(var(--primary-rgb), 0.02);
+  border-bottom: 1px solid var(--border-dim);
 }
 
 .header-text h2 {
