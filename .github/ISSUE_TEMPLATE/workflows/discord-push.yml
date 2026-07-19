@@ -9,8 +9,8 @@ jobs:
   notify-discord:
     runs-on: ubuntu-latest
     steps:
-      - name: Notify Discord
-        uses: Qbox-project/pipeline-pling@v1.2
+      - name: Pipeline Pling
+        uses: Qbox-project/pipeline-pling@v1.2.0
         with:
           webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
           accent-color: "6ed0f3"
