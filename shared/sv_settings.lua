@@ -6,13 +6,12 @@ return {
         -- 'fivemanage', (Recommended)
         -- 'r2', (Cloudflare - Recommended)
         Type = 'qbox',
-
+        
         -- Qbox CDN Configuration (https://docs.qbox.re/dashboard/cdn)
         Qbox = {
-            ApiKey = '20260719_0b0hNP0Hhe4e4hHbVY30Fjo', -- API key generated from your Qbox CDN dashboard
-            PublicUrl = 'https://r2.qbox.re/lumanodestudios/housing/', -- Your Qbox CDN public URL space/folder
+            ApiKey = '' -- API key generated from your Qbox CDN dashboard
         },
-        
+
         -- Fivemanage Configuration
         Fivemanage = {
             Url = 'https://api.fivemanage.com/api/v3/file',

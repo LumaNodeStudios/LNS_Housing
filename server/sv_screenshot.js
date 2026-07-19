@@ -15,70 +15,82 @@ try {
     console.log('^1[LNS_Housing]^0 Output dir error: ' + err.message);
 }
 
-function saveMapping(model, url) {
-    // Mappings are not stored or used anymore.
-    // URLs are dynamically derived in NUI from settings.PublicUrl and the model name.
+const FURNITURE_TABLE = 'housing_images';
+let furnitureMappingsCache = {};
+let furnitureTableReady = false;
+
+async function ensureFurnitureTable() {
+    if (furnitureTableReady) return;
+    try {
+        await global.exports.oxmysql.execute_async(
+            `CREATE TABLE IF NOT EXISTS \`${FURNITURE_TABLE}\` (
+                \`model\` VARCHAR(64) NOT NULL PRIMARY KEY,
+                \`url\` VARCHAR(255) NOT NULL
+            )`
+        );
+        furnitureTableReady = true;
+    } catch (e) {
+        console.log('^1[LNS_Housing]^0 Failed to ensure furniture image table: ' + e.message);
+    }
 }
 
-global.exports('GetImageMappings', () => {
-    let SvSettings = {};
+async function loadFurnitureMappingsCache() {
+    await ensureFurnitureTable();
     try {
-        SvSettings = global.exports[RESOURCE].GetSvSettings();
+        const rows = await global.exports.oxmysql.query_async(`SELECT \`model\`, \`url\` FROM \`${FURNITURE_TABLE}\``);
+        furnitureMappingsCache = {};
+        for (const row of rows || []) {
+            furnitureMappingsCache[row.model] = row.url;
+        }
+        console.log(`^2[LNS_Housing]^0 Loaded ${Object.keys(furnitureMappingsCache).length} furniture image mapping(s)`);
     } catch (e) {
-        console.log('^1[LNS_Housing]^0 Failed to get SvSettings: ' + e.message);
+        console.log('^1[LNS_Housing]^0 Failed to load furniture mappings: ' + e.message);
     }
+}
+
+async function saveFurnitureMapping(model, url) {
+    furnitureMappingsCache[model] = url;
+    await ensureFurnitureTable();
+    try {
+        await global.exports.oxmysql.execute_async(
+            `INSERT INTO \`${FURNITURE_TABLE}\` (\`model\`, \`url\`) VALUES (?, ?)
+             ON DUPLICATE KEY UPDATE \`url\` = VALUES(\`url\`)`,
+            [model, url]
+        );
+    } catch (e) {
+        console.log('^1[LNS_Housing]^0 Failed to persist furniture mapping for ' + model + ': ' + e.message);
+    }
+}
+
+on('onResourceStart', (resourceName) => {
+    if (resourceName !== RESOURCE) return;
+    loadFurnitureMappingsCache();
+});
+
+global.exports('GetImageMappings', () => {
+    const SvSettings = (() => {
+        try {
+            return global.exports[RESOURCE].GetSvSettings();
+        } catch (e) {
+            console.log('^1[LNS_Housing]^0 Failed to get SvSettings: ' + e.message);
+            return {};
+        }
+    })();
     const storage = SvSettings.FurnitureImageStorage || { Type: 'local' };
     const storageType = (storage.Type || 'local').toLowerCase();
 
-    let baseUrl = '';
     if (storageType === 'local') {
-        baseUrl = `nui://${RESOURCE}/web/dist/assets/furniture/`;
-    } else if (storageType === 'qbox') {
-        const config = storage.Qbox || {};
-        baseUrl = config.PublicUrl || '';
-    } else if (storageType === 'fivemanage') {
-        const config = storage.Fivemanage || {};
-        baseUrl = config.PublicUrl || '';
-    } else if (storageType === 'r2') {
-        const config = storage.R2 || {};
-        baseUrl = config.PublicUrl || '';
-        if (config.Folder && baseUrl) {
-            const cleanPublicUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-            const cleanFolder = config.Folder.startsWith('/') ? config.Folder.slice(1) : config.Folder;
-            baseUrl = `${cleanPublicUrl}/${cleanFolder}/`;
-        }
-    }
-
-    if (baseUrl && !baseUrl.endsWith('/')) {
-        baseUrl = baseUrl + '/';
+        return {
+            baseUrl: `nui://${RESOURCE}/web/dist/assets/furniture/`,
+            mappings: {}
+        };
     }
 
     return {
-        baseUrl: baseUrl,
-        mappings: {}
+        baseUrl: '',
+        mappings: furnitureMappingsCache
     };
 });
-
-async function uploadToQbox(buffer, filename, apiKey) {
-    const form = new FormData();
-    form.append('file', buffer, {
-        filename: filename,
-        contentType: 'image/png',
-    });
-
-    const response = await axios.post('https://api.qbox.re/v1/file', form, {
-        headers: {
-            ...form.getHeaders(),
-            'Authorization': apiKey
-        }
-    });
-
-    if (response.data) {
-        if (response.data.url) return response.data.url;
-        if (response.data.data && response.data.data.url) return response.data.data.url;
-    }
-    throw new Error('Invalid response from Qbox CDN');
-}
 
 async function uploadToFivemanage(buffer, filename, token, url = 'https://api.fivemanage.com/api/v3/file', folder = null) {
     const form = new FormData();
@@ -124,6 +136,27 @@ async function uploadToR2(buffer, filename, config) {
 
     const baseUrl = config.PublicUrl.endsWith('/') ? config.PublicUrl.slice(0, -1) : config.PublicUrl;
     return `${baseUrl}/${key}`;
+}
+
+async function uploadToQbox(buffer, filename, apiKey) {
+    const form = new FormData();
+    form.append('file', buffer, {
+        filename: filename,
+        contentType: 'image/png',
+    });
+
+    const response = await axios.post('https://api.qbox.re/v1/file', form, {
+        headers: {
+            ...form.getHeaders(),
+            'Authorization': apiKey
+        }
+    });
+
+    if (response.data) {
+        if (response.data.url) return response.data.url;
+        if (response.data.data && response.data.data.url) return response.data.data.url;
+    }
+    throw new Error('Invalid response from Qbox CDN');
 }
 
 function stripDataUri(b64) {
@@ -228,8 +261,6 @@ function removeChromaKeyInPlace(png, mode) {
             }
         }
     }
-
-    console.log('^2[LNS_Housing]^0 Chroma key (' + mode + '): ' + removed + '/' + totalPx + ' pixels removed');
 }
 
 function resizePNGObject(src, targetW, targetH) {
@@ -343,16 +374,12 @@ onNet('LNS_Housing:server:processScreenshot', async (payload) => {
         }
 
         try {
-            // Decode once
             const img = PNG.sync.read(outputData);
 
-            // Chroma key on raw pixel data
             removeChromaKeyInPlace(img, 'green');
 
-            // Resize raw pixel data
             const resizedImg = resizePNGObject(img, 256, 256);
 
-            // Encode once
             outputData = PNG.sync.write(resizedImg, { colorType: 6 });
         } catch (e) {
             console.log('^3[LNS_Housing]^0 Image processing failed: ' + e.message);
@@ -376,36 +403,15 @@ onNet('LNS_Housing:server:processScreenshot', async (payload) => {
             }
 
             fs.writeFileSync(outputPath, outputData);
-            console.log('^2[LNS_Housing]^0 Saved transparent furniture screenshot locally: ' + modelName + '.png (' + Math.round(outputData.length / 1024) + ' KB)');
-
-            // Update cache and remove any stale CDN entry for this model.
-            saveMapping(modelName, `nui://${RESOURCE}/web/dist/assets/furniture/${modelName}.png`);
-            try { DeleteResourceKvp(KVP_PREFIX + modelName); } catch (_) { }
-        } else if (storageType === 'qbox') {
-            const config = storage.Qbox || {};
-            if (!config.ApiKey) {
-                console.log('^1[LNS_Housing]^0 Qbox CDN ApiKey is missing in settings!');
-                return;
-            }
-            console.log(`^3[LNS_Housing]^0 Uploading ${modelName}.png to Qbox CDN...`);
-            try {
-                const url = await uploadToQbox(outputData, `${modelName}.png`, config.ApiKey);
-                saveMapping(modelName, url);
-                console.log(`^2[LNS_Housing]^0 Uploaded successfully to Qbox CDN: ${modelName} -> ${url}`);
-            } catch (err) {
-                console.log('^1[LNS_Housing]^0 Qbox CDN upload failed: ' + err.message);
-            }
         } else if (storageType === 'fivemanage') {
             const config = storage.Fivemanage || {};
             if (!config.Token) {
                 console.log('^1[LNS_Housing]^0 Fivemanage Token is missing in settings!');
                 return;
             }
-            console.log(`^3[LNS_Housing]^0 Uploading ${modelName}.png to Fivemanage...`);
             try {
                 const url = await uploadToFivemanage(outputData, `${modelName}.png`, config.Token, config.Url, config.Folder || null);
-                saveMapping(modelName, url);
-                console.log(`^2[LNS_Housing]^0 Uploaded successfully to Fivemanage: ${modelName} -> ${url}`);
+                await saveFurnitureMapping(modelName, url);
             } catch (err) {
                 console.log('^1[LNS_Housing]^0 Fivemanage upload failed: ' + err.message);
             }
@@ -415,13 +421,23 @@ onNet('LNS_Housing:server:processScreenshot', async (payload) => {
                 console.log('^1[LNS_Housing]^0 Cloudflare R2 configuration is incomplete in settings!');
                 return;
             }
-            console.log(`^3[LNS_Housing]^0 Uploading ${modelName}.png to Cloudflare R2...`);
             try {
                 const url = await uploadToR2(outputData, `${modelName}.png`, config);
-                saveMapping(modelName, url);
-                console.log(`^2[LNS_Housing]^0 Uploaded successfully to Cloudflare R2: ${modelName} -> ${url}`);
+                await saveFurnitureMapping(modelName, url);
             } catch (err) {
                 console.log('^1[LNS_Housing]^0 Cloudflare R2 upload failed: ' + err.message);
+            }
+        } else if (storageType === 'qbox') {
+            const config = storage.Qbox || {};
+            if (!config.ApiKey) {
+                console.log('^1[LNS_Housing]^0 Qbox CDN ApiKey is missing in settings!');
+                return;
+            }
+            try {
+                const url = await uploadToQbox(outputData, `${modelName}.png`, config.ApiKey);
+                await saveFurnitureMapping(modelName, url);
+            } catch (err) {
+                console.log('^1[LNS_Housing]^0 Qbox CDN upload failed: ' + err.message);
             }
         } else {
             console.log('^1[LNS_Housing]^0 Unknown furniture image storage type: ' + storageType);
@@ -475,23 +491,12 @@ async function uploadPropertyPhoto(base64Data) {
 
         const outputPath = path.resolve(path.join(PROPERTIES_DIR, filename));
         fs.writeFileSync(outputPath, outputData);
-        console.log(`^2[LNS_Housing]^0 Saved property photo locally: ${filename}`);
         return `assets/properties/${filename}`;
-    } else if (storageType === 'qbox') {
-        const config = storage.Qbox || {};
-        if (!config.ApiKey) {
-            throw new Error('Qbox CDN ApiKey is missing in settings');
-        }
-        console.log(`^3[LNS_Housing]^0 Uploading property photo to Qbox CDN...`);
-
-        const url = await uploadToQbox(outputData, filename, config.ApiKey);
-        return url;
     } else if (storageType === 'fivemanage') {
         const config = storage.Fivemanage || {};
         if (!config.Token) {
             throw new Error('Fivemanage Token is missing in settings');
         }
-        console.log(`^3[LNS_Housing]^0 Uploading property photo to Fivemanage...`);
         const url = await uploadToFivemanage(outputData, filename, config.Token, config.Url);
         return url;
     } else if (storageType === 'r2') {
@@ -499,13 +504,20 @@ async function uploadPropertyPhoto(base64Data) {
         if (!config.AccountId || !config.AccessKeyId || !config.SecretAccessKey || !config.Bucket || !config.PublicUrl) {
             throw new Error('Cloudflare R2 configuration is incomplete');
         }
-        console.log(`^3[LNS_Housing]^0 Uploading property photo to Cloudflare R2...`);
 
         const r2Config = {
             ...config,
             Folder: config.Folder ? `${config.Folder}/properties` : 'properties'
         };
         const url = await uploadToR2(outputData, filename, r2Config);
+        return url;
+    } else if (storageType === 'qbox') {
+        const config = storage.Qbox || {};
+        if (!config.ApiKey) {
+            throw new Error('Qbox CDN ApiKey is missing in settings');
+        }
+
+        const url = await uploadToQbox(outputData, filename, config.ApiKey);
         return url;
     } else {
         throw new Error('Unknown storage type: ' + storageType);
