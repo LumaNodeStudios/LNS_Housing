@@ -448,7 +448,7 @@ end)
 
 exports('SpawnInStarterApartment', function()
     teleportToStarterApartment()
-end) -- This is for the housing system
+end)
 
 local function RegisterApartmentCreatorCommands()
     local createCmd = Settings.Apartments.Creator and Settings.Apartments.Creator.Command or 'createapartment'
