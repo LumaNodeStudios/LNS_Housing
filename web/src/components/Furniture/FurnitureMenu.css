@@ -134,6 +134,7 @@
 }
 
 .search-bar {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -144,6 +145,7 @@
   height: 42px;
   margin: 5px 15px 15px 15px;
   transition: var(--transition-smooth);
+  overflow: hidden;
 }
 
 .search-bar:focus-within {
@@ -152,8 +154,19 @@
 }
 
 .search-icon {
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
   color: var(--text-muted);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-icon svg {
+  position: static !important;
+  display: block;
 }
 
 .search-bar input {
@@ -705,6 +718,7 @@
   color: var(--text-main);
   box-shadow: var(--shadow-main);
   transition: var(--transition-smooth);
+  z-index: 100;
 }
 
 .freecam-hint {
