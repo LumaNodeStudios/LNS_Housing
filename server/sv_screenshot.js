@@ -33,6 +33,9 @@ global.exports('GetImageMappings', () => {
     let baseUrl = '';
     if (storageType === 'local') {
         baseUrl = `nui://${RESOURCE}/web/dist/assets/furniture/`;
+    } else if (storageType === 'qbox') {
+        const config = storage.Qbox || {};
+        baseUrl = config.PublicUrl || '';
     } else if (storageType === 'fivemanage') {
         const config = storage.Fivemanage || {};
         baseUrl = config.PublicUrl || '';
@@ -55,6 +58,27 @@ global.exports('GetImageMappings', () => {
         mappings: {}
     };
 });
+
+async function uploadToQbox(buffer, filename, apiKey) {
+    const form = new FormData();
+    form.append('file', buffer, {
+        filename: filename,
+        contentType: 'image/png',
+    });
+
+    const response = await axios.post('https://api.qbox.re/v1/file', form, {
+        headers: {
+            ...form.getHeaders(),
+            'Authorization': apiKey
+        }
+    });
+
+    if (response.data) {
+        if (response.data.url) return response.data.url;
+        if (response.data.data && response.data.data.url) return response.data.data.url;
+    }
+    throw new Error('Invalid response from Qbox CDN');
+}
 
 async function uploadToFivemanage(buffer, filename, token, url = 'https://api.fivemanage.com/api/v3/file', folder = null) {
     const form = new FormData();
@@ -357,6 +381,20 @@ onNet('LNS_Housing:server:processScreenshot', async (payload) => {
             // Update cache and remove any stale CDN entry for this model.
             saveMapping(modelName, `nui://${RESOURCE}/web/dist/assets/furniture/${modelName}.png`);
             try { DeleteResourceKvp(KVP_PREFIX + modelName); } catch (_) { }
+        } else if (storageType === 'qbox') {
+            const config = storage.Qbox || {};
+            if (!config.ApiKey) {
+                console.log('^1[LNS_Housing]^0 Qbox CDN ApiKey is missing in settings!');
+                return;
+            }
+            console.log(`^3[LNS_Housing]^0 Uploading ${modelName}.png to Qbox CDN...`);
+            try {
+                const url = await uploadToQbox(outputData, `${modelName}.png`, config.ApiKey);
+                saveMapping(modelName, url);
+                console.log(`^2[LNS_Housing]^0 Uploaded successfully to Qbox CDN: ${modelName} -> ${url}`);
+            } catch (err) {
+                console.log('^1[LNS_Housing]^0 Qbox CDN upload failed: ' + err.message);
+            }
         } else if (storageType === 'fivemanage') {
             const config = storage.Fivemanage || {};
             if (!config.Token) {
@@ -439,6 +477,15 @@ async function uploadPropertyPhoto(base64Data) {
         fs.writeFileSync(outputPath, outputData);
         console.log(`^2[LNS_Housing]^0 Saved property photo locally: ${filename}`);
         return `assets/properties/${filename}`;
+    } else if (storageType === 'qbox') {
+        const config = storage.Qbox || {};
+        if (!config.ApiKey) {
+            throw new Error('Qbox CDN ApiKey is missing in settings');
+        }
+        console.log(`^3[LNS_Housing]^0 Uploading property photo to Qbox CDN...`);
+
+        const url = await uploadToQbox(outputData, filename, config.ApiKey);
+        return url;
     } else if (storageType === 'fivemanage') {
         const config = storage.Fivemanage || {};
         if (!config.Token) {
