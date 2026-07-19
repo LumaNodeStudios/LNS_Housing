@@ -5,6 +5,7 @@ local Freecam = Freecam
 Modeler = {
     IsMenuActive = false,
     IsFreecamMode = false,
+    FurnitureDataReady = false,
     property_id = nil,
     shellPos = nil,
     CurrentObject = nil,
@@ -20,45 +21,45 @@ Modeler = {
     OpenMenu = function(self, propertyId)
         local property = Properties[propertyId]
         if not property then return end
-        
-        
-        
+
         self.shellPos = property.door_id and exports.ox_doorlock:getDoor(property.door_id).coords or GetEntityCoords(cache.ped)
-        
         self.property_id = propertyId
         self.IsMenuActive = true
         self.MenuOpen = true
-
         self:UpdateOwnedItems()
         self:StartSelectionThread()
 
-        SendNUIMessage({
-            action = "setVisible",
-            data = true
-        })
+        SendNUIMessage({ action = "setVisible", data = true })
 
-        lib.callback('LNS_Housing:server:getFurnitureImages', false, function(imageUrls)
-            imageUrls = imageUrls or {}
-            local mappings = imageUrls.mappings or {}
-            local baseUrl = imageUrls.baseUrl
+        if self.FurnitureDataReady then
+            SendNUIMessage({ action = "setFurnituresData", data = Furniture })
+        else
+            lib.callback('LNS_Housing:server:getFurnitureImages', false, function(imageUrls)
+                imageUrls = imageUrls or {}
+                local mappings = imageUrls.mappings or {}
+                local baseUrl = imageUrls.baseUrl
 
-            for _, category in ipairs(Furniture) do
-                for _, item in ipairs(category.items) do
-                    if mappings[item.model] then
-                        item.imageUrl = mappings[item.model]
-                    elseif baseUrl then
-                        item.imageUrl = baseUrl .. item.model .. '.png'
-                    else
-                        item.imageUrl = nil
+                if not baseUrl and next(mappings) == nil then
+                    print('^1[LNS_Housing]^0 getFurnitureImages returned no baseUrl and no mappings, not caching')
+                else
+                    self.FurnitureDataReady = true
+                end
+
+                for _, category in ipairs(Furniture) do
+                    for _, item in ipairs(category.items) do
+                        if mappings[item.model] then
+                            item.imageUrl = mappings[item.model]
+                        elseif baseUrl then
+                            item.imageUrl = baseUrl .. item.model .. '.png'
+                        else
+                            item.imageUrl = nil
+                        end
                     end
                 end
-            end
 
-            SendNUIMessage({
-                action = "setFurnituresData",
-                data = Furniture
-            })
-        end)
+                SendNUIMessage({ action = "setFurnituresData", data = Furniture })
+            end)
+        end
 
         self:FreecamActive(true)
         self:FreecamMode(false)
@@ -853,12 +854,9 @@ RegisterNUICallback("toggleCursor", function(data, cb)
     cb("ok")
 end)
 
-
-
 RegisterNetEvent('LNS_Housing:client:openFurnitureMenu', function(propertyId)
     Modeler:OpenMenu(propertyId)
 end)
-
 
 CreateThread(function()
     while true do

@@ -4,10 +4,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Modeler3D from './Modeler3D';
 import './FurnitureMenu.css';
 
-const FurnitureImage = ({ item, ItemIcon }) => {
+const FurnitureImage = React.memo(function FurnitureImage({ item, ItemIcon }) {
   const [loaded, setLoaded] = useState(false);
+  const [contentReady, setContentReady] = useState(false);
   const [error, setError] = useState(false);
   const imageUrl = item.imageUrl || `assets/furniture/${item.model}.png`;
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setContentReady(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   return (
     <div className="icon-wrapper">
@@ -16,15 +22,36 @@ const FurnitureImage = ({ item, ItemIcon }) => {
           src={imageUrl}
           alt={item.label}
           className="furniture-img"
+          decoding="async"
           onLoad={() => setLoaded(true)}
           onError={() => setError(true)}
-          style={{ display: loaded ? 'block' : 'none' }}
+          style={{
+            opacity: loaded ? 1 : 0,
+            position: loaded ? 'static' : 'absolute',
+          }}
         />
       )}
-      {(!loaded || error) && <ItemIcon size={28} className="placeholder" />}
+      {!loaded && !error && (
+        <div className="furniture-img-spinner" aria-hidden="true" />
+      )}
+      {error && <ItemIcon size={28} className="placeholder" />}
     </div>
   );
-};
+});
+
+const ItemCard = React.memo(function ItemCard({ item, ItemIcon, isPlacing, isThisPlacing, onHoverIn, onHoverOut, onClick }) {
+  return (
+    <div
+      className={`item-card ${isPlacing ? (isThisPlacing ? 'is-placing' : 'disabled') : ''} item-card-anim`}
+      onMouseEnter={onHoverIn}
+      onMouseLeave={onHoverOut}
+      onClick={onClick}
+    >
+      <FurnitureImage item={item} ItemIcon={ItemIcon} />
+      <span className="item-card-price">${item.price}</span>
+    </div>
+  );
+});
 
 const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
   const [activeCategory, setActiveCategory] = useState('all');
@@ -103,38 +130,39 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
     Package: Package
   };
 
-  const categories = Array.isArray(items) ? items.map(cat => ({
-    id: cat.id,
-    label: cat.label,
-    icon: IconMap[cat.icon] || Package
-  })) : [];
+  const categories = React.useMemo(() =>
+    Array.isArray(items) ? items.map(cat => ({
+      id: cat.id,
+      label: cat.label,
+      icon: IconMap[cat.icon] || Package
+    })) : [],
+    [items]
+  );
 
-  const activeCategoryData = Array.isArray(items) ? items.find(cat => cat.id === activeCategory) : null;
+  const activeCategoryData = React.useMemo(() =>
+    Array.isArray(items) ? items.find(cat => cat.id === activeCategory) : null,
+    [items, activeCategory]
+  );
 
-  const filteredItems = (() => {
+  const filteredItems = React.useMemo(() => {
     if (activeCategory === 'all') {
       const all = [];
       items.forEach(cat => {
         if (cat.items) {
-          cat.items.forEach(item => {
-            all.push({ ...item, categoryId: cat.id });
-          });
+          cat.items.forEach(item => all.push({ ...item, categoryId: cat.id }));
         }
       });
-      return all.filter(item =>
-        item.label.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    } else {
-      return (activeCategoryData?.items || []).filter(item =>
-        item.label.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      return all.filter(item => item.label.toLowerCase().includes(searchQuery.toLowerCase()));
     }
-  })();
+    return (activeCategoryData?.items || []).filter(item =>
+      item.label.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [items, activeCategory, activeCategoryData, searchQuery]);
 
   const filteredOwnedItems = Array.isArray(ownedItems)
     ? ownedItems.filter(item =>
-        item.label.toLowerCase().includes(searchQueryOwned.toLowerCase())
-      )
+      item.label.toLowerCase().includes(searchQueryOwned.toLowerCase())
+    )
     : [];
 
   const getItemIcon = (item) => {
@@ -185,6 +213,8 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
       initial={{ x: -400, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: -400, opacity: 0 }}
+      transition={{ type: 'tween', duration: 0.22, ease: [0.25, 0.1, 0.25, 1] }}
+      style={{ willChange: 'transform, opacity' }}
     >
       <div className="sidebar-header">
         <button
@@ -205,12 +235,13 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
         </button>
       </div>
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence initial={false}>
         <motion.div
           className="sidebar-content"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
           key={activeTab}
         >
           {(activeTab === 'shopping' || activeTab === 'cart') && (
@@ -274,27 +305,22 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
 
                   <div className="items-grid-scroll" key={`${activeTab}-${activeCategory}`}>
                     <div className="items-grid">
-                      <AnimatePresence mode="popLayout">
-                        {filteredItems.map((item) => {
-                          const ItemIcon = getItemIcon(item);
-                          const itemKey = `${item.categoryId || activeCategory}-${item.id}`;
-                          return (
-                            <motion.div
-                              key={itemKey}
-                              className={`item-card ${isPlacing ? (placingItem?.id === item.id ? 'is-placing' : 'disabled') : ''}`}
-                              initial={{ scale: 0.95, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              exit={{ scale: 0.95, opacity: 0 }}
-                              onMouseEnter={() => !isPlacing && post('hoverIn', item)}
-                              onMouseLeave={() => !isPlacing && post('hoverOut')}
-                              onClick={() => handlePreview(item)}
-                            >
-                              <FurnitureImage item={item} ItemIcon={ItemIcon} />
-                              <span className="item-card-price">${item.price}</span>
-                            </motion.div>
-                          );
-                        })}
-                      </AnimatePresence>
+                      {filteredItems.map((item) => {
+                        const ItemIcon = getItemIcon(item);
+                        const itemKey = `${item.categoryId || activeCategory}-${item.id}`;
+                        return (
+                          <ItemCard
+                            key={itemKey}
+                            item={item}
+                            ItemIcon={ItemIcon}
+                            isPlacing={isPlacing}
+                            isThisPlacing={placingItem?.id === item.id}
+                            onHoverIn={() => !isPlacing && post('hoverIn', item)}
+                            onHoverOut={() => !isPlacing && post('hoverOut')}
+                            onClick={() => handlePreview(item)}
+                          />
+                        );
+                      })}
                     </div>
                   </div>
                 </>
