@@ -8,11 +8,22 @@
       <Name>house_alarm_sp</Name>
       <Header>
         <Flags value="0x00008004" />
-        <Volume value="300" />
-        <Category>scripted_louder</Category>
+        <Volume value="200" />
+        <Category>scripted</Category>
       </Header>
       <ContainerName>audiodirectory/lns_bank</ContainerName>
       <FileName>house_alarm</FileName>
+      <WaveSlotNum value="0" />
+    </Item>
+    <Item type="SimpleSound">
+      <Name>house_doorbell_sp</Name>
+      <Header>
+        <Flags value="0x00008004" />
+        <Volume value="200" />
+        <Category>scripted</Category>
+      </Header>
+      <ContainerName>audiodirectory/lns_bank</ContainerName>
+      <FileName>house_doorbell</FileName>
       <WaveSlotNum value="0" />
     </Item>
     <Item type="SoundSet">
@@ -24,6 +35,10 @@
         <Item>
           <ScriptName>house_alarm</ScriptName>
           <ChildSound>house_alarm_sp</ChildSound>
+        </Item>
+        <Item>
+          <ScriptName>house_doorbell</ScriptName>
+          <ChildSound>house_doorbell_sp</ChildSound>
         </Item>
       </SoundSets>
     </Item>

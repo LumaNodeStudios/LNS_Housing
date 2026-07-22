@@ -16,7 +16,32 @@
         <Item>
           <Type>format</Type>
           <Codec>ADPCM</Codec>
-          <Samples value="1367629" />
+          <Samples value="1364939" />
+          <SampleRate value="44100" />
+          <Headroom value="-200" />
+          <PlayBegin value="0" />
+          <PlayEnd value="0" />
+          <LoopBegin value="0" />
+          <LoopEnd value="0" />
+          <LoopPoint value="-1" />
+          <Peak unk="0" />
+        </Item>
+      </Chunks>
+    </Item>
+    <Item>
+      <Name>house_doorbell</Name>
+      <FileName>house_doorbell.wav</FileName>
+      <Chunks>
+        <Item>
+          <Type>peak</Type>
+        </Item>
+        <Item>
+          <Type>data</Type>
+        </Item>
+        <Item>
+          <Type>format</Type>
+          <Codec>ADPCM</Codec>
+          <Samples value="193511" />
           <SampleRate value="44100" />
           <Headroom value="-200" />
           <PlayBegin value="0" />
