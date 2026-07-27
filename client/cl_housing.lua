@@ -33,6 +33,26 @@ end, false)
 
 RegisterNUICallback('createHouse', function(data, cb)
     SetNuiFocus(false, false)
+
+    local zoneCoords = nil
+
+    if data.zone_data and data.zone_data.points and #data.zone_data.points > 0 then
+        local sumX, sumY, sumZ = 0, 0, 0
+        local count = #data.zone_data.points
+        for _, pt in ipairs(data.zone_data.points) do
+            sumX = sumX + pt.x
+            sumY = sumY + pt.y
+            sumZ = sumZ + pt.z
+        end
+        zoneCoords = vec3(sumX / count, sumY / count, sumZ / count)
+    elseif data.entranceCoords then
+        zoneCoords = vec3(data.entranceCoords.x, data.entranceCoords.y, data.entranceCoords.z)
+    else
+        zoneCoords = GetEntityCoords(cache.ped)
+    end
+
+    data.region = GetLabelText(GetNameOfZone(zoneCoords.x, zoneCoords.y, zoneCoords.z))
+
     local success = lib.callback.await('LNS_Housing:server:createHouse', false, data)
     if success then
         Bridge.Client.Notify('House created successfully!', 'success')
