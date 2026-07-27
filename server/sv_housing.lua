@@ -557,6 +557,35 @@ function TriggerHouseAlarm(propertyId)
     end)
 end
 
+function TriggerHouseDoorbell(propertyId)
+    local p = Properties[propertyId]
+    if not p then
+        print('^1[Doorbell]^7 No property found for id ' .. tostring(propertyId))
+        return
+    end
+
+    local coords = GetEntranceCoordsServer(p)
+    if not coords then
+        print('^1[Doorbell]^7 No entrance coords resolved for property ' .. propertyId)
+        return
+    end
+
+    print(('^2[Doorbell]^7 Ringing at property %s, coords: %s'):format(propertyId, tostring(coords)))
+
+    local isShell = p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo'
+    local insideCoords = nil
+    if isShell then
+        insideCoords = vec3(coords.x, coords.y, Settings.ShellSpawningZ or -100.0)
+    end
+
+    TriggerClientEvent('LNS_Housing:client:triggerHouseDoorbell', -1, coords, insideCoords)
+end
+
+RegisterNetEvent('LNS_Housing:server:ringDoorbell', function(propertyId)
+    print('^2[Doorbell]^7 Server received ring request for ' .. tostring(propertyId))
+    TriggerHouseDoorbell(propertyId)
+end)
+
 RegisterNetEvent('LNS_Housing:server:lockpickFailed', function(propertyId)
     local src = source
     local isApartment = Properties[propertyId] == nil

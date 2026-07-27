@@ -372,6 +372,13 @@ local function RegisterApartmentDoors(delay)
 
                         local options = {
                             {
+                                label = 'Ring Doorbell',
+                                icon = 'fas fa-bell',
+                                onSelect = function()
+                                    TriggerServerEvent('LNS_Housing:server:ringApartmentDoorbell', room.id)
+                                end
+                            },
+                            {
                                 label = 'Raid Apartment',
                                 icon = 'fas fa-shield-halved',
                                 items = Settings.Security.RaidItem,

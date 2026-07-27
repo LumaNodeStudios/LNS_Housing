@@ -6,6 +6,8 @@ local PropertyBlips = {}
 local ClearPropertyBlips, UpdatePropertyBlips
 local PropertyZones = {}
 local activeAlarmsCount = 0
+local activeAlarmsCount = 0
+local activeDoorbellsCount = 0
 Properties = {}
 EntranceTargets = {}
 LoadedFurniture = {}
@@ -504,72 +506,45 @@ function RegisterPropertyZones(p, forceShell)
             end
 
             if shouldRegister then
-                local onEnterFn = function()
-                    local shellName = p.metadata.shell or 'Standard Motel'
-                    SpawnShellForProperty(p.id, shellName, shellCoords)
+                local zoneSize = isIpl and (shellData.zoneSize or vec3(150.0, 150.0, 80.0)) or vec3(25.0, 25.0, 10.0)
+                PropertyZones[p.id] = lib.zones.box({
+                    coords = shellCoords,
+                    size = zoneSize,
+                    debug = Settings.Debug.Zones,
+                    onEnter = function()
+                        local shellName = p.metadata.shell or 'Standard Motel'
+                        SpawnShellForProperty(p.id, shellName, shellCoords)
 
-                    LoadFurnitures(p.id)
-                    TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', p.id)
+                        LoadFurnitures(p.id)
+                        TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', p.id)
 
-                    if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'manage') then
-                        lib.addRadialItem({
-                            id = 'housing_furniture',
-                            icon = 'couch',
-                            label = 'Furniture Menu',
-                            onSelect = function()
-                                TriggerEvent('LNS_Housing:client:openFurnitureMenu', p.id)
+                        if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'manage') then
+                            lib.addRadialItem({
+                                id = 'housing_furniture',
+                                icon = 'couch',
+                                label = 'Furniture Menu',
+                                onSelect = function()
+                                    TriggerEvent('LNS_Housing:client:openFurnitureMenu', p.id)
+                                end
+                            })
+                        end
+                    end,
+                    onExit = function()
+                        UnloadFurnitures(p.id)
+                        lib.removeRadialItem('housing_furniture')
+                        TriggerServerEvent('LNS_Housing:server:leavePropertyBucket')
+                        
+                        SetTimeout(0, function()
+                            if PropertyZones[p.id] then
+                                local zone = PropertyZones[p.id]
+                                PropertyZones[p.id] = nil
+                                pcall(function()
+                                    zone:remove()
+                                end)
                             end
-                        })
+                        end)
                     end
-                end
-
-                local onExitFn = function()
-                    UnloadFurnitures(p.id)
-                    lib.removeRadialItem('housing_furniture')
-                    TriggerServerEvent('LNS_Housing:server:leavePropertyBucket')
-
-                    SetTimeout(0, function()
-                        if PropertyZones[p.id] then
-                            local zone = PropertyZones[p.id]
-                            PropertyZones[p.id] = nil
-                            pcall(function()
-                                zone:remove()
-                            end)
-                        end
-                    end)
-                end
-
-                if shellData.zoneCoords and #shellData.zoneCoords >= 3 then
-                    local zoneThickness = shellData.zoneThickness or (isIpl and 20.0 or 10.0)
-                    local points = {}
-
-                    for i, pt in ipairs(shellData.zoneCoords) do
-                        if isIpl then
-                            local baseZ = pt.z or shellCoords.z
-                            points[i] = vector3(pt.x, pt.y, baseZ + (zoneThickness / 2))
-                        else
-                            local baseZ = shellCoords.z + (pt.z or 0.0)
-                            points[i] = vector3(shellCoords.x + pt.x, shellCoords.y + pt.y, baseZ + (zoneThickness / 2))
-                        end
-                    end
-
-                    PropertyZones[p.id] = lib.zones.poly({
-                        points = points,
-                        thickness = zoneThickness,
-                        debug = Settings.Debug.Zones,
-                        onEnter = onEnterFn,
-                        onExit = onExitFn
-                    })
-                else
-                    local zoneSize = isIpl and (shellData.zoneSize or vec3(150.0, 150.0, 80.0)) or vec3(25.0, 25.0, 10.0)
-                    PropertyZones[p.id] = lib.zones.box({
-                        coords = shellCoords,
-                        size = zoneSize,
-                        debug = Settings.Debug.Zones,
-                        onEnter = onEnterFn,
-                        onExit = onExitFn
-                    })
-                end
+                })
             end
         end
     
@@ -604,6 +579,7 @@ function RegisterPropertyZones(p, forceShell)
             end
         })
     else
+        
         local door = p.door_id and GetOxDoorlockDoor(p.door_id)
         if door and door.coords then
             local doorCoords = vec3(door.coords.x, door.coords.y, door.coords.z)
@@ -737,6 +713,13 @@ function RegisterPropertyEntranceTargets(p)
                     debug = Settings.Debug.Zones,
                     options = {
                         {
+                            label = 'Ring Doorbell',
+                            icon = 'fas fa-bell',
+                            onSelect = function()
+                                TriggerServerEvent('LNS_Housing:server:ringDoorbell', id)
+                            end
+                        },
+                        {
                             label = 'Raid House',
                             icon = 'fas fa-shield-halved',
                             items = Settings.Security.RaidItem,
@@ -840,7 +823,14 @@ function RegisterPropertyEntranceTargets(p)
                         onSelect = function()
                             StartPoliceRaid(id, 'house', nil)
                         end
-                    }
+                    },
+                    {
+                        label = 'Ring Doorbell',
+                        icon = 'fas fa-bell',
+                        onSelect = function()
+                            TriggerServerEvent('LNS_Housing:server:ringDoorbell', id)
+                        end
+                    },
                 }
             })
         end
@@ -1532,7 +1522,7 @@ RegisterNetEvent('LNS_Housing:client:triggerHouseAlarm', function(coords, durati
         activeAlarmsCount = activeAlarmsCount + 1
 
         local attempts = 0
-        while not RequestScriptAudioBank("sound/audiodirectory/lns_bank", false) and attempts < 100 do
+        while not RequestScriptAudioBank("audiodirectory/lns_bank", false) and attempts < 100 do
             Wait(100)
             attempts = attempts + 1
         end
@@ -1552,7 +1542,92 @@ RegisterNetEvent('LNS_Housing:client:triggerHouseAlarm', function(coords, durati
 
         activeAlarmsCount = activeAlarmsCount - 1
         if activeAlarmsCount == 0 then
-            ReleaseNamedScriptAudioBank("sound/audiodirectory/lns_bank")
+            ReleaseNamedScriptAudioBank("audiodirectory/lns_bank")
         end
     end
 end)
+
+RegisterNetEvent('LNS_Housing:client:triggerHouseDoorbell', function(entranceCoords, insideCoords)
+    print('^3[Doorbell]^7 Event received on client')
+
+    if not entranceCoords then
+        print('^1[Doorbell]^7 No entranceCoords received - aborting')
+        return
+    end
+
+    local playerCoords = GetEntityCoords(PlayerPedId())
+    local doorCoords = vec3(entranceCoords.x, entranceCoords.y, entranceCoords.z)
+    local distToDoor = #(playerCoords - doorCoords)
+    local isNearEntrance = distToDoor < 35.0
+
+    print(('^3[Doorbell]^7 Distance to door: %.1f (near: %s)'):format(distToDoor, tostring(isNearEntrance)))
+
+    local insideVec = nil
+    local isNearInside = false
+    if insideCoords then
+        insideVec = vec3(insideCoords.x, insideCoords.y, insideCoords.z)
+        local distToInside = #(playerCoords - insideVec)
+        isNearInside = distToInside < 35.0
+        print(('^3[Doorbell]^7 Distance to inside: %.1f (near: %s)'):format(distToInside, tostring(isNearInside)))
+    else
+        print('^3[Doorbell]^7 No insideCoords (non-shell property, expected)')
+    end
+
+    if not isNearEntrance and not isNearInside then
+        print('^1[Doorbell]^7 Not near either point - not playing')
+        return
+    end
+
+    activeDoorbellsCount = activeDoorbellsCount + 1
+
+    local attempts = 0
+    local bankLoaded = false
+    while not bankLoaded and attempts < 100 do
+        bankLoaded = RequestScriptAudioBank("audiodirectory/lns_bank", false)
+        if not bankLoaded then
+            Wait(100)
+            attempts = attempts + 1
+        end
+    end
+
+    print(('^3[Doorbell]^7 Audio bank loaded: %s (attempts: %d)'):format(tostring(bankLoaded), attempts))
+
+    if not bankLoaded then
+        print('^1[Doorbell]^7 Audio bank FAILED to load - check the bank path/name')
+        activeDoorbellsCount = activeDoorbellsCount - 1
+        return
+    end
+
+    local soundIds = {}
+
+    if isNearEntrance then
+        local outsideSoundId = GetSoundId()
+        PlaySoundFromCoord(outsideSoundId, "house_doorbell", doorCoords.x, doorCoords.y, doorCoords.z, "lns_soundset", false, 15.0, false)
+        table.insert(soundIds, outsideSoundId)
+        print('^2[Doorbell]^7 Called PlaySoundFromCoord for outside, soundId: ' .. outsideSoundId)
+    end
+
+    if insideVec and isNearInside then
+        local insideSoundId = GetSoundId()
+        PlaySoundFromCoord(insideSoundId, "house_doorbell", insideVec.x, insideVec.y, insideVec.z, "lns_soundset", false, 15.0, false)
+        table.insert(soundIds, insideSoundId)
+        print('^2[Doorbell]^7 Called PlaySoundFromCoord for inside, soundId: ' .. insideSoundId)
+    end
+
+    Wait(5000)
+
+    for _, soundId in ipairs(soundIds) do
+        StopSound(soundId)
+        ReleaseSoundId(soundId)
+    end
+
+    activeDoorbellsCount = activeDoorbellsCount - 1
+    if activeDoorbellsCount == 0 then
+        ReleaseNamedScriptAudioBank("audiodirectory/lns_bank")
+    end
+end)
+
+RegisterCommand('testbank', function()
+    local ok = RequestScriptAudioBank("audiodirectory/lns_bank", false)
+    print('Bank load result (first try):', ok)
+end, false)

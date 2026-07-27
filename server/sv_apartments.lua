@@ -1158,6 +1158,21 @@ RegisterNetEvent('LNS_Housing:server:toggleApartmentLock', function(roomId)
     end
 end)
 
+RegisterNetEvent('LNS_Housing:server:ringApartmentDoorbell', function(roomId)
+    local roomData = getRoomDataById(roomId)
+    if not roomData or not roomData.doorCoords then return end
+
+    local coords = vec3(roomData.doorCoords.x, roomData.doorCoords.y, roomData.doorCoords.z)
+
+    local isShell = roomData.shell and roomData.shell ~= 'mlo'
+    local insideCoords = nil
+    if isShell then
+        insideCoords = vec3(coords.x, coords.y, Settings.ShellSpawningZ or -100.0)
+    end
+
+    TriggerClientEvent('LNS_Housing:client:triggerHouseDoorbell', -1, coords, insideCoords)
+end)
+
 function GetApartmentDoorId(roomId)
     return roomDoors[roomId]
 end
