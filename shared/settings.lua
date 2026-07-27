@@ -13,6 +13,7 @@ return {
             Enabled = true,                        -- If true, players can use the item below to open the real estate menu
             Name = 'lockpick',           -- Item name that opens the real estate (properties) menu when used
         },
+        ContractDistance = 5.0, -- Max distance to draft a contract (in meters)
         OnlyBuyViaContracts = false,                -- If true, players can only buy houses through a signed contract with an agent
         Jobs = { 'realestate', 'luxuryestate' },    -- Jobs allowed to access the real estate agent actions
         Groups = { --[['admin', 'god', 'superadmin']] },  -- Admin groups that have full agent permissions
