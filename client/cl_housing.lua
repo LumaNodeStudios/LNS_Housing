@@ -1,3 +1,4 @@
+lib.require('@qbx_core.modules.lib')
 local Settings = lib.load('shared.settings')
 local Furniture = lib.load('shared.furniture')
 local CurrentProperty = nil
@@ -8,6 +9,9 @@ local PropertyZones = {}
 local activeAlarmsCount = 0
 local activeAlarmsCount = 0
 local activeDoorbellsCount = 0
+local AUDIO_BANK = "audiodirectory/lns_bank"
+local AUDIO_REF = "lns_soundset"
+local AUDIO_TIMEOUT = 10000 -- ms
 Properties = {}
 EntranceTargets = {}
 LoadedFurniture = {}
@@ -711,6 +715,7 @@ function RegisterPropertyEntranceTargets(p)
                     size = vec3(1.0, 1.5, 2.0),
                     rotation = targetHeading,
                     debug = Settings.Debug.Zones,
+                    distance = 40,
                     options = {
                         {
                             label = 'Ring Doorbell',
@@ -748,6 +753,7 @@ function RegisterPropertyEntranceTargets(p)
                 size = vec3(1.5, 1.5, 2.0),
                 rotation = targetHeading,
                 debug = Settings.Debug.Zones,
+                distance = 40,
                 options = {
                     {
                         label = 'Enter ' .. p.label,
@@ -1517,117 +1523,108 @@ RegisterNetEvent('LNS_Housing:client:triggerHouseAlarm', function(coords, durati
             end
         end
     end
-
+ 
     if isNearEntrance or isNearShell then
         activeAlarmsCount = activeAlarmsCount + 1
-
-        local attempts = 0
-        while not RequestScriptAudioBank("audiodirectory/lns_bank", false) and attempts < 100 do
-            Wait(100)
-            attempts = attempts + 1
+ 
+        local bankLoaded = qbx.loadAudioBank(AUDIO_BANK, AUDIO_TIMEOUT)
+        if not bankLoaded then
+            activeAlarmsCount = activeAlarmsCount - 1
+            return
         end
-
-        local outsideSoundId = GetSoundId()
-        PlaySoundFromCoord(outsideSoundId, "house_alarm", alarmCoords.x, alarmCoords.y, alarmCoords.z, "lns_soundset", false, 15.0, false)
-
-        local insideSoundId = GetSoundId()
-        PlaySoundFromCoord(insideSoundId, "house_alarm", shellCoords.x, shellCoords.y, shellCoords.z, "lns_soundset", false, 15.0, false)
-
+ 
+        local outsideSoundId = qbx.playAudio({
+            audioName = "house_alarm",
+            audioRef = AUDIO_REF,
+            audioSource = alarmCoords,
+            range = 25.0,
+            returnSoundId = true,
+        })
+ 
+        local insideSoundId = qbx.playAudio({
+            audioName = "house_alarm",
+            audioRef = AUDIO_REF,
+            audioSource = shellCoords,
+            range = 15.0,
+            returnSoundId = true,
+        })
+ 
         Wait(durationMs or 30000)
-
-        StopSound(outsideSoundId)
-        ReleaseSoundId(outsideSoundId)
-        StopSound(insideSoundId)
-        ReleaseSoundId(insideSoundId)
-
+ 
+        if outsideSoundId then
+            StopSound(outsideSoundId)
+            ReleaseSoundId(outsideSoundId)
+        end
+        if insideSoundId then
+            StopSound(insideSoundId)
+            ReleaseSoundId(insideSoundId)
+        end
+ 
         activeAlarmsCount = activeAlarmsCount - 1
         if activeAlarmsCount == 0 then
-            ReleaseNamedScriptAudioBank("audiodirectory/lns_bank")
+            ReleaseScriptAudioBank()
         end
     end
 end)
-
+ 
 RegisterNetEvent('LNS_Housing:client:triggerHouseDoorbell', function(entranceCoords, insideCoords)
-    print('^3[Doorbell]^7 Event received on client')
-
-    if not entranceCoords then
-        print('^1[Doorbell]^7 No entranceCoords received - aborting')
-        return
-    end
-
+    if not entranceCoords then return end
+ 
     local playerCoords = GetEntityCoords(PlayerPedId())
     local doorCoords = vec3(entranceCoords.x, entranceCoords.y, entranceCoords.z)
     local distToDoor = #(playerCoords - doorCoords)
     local isNearEntrance = distToDoor < 35.0
-
-    print(('^3[Doorbell]^7 Distance to door: %.1f (near: %s)'):format(distToDoor, tostring(isNearEntrance)))
-
     local insideVec = nil
     local isNearInside = false
+
     if insideCoords then
         insideVec = vec3(insideCoords.x, insideCoords.y, insideCoords.z)
         local distToInside = #(playerCoords - insideVec)
         isNearInside = distToInside < 35.0
-        print(('^3[Doorbell]^7 Distance to inside: %.1f (near: %s)'):format(distToInside, tostring(isNearInside)))
-    else
-        print('^3[Doorbell]^7 No insideCoords (non-shell property, expected)')
     end
-
-    if not isNearEntrance and not isNearInside then
-        print('^1[Doorbell]^7 Not near either point - not playing')
-        return
-    end
-
+ 
+    if not isNearEntrance and not isNearInside then return end
+ 
     activeDoorbellsCount = activeDoorbellsCount + 1
-
-    local attempts = 0
-    local bankLoaded = false
-    while not bankLoaded and attempts < 100 do
-        bankLoaded = RequestScriptAudioBank("audiodirectory/lns_bank", false)
-        if not bankLoaded then
-            Wait(100)
-            attempts = attempts + 1
-        end
-    end
-
-    print(('^3[Doorbell]^7 Audio bank loaded: %s (attempts: %d)'):format(tostring(bankLoaded), attempts))
-
+ 
+    local bankLoaded = qbx.loadAudioBank(AUDIO_BANK, AUDIO_TIMEOUT)
+ 
     if not bankLoaded then
-        print('^1[Doorbell]^7 Audio bank FAILED to load - check the bank path/name')
         activeDoorbellsCount = activeDoorbellsCount - 1
         return
     end
-
+ 
     local soundIds = {}
-
+ 
     if isNearEntrance then
-        local outsideSoundId = GetSoundId()
-        PlaySoundFromCoord(outsideSoundId, "house_doorbell", doorCoords.x, doorCoords.y, doorCoords.z, "lns_soundset", false, 15.0, false)
-        table.insert(soundIds, outsideSoundId)
-        print('^2[Doorbell]^7 Called PlaySoundFromCoord for outside, soundId: ' .. outsideSoundId)
+        qbx.playAudio({
+            audioName = "house_doorbell",
+            audioRef = AUDIO_REF,
+            audioSource = doorCoords,
+            range = 5.0,
+            returnSoundId = false,
+        })
     end
-
+ 
     if insideVec and isNearInside then
-        local insideSoundId = GetSoundId()
-        PlaySoundFromCoord(insideSoundId, "house_doorbell", insideVec.x, insideVec.y, insideVec.z, "lns_soundset", false, 15.0, false)
-        table.insert(soundIds, insideSoundId)
-        print('^2[Doorbell]^7 Called PlaySoundFromCoord for inside, soundId: ' .. insideSoundId)
+        qbx.playAudio({
+            audioName = "house_doorbell",
+            audioRef = AUDIO_REF,
+            audioSource = insideVec,
+            range = 10.0,
+            returnSoundId = false,
+        })
     end
-
+ 
     Wait(5000)
-
+ 
     for _, soundId in ipairs(soundIds) do
         StopSound(soundId)
         ReleaseSoundId(soundId)
     end
-
+ 
     activeDoorbellsCount = activeDoorbellsCount - 1
     if activeDoorbellsCount == 0 then
-        ReleaseNamedScriptAudioBank("audiodirectory/lns_bank")
+        ReleaseScriptAudioBank()
     end
 end)
-
-RegisterCommand('testbank', function()
-    local ok = RequestScriptAudioBank("audiodirectory/lns_bank", false)
-    print('Bank load result (first try):', ok)
-end, false)

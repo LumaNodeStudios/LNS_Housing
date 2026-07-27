@@ -559,18 +559,10 @@ end
 
 function TriggerHouseDoorbell(propertyId)
     local p = Properties[propertyId]
-    if not p then
-        print('^1[Doorbell]^7 No property found for id ' .. tostring(propertyId))
-        return
-    end
+    if not p then return end
 
     local coords = GetEntranceCoordsServer(p)
-    if not coords then
-        print('^1[Doorbell]^7 No entrance coords resolved for property ' .. propertyId)
-        return
-    end
-
-    print(('^2[Doorbell]^7 Ringing at property %s, coords: %s'):format(propertyId, tostring(coords)))
+    if not coords then return end
 
     local isShell = p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo'
     local insideCoords = nil
@@ -579,10 +571,11 @@ function TriggerHouseDoorbell(propertyId)
     end
 
     TriggerClientEvent('LNS_Housing:client:triggerHouseDoorbell', -1, coords, insideCoords)
+
+    AddSecurityLog(propertyId, "Doorbell Rung", "Someone rang the doorbell at the property.", "#3b82f6")
 end
 
 RegisterNetEvent('LNS_Housing:server:ringDoorbell', function(propertyId)
-    print('^2[Doorbell]^7 Server received ring request for ' .. tostring(propertyId))
     TriggerHouseDoorbell(propertyId)
 end)
 

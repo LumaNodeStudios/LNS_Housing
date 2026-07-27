@@ -13,7 +13,7 @@ files {
     'web/dist/**/*',
     'stream/[Shells]/*.ytyp',
     'sound/data/lns_data.dat54.rel',
-    'audiodirectory/lns_bank.awc'
+    'sound/audiodirectory/lns_bank.awc'
 }
 
 shared_scripts {
