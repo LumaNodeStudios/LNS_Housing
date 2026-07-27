@@ -336,3 +336,52 @@ end
 
 exports('PolyCreator', polyCreator)
 exports('DoorPicker', mloDoor)
+
+RegisterCommand('getzonecoords', function()
+    CreateThread(function()
+        local hasPermission = lib.callback.await('LNS_Housing:server:checkPermission', false, 'admin')
+        if not hasPermission then
+            Bridge.Client.Notify('You do not have permission to use this command.', 'error')
+            return
+        end
+
+        Bridge.Client.Notify('Place points around the zone footprint, then press H to finish.', 'inform')
+
+        local result = polyCreator()
+        if not result or not result.points or #result.points < 3 then
+            Bridge.Client.Notify('Zone creation cancelled or not enough points (need 3+).', 'error')
+            return
+        end
+
+        local origin = result.points[1]
+        local absLines = {}
+        for _, pt in ipairs(result.points) do
+            table.insert(absLines, string.format('    { x = %.2f, y = %.2f, z = %.2f },', pt.x, pt.y, pt.z))
+        end
+
+        local relLines = {}
+        for _, pt in ipairs(result.points) do
+            local rx = pt.x - origin.x
+            local ry = pt.y - origin.y
+            local rz = pt.z - origin.z
+            table.insert(relLines, string.format('    { x = %.2f, y = %.2f, z = %.2f },', rx, ry, rz))
+        end
+
+        print('^2[ZoneCreator] ^7----------------------------------------')
+        print('^3[ZoneCreator] ^7ABSOLUTE (paste into an IPL entry):')
+        print('zoneCoords = {')
+        print(table.concat(absLines, '\n'))
+        print('},')
+        print(string.format('zoneThickness = %.1f,', result.thickness))
+        print('')
+        print('^3[ZoneCreator] ^7RELATIVE (paste into a Shell entry, relative to origin below):')
+        print(string.format('-- Origin point was: vec3(%.2f, %.2f, %.2f)', origin.x, origin.y, origin.z))
+        print('zoneCoords = {')
+        print(table.concat(relLines, '\n'))
+        print('},')
+        print(string.format('zoneThickness = %.1f,', result.thickness))
+        print('^2[ZoneCreator] ^7----------------------------------------')
+
+        Bridge.Client.Notify('Zone coords printed to console (F8).', 'success')
+    end)
+end, false)

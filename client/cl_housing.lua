@@ -504,45 +504,72 @@ function RegisterPropertyZones(p, forceShell)
             end
 
             if shouldRegister then
-                local zoneSize = isIpl and (shellData.zoneSize or vec3(150.0, 150.0, 80.0)) or vec3(25.0, 25.0, 10.0)
-                PropertyZones[p.id] = lib.zones.box({
-                    coords = shellCoords,
-                    size = zoneSize,
-                    debug = Settings.Debug.Zones,
-                    onEnter = function()
-                        local shellName = p.metadata.shell or 'Standard Motel'
-                        SpawnShellForProperty(p.id, shellName, shellCoords)
+                local onEnterFn = function()
+                    local shellName = p.metadata.shell or 'Standard Motel'
+                    SpawnShellForProperty(p.id, shellName, shellCoords)
 
-                        LoadFurnitures(p.id)
-                        TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', p.id)
+                    LoadFurnitures(p.id)
+                    TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', p.id)
 
-                        if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'manage') then
-                            lib.addRadialItem({
-                                id = 'housing_furniture',
-                                icon = 'couch',
-                                label = 'Furniture Menu',
-                                onSelect = function()
-                                    TriggerEvent('LNS_Housing:client:openFurnitureMenu', p.id)
-                                end
-                            })
-                        end
-                    end,
-                    onExit = function()
-                        UnloadFurnitures(p.id)
-                        lib.removeRadialItem('housing_furniture')
-                        TriggerServerEvent('LNS_Housing:server:leavePropertyBucket')
-                        
-                        SetTimeout(0, function()
-                            if PropertyZones[p.id] then
-                                local zone = PropertyZones[p.id]
-                                PropertyZones[p.id] = nil
-                                pcall(function()
-                                    zone:remove()
-                                end)
+                    if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'manage') then
+                        lib.addRadialItem({
+                            id = 'housing_furniture',
+                            icon = 'couch',
+                            label = 'Furniture Menu',
+                            onSelect = function()
+                                TriggerEvent('LNS_Housing:client:openFurnitureMenu', p.id)
                             end
-                        end)
+                        })
                     end
-                })
+                end
+
+                local onExitFn = function()
+                    UnloadFurnitures(p.id)
+                    lib.removeRadialItem('housing_furniture')
+                    TriggerServerEvent('LNS_Housing:server:leavePropertyBucket')
+
+                    SetTimeout(0, function()
+                        if PropertyZones[p.id] then
+                            local zone = PropertyZones[p.id]
+                            PropertyZones[p.id] = nil
+                            pcall(function()
+                                zone:remove()
+                            end)
+                        end
+                    end)
+                end
+
+                if shellData.zoneCoords and #shellData.zoneCoords >= 3 then
+                    local zoneThickness = shellData.zoneThickness or (isIpl and 20.0 or 10.0)
+                    local points = {}
+
+                    for i, pt in ipairs(shellData.zoneCoords) do
+                        if isIpl then
+                            local baseZ = pt.z or shellCoords.z
+                            points[i] = vector3(pt.x, pt.y, baseZ + (zoneThickness / 2))
+                        else
+                            local baseZ = shellCoords.z + (pt.z or 0.0)
+                            points[i] = vector3(shellCoords.x + pt.x, shellCoords.y + pt.y, baseZ + (zoneThickness / 2))
+                        end
+                    end
+
+                    PropertyZones[p.id] = lib.zones.poly({
+                        points = points,
+                        thickness = zoneThickness,
+                        debug = Settings.Debug.Zones,
+                        onEnter = onEnterFn,
+                        onExit = onExitFn
+                    })
+                else
+                    local zoneSize = isIpl and (shellData.zoneSize or vec3(150.0, 150.0, 80.0)) or vec3(25.0, 25.0, 10.0)
+                    PropertyZones[p.id] = lib.zones.box({
+                        coords = shellCoords,
+                        size = zoneSize,
+                        debug = Settings.Debug.Zones,
+                        onEnter = onEnterFn,
+                        onExit = onExitFn
+                    })
+                end
             end
         end
     
@@ -577,7 +604,6 @@ function RegisterPropertyZones(p, forceShell)
             end
         })
     else
-        
         local door = p.door_id and GetOxDoorlockDoor(p.door_id)
         if door and door.coords then
             local doorCoords = vec3(door.coords.x, door.coords.y, door.coords.z)

@@ -91,118 +91,6 @@ return {
 
     MaxKeys = 5, -- Maximum number of physical keys/copies that can be shared per property
 
-    -- Shell/Interior template configurations (interiors spawned under the map)
-    ShellSpawningZ = -100.0, -- Z coordinate to spawn shells
-    Shells = {
-        ["Standard Motel"] = {
-            label = "Standard Motel",
-            hash = "standardmotel_shell",
-            doorOffset = { x = -0.5, y = -2.3, z = 0.0, h = 90.0, width = 1.5 } -- Exit door offset from the shell origin
-        },
-        ["Modern Hotel"] = {
-            label = "Modern Hotel",
-            hash = "modernhotel_shell",
-            doorOffset = { x = 4.98, y = 4.35, z = -0.75, h = 179.79, width = 2.0 }
-        },
-        ["Apartment Furnished"] = {
-            label = "Apartment Furnished",
-            hash = "furnitured_midapart",
-            doorOffset = { x = 1.44, y = -10.25, z = 0.0, h = 0.0, width = 1.5 }
-        },
-        ["Apartment Unfurnished"] = {
-            label = "Apartment Unfurnished",
-            hash = "shell_v16mid",
-            doorOffset = { x = 1.34, y = -14.36, z = -0.5, h = 354.08, width = 1.5 }
-        },
-        ["Apartment 2 Unfurnished"] = {
-            label = "Apartment 2 Unfurnished",
-            hash = "shell_v16low",
-            doorOffset = { x = 4.69, y = -6.5, z = -1.0, h = 358.50, width = 1.5 }
-        },
-        ["Garage"] = {
-            label = "Garage",
-            hash = "shell_garagem",
-            doorOffset = { x = 14.0, y = 1.7, z = -0.76, h = 88.49, width = 2.0 }
-        },
-        ["Office"] = {
-            label = "Office",
-            hash = "shell_office1",
-            doorOffset = { x = 1.2, y = 4.90, z = -0.73, h = 180.0, width = 2.0 }
-        },
-        ["Store"] = {
-            label = "Store",
-            hash = "shell_store1",
-            doorOffset = { x = -2.69, y = -4.56, z = -0.62, h = 1.91, width = 2.0 }
-        },
-        ["Warehouse"] = {
-            label = "Warehouse",
-            hash = "shell_warehouse1",
-            doorOffset = { x = -8.96, y = 0.11, z = -0.95, h = 270.64, width = 2.0 }
-        },
-        ["Container"] = {
-            label = "Container",
-            hash = "container_shell",
-            doorOffset = { x = 0.05, y = -5.7, z = -0.22, h = 1.7, width = 2.2 }
-        },
-        ["2 Floor House"] = {
-            label = "2 Floor House",
-            hash = "shell_michael",
-            doorOffset = { x = -9.6, y = 5.63, z = -4.07, h = 268.55, width = 2.0 }
-        },
-        ["House 1"] = {
-            label = "House 1",
-            hash = "shell_frankaunt",
-            doorOffset = { x = -0.34, y = -5.97, z = -0.57, h = 357.23, width = 2.0 }
-        },
-        ["House 2"] = {
-            label = "House 2",
-            hash = "shell_ranch",
-            doorOffset = { x = -1.23, y = -5.54, z = -1.1, h = 272.21, width = 2.0 }
-        },
-        ["House 3"] = {
-            label = "House 3",
-            hash = "shell_lester",
-            doorOffset = { x = -1.61, y = -6.02, z = -0.37, h = 357.7, width = 2.0 }
-        },
-        ["House 4"] = {
-            label = "House 4",
-            hash = "shell_trevor",
-            doorOffset = { x = 0.2, y = -3.82, z = -0.41, h = 358.4, width = 2.0 }
-        },
-        ["Trailer"] = {
-            label = "Trailer",
-            hash = "shell_trailer",
-            doorOffset = { x = -1.27, y = -2.08, z = -0.48, h = 358.84, width = 2.0 }
-        }
-    },
-
-    IPLs = {
-        ["Eclipse Penthouse 1"] = {
-            label = "Eclipse Penthouse 1",
-            ipls = { "apa_v_mp_h_01_a" },
-            coords = vec4(-786.8663, 315.7642, 217.6385, 270.0),
-            exitCoords = vec4(-786.8663, 315.7642, 217.6385, 270.0),
-            zoneSize = vec3(150.0, 150.0, 80.0)
-        },
-        ["Eclipse Penthouse 2"] = {
-            label = "Eclipse Penthouse 2",
-            ipls = { "apa_v_mp_h_02_a" },
-            coords = vec4(-786.9563, 315.6229, 187.9136, 270.0),
-            exitCoords = vec4(-786.9563, 315.6229, 187.9136, 270.0),
-            zoneSize = vec3(150.0, 150.0, 80.0)
-        },
-        ["Eclipse Penthouse 3"] = {
-            label = "Eclipse Penthouse 3",
-            ipls = { "apa_v_mp_h_03_a" },
-            coords = vec4(-786.8741, 315.7975, 157.9137, 270.0),
-            exitCoords = vec4(-786.8741, 315.7975, 157.9137, 270.0),
-            zoneSize = vec3(150.0, 150.0, 80.0)
-        }
-    },
-
-    -- Placeholder for dynamic custom room configurations
-    Rooms = {},
-
     -- Housing specific settings
     Housing = {
         Creator = {
@@ -269,5 +157,250 @@ return {
             coords = vec3(-826.53, -700.2, 27.06), -- Entrance vector coordinate
             postal = '8083'             -- Postal map code
         }
-    }
+    },
+
+    -- Shell/Interior template configurations (interiors spawned under the map)
+    ShellSpawningZ = -100.0, -- Z coordinate to spawn shells
+    Shells = {
+        ["Standard Motel"] = {
+            label = "Standard Motel",
+            hash = "standardmotel_shell",
+            doorOffset = { x = -0.5, y = -2.3, z = 0.0, h = 90.0, width = 1.5 }, -- Exit door offset from the shell origin
+            zoneThickness = 8.0, -- Vertical thickness of the interaction zone
+            zoneCoords = { -- Points relative to the shell's spawn origin, forming the footprint polygon (adjust to match the actual interior bounds)
+                { x = -6.0, y = -6.0 },
+                { x = 6.0, y = -6.0 },
+                { x = 6.0, y = 6.0 },
+                { x = -6.0, y = 6.0 },
+            }
+        },
+        ["Modern Hotel"] = {
+            label = "Modern Hotel",
+            hash = "modernhotel_shell",
+            doorOffset = { x = 4.98, y = 4.35, z = -0.75, h = 179.79, width = 2.0 },
+            zoneThickness = 10.0,
+            zoneCoords = {
+                { x = -1.0, y = -1.0 },
+                { x = 11.0, y = -1.0 },
+                { x = 11.0, y = 10.0 },
+                { x = -1.0, y = 10.0 },
+            }
+        },
+        ["Apartment Furnished"] = {
+            label = "Apartment Furnished",
+            hash = "furnitured_midapart",
+            doorOffset = { x = 1.44, y = -10.25, z = 0.0, h = 0.0, width = 1.5 },
+            zoneThickness = 8.0,
+            zoneCoords = {
+                { x = -6.0, y = -14.0 },
+                { x = 9.0, y = -14.0 },
+                { x = 9.0, y = 1.0 },
+                { x = -6.0, y = 1.0 },
+            }
+        },
+        ["Apartment Unfurnished"] = {
+            label = "Apartment Unfurnished",
+            hash = "shell_v16mid",
+            doorOffset = { x = 1.34, y = -14.36, z = -0.5, h = 354.08, width = 1.5 },
+            zoneThickness = 8.0,
+            zoneCoords = {
+                { x = -6.0, y = -18.0 },
+                { x = 9.0, y = -18.0 },
+                { x = 9.0, y = 1.0 },
+                { x = -6.0, y = 1.0 },
+            }
+        },
+        ["Apartment 2 Unfurnished"] = {
+            label = "Apartment 2 Unfurnished",
+            hash = "shell_v16low",
+            doorOffset = { x = 4.69, y = -6.5, z = -1.0, h = 358.50, width = 1.5 },
+            zoneThickness = 8.0,
+            zoneCoords = {
+                { x = -2.0, y = -10.0 },
+                { x = 11.0, y = -10.0 },
+                { x = 11.0, y = 3.0 },
+                { x = -2.0, y = 3.0 },
+            }
+        },
+        ["Garage"] = {
+            label = "Garage",
+            hash = "shell_garagem",
+            doorOffset = { x = 14.0, y = 1.7, z = -0.76, h = 88.49, width = 2.0 },
+            zoneThickness = 8.0,
+            zoneCoords = {
+                { x = 0.0, y = -8.0 },
+                { x = 18.0, y = -8.0 },
+                { x = 18.0, y = 10.0 },
+                { x = 0.0, y = 10.0 },
+            }
+        },
+        ["Office"] = {
+            label = "Office",
+            hash = "shell_office1",
+            doorOffset = { x = 1.2, y = 4.90, z = -0.73, h = 180.0, width = 2.0 },
+            zoneThickness = 8.0,
+            zoneCoords = {
+                { x = -5.0, y = -2.0 },
+                { x = 7.0, y = -2.0 },
+                { x = 7.0, y = 9.0 },
+                { x = -5.0, y = 9.0 },
+            }
+        },
+        ["Store"] = {
+            label = "Store",
+            hash = "shell_store1",
+            doorOffset = { x = -2.69, y = -4.56, z = -0.62, h = 1.91, width = 2.0 },
+            zoneThickness = 8.0,
+            zoneCoords = {
+                { x = -9.0, y = -9.0 },
+                { x = 4.0, y = -9.0 },
+                { x = 4.0, y = 3.0 },
+                { x = -9.0, y = 3.0 },
+            }
+        },
+        ["Warehouse"] = {
+            label = "Warehouse",
+            hash = "shell_warehouse1",
+            doorOffset = { x = -8.96, y = 0.11, z = -0.95, h = 270.64, width = 2.0 },
+            zoneThickness = 10.0,
+            zoneCoords = {
+                { x = -14.0, y = -10.0 },
+                { x = 4.0, y = -10.0 },
+                { x = 4.0, y = 10.0 },
+                { x = -14.0, y = 10.0 },
+            }
+        },
+        ["Container"] = {
+            label = "Container",
+            hash = "container_shell",
+            doorOffset = { x = 0.05, y = -5.7, z = -0.22, h = 1.7, width = 2.2 },
+            zoneThickness = 6.0,
+            zoneCoords = {
+                { x = -4.0, y = -8.0 },
+                { x = 4.0, y = -8.0 },
+                { x = 4.0, y = 2.0 },
+                { x = -4.0, y = 2.0 },
+            }
+        },
+        ["2 Floor House"] = {
+            label = "2 Floor House",
+            hash = "shell_michael",
+            doorOffset = { x = -9.6, y = 5.63, z = -4.07, h = 268.55, width = 2.0 },
+            zoneThickness = 14.0,
+            zoneCoords = {
+                { x = -16.0, y = -2.0 },
+                { x = 2.0, y = -2.0 },
+                { x = 2.0, y = 12.0 },
+                { x = -16.0, y = 12.0 },
+            }
+        },
+        ["House 1"] = {
+            label = "House 1",
+            hash = "shell_frankaunt",
+            doorOffset = { x = -0.34, y = -5.97, z = -0.57, h = 357.23, width = 2.0 },
+            zoneThickness = 8.0,
+            zoneCoords = {
+                { x = -6.0, y = -9.0 },
+                { x = 6.0, y = -9.0 },
+                { x = 6.0, y = 2.0 },
+                { x = -6.0, y = 2.0 },
+            }
+        },
+        ["House 2"] = {
+            label = "House 2",
+            hash = "shell_ranch",
+            doorOffset = { x = -1.23, y = -5.54, z = -1.1, h = 272.21, width = 2.0 },
+            zoneThickness = 8.0,
+            zoneCoords = {
+                { x = -7.0, y = -9.0 },
+                { x = 5.0, y = -9.0 },
+                { x = 5.0, y = 2.0 },
+                { x = -7.0, y = 2.0 },
+            }
+        },
+        ["House 3"] = {
+            label = "House 3",
+            hash = "shell_lester",
+            doorOffset = { x = -1.61, y = -6.02, z = -0.37, h = 357.7, width = 2.0 },
+            zoneThickness = 8.0,
+            zoneCoords = {
+                { x = -7.0, y = -9.0 },
+                { x = 5.0, y = -9.0 },
+                { x = 5.0, y = 2.0 },
+                { x = -7.0, y = 2.0 },
+            }
+        },
+        ["House 4"] = {
+            label = "House 4",
+            hash = "shell_trevor",
+            doorOffset = { x = 0.2, y = -3.82, z = -0.41, h = 358.4, width = 2.0 },
+            zoneThickness = 8.0,
+            zoneCoords = {
+                { x = -6.0, y = -7.0 },
+                { x = 6.0, y = -7.0 },
+                { x = 6.0, y = 2.0 },
+                { x = -6.0, y = 2.0 },
+            }
+        },
+        ["Trailer"] = {
+            label = "Trailer",
+            hash = "shell_trailer",
+            doorOffset = { x = -1.27, y = -2.08, z = -0.48, h = 358.84, width = 2.0 },
+            zoneThickness = 6.0,
+            zoneCoords = {
+                { x = -4.0, y = -5.0 },
+                { x = 4.0, y = -5.0 },
+                { x = 4.0, y = 2.0 },
+                { x = -4.0, y = 2.0 },
+            }
+        }
+    },
+
+    IPLs = {
+        ["Eclipse Penthouse 1"] = {
+            label = "Eclipse Penthouse 1",
+            ipls = { "apa_v_mp_h_01_a" },
+            coords = vec4(-786.8663, 315.7642, 217.6385, 270.0),
+            exitCoords = vec4(-786.8663, 315.7642, 217.6385, 270.0),
+            zoneSize = vec3(150.0, 150.0, 80.0), -- Fallback box size, used only if zoneCoords is not set
+            zoneThickness = 10.0,
+            zoneCoords = { -- Absolute world points forming the penthouse footprint polygon (adjust to match the actual interior bounds)
+                { x = -800.0, y = 302.0 },
+                { x = -774.0, y = 302.0 },
+                { x = -774.0, y = 330.0 },
+                { x = -800.0, y = 330.0 },
+            }
+        },
+        ["Eclipse Penthouse 2"] = {
+            label = "Eclipse Penthouse 2",
+            ipls = { "apa_v_mp_h_02_a" },
+            coords = vec4(-786.9563, 315.6229, 187.9136, 270.0),
+            exitCoords = vec4(-786.9563, 315.6229, 187.9136, 270.0),
+            zoneSize = vec3(150.0, 150.0, 80.0),
+            zoneThickness = 10.0,
+            zoneCoords = {
+                { x = -800.0, y = 302.0 },
+                { x = -774.0, y = 302.0 },
+                { x = -774.0, y = 330.0 },
+                { x = -800.0, y = 330.0 },
+            }
+        },
+        ["Eclipse Penthouse 3"] = {
+            label = "Eclipse Penthouse 3",
+            ipls = { "apa_v_mp_h_03_a" },
+            coords = vec4(-786.8741, 315.7975, 157.9137, 270.0),
+            exitCoords = vec4(-786.8741, 315.7975, 157.9137, 270.0),
+            zoneSize = vec3(150.0, 150.0, 80.0),
+            zoneThickness = 10.0,
+            zoneCoords = {
+                { x = -800.0, y = 302.0 },
+                { x = -774.0, y = 302.0 },
+                { x = -774.0, y = 330.0 },
+                { x = -800.0, y = 330.0 },
+            }
+        }
+    },
+
+    -- IGNORE
+    Rooms = {},
 }
