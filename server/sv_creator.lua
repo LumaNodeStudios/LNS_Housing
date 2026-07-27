@@ -1,5 +1,6 @@
 local Settings = lib.load('shared.settings')
 local SvSettings = lib.load('shared.sv_settings')
+local SQFT_PER_SQM = 10.7639
 
 exports('GetSvSettings', function()
     return SvSettings
@@ -7,6 +8,24 @@ end)
 
 function GetRealEstatePermission(source)
     return CheckPermission(source, 'realestate')
+end
+
+local function calculateZoneArea(points)
+    if not points or #points < 3 then return 0 end
+    local area = 0
+    local n = #points
+    for i = 1, n do
+        local p1 = points[i]
+        local p2 = points[(i % n) + 1]
+        area = area + (p1.x * p2.y - p2.x * p1.y)
+    end
+    return math.abs(area) / 2
+end
+
+local function calculateSquareFootage(zoneData)
+    if not zoneData or not zoneData.points then return 0 end
+    local areaSqMeters = calculateZoneArea(zoneData.points)
+    return math.floor(areaSqMeters * SQFT_PER_SQM)
 end
 
 lib.callback.register('LNS_Housing:server:uploadPhoto', function(source, base64Data)
@@ -98,8 +117,16 @@ lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
         }
     end
 
+    if data.zone_data then
+        data.size = calculateSquareFootage(data.zone_data)
+    end
+
     local newHouse = CreateProperty(data)
     if newHouse then
+        newHouse.size = data.size or 0
+        newHouse.region = data.region or 'Unknown'
+        SaveProperty(newHouse.id)
+
         if newHouse.metadata and newHouse.metadata.garage_data then
             Bridge.Server.RegisterGarage(newHouse.id, newHouse.label, newHouse.metadata.garage_data)
         end
