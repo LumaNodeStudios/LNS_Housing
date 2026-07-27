@@ -23,6 +23,10 @@ function LoadProperties()
             if v.metadata.tenant_history == nil then v.metadata.tenant_history = {} end
             if v.metadata.rent_history == nil then v.metadata.rent_history = {} end
             if v.metadata.partial_payment == nil then v.metadata.partial_payment = 0 end
+            if v.metadata.size == nil then v.metadata.size = 0 end
+            if v.metadata.region == nil then v.metadata.region = 'Unknown' end
+            v.size = v.metadata.size
+            v.region = v.metadata.region
             
             v.furniture = json.decode(v.furniture)
             v.zone_data = json.decode(v.zone_data or '[]')
@@ -102,7 +106,9 @@ function CreateProperty(data)
             shell = data.mlo and 'mlo' or (data.shell or 'Standard Motel'),
             entrance = data.entrance,
             locked = true,
-            garage_data = data.garage_data or nil
+            garage_data = data.garage_data or nil,
+            size = data.size or 0,
+            region = data.region or 'Unknown'
         }),
         json.encode(data.yard_zone_data or nil),
         0,
@@ -131,7 +137,9 @@ function CreateProperty(data)
                 shell = data.mlo and 'mlo' or (data.shell or 'Standard Motel'),
                 entrance = data.entrance,
                 locked = true,
-                garage_data = data.garage_data or nil
+                garage_data = data.garage_data or nil,
+                size = data.size or 0,
+                region = data.region or 'Unknown'
             },
             image = data.image or nil,
             sale_type = data.saleType or 'direct',
@@ -150,6 +158,8 @@ function CreateProperty(data)
             commission_rate = data.commission_rate or 10,
             garage = tonumber(data.slots) or 2
         }
+        Properties[id].size = Properties[id].metadata.size
+        Properties[id].region = Properties[id].metadata.region
         return Properties[id]
     end
     return nil

@@ -123,10 +123,6 @@ lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
 
     local newHouse = CreateProperty(data)
     if newHouse then
-        newHouse.size = data.size or 0
-        newHouse.region = data.region or 'Unknown'
-        SaveProperty(newHouse.id)
-
         if newHouse.metadata and newHouse.metadata.garage_data then
             Bridge.Server.RegisterGarage(newHouse.id, newHouse.label, newHouse.metadata.garage_data)
         end

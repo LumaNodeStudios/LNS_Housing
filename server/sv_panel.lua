@@ -377,7 +377,8 @@ lib.callback.register('LNS_Housing:server:updateListingDetails', function(source
     p.sale_type = data.sale_type or p.sale_type
     p.image = data.image
     p.zone_data = data.zone_data or p.zone_data
-    p.size = calculateSquareFootage(p.zone_data)
+    p.metadata.size = calculateSquareFootage(p.zone_data)
+    p.size = p.metadata.size
     p.yard_zone_data = data.yard_zone_data or p.yard_zone_data
 
     if not p.metadata then p.metadata = {} end
