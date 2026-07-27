@@ -42,7 +42,7 @@ const CustomSelect = ({ label, icon: Icon, value, options, onChange, name, place
                     {Icon && <Icon size={12} />} {label}
                 </label>
             )}
-            <div 
+            <div
                 className={`re-custom-select-trigger ${isOpen ? 'active' : ''}`}
                 onClick={() => setIsOpen(!isOpen)}
             >
@@ -54,7 +54,7 @@ const CustomSelect = ({ label, icon: Icon, value, options, onChange, name, place
 
             <AnimatePresence>
                 {isOpen && (
-                    <motion.div 
+                    <motion.div
                         className="re-custom-select-dropdown"
                         initial={{ opacity: 0, y: -8 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -110,7 +110,6 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     const [agencyContracts, setAgencyContracts] = useState([]);
     const [nearbyPlayers, setNearbyPlayers] = useState([]);
     const [selectedNearbyPlayer, setSelectedNearbyPlayer] = useState('');
-    const [manualPlayerId, setManualPlayerId] = useState('');
     const isAgent = hasPermission && (hasPermission.allowed || hasPermission === true);
     const canCreate = hasPermission === true || (hasPermission && hasPermission.permissions?.createHouse);
     const canDraft = hasPermission === true || (hasPermission && hasPermission.permissions?.draftContract);
@@ -326,7 +325,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
 
     const handleDraftContract = (e) => {
         e.preventDefault();
-        const targetId = selectedNearbyPlayer || manualPlayerId;
+        const targetId = selectedNearbyPlayer;
         if (!targetId) return;
 
         if (!window.GetParentResourceName) {
@@ -353,7 +352,6 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             commissionRate: hasPermission?.defaultCommission || 10
         });
         setSelectedNearbyPlayer('');
-        setManualPlayerId('');
         setActiveTab('browse');
     };
 
@@ -1071,24 +1069,8 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                         value: p.id,
                                                         label: `${p.name} (ID: ${p.id})`
                                                     }))}
-                                                    onChange={(e) => {
-                                                        setSelectedNearbyPlayer(e.target.value);
-                                                        if (e.target.value) setManualPlayerId('');
-                                                    }}
+                                                    onChange={(e) => setSelectedNearbyPlayer(e.target.value)}
                                                 />
-
-                                                <div className="re-creator-input-field">
-                                                    <label><UserPlus size={12} /> Or Enter Client Server ID</label>
-                                                    <input
-                                                        type="number"
-                                                        placeholder="Manual Player ID"
-                                                        value={manualPlayerId}
-                                                        onChange={(e) => {
-                                                            setManualPlayerId(e.target.value);
-                                                            if (e.target.value) setSelectedNearbyPlayer('');
-                                                        }}
-                                                    />
-                                                </div>
 
                                                 <div className="re-creator-input-field">
                                                     <label><DollarSign size={12} /> Contract Value ($)</label>
@@ -1356,15 +1338,15 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                     className="re-number-input-spinless"
                                                 />
                                                 <div className="re-number-spinners">
-                                                    <button 
-                                                        type="button" 
+                                                    <button
+                                                        type="button"
                                                         className="spinner-arrow up"
                                                         onClick={() => handleInputChange({ target: { name: 'slots', value: (parseInt(formData.slots) || 0) + 1 } })}
                                                     >
                                                         <ChevronUp size={10} />
                                                     </button>
-                                                    <button 
-                                                        type="button" 
+                                                    <button
+                                                        type="button"
                                                         className="spinner-arrow down"
                                                         onClick={() => handleInputChange({ target: { name: 'slots', value: Math.max(0, (parseInt(formData.slots) || 0) - 1) } })}
                                                     >
@@ -1572,8 +1554,8 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                     {formData.saleType === 'rent'
                                                         ? 'Weekly Rent ($)'
                                                         : formData.saleType === 'auction'
-                                                        ? 'Starting Bid ($)'
-                                                        : 'Purchase Price ($)'}
+                                                            ? 'Starting Bid ($)'
+                                                            : 'Purchase Price ($)'}
                                                 </label>
                                                 <input
                                                     name="price"
@@ -1612,7 +1594,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                 <button className="re-btn-secondary" type="button" onClick={resetCreatorForm}>
                                     <Trash2 size={12} /> {editingPropertyId ? 'Cancel' : 'Discard'}
                                 </button>
-                                
+
                                 {currentStep > 1 && (
                                     <button className="re-btn-secondary" type="button" onClick={() => setCurrentStep(prev => prev - 1)}>
                                         <ChevronLeft size={14} /> Back
@@ -1620,18 +1602,18 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                 )}
 
                                 {currentStep < 3 ? (
-                                    <button 
-                                        className="re-btn-primary" 
-                                        type="button" 
+                                    <button
+                                        className="re-btn-primary"
+                                        type="button"
                                         onClick={() => setCurrentStep(prev => prev + 1)}
                                         disabled={!isStepValid(currentStep)}
                                     >
                                         Next <ChevronRight size={14} />
                                     </button>
                                 ) : (
-                                    <button 
-                                        className="re-btn-primary" 
-                                        type="button" 
+                                    <button
+                                        className="re-btn-primary"
+                                        type="button"
                                         onClick={editingPropertyId ? handleUpdateProperty : handleCreateProperty}
                                         disabled={!isStepValid(3)}
                                     >

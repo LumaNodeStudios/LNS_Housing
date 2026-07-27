@@ -206,6 +206,22 @@ RegisterNetEvent('LNS_Housing:server:createContract', function(data)
         return
     end
 
+    local targetPed = GetPlayerPed(targetId)
+    if not targetPed or targetPed == 0 then
+        Bridge.Server.Notify(src, "Invalid or offline target player.", "error")
+        return
+    end
+
+    local srcPed = GetPlayerPed(src)
+    local srcCoords = GetEntityCoords(srcPed)
+    local targetCoords = GetEntityCoords(targetPed)
+    local maxDistance = (Settings.RealEstate.ContractDistance) or 5.0
+
+    if #(srcCoords - targetCoords) > maxDistance then
+        Bridge.Server.Notify(src, "That player is too far away to draft a contract with.", "error")
+        return
+    end
+
     local clientCid = Bridge.Server.GetIdentifier(targetId)
     if not clientCid then
         Bridge.Server.Notify(src, "Invalid target player.", "error")
