@@ -121,6 +121,23 @@ lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
         data.size = calculateSquareFootage(data.zone_data)
     end
 
+    if data.cameraPosition then
+        data.camera_coords = {
+            x = data.cameraPosition.x,
+            y = data.cameraPosition.y,
+            z = data.cameraPosition.z
+        }
+        data.doorbell_camera = true
+    end
+
+    if data.cameraAim then
+        data.camera_aim = {
+            x = data.cameraAim.x,
+            y = data.cameraAim.y,
+            z = data.cameraAim.z
+        }
+    end
+
     local newHouse = CreateProperty(data)
     if newHouse then
         if newHouse.metadata and newHouse.metadata.garage_data then

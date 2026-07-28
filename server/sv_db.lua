@@ -108,7 +108,10 @@ function CreateProperty(data)
             locked = true,
             garage_data = data.garage_data or nil,
             size = data.size or 0,
-            region = data.region or 'Unknown'
+            region = data.region or 'Unknown',
+            camera_coords = data.camera_coords or nil,
+            camera_aim = data.camera_aim or nil,
+            doorbell_camera = data.doorbell_camera or false
         }),
         json.encode(data.yard_zone_data or nil),
         0,
@@ -139,7 +142,10 @@ function CreateProperty(data)
                 locked = true,
                 garage_data = data.garage_data or nil,
                 size = data.size or 0,
-                region = data.region or 'Unknown'
+                region = data.region or 'Unknown',
+                camera_coords = data.camera_coords or nil,
+                camera_aim = data.camera_aim or nil,
+                doorbell_camera = data.doorbell_camera or false
             },
             image = data.image or nil,
             sale_type = data.saleType or 'direct',
@@ -384,6 +390,13 @@ MySQL.ready(function()
     ]])
 
     pcall(LoadProperties)
+
+    for id, _ in pairs(Properties) do
+        if SyncPropertyDoor then
+            pcall(SyncPropertyDoor, id)
+        end
+    end
+
     DbReady = true
 end)
 

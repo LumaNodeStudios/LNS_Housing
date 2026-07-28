@@ -37,6 +37,20 @@ function SyncPropertyDoor(propertyId)
 
     if #doorsToSync == 0 then return end
 
+    local pk = Settings.Security.PhysicalKeys
+
+    if pk and pk.Enabled then
+        for _, doorId in ipairs(doorsToSync) do
+            exports.ox_doorlock:editDoor(doorId, {
+                identifiers = {},
+                items = {
+                    { name = pk.Item, metadata = { propertyId = propertyId, isApartment = false } }
+                }
+            })
+        end
+        return
+    end
+
     local identifiers = {}
 
     if not IsRentOverdue(p) then
@@ -57,7 +71,8 @@ function SyncPropertyDoor(propertyId)
 
     for _, doorId in ipairs(doorsToSync) do
         exports.ox_doorlock:editDoor(doorId, {
-            identifiers = identifiers
+            identifiers = identifiers,
+            items = {}
         })
     end
 end
@@ -458,23 +473,118 @@ RegisterNetEvent('LNS_Housing:server:toggleLock', function(propertyId)
     local p = Properties[propertyId]
     if not p then return end
 
-    local hasAccess = HasPermissionAccess(src, propertyId, 'entry') or HasPermissionAccess(src, propertyId, 'manage')
+    local pk = Settings.Security.PhysicalKeys
+    local hasAccess
+
+    if pk and pk.Enabled then
+        hasAccess = HasPermissionAccess(src, propertyId, 'entry')
+    else
+        hasAccess = HasPermissionAccess(src, propertyId, 'entry') or HasPermissionAccess(src, propertyId, 'manage')
+    end
 
     if not hasAccess then
         Bridge.Server.Notify(src, 'You do not have key access to lock/unlock this property.', 'error')
         return
     end
 
-    if p.metadata.locked == nil then
-        p.metadata.locked = true
+    local doorId = p.door_id
+    if (not doorId or doorId == 0) and p.doors and #p.doors > 0 then
+        doorId = p.doors[1]
     end
 
-    p.metadata.locked = not p.metadata.locked
+    local newLockedState
+
+    if doorId and doorId ~= 0 then
+        local doorData = nil
+        if exports.ox_doorlock and exports.ox_doorlock.getDoor then
+            pcall(function() doorData = exports.ox_doorlock:getDoor(doorId) end)
+        elseif exports.ox_doorlock and exports.ox_doorlock.getDoorData then
+            pcall(function() doorData = exports.ox_doorlock:getDoorData(doorId) end)
+        end
+
+        local currentState = doorData and doorData.state or 1
+        local newState = currentState == 1 and 0 or 1
+        exports.ox_doorlock:setDoorState(doorId, newState)
+
+        newLockedState = newState == 1
+    else
+        if p.metadata.locked == nil then
+            p.metadata.locked = true
+        end
+        p.metadata.locked = not p.metadata.locked
+        newLockedState = p.metadata.locked
+    end
+
+    p.metadata.locked = newLockedState
     SaveProperty(propertyId)
     TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
 
-    local state = p.metadata.locked and 'locked' or 'unlocked'
+    local state = newLockedState and 'locked' or 'unlocked'
     Bridge.Server.Notify(src, 'Property is now ' .. state .. '.', 'success')
+end)
+
+RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgradeId)
+    local src = source
+    local p = Properties[propertyId]
+    if not p or p.isApartment then return end
+
+    if not HasPermissionAccess(src, propertyId, 'manage') then
+        Bridge.Server.Notify(src, 'You do not have permission to upgrade this property.', 'error')
+        return
+    end
+
+    if not p.metadata then p.metadata = {} end
+
+    if upgradeId == 'doorbell_camera' then
+        if p.metadata.doorbell_camera then
+            Bridge.Server.Notify(src, 'This property already has a doorbell camera installed.', 'error')
+            return
+        end
+
+        local price = tonumber(p.doorbellCameraPrice) or (Settings.Security.DoorbellCameraPrice or 15000)
+        local money = Bridge.Server.GetBankMoney(src)
+        if money < price then
+            Bridge.Server.Notify(src, 'You cannot afford this upgrade.', 'error')
+            return
+        end
+
+        Bridge.Server.RemoveBankMoney(src, price, 'Doorbell Camera Upgrade: ' .. p.label)
+        p.metadata.doorbell_camera = true
+        SaveProperty(propertyId)
+
+        AddSecurityLog(propertyId, 'Doorbell Camera Installed', 'A motion-activated doorbell camera was installed at the front entrance.', '#22c55e')
+
+        TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
+        Bridge.Server.Notify(src, 'Doorbell camera installed successfully!', 'success')
+    end
+end)
+
+local MotionAlertCooldown = {}
+
+RegisterNetEvent('LNS_Housing:server:motionDetected', function(propertyId)
+    local src = source
+    local p = Properties[propertyId]
+    if not p or p.isApartment then return end
+    if not (p.metadata and p.metadata.doorbell_camera) then return end
+
+    local now = os.time()
+    if MotionAlertCooldown[propertyId] and (now - MotionAlertCooldown[propertyId]) < 20 then
+        return
+    end
+    MotionAlertCooldown[propertyId] = now
+
+    --[[if HasPermissionAccess(src, propertyId, 'entry') then
+        return
+    end]]
+
+    if p.owner then
+        local onlineOwner = Bridge.Server.IsPlayerOnline(p.owner)
+        if onlineOwner then
+            TriggerClientEvent('LNS_Housing:client:motionAlert', onlineOwner.PlayerData.source, p.label, propertyId)
+        end
+    end
+
+    AddSecurityLog(propertyId, 'Motion Detected', 'Motion was detected at the front door by an unrecognized visitor.', '#f59e0b')
 end)
 
 RegisterNetEvent('LNS_Housing:server:enterPropertyBucket', function(propertyId)
@@ -614,6 +724,17 @@ RegisterNetEvent('LNS_Housing:server:notifyPoliceFallback', function(message)
     end
 end)
 
+function ResyncAllPropertyDoors()
+    local count = 0
+    for id, p in pairs(Properties) do
+        SyncPropertyDoor(id)
+        count = count + 1
+    end
+    return count
+end
+
+exports('ResyncAllPropertyDoors', ResyncAllPropertyDoors)
+
 exports('ToggleLock', function(propertyId)
     local p = Properties[propertyId]
     if not p then return nil end
@@ -695,4 +816,20 @@ lib.callback.register('LNS_Housing:server:isStashLocked', function(source, stash
         LockedStashes[stashId] = true
     end
     return LockedStashes[stashId]
+end)
+
+exports('GivePhysicalKey', function(propertyId, targetSource)
+    local p = Properties[propertyId]
+    if not p then return false end
+
+    local pk = Settings.Security.PhysicalKeys
+    if not pk or not pk.Enabled then return false end
+
+    local added = exports.ox_inventory:AddItem(targetSource, pk.Item, 1, {
+        propertyId = propertyId,
+        isApartment = false,
+        description = 'Key to: ' .. p.label
+    })
+
+    return added and true or false
 end)

@@ -3,7 +3,7 @@ return {
     Debug = {
         BuyHouses = true, 
         LawnGrowth = true, 
-        Zones = true 
+        Zones = false 
     },
 
     -- Real estate job and agency management settings
@@ -35,6 +35,25 @@ return {
             DraftContract = 1,     
             ManageListings = 3,    
             ManageEmployees = 4,   
+        }
+    },
+
+    -- Locksmith NPC settings, used to cut new physical key items for a property/apartment
+    Locksmith = {
+        Enabled = true,
+        BlankKeyItem = 'blank_house_key',  -- Item required and consumed to cut a new key
+        Distance = 2.0,                    -- Interaction distance for the target option
+        Ped = {
+            Model = 'a_m_m_business_01',
+            Coords = vec4(170.06, -1799.52, 29.32, 321.68), -- Adjust to your locksmith location
+            Scenario = 'WORLD_HUMAN_STAND_IMPATIENT',
+        },
+        Blip = {
+            Enabled = true,
+            Sprite = 186,
+            Color = 1,
+            Scale = 0.8,
+            Label = 'Locksmith'
         }
     },
 
@@ -86,7 +105,13 @@ return {
             [3] = { rounds = 3, speed = 1.3, area = 30 }, -- Level 3: 3 rounds, faster, medium area
             [4] = { rounds = 4, speed = 1.4, area = 25 }, -- Level 4: 4 rounds, medium-fast speed, medium-small area
             [5] = { rounds = 4, speed = 1.4, area = 25 }, -- Level 5: 4 rounds, fast speed, small area
-        }
+        },
+        -- Physical key item settings
+        PhysicalKeys = {
+            Enabled = true,           -- If true, 'entry' access (enter/lock/unlock) for houses AND apartments requires holding a physical key item bound (via metadata) to that specific property/apartment
+            Item = 'house_key',        -- Item name used as the physical key. Every copy MUST be given via GivePhysicalKey/GiveApartmentPhysicalKey or the locksmith, or it will not open anything.
+            RequireKeyholder = false,  -- If true, having the key item is not enough on its own. The person must ALSO be a listed keyholder (owner, or in permissions.entry) on that property/apartment. If false, the key alone is sufficient (so a stolen key still works).
+        },
     },
 
     MaxKeys = 5, -- Maximum number of physical keys/copies that can be shared per property

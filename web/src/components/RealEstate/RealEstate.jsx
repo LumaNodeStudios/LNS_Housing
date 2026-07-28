@@ -204,8 +204,12 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         entranceType: 'door',
         entranceCoords: null,
         garageCoords: null,
-        garageSpawnCoords: null
+        garageSpawnCoords: null,
+        cameraPosition: null,
+        cameraAim: null
     });
+
+    const [editingHasDoorbellCamera, setEditingHasDoorbellCamera] = useState(false);
 
     const [draftData, setDraftData] = useState({
         propertyId: '',
@@ -359,6 +363,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         setEditingPropertyId(p.id);
         setCurrentStep(1);
         const hasEntranceCoords = !!(p.metadata && p.metadata.entrance);
+        setEditingHasDoorbellCamera(!!(p.metadata && p.metadata.doorbell_camera));
         setFormData({
             name: p.label || 'New Property',
             type: p.type || 'Residential',
@@ -376,7 +381,9 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             entranceType: hasEntranceCoords ? 'coords' : 'door',
             entranceCoords: p.metadata && p.metadata.entrance ? p.metadata.entrance : null,
             garageCoords: p.metadata && p.metadata.garage_data ? { x: p.metadata.garage_data.x, y: p.metadata.garage_data.y, z: p.metadata.garage_data.z, h: p.metadata.garage_data.h } : null,
-            garageSpawnCoords: p.metadata && p.metadata.garage_data && p.metadata.garage_data.spawn ? p.metadata.garage_data.spawn : null
+            garageSpawnCoords: p.metadata && p.metadata.garage_data && p.metadata.garage_data.spawn ? p.metadata.garage_data.spawn : null,
+            cameraPosition: p.metadata && p.metadata.camera_coords ? p.metadata.camera_coords : null,
+            cameraAim: p.metadata && p.metadata.camera_aim ? p.metadata.camera_aim : null
         });
         setActiveTab('creator');
     };
@@ -408,7 +415,9 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 entranceType: formData.entranceType,
                 entranceCoords: formData.entranceCoords,
                 garageCoords: formData.garageCoords,
-                garageSpawnCoords: formData.garageSpawnCoords
+                garageSpawnCoords: formData.garageSpawnCoords,
+                cameraPosition: formData.cameraPosition,
+                cameraAim: formData.cameraAim
             })
         }).then(() => {
             setEditingPropertyId(null);
@@ -660,6 +669,19 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             });
     };
 
+    const handlePickCameraPlacement = () => {
+        fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/pickCameraPlacement`, {
+            method: 'POST',
+            body: JSON.stringify({})
+        })
+            .then(resp => resp.json())
+            .then(result => {
+                if (result) {
+                    setFormData(prev => ({ ...prev, cameraPosition: result.position, cameraAim: result.aim }));
+                }
+            });
+    };
+
     const resetCreatorForm = () => {
         setFormData({
             name: 'New Property',
@@ -678,9 +700,12 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             entranceType: 'door',
             entranceCoords: null,
             garageCoords: null,
-            garageSpawnCoords: null
+            garageSpawnCoords: null,
+            cameraPosition: null,
+            cameraAim: null
         });
         setEditingPropertyId(null);
+        setEditingHasDoorbellCamera(false);
         setCurrentStep(1);
         setActiveTab('browse');
     };
@@ -1521,6 +1546,18 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                             </div>
                                             <button className="re-btn-action" type="button" onClick={handlePickGarageSpawnCoords}>
                                                 {formData.garageSpawnCoords ? 'Reselect' : 'Set Current Position'}
+                                            </button>
+                                        </div>
+
+                                        <div className="re-interactive-row">
+                                            <div className="re-interactive-info">
+                                                <span className="re-interactive-label">Doorbell Camera Placement</span>
+                                                <span className={`re-interactive-status ${formData.cameraPosition ? 'active' : ''}`}>
+                                                    {formData.cameraPosition ? 'Camera Position Set' : 'Using Default (Front Door)'}
+                                                </span>
+                                            </div>
+                                            <button className="re-btn-action" type="button" onClick={handlePickCameraPlacement}>
+                                                {formData.cameraPosition ? 'Reposition Camera' : 'Place Camera'}
                                             </button>
                                         </div>
                                     </div>

@@ -385,6 +385,15 @@ lib.callback.register('LNS_Housing:server:updateListingDetails', function(source
     p.metadata.shell = data.mlo and 'mlo' or (data.shell or p.metadata.shell or 'Standard Motel')
     p.metadata.allow_wall_colors = data.allowWallColors or false
 
+    if p.metadata.doorbell_camera then
+        if data.cameraPosition then
+            p.metadata.camera_coords = data.cameraPosition
+        end
+        if data.cameraAim then
+            p.metadata.camera_aim = data.cameraAim
+        end
+    end
+
     if data.entranceType == 'coords' then
         p.metadata.entrance = data.entranceCoords
         if p.metadata.locked == nil then

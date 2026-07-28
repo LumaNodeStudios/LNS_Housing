@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Clock, Calendar, MapPin, Building, Zap, Droplets,
-  Thermometer, Settings, Flame, Droplet, Shield, Car, Users, DollarSign, X, Power, Package, Wrench, Wind, UserPlus, Key, Shirt, Trash2, Check, MoreVertical, Crown, CreditCard, History, CalendarCheck, Palette, EyeOff, BellRing, ShieldCheck
+  Clock, Calendar, MapPin, Settings, Shield, Car, Users, Camera, X, Power, Package, UserPlus, Key, Shirt, Trash2, Check, Crown, CreditCard, History, Palette, BellRing, ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './Panel.css';
@@ -208,6 +207,13 @@ const Panel = ({ data: initialData }) => {
     });
   };
 
+  const handleViewCamera = () => {
+    fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/viewDoorbellCamera`, {
+      method: 'POST',
+      body: JSON.stringify({ propertyId: propertyData.id })
+    });
+  };
+
   const handlePayRent = (amount) => {
     fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/payRent`, {
       method: 'POST',
@@ -275,10 +281,19 @@ const Panel = ({ data: initialData }) => {
       maxLevel: 5,
       price: propertyData.securityUpgradePrice
         ? (typeof propertyData.securityUpgradePrice === 'object'
-            ? (propertyData.securityUpgradePrice[(propertyData.metadata?.security_level || 0) + 1] || 10000)
-            : Number(propertyData.securityUpgradePrice) * ((propertyData.metadata?.security_level || 0) + 1))
+          ? (propertyData.securityUpgradePrice[(propertyData.metadata?.security_level || 0) + 1] || 10000)
+          : Number(propertyData.securityUpgradePrice) * ((propertyData.metadata?.security_level || 0) + 1))
         : 10000 * ((propertyData.metadata?.security_level || 0) + 1)
-    }
+    },
+    ...(!propertyData.isApartment ? [{
+      id: 'doorbell_camera',
+      title: 'Doorbell Camera',
+      desc: 'Install a motion-activated camera at your front door to detect visitors and view a live feed.',
+      icon: Camera,
+      level: propertyData.metadata?.doorbell_camera ? 1 : 0,
+      maxLevel: 1,
+      price: propertyData.doorbellCameraPrice || 15000
+    }] : [])
   ];
 
   const syncPermissions = (updatedRoommates) => {
@@ -477,14 +492,22 @@ const Panel = ({ data: initialData }) => {
                           </div>
                           <p>{upgrade.desc}</p>
                           <div className="upgrade-action-row">
-                            <span className="price-tag">${upgrade.price.toLocaleString()}</span>
-                            <button
-                              className="purchase-btn"
-                              disabled={upgrade.level >= upgrade.maxLevel}
-                              onClick={() => handleUpgradeSecurity(upgrade.id)}
-                            >
-                              {upgrade.level >= upgrade.maxLevel ? 'MAXED' : 'PURCHASE'}
-                            </button>
+                            {upgrade.id === 'doorbell_camera' && upgrade.level >= upgrade.maxLevel ? (
+                              <button className="camera-view-btn" onClick={handleViewCamera}>
+                                <Camera size={12} /> View Live Feed
+                              </button>
+                            ) : (
+                              <>
+                                <span className="price-tag">${upgrade.price.toLocaleString()}</span>
+                                <button
+                                  className="purchase-btn"
+                                  disabled={upgrade.level >= upgrade.maxLevel}
+                                  onClick={() => handleUpgradeSecurity(upgrade.id)}
+                                >
+                                  {upgrade.level >= upgrade.maxLevel ? 'MAXED' : 'PURCHASE'}
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -649,9 +672,9 @@ const Panel = ({ data: initialData }) => {
                       <div className="o-stat highlight">
                         <span className="o-label">{propertyData.metadata?.rent_debt > 0 ? "Debt Due" : "Next Cycle Due"}</span>
                         <span className="o-value" style={{ color: propertyData.metadata?.rent_debt > 0 ? 'var(--danger)' : 'var(--primary)' }}>
-                          {propertyData.metadata?.due_by 
+                          {propertyData.metadata?.due_by
                             ? new Date(propertyData.metadata.due_by * 1000).toLocaleDateString()
-                            : (propertyData.metadata?.last_rent_paid 
+                            : (propertyData.metadata?.last_rent_paid
                               ? new Date((propertyData.metadata.last_rent_paid + 604800) * 1000).toLocaleDateString()
                               : 'Pending'
                             )
@@ -677,8 +700,8 @@ const Panel = ({ data: initialData }) => {
                         <div className="toggle-thumb" />
                       </button>
                     </div>
-                    <button 
-                      className="pay-now-btn-new" 
+                    <button
+                      className="pay-now-btn-new"
                       onClick={() => handlePayRent(propertyData.metadata?.rent_debt > 0 ? propertyData.metadata.rent_debt : (propertyData.metadata?.rent_amount || propertyData.price || 1000))}
                     >
                       {propertyData.metadata?.rent_debt > 0 ? "Pay Total Debt" : "Pay Next Cycle"}

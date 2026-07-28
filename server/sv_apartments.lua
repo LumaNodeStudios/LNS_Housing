@@ -40,7 +40,8 @@ local function CreateApartmentDoorlocks()
                     coords = room.doorCoords,
                     heading = room.doorHeading or 0.0,
                     state = 1,
-                    maxDistance = 2.0
+                    maxDistance = 2.0,
+                    items = {}
                 })
                 roomDoors[room.id] = doorId
             else
@@ -53,6 +54,17 @@ end
 local function SyncApartmentDoor(roomId)
     local doorId = roomDoors[roomId]
     if not doorId then return end
+
+    local pk = Settings.Security.PhysicalKeys
+    if pk and pk.Enabled then
+        exports.ox_doorlock:editDoor(doorId, {
+            identifiers = {},
+            items = {
+                { name = pk.Item, metadata = { propertyId = roomId, isApartment = true } }
+            }
+        })
+        return
+    end
 
     local identifiers = {}
     local results = MySQL.query.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ?', {roomId})
@@ -76,7 +88,8 @@ local function SyncApartmentDoor(roomId)
     end
 
     exports.ox_doorlock:editDoor(doorId, {
-        identifiers = identifiers
+        identifiers = identifiers,
+        items = {}
     })
 end
 
@@ -942,7 +955,8 @@ lib.callback.register('LNS_Housing:server:createApartment', function(source, dat
                     coords = doorCoordsVec,
                     heading = doorHeading or 0.0,
                     state = 1,
-                    maxDistance = 2.0
+                    maxDistance = 2.0,
+                    items = {}
                 })
                 roomDoors[roomId] = doorId
             else
@@ -1098,7 +1112,8 @@ lib.callback.register('LNS_Housing:server:updateApartment', function(source, dat
                     coords = doorCoordsVec,
                     heading = doorHeading or 0.0,
                     state = 1,
-                    maxDistance = 2.0
+                    maxDistance = 2.0,
+                    items = {}
                 })
                 roomDoors[roomId] = doorId
             end
@@ -1128,7 +1143,14 @@ end)
 
 RegisterNetEvent('LNS_Housing:server:toggleApartmentLock', function(roomId)
     local src = source
-    local hasAccess = CheckPermission(src, 'apartment', roomId, 'entry') or CheckPermission(src, 'apartment', roomId, 'manage')
+    local pk = Settings.Security.PhysicalKeys
+    local hasAccess
+
+    if pk and pk.Enabled then
+        hasAccess = CheckPermission(src, 'apartment', roomId, 'entry')
+    else
+        hasAccess = CheckPermission(src, 'apartment', roomId, 'entry') or CheckPermission(src, 'apartment', roomId, 'manage')
+    end
 
     if not hasAccess then
         Bridge.Server.Notify(src, 'You do not have key access to lock/unlock this apartment.', 'error')
@@ -1176,3 +1198,19 @@ end)
 function GetApartmentDoorId(roomId)
     return roomDoors[roomId]
 end
+
+exports('GiveApartmentPhysicalKey', function(roomId, targetSource)
+    local pk = Settings.Security.PhysicalKeys
+    if not pk or not pk.Enabled then return false end
+
+    local roomData = getRoomDataById(roomId)
+    if not roomData then return false end
+
+    local added = exports.ox_inventory:AddItem(targetSource, pk.Item, 1, {
+        propertyId = roomId,
+        isApartment = true,
+        description = 'Key to: Apartment Room #' .. roomId
+    })
+
+    return added and true or false
+end)

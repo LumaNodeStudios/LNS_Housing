@@ -12,6 +12,9 @@ local activeDoorbellsCount = 0
 local AUDIO_BANK = "audiodirectory/lns_bank"
 local AUDIO_REF = "lns_soundset"
 local AUDIO_TIMEOUT = 10000 -- ms
+local DoorbellCam = nil
+local MotionZones = {}
+local MotionLastTriggered = {}
 Properties = {}
 EntranceTargets = {}
 LoadedFurniture = {}
@@ -118,6 +121,194 @@ RegisterNUICallback('respondToContract', function(data, cb)
     local success = lib.callback.await('LNS_Housing:server:respondToContract', false, data.id, data.action)
     SendNUIMessage({ action = 'closeUI' })
     cb(success)
+end)
+
+RegisterNUICallback('viewDoorbellCamera', function(data, cb)
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'closeUI' })
+    OpenDoorbellCamera(data.propertyId)
+    cb('ok')
+end)
+
+function OpenDoorbellCamera(propertyId)
+    local p = Properties[propertyId]
+    if not p or p.isApartment or not (p.metadata and p.metadata.doorbell_camera) then
+        Bridge.Client.Notify('This property does not have a doorbell camera installed.', 'error')
+        return
+    end
+
+    local camCoords, aimCoords = nil, nil
+
+    if p.metadata.camera_coords then
+        local c = p.metadata.camera_coords
+        camCoords = vec3(c.x, c.y, c.z)
+    end
+
+    if p.metadata.camera_aim then
+        local a = p.metadata.camera_aim
+        aimCoords = vec3(a.x, a.y, a.z)
+    end
+
+    if not camCoords then
+        local entranceCoords = GetEntranceCoords(p)
+        if not entranceCoords then return end
+
+        camCoords = vec3(entranceCoords.x, entranceCoords.y, entranceCoords.z + 2.2)
+        aimCoords = vec3(entranceCoords.x, entranceCoords.y, entranceCoords.z + 0.5)
+    end
+
+    aimCoords = aimCoords or camCoords
+
+    if DoorbellCam then
+        RenderScriptCams(false, false, 0, true, false)
+        DestroyCam(DoorbellCam, false)
+        DoorbellCam = nil
+    end
+
+    DoScreenFadeOut(1000)
+
+    while not IsScreenFadedOut() do
+        Wait(0)
+    end
+
+    DoorbellCam = CreateCam("DEFAULT_SCRIPTED_CAMERA", true)
+
+    SetCamCoord(DoorbellCam, camCoords.x, camCoords.y, camCoords.z)
+    PointCamAtCoord(DoorbellCam, aimCoords.x, aimCoords.y, aimCoords.z)
+
+    SetCamActive(DoorbellCam, true)
+
+    RenderScriptCams(true, false, 0, true, false)
+
+    SetTimecycleModifier("CAMERA_secuirity")
+
+    Wait(100)
+
+    DoScreenFadeIn(1000)
+
+    lib.showTextUI('[G] Close Camera Feed', { position = 'top-center' })
+
+    CreateThread(function()
+        local startTime = GetGameTimer()
+
+        while DoorbellCam do
+            Wait(0)
+
+            DisableControlAction(0, 1, true)
+            DisableControlAction(0, 2, true)
+
+            DrawCameraOverlay(startTime)
+
+            if IsControlJustPressed(0, 47) then -- G
+                break
+            end
+        end
+
+        DoScreenFadeOut(1000)
+
+        while not IsScreenFadedOut() do
+            Wait(0)
+        end
+
+        ClearTimecycleModifier()
+        lib.hideTextUI()
+
+        RenderScriptCams(false, false, 0, true, false)
+
+        if DoorbellCam then
+            DestroyCam(DoorbellCam, false)
+            DoorbellCam = nil
+        end
+
+        Wait(100)
+
+        DoScreenFadeIn(1000)
+    end)
+end
+
+function DrawCameraOverlay(startTime)
+    DrawRect(0.5, 0.5, 1.0, 1.0, 0, 0, 0, 20)
+
+    local elapsed = GetGameTimer() - startTime
+    if (elapsed % 1000) < 600 then
+        DrawRect(0.028, 0.075, 0.012, 0.02, 220, 20, 20, 255)
+    end
+
+    SetTextFont(4)
+    SetTextScale(0.32, 0.32)
+    SetTextColour(255, 255, 255, 220)
+    SetTextOutline()
+    SetTextEntry("STRING")
+    AddTextComponentString("REC")
+    DrawText(0.045, 0.068, 0.0)
+
+    local year, month, day, hour, minute, second = GetLocalTime()
+    local dateStr = string.format("%02d/%02d/%04d  %02d:%02d:%02d", day, month, year, hour, minute, second)
+
+    SetTextFont(4)
+    SetTextScale(0.28, 0.28)
+    SetTextColour(255, 255, 255, 200)
+    SetTextOutline()
+    SetTextEntry("STRING")
+    AddTextComponentString(dateStr)
+    DrawText(0.83, 0.9, 0.0)
+
+    SetTextFont(4)
+    SetTextScale(0.28, 0.28)
+    SetTextColour(255, 255, 255, 200)
+    SetTextOutline()
+    SetTextEntry("STRING")
+    AddTextComponentString("DOORBELL CAM - LIVE")
+    DrawText(0.045, 0.9, 0.0)
+end
+
+function RegisterDoorbellMotionZone(p)
+    if not p or p.isApartment then return end
+    if not (p.metadata and p.metadata.doorbell_camera) then return end
+    if MotionZones[p.id] then return end
+
+    local entranceCoords = GetEntranceCoords(p)
+    if not entranceCoords then return end
+
+    MotionZones[p.id] = lib.points.new({
+        coords = entranceCoords,
+        distance = 6.0,
+        onEnter = function()
+            local last = MotionLastTriggered[p.id] or 0
+            if (GetGameTimer() - last) < 15000 then return end
+            MotionLastTriggered[p.id] = GetGameTimer()
+            TriggerServerEvent('LNS_Housing:server:motionDetected', p.id)
+        end
+    })
+end
+
+function ClearDoorbellMotionZone(propertyId)
+    if MotionZones[propertyId] then
+        pcall(function() MotionZones[propertyId]:remove() end)
+        MotionZones[propertyId] = nil
+    end
+end
+
+RegisterNetEvent('LNS_Housing:client:motionAlert', function(propertyLabel, propertyId)
+    if GetResourceState('sd-phone') == 'started' then
+        exports['sd-phone']:showNotification({
+            title = 'Home Security',
+            body = 'Motion detected at the front door of ' .. propertyLabel .. '!'
+        })
+    elseif GetResourceState('lb-phone') == 'started' then
+        exports["lb-phone"]:SendNotification({
+            title = "Home Security",
+            content = 'Motion detected at the front door of ' .. propertyLabel .. '!'
+        })
+    elseif GetResourceState('roadphone') == 'started' then
+        local notifyData = {
+            title = "Home Security",
+            message = 'Motion detected at the front door of ' .. propertyLabel .. '!'
+        }
+        exports["roadphone"]:sendNotification(notifyData)
+    else
+        Bridge.Client.Notify('Motion detected at the front door of ' .. propertyLabel .. '!', 'warning')
+    end
 end)
 
 function LockpickDoor(propertyId)
@@ -646,12 +837,27 @@ function RegisterPropertyEntranceTargets(p)
                                 label = 'Enter ' .. p.label,
                                 icon = 'fas fa-door-open',
                                 canInteract = function()
-                                    local doorState = exports.ox_doorlock:getDoor(doorId).state
-                                    local isUnlocked = doorState == 0
-                                    if isUnlocked then return true end
-                                    return lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry')
+                                    return true
                                 end,
                                 onSelect = function()
+                                    if Settings.Security.PhysicalKeys and Settings.Security.PhysicalKeys.Enabled then
+                                        local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry')
+                                        if not hasAccess then
+                                            Bridge.Client.Notify('You need a key to enter this property.', 'error')
+                                            return
+                                        end
+                                    else
+                                        local doorState = exports.ox_doorlock:getDoor(doorId).state
+                                        local isUnlocked = doorState == 0
+                                        if not isUnlocked then
+                                            local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry')
+                                            if not hasAccess then
+                                                Bridge.Client.Notify('This property is locked.', 'error')
+                                                return
+                                            end
+                                        end
+                                    end
+
                                     EnterShellProperty(id)
                                 end
                             },
@@ -759,11 +965,26 @@ function RegisterPropertyEntranceTargets(p)
                         label = 'Enter ' .. p.label,
                         icon = 'fas fa-door-open',
                         canInteract = function()
-                            local isLocked = p.metadata.locked ~= false
-                            if not isLocked then return true end
-                            return lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry')
+                            return true
                         end,
                         onSelect = function()
+                            if Settings.Security.PhysicalKeys and Settings.Security.PhysicalKeys.Enabled then
+                                local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry')
+                                if not hasAccess then
+                                    Bridge.Client.Notify('You need a key to enter this property.', 'error')
+                                    return
+                                end
+                            else
+                                local isLocked = p.metadata.locked ~= false
+                                if isLocked then
+                                    local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry')
+                                    if not hasAccess then
+                                        Bridge.Client.Notify('This property is locked.', 'error')
+                                        return
+                                    end
+                                end
+                            end
+
                             EnterShellProperty(id)
                         end
                     },
@@ -799,7 +1020,7 @@ function RegisterPropertyEntranceTargets(p)
                         label = 'Lock/Unlock ' .. p.label,
                         icon = 'fas fa-key',
                         canInteract = function()
-                            return lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry') or lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'manage')
+                            return true
                         end,
                         onSelect = function()
                             TriggerServerEvent('LNS_Housing:server:toggleLock', id)
@@ -844,16 +1065,11 @@ function RegisterPropertyEntranceTargets(p)
 end
 
 function CleanUpHousingSession()
-    
     lib.hideTextUI()
-
-    
     lib.removeRadialItem('housing_furniture')
 
-    
     SetNuiFocus(false, false)
 
-    
     if Modeler then
         if Modeler.CurrentObject and DoesEntityExist(Modeler.CurrentObject) then
             DeleteEntity(Modeler.CurrentObject)
@@ -874,14 +1090,12 @@ function CleanUpHousingSession()
             end)
         end
     end
-
     
     if LoadedFurniture then
         for propertyId, _ in pairs(LoadedFurniture) do
             UnloadFurnitures(propertyId)
         end
     end
-
     
     if PropertyZones then
         for id, zone in pairs(PropertyZones) do
@@ -894,7 +1108,13 @@ function CleanUpHousingSession()
         PropertyZones = {}
     end
 
-    
+    for id, zone in pairs(MotionZones) do
+        if zone and zone.remove then
+            pcall(function() zone:remove() end)
+        end
+    end
+    MotionZones = {}
+
     if CurrentInterior and CurrentInterior ~= 0 then
         DeactivateInteriorEntitySet(CurrentInterior, "wall_tint")
         RefreshInterior(CurrentInterior)
@@ -974,6 +1194,7 @@ function InitializeHousing()
 
         for id, p in pairs(Properties) do
             RegisterPropertyZones(p)
+            RegisterDoorbellMotionZone(p)
             if p.metadata and p.metadata.garage_data then
                 Bridge.Client.RegisterGarage(p.id, p.label, p.metadata.garage_data)
             end
@@ -1114,18 +1335,19 @@ RegisterNetEvent('LNS_Housing:client:updateFurniture', function(propertyId, furn
 end)
 
 RegisterNetEvent('LNS_Housing:client:updateProperties', function(allProperties)
-    
     for k, v in pairs(allProperties) do
         local isNew = Properties[k] == nil
         Properties[k] = v
         if isNew then
             RegisterPropertyZones(v)
             RegisterPropertyEntranceTargets(v)
+            RegisterDoorbellMotionZone(v)
         else
             RegisterPropertyEntranceTargets(v)
             if ActiveYardPropertyId == k and RefreshYardGrass then
                 RefreshYardGrass(k)
             end
+            RegisterDoorbellMotionZone(v)
         end
 
         if v.metadata and v.metadata.garage_data then
@@ -1142,6 +1364,7 @@ RegisterNetEvent('LNS_Housing:client:updateProperties', function(allProperties)
                 EntranceTargets[k] = nil
             end
             Bridge.Client.UnregisterGarage(k)
+            ClearDoorbellMotionZone(k)
             Properties[k] = nil
         end
     end
@@ -1333,7 +1556,7 @@ function SpawnShellForProperty(propertyId, shellName, shellCoords)
                     label = 'Lock/Unlock Property',
                     icon = 'fas fa-key',
                     canInteract = function()
-                        return lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'entry') or lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'manage')
+                        return true
                     end,
                     onSelect = function()
                         TriggerServerEvent('LNS_Housing:server:toggleLock', propertyId)
@@ -1389,7 +1612,7 @@ function SpawnShellForProperty(propertyId, shellName, shellCoords)
                 label = 'Lock/Unlock Property',
                 icon = 'fas fa-key',
                 canInteract = function()
-                    return lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'entry') or lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'manage')
+                    return true
                 end,
                 onSelect = function()
                     TriggerServerEvent('LNS_Housing:server:toggleLock', propertyId)

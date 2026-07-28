@@ -1,5 +1,62 @@
 local Settings = lib.load('shared.settings')
 
+function IsKeyholder(source, targetId, isApartment)
+    local identifier = Bridge.Server.GetIdentifier(source)
+    if not identifier then return false end
+
+    if isApartment then
+        local rows = MySQL.query.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ?', {targetId})
+        if not rows then return false end
+
+        for _, row in ipairs(rows) do
+            if row.citizenid == identifier then return true end
+            local perms = row.permissions and json.decode(row.permissions)
+            if perms and perms.entry then
+                for _, cid in ipairs(perms.entry) do
+                    if cid == identifier then return true end
+                end
+            end
+        end
+        return false
+    end
+
+    local p = Properties[targetId]
+    if not p then return false end
+
+    if p.owner == identifier then return true end
+    if p.permissions and p.permissions.entry then
+        for _, cid in ipairs(p.permissions.entry) do
+            if cid == identifier then return true end
+        end
+    end
+    return false
+end
+
+function HasPhysicalKey(source, targetId, isApartment)
+    local pk = Settings.Security.PhysicalKeys
+    if not pk or not pk.Enabled then return nil end
+
+    local slots = exports.ox_inventory:Search(source, 'slots', pk.Item)
+    if not slots or #slots == 0 then return false end
+
+    local hasMatchingKey = false
+    for _, slot in ipairs(slots) do
+        local meta = slot.metadata or {}
+        if meta.propertyId == targetId and (meta.isApartment == true) == (isApartment == true) then
+            hasMatchingKey = true
+            break
+        end
+    end
+
+    if not hasMatchingKey then return false end
+
+    if pk.RequireKeyholder then
+        return IsKeyholder(source, targetId, isApartment)
+    end
+
+    return true
+end
+
 function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
     if permType == 'admin' then
         if Bridge.Framework == 'esx' then
@@ -146,6 +203,13 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
             end
         end
 
+        if accessType == 'entry' or accessType == 'doors' then
+            local keyResult = HasPhysicalKey(source, propertyId, false)
+            if keyResult ~= nil then
+                return keyResult
+            end
+        end
+
         local identifier = Bridge.Server.GetIdentifier(source)
         local hasStandardAccess = false
         if not IsRentOverdue(p) then
@@ -197,6 +261,13 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
                 if accessType ~= 'storage' and accessType ~= 'stash' then
                     return true
                 end
+            end
+        end
+
+        if accessType == 'entry' or accessType == 'doors' then
+            local keyResult = HasPhysicalKey(source, roomId, true)
+            if keyResult ~= nil then
+                return keyResult
             end
         end
 

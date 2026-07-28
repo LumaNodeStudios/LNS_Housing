@@ -38,6 +38,7 @@ client_scripts {
     'client/cl_zoneCreator.lua',
     'client/cl_lawn.lua',
     'client/cl_apartments.lua',
+    'client/cl_locksmith.lua',
     'client/cl_screenshot.lua'
 }
 
@@ -52,6 +53,7 @@ server_scripts {
     'server/sv_lawn.lua',
     'server/sv_panel.lua',
     'server/sv_apartments.lua',
+    'server/sv_locksmith.lua',
     'server/sv_screenshot.lua',
     'server/sv_screenshot.js'
 }
