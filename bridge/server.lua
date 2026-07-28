@@ -383,3 +383,25 @@ end
 function Bridge.Server.UnregisterGarage(propertyId)
     -- Bomboclat
 end
+
+-- Phone Scripts
+function Bridge.Server.PhoneNotification(source, data)
+    if Bridge.PhoneScript == 'yseries' then
+        exports.yseries:SendNotification({
+            title = data.title,
+            text = data.body,
+        }, 'source', source)
+        return true
+    end
+    return false
+end
+
+RegisterNetEvent('LNS_Housing:server:motionAlert', function(propertyLabel)
+    local src = source
+    if type(propertyLabel) ~= 'string' then return end
+
+    Bridge.Server.PhoneNotification(src, {
+        title = 'Home Security',
+        body = ('Motion detected at the front door of %s!'):format(propertyLabel)
+    })
+end)

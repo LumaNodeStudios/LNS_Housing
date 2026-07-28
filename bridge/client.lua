@@ -218,6 +218,7 @@ function Bridge.Client.UnregisterGarage(propertyId)
 end
 
 -- Phone Scripts
+-- Phone Scripts
 function Bridge.Client.PhoneNotification(data)
     if Bridge.PhoneScript == 'sd-phone' then
         exports['sd-phone']:showNotification({
@@ -237,6 +238,8 @@ function Bridge.Client.PhoneNotification(data)
             message = data.body
         })
         return true
+    elseif Bridge.PhoneScript == 'yseries' then
+        return false
     end
 
     return false

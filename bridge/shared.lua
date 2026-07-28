@@ -31,4 +31,6 @@ elseif GetResourceState('lb-phone') == 'started' then
     Bridge.PhoneScript = 'lb-phone'
 elseif GetResourceState('roadphone') == 'started' then
     Bridge.PhoneScript = 'roadphone'
+elseif GetResourceState('yseries') == 'started' then
+    Bridge.PhoneScript = 'yseries'
 end
