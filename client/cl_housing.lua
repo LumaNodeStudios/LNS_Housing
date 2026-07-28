@@ -290,24 +290,13 @@ function ClearDoorbellMotionZone(propertyId)
 end
 
 RegisterNetEvent('LNS_Housing:client:motionAlert', function(propertyLabel, propertyId)
-    if GetResourceState('sd-phone') == 'started' then
-        exports['sd-phone']:showNotification({
-            title = 'Home Security',
-            body = 'Motion detected at the front door of ' .. propertyLabel .. '!'
-        })
-    elseif GetResourceState('lb-phone') == 'started' then
-        exports["lb-phone"]:SendNotification({
-            title = "Home Security",
-            content = 'Motion detected at the front door of ' .. propertyLabel .. '!'
-        })
-    elseif GetResourceState('roadphone') == 'started' then
-        local notifyData = {
-            title = "Home Security",
-            message = 'Motion detected at the front door of ' .. propertyLabel .. '!'
-        }
-        exports["roadphone"]:sendNotification(notifyData)
-    else
-        Bridge.Client.Notify('Motion detected at the front door of ' .. propertyLabel .. '!', 'warning')
+    local success = Bridge.Client.PhoneNotification({
+        title = 'Home Security',
+        body = ('Motion detected at the front door of %s!'):format(propertyLabel)
+    })
+
+    if not success then
+        Bridge.Client.Notify(('Motion detected at the front door of %s!'):format(propertyLabel), 'warning')
     end
 end)
 

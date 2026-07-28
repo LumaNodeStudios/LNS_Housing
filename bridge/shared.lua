@@ -2,7 +2,8 @@ Bridge = {
     Client = {},
     Server = {},
     Framework = 'qbx',
-    GarageScript = nil
+    GarageScript = nil,
+    PhoneScript = nil
 }
 
 -- Auto-detect active framework
@@ -21,4 +22,13 @@ elseif GetResourceState('cd_garage') == 'started' then
     Bridge.GarageScript = 'cd_garage'
 elseif GetResourceState('op-garages') == 'started' then
     Bridge.GarageScript = 'op-garages'
+end
+
+-- Auto-detect active phone script
+if GetResourceState('sd-phone') == 'started' then
+    Bridge.PhoneScript = 'sd-phone'
+elseif GetResourceState('lb-phone') == 'started' then
+    Bridge.PhoneScript = 'lb-phone'
+elseif GetResourceState('roadphone') == 'started' then
+    Bridge.PhoneScript = 'roadphone'
 end

@@ -216,3 +216,28 @@ function Bridge.Client.UnregisterGarage(propertyId)
         clientGarageZones[propertyId] = nil
     end
 end
+
+-- Phone Scripts
+function Bridge.Client.PhoneNotification(data)
+    if Bridge.PhoneScript == 'sd-phone' then
+        exports['sd-phone']:showNotification({
+            title = data.title,
+            body = data.body,
+        })
+        return true
+    elseif Bridge.PhoneScript == 'lb-phone' then
+        exports['lb-phone']:SendNotification({
+            title = data.title,
+            content = data.body
+        })
+        return true
+    elseif Bridge.PhoneScript == 'roadphone' then
+        exports['roadphone']:sendNotification({
+            title = data.title,
+            message = data.body
+        })
+        return true
+    end
+
+    return false
+end
