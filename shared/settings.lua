@@ -114,7 +114,7 @@ return {
         },
     },
 
-    MaxKeys = 5, -- Maximum number of physical keys/copies that can be shared per property
+    MaxKeys = 5, -- Maximum number of copies that can be shared per property
 
     -- Housing specific settings
     Housing = {
