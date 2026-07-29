@@ -290,18 +290,20 @@ function ClearDoorbellMotionZone(propertyId)
 end
 
 RegisterNetEvent('LNS_Housing:client:motionAlert', function(propertyLabel, propertyId)
+    local message = ('Motion detected at the front door of %s!'):format(propertyLabel)
+    
     if Bridge.PhoneScript == 'yseries' then
         TriggerServerEvent('LNS_Housing:server:motionAlert', propertyLabel)
         return
-    end
+    else
+        local success = Bridge.Client.PhoneNotification({
+            title = 'Home Security',
+            body = message
+        })
 
-    local success = Bridge.Client.PhoneNotification({
-        title = 'Home Security',
-        body = ('Motion detected at the front door of %s!'):format(propertyLabel)
-    })
-
-    if not success then
-        Bridge.Client.Notify(('Motion detected at the front door of %s!'):format(propertyLabel), 'warning')
+        if not success then
+            Bridge.Client.Notify(message, 'warning')
+        end
     end
 end)
 

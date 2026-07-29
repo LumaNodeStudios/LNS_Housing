@@ -34,13 +34,17 @@ local function CreateApartmentDoorlocks()
             end)
 
             if not existingDoor then
-                local doorId = exports.ox_doorlock:createDoorlock({
+                local doorId = exports.ox_doorlock:createDoor({
                     name = doorName,
-                    model = room.doorModel,
-                    coords = room.doorCoords,
-                    heading = room.doorHeading or 0.0,
                     state = 1,
                     maxDistance = 2.0,
+                    doors = {
+                        {
+                            model = room.doorModel,
+                            coords = room.doorCoords,
+                            heading = room.doorHeading or 0.0,
+                        }
+                    },
                     items = {}
                 })
                 roomDoors[room.id] = doorId
@@ -949,13 +953,17 @@ lib.callback.register('LNS_Housing:server:createApartment', function(source, dat
             end)
 
             if not existingDoor then
-                local doorId = exports.ox_doorlock:createDoorlock({
+                local doorId = exports.ox_doorlock:createDoor({
                     name = doorName,
-                    model = doorModel,
-                    coords = doorCoordsVec,
-                    heading = doorHeading or 0.0,
                     state = 1,
                     maxDistance = 2.0,
+                    doors = {
+                        {
+                            model = doorModel,
+                            coords = doorCoordsVec,
+                            heading = doorHeading or 0.0,
+                        }
+                    },
                     items = {}
                 })
                 roomDoors[roomId] = doorId
@@ -1106,13 +1114,17 @@ lib.callback.register('LNS_Housing:server:updateApartment', function(source, dat
                 })
                 roomDoors[roomId] = existingDoor.id
             else
-                local doorId = exports.ox_doorlock:createDoorlock({
+                local doorId = exports.ox_doorlock:createDoor({
                     name = doorName,
-                    model = doorModel,
-                    coords = doorCoordsVec,
-                    heading = doorHeading or 0.0,
                     state = 1,
                     maxDistance = 2.0,
+                    doors = {
+                        {
+                            model = doorModel,
+                            coords = doorCoordsVec,
+                            heading = doorHeading or 0.0,
+                        }
+                    },
                     items = {}
                 })
                 roomDoors[roomId] = doorId

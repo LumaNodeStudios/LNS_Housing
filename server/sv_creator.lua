@@ -58,13 +58,17 @@ lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
         local doorIds = {}
         for i, door in ipairs(data.doors) do
             if type(door) == 'table' and door.isNew then
-                local newDoorId = exports.ox_doorlock:createDoorlock({
+                local newDoorId = exports.ox_doorlock:createDoor({
                     name = (data.name or data.label or 'Property') .. ' Door ' .. i,
-                    model = door.model,
-                    coords = door.coords,
-                    heading = door.heading,
                     state = 1,
-                    maxDistance = 2.0
+                    maxDistance = 2.0,
+                    doors = {
+                        {
+                            model = door.model,
+                            coords = door.coords,
+                            heading = door.heading,
+                        }
+                    }
                 })
                 doorIds[#doorIds+1] = newDoorId
                 if i == 1 then
