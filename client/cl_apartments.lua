@@ -182,7 +182,6 @@ local function createApartmentZone(roomData)
                 UnloadFurnitures(MyApartmentId)
             end
             lib.removeRadialItem('housing_furniture')
-            lib.removeRadialItem('housing_lock')
         end
     })
 end
