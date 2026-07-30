@@ -10,6 +10,7 @@ end
 local activeRooms = {}
 local playerRooms = {}
 local roomDoors = {}
+local assignedRoomIds = {}
 
 local function GetPlayerLicense(src)
     local license = GetPlayerIdentifierByType(src, 'license2')
@@ -138,6 +139,7 @@ CreateThread(function()
     if result then
         for _, row in ipairs(result) do
             playerRooms[row.license] = row.room_id
+            assignedRoomIds[row.room_id] = true
         end
         print('^2[Apartments] ^7Loaded ' .. #result .. ' apartments.')
     end
@@ -203,7 +205,7 @@ local function getAvailableRoom()
 
     local available = {}
     for _, room in ipairs(Settings.Rooms) do
-        if room.isStarter then
+        if room.isStarter and not assignedRoomIds[room.id] then
             table.insert(available, room)
         end
     end
@@ -226,11 +228,13 @@ local function getPlayerRoom(src, citizenid, isNew)
     local result = MySQL.single.await('SELECT room_id FROM player_apartments WHERE license = ?', {license})
     if result then
         playerRooms[license] = result.room_id
+        assignedRoomIds[result.room_id] = true
         return result.room_id
     end
 
     local room = getAvailableRoom()
     if room then
+        assignedRoomIds[room.id] = true
         local isNewChar = not not isNew
 
         local insertSuccess = pcall(function()
@@ -246,12 +250,16 @@ local function getPlayerRoom(src, citizenid, isNew)
             SyncApartmentDoor(room.id)
             return room.id
         else
+            assignedRoomIds[room.id] = nil
             local r = MySQL.single.await('SELECT room_id FROM player_apartments WHERE license = ?', {license})
             if r then
                 playerRooms[license] = r.room_id
+                assignedRoomIds[r.room_id] = true
                 return r.room_id
             end
         end
+    else
+        Bridge.Server.Notify(src, 'No apartment rooms are currently available right now.', 'error')
     end
     return nil
 end
