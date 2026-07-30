@@ -1,5 +1,5 @@
 local Settings = lib.load('shared.settings')
-local CAMERA_PROP_MODEL = `prop_cctv_cam_06a`
+local CAMERA_PROPS = Settings.Security.CameraProps or { `prop_cctv_cam_07a` }
 
 RegisterNUICallback('pickDoor', function(_, cb)
     SendNUIMessage({ action = 'toggleVisibility', data = { visible = false } })
@@ -81,38 +81,98 @@ RegisterNUICallback('pickCameraPlacement', function(data, cb)
 end)
 
 function StartCameraPlacementMode()
-    if not IsModelValid(CAMERA_PROP_MODEL) then
-        Bridge.Client.Notify('Camera prop model is invalid, contact an admin.', 'error')
+    if not CAMERA_PROPS or #CAMERA_PROPS == 0 then
+        Bridge.Client.Notify('No camera props configured, contact an admin.', 'error')
         return nil
     end
 
-    Bridge.Client.Notify('Aim and press [E] to place the camera. Scroll to rotate. [BACKSPACE] to cancel.', 'inform')
+    local propIndex = 1
+    local foundValid = false
+    for i, model in ipairs(CAMERA_PROPS) do
+        if IsModelValid(model) then
+            propIndex = i
+            foundValid = true
+            break
+        end
+    end
 
-    lib.requestModel(CAMERA_PROP_MODEL)
-    local previewProp = CreateObject(CAMERA_PROP_MODEL, GetEntityCoords(cache.ped), false, false, false)
+    if not foundValid then
+        Bridge.Client.Notify('Camera prop models are invalid, contact an admin.', 'error')
+        return nil
+    end
+
+    Bridge.Client.Notify('Aim and press [E] to place the camera. Scroll to rotate, [<-]/[->] to change model. [BACKSPACE] to cancel.', 'inform')
+
+    local currentModel = CAMERA_PROPS[propIndex]
+    lib.requestModel(currentModel)
+
+    local previewProp = CreateObject(currentModel, GetEntityCoords(cache.ped), false, false, false)
     SetEntityAlpha(previewProp, 200, false)
     SetEntityCollision(previewProp, false, false)
     FreezeEntityPosition(previewProp, true)
 
+    local function swapPreviewModel(newIndex, coords, heading)
+        local newModel = CAMERA_PROPS[newIndex]
+        if not IsModelValid(newModel) then return false end
+
+        lib.requestModel(newModel)
+
+        if DoesEntityExist(previewProp) then
+            DeleteEntity(previewProp)
+        end
+        SetModelAsNoLongerNeeded(currentModel)
+
+        previewProp = CreateObject(newModel, coords, false, false, false)
+        SetEntityAlpha(previewProp, 200, false)
+        SetEntityCollision(previewProp, false, false)
+        FreezeEntityPosition(previewProp, true)
+        SetEntityRotation(previewProp, 0.0, 0.0, heading, 2, true)
+
+        currentModel = newModel
+        propIndex = newIndex
+        return true
+    end
+
     local camPos, aimPos = nil, nil
     local manualHeading = 0.0
+    local cycleCooldown = 0
 
     while not camPos do
         Wait(0)
-        DisableControlAction(0, 14, true) -- INPUT_SCROLL_UP
-        DisableControlAction(0, 15, true) -- INPUT_SCROLL_DOWN
+        DisableControlAction(0, 14, true)  -- INPUT_SCROLL_UP
+        DisableControlAction(0, 15, true)  -- INPUT_SCROLL_DOWN
+        DisableControlAction(0, 174, true) -- INPUT_FRONTEND_LEFT (Left Arrow)
+        DisableControlAction(0, 175, true) -- INPUT_FRONTEND_RIGHT (Right Arrow)
 
         local hit, coords = GetPlayerRaycastCoords(10.0)
         if hit then
             SetEntityCoords(previewProp, coords.x, coords.y, coords.z, false, false, false, false)
             SetEntityRotation(previewProp, 0.0, 0.0, manualHeading, 2, true)
-            DrawText3D(coords.x, coords.y, coords.z + 0.15, '[E] Place | Scroll to Rotate | [BACKSPACE] Cancel')
+            DrawText3D(coords.x, coords.y, coords.z + 0.15, ('[E] Place | Scroll to Rotate | [<-]/[->] Model %d/%d | [BACKSPACE] Cancel'):format(propIndex, #CAMERA_PROPS))
         end
 
-        if IsDisabledControlJustPressed(0, 14) then -- Scroll Up
+        if IsDisabledControlJustPressed(0, 14) then
             manualHeading = manualHeading + 5.0
-        elseif IsDisabledControlJustPressed(0, 15) then -- Scroll Down
+        elseif IsDisabledControlJustPressed(0, 15) then
             manualHeading = manualHeading - 5.0
+        end
+
+        local now = GetGameTimer()
+        if now > cycleCooldown then
+            local placeCoords = hit and coords or GetEntityCoords(previewProp)
+            if IsDisabledControlJustPressed(0, 174) then -- Left Arrow
+                local nextIndex = propIndex - 1
+                if nextIndex < 1 then nextIndex = #CAMERA_PROPS end
+                if swapPreviewModel(nextIndex, placeCoords, manualHeading) then
+                    cycleCooldown = now + 200
+                end
+            elseif IsDisabledControlJustPressed(0, 175) then -- Right Arrow
+                local nextIndex = propIndex + 1
+                if nextIndex > #CAMERA_PROPS then nextIndex = 1 end
+                if swapPreviewModel(nextIndex, placeCoords, manualHeading) then
+                    cycleCooldown = now + 200
+                end
+            end
         end
 
         SetEntityHeading(previewProp, manualHeading)
@@ -121,46 +181,42 @@ function StartCameraPlacementMode()
             camPos = coords
         elseif IsControlJustPressed(0, 194) then -- Backspace
             DeleteEntity(previewProp)
-            SetModelAsNoLongerNeeded(CAMERA_PROP_MODEL)
+            SetModelAsNoLongerNeeded(currentModel)
             return nil
         end
     end
 
     SetEntityCoords(previewProp, camPos.x, camPos.y, camPos.z, false, false, false, false)
+    SetEntityRotation(previewProp, 0.0, 0.0, manualHeading, 2, true)
+    FreezeEntityPosition(previewProp, true)
+
+    Bridge.Client.Notify('Now aim where the camera should look and press [E] to confirm. [BACKSPACE] to cancel.', 'inform')
 
     while not aimPos do
         Wait(0)
         local hit, coords = GetPlayerRaycastCoords(15.0)
         if hit then
-            local dx = coords.x - camPos.x
-            local dy = coords.y - camPos.y
-            local dz = coords.z - camPos.z
-            local dist2d = math.sqrt(dx * dx + dy * dy)
-
-            local heading = math.deg(math.atan(dx, -dy))
-            local pitch = math.deg(math.atan(dz, dist2d))
-
-            SetEntityRotation(previewProp, -pitch, 0.0, heading, 2, true)
-
             DrawLine(camPos.x, camPos.y, camPos.z, coords.x, coords.y, coords.z, 255, 60, 60, 200)
             DrawText3D(coords.x, coords.y, coords.z + 0.15, '[E] Confirm Aim Point | [BACKSPACE] Cancel')
         end
 
-        if IsControlJustPressed(0, 38) then -- E
+        if IsControlJustPressed(0, 38) then
             aimPos = coords
-        elseif IsControlJustPressed(0, 194) then -- Backspace
+        elseif IsControlJustPressed(0, 194) then
             DeleteEntity(previewProp)
-            SetModelAsNoLongerNeeded(CAMERA_PROP_MODEL)
+            SetModelAsNoLongerNeeded(currentModel)
             return nil
         end
     end
 
     DeleteEntity(previewProp)
-    SetModelAsNoLongerNeeded(CAMERA_PROP_MODEL)
+    SetModelAsNoLongerNeeded(currentModel)
 
     return {
         position = { x = camPos.x, y = camPos.y, z = camPos.z },
-        aim = { x = aimPos.x, y = aimPos.y, z = aimPos.z }
+        aim = { x = aimPos.x, y = aimPos.y, z = aimPos.z },
+        heading = manualHeading,
+        model = currentModel -- NEW: which prop the player picked
     }
 end
 

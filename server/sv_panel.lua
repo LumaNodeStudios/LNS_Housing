@@ -27,41 +27,6 @@ RegisterNetEvent('LNS_Housing:server:updateWallColor', function(propertyId, colo
     SaveProperty(propertyId)
 end)
 
-RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgradeId)
-    local src = source
-    local p = Properties[propertyId]
-    if not p then return end
-
-    local identifier = Bridge.Server.GetIdentifier(src)
-    if p.owner ~= identifier then return end
-
-    local currentLevel = p.metadata.security_level or 0
-    if currentLevel >= Settings.Security.MaxLevel then
-        Bridge.Server.Notify(src, 'Security is already at maximum level!', 'error')
-        return
-    end
-
-    local nextLevel = currentLevel + 1
-    local price = 10000
-    if type(Settings.Security.UpgradePrice) == 'table' then
-        price = Settings.Security.UpgradePrice[nextLevel] or 10000
-    elseif type(Settings.Security.UpgradePrice) == 'number' then
-        price = Settings.Security.UpgradePrice * nextLevel
-    else
-        price = 10000 * nextLevel
-    end
-
-    if Bridge.Server.GetBankMoney(src) >= price then
-        Bridge.Server.RemoveBankMoney(src, price, "Security Upgrade: " .. p.label)
-        p.metadata.security_level = nextLevel
-        SaveProperty(propertyId)
-        TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
-        Bridge.Server.Notify(src, 'Security upgraded to level ' .. nextLevel, 'success')
-    else
-        Bridge.Server.Notify(src, 'Not enough money in bank!', 'error')
-    end
-end)
-
 RegisterNetEvent('LNS_Housing:server:payRent', function(propertyId, payAmount)
     local src = source
     local id = tonumber(propertyId)
@@ -392,6 +357,12 @@ lib.callback.register('LNS_Housing:server:updateListingDetails', function(source
         if data.cameraAim then
             p.metadata.camera_aim = data.cameraAim
         end
+        if data.cameraHeading ~= nil then
+            p.metadata.camera_heading = data.cameraHeading
+        end
+        if data.cameraModel then
+            p.metadata.camera_model = data.cameraModel
+        end
     end
 
     if data.entranceType == 'coords' then
@@ -450,6 +421,7 @@ lib.callback.register('LNS_Housing:server:updateListingDetails', function(source
     end
 
     TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
+    print('cameraModel received:', data.cameraModel)
     return true
 end)
 

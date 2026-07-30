@@ -15,6 +15,7 @@ RegisterNetEvent('LNS_Housing:client:openPanel', function(propertyData)
     end
 
     propertyData.securityUpgradePrice = Settings.Security.UpgradePrice
+    propertyData.doorbellCameraPrice = Settings.Security.doorbellCameraPrice
 
     local coords = GetEntityCoords(cache.ped)
     local streetHash, crossingHash = GetStreetNameAtCoord(coords.x, coords.y, coords.z)

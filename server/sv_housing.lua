@@ -535,13 +535,46 @@ RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgr
 
     if not p.metadata then p.metadata = {} end
 
-    if upgradeId == 'doorbell_camera' then
+    if upgradeId == 'security' then
+        local currentLevel = p.metadata.security_level or 0
+        local maxLevel = Settings.Security.MaxLevel or 5
+        if currentLevel >= maxLevel then
+            Bridge.Server.Notify(src, 'Security is already at maximum level!', 'error')
+            return
+        end
+
+        local nextLevel = currentLevel + 1
+        local price = 10000
+        if type(Settings.Security.UpgradePrice) == 'table' then
+            price = Settings.Security.UpgradePrice[nextLevel] or 10000
+        elseif type(Settings.Security.UpgradePrice) == 'number' then
+            price = Settings.Security.UpgradePrice * nextLevel
+        else
+            price = 10000 * nextLevel
+        end
+
+        local money = Bridge.Server.GetBankMoney(src)
+        if money < price then
+            Bridge.Server.Notify(src, 'Not enough money in bank!', 'error')
+            return
+        end
+
+        Bridge.Server.RemoveBankMoney(src, price, "Security Upgrade: " .. p.label)
+        p.metadata.security_level = nextLevel
+        SaveProperty(propertyId)
+
+        AddSecurityLog(propertyId, 'Security Upgraded', 'Security system upgraded to level ' .. nextLevel .. '.', '#22c55e')
+
+        TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
+        Bridge.Server.Notify(src, 'Security upgraded to level ' .. nextLevel, 'success')
+
+    elseif upgradeId == 'doorbell_camera' then
         if p.metadata.doorbell_camera then
             Bridge.Server.Notify(src, 'This property already has a doorbell camera installed.', 'error')
             return
         end
 
-        local price = tonumber(p.doorbellCameraPrice) or (Settings.Security.DoorbellCameraPrice or 15000)
+        local price = Settings.Security.doorbellCameraPrice or 15000
         local money = Bridge.Server.GetBankMoney(src)
         if money < price then
             Bridge.Server.Notify(src, 'You cannot afford this upgrade.', 'error')
@@ -552,7 +585,7 @@ RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgr
         p.metadata.doorbell_camera = true
         SaveProperty(propertyId)
 
-        AddSecurityLog(propertyId, 'Doorbell Camera Installed', 'A motion-activated doorbell camera was installed at the front entrance.', '#22c55e')
+        AddSecurityLog(propertyId, 'Doorbell Camera Installed', 'The doorbell camera system was activated.', '#22c55e')
 
         TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
         Bridge.Server.Notify(src, 'Doorbell camera installed successfully!', 'success')

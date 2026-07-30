@@ -201,6 +201,9 @@ const Panel = ({ data: initialData }) => {
   }, []);
 
   const handleUpgradeSecurity = (upgradeId) => {
+    if (upgradeId === 'doorbell_camera') {
+      handleClose(); // let the player leave the UI to place the camera
+    }
     fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/upgradeSecurity`, {
       method: 'POST',
       body: JSON.stringify({ propertyId: propertyData.id, upgradeId })

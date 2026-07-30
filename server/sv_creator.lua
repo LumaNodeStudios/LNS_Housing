@@ -1,6 +1,6 @@
 local Settings = lib.load('shared.settings')
 local SvSettings = lib.load('shared.sv_settings')
-local SQFT_PER_SQM = 10.7639
+SQFT_PER_SQM = 10.7639
 
 exports('GetSvSettings', function()
     return SvSettings
@@ -10,7 +10,7 @@ function GetRealEstatePermission(source)
     return CheckPermission(source, 'realestate')
 end
 
-local function calculateZoneArea(points)
+function calculateZoneArea(points)
     if not points or #points < 3 then return 0 end
     local area = 0
     local n = #points
@@ -22,7 +22,7 @@ local function calculateZoneArea(points)
     return math.abs(area) / 2
 end
 
-local function calculateSquareFootage(zoneData)
+function calculateSquareFootage(zoneData)
     if not zoneData or not zoneData.points then return 0 end
     local areaSqMeters = calculateZoneArea(zoneData.points)
     return math.floor(areaSqMeters * SQFT_PER_SQM)
@@ -127,7 +127,6 @@ lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
             y = data.cameraPosition.y,
             z = data.cameraPosition.z
         }
-        data.doorbell_camera = true
     end
 
     if data.cameraAim then
@@ -138,12 +137,21 @@ lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
         }
     end
 
+    if data.cameraHeading ~= nil then
+        data.camera_heading = data.cameraHeading
+    end
+
+    if data.cameraModel then
+        data.camera_model = data.cameraModel
+    end
+
     local newHouse = CreateProperty(data)
     if newHouse then
         if newHouse.metadata and newHouse.metadata.garage_data then
             Bridge.Server.RegisterGarage(newHouse.id, newHouse.label, newHouse.metadata.garage_data)
         end
         TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
+        print('cameraModel received:', data.cameraModel)
         return newHouse
     end
     return nil

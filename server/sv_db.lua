@@ -111,6 +111,7 @@ function CreateProperty(data)
             region = data.region or 'Unknown',
             camera_coords = data.camera_coords or nil,
             camera_aim = data.camera_aim or nil,
+            camera_model = data.camera_model or nil,
             doorbell_camera = data.doorbell_camera or false
         }),
         json.encode(data.yard_zone_data or nil),
@@ -145,6 +146,7 @@ function CreateProperty(data)
                 region = data.region or 'Unknown',
                 camera_coords = data.camera_coords or nil,
                 camera_aim = data.camera_aim or nil,
+                camera_model = data.camera_model or nil,
                 doorbell_camera = data.doorbell_camera or false
             },
             image = data.image or nil,
@@ -420,6 +422,9 @@ function ResetPropertyOwnershipData(id)
     p.metadata.auto_pay = nil
     p.metadata.partial_payment = nil
     p.metadata.rent_history = {}
+    p.metadata.doorbell_camera = false
+    p.metadata.camera_coords = nil
+    p.metadata.camera_aim = nil
 
     if Bridge and Bridge.Server and Bridge.Server.RegisterPropertyStashes then
         Bridge.Server.RegisterPropertyStashes(id, p.furniture)

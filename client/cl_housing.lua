@@ -15,6 +15,9 @@ local AUDIO_TIMEOUT = 10000 -- ms
 local DoorbellCam = nil
 local MotionZones = {}
 local MotionLastTriggered = {}
+local CAMERA_PROPS = Settings.Security.CameraProps or { `prop_cctv_cam_07a` }
+local DEFAULT_CAMERA_PROP = CAMERA_PROPS[1]
+local LoadedCameraProps = {}
 Properties = {}
 EntranceTargets = {}
 LoadedFurniture = {}
@@ -668,6 +671,40 @@ function UnloadFurnitures(propertyId)
     LoadedFurniture[propertyId] = nil
 end
 
+function LoadDoorbellCameraProp(propertyId)
+    local p = Properties[propertyId]
+    if not p or p.isApartment then return end
+    if not (p.metadata and p.metadata.doorbell_camera) then return end
+    if not p.metadata.camera_coords then return end
+    if LoadedCameraProps[propertyId] then return end
+
+    local coords = p.metadata.camera_coords
+    local heading = p.metadata.camera_heading or 0.0
+    local model = p.metadata.camera_model or DEFAULT_CAMERA_PROP
+
+    if not IsModelValid(model) then
+        model = DEFAULT_CAMERA_PROP
+    end
+
+    lib.requestModel(model)
+
+    local obj = CreateObjectNoOffset(model, coords.x, coords.y, coords.z, false, false, false)
+    SetEntityRotation(obj, 0.0, 0.0, heading, 2, true)
+    FreezeEntityPosition(obj, true)
+    SetEntityCollision(obj, false, false)
+    SetModelAsNoLongerNeeded(model)
+
+    LoadedCameraProps[propertyId] = obj
+end
+
+function UnloadDoorbellCameraProp(propertyId)
+    local obj = LoadedCameraProps[propertyId]
+    if obj and DoesEntityExist(obj) then
+        DeleteEntity(obj)
+    end
+    LoadedCameraProps[propertyId] = nil
+end
+
 function RegisterPropertyZones(p, forceShell)
     if RegisterYardZone then
         RegisterYardZone(p)
@@ -1092,6 +1129,12 @@ function CleanUpHousingSession()
             UnloadFurnitures(propertyId)
         end
     end
+
+    if LoadedCameraProps then
+        for propertyId, _ in pairs(LoadedCameraProps) do
+            UnloadDoorbellCameraProp(propertyId)
+        end
+    end
     
     if PropertyZones then
         for id, zone in pairs(PropertyZones) do
@@ -1344,6 +1387,37 @@ RegisterNetEvent('LNS_Housing:client:updateProperties', function(allProperties)
                 RefreshYardGrass(k)
             end
             RegisterDoorbellMotionZone(v)
+        end
+
+        -- Handle doorbell camera prop loading/unloading based on distance or properties update
+        if LoadedCameraProps[k] then
+            if not v.metadata or not v.metadata.doorbell_camera or not v.metadata.camera_coords then
+                UnloadDoorbellCameraProp(k)
+            else
+                if DoesEntityExist(LoadedCameraProps[k]) then
+                    local entityCoords = GetEntityCoords(LoadedCameraProps[k])
+                    local coordsChanged = #(entityCoords - vec3(v.metadata.camera_coords.x, v.metadata.camera_coords.y, v.metadata.camera_coords.z)) > 0.1
+
+                    local wantedModel = v.metadata.camera_model and (tonumber(v.metadata.camera_model) or GetHashKey(v.metadata.camera_model))
+                    local modelChanged = wantedModel and GetEntityModel(LoadedCameraProps[k]) ~= wantedModel
+
+                    if coordsChanged or modelChanged then
+                        UnloadDoorbellCameraProp(k)
+                    end
+                else
+                    LoadedCameraProps[k] = nil
+                end
+            end
+        end
+
+        if not LoadedCameraProps[k] and v.metadata and v.metadata.doorbell_camera and v.metadata.camera_coords then
+            local playerPed = cache.ped or PlayerPedId()
+            local playerCoords = GetEntityCoords(playerPed)
+            local renderDist = (Settings.Security and Settings.Security.DoorbellCameraRenderDistance) or 80.0
+            local camCoords = vec3(v.metadata.camera_coords.x, v.metadata.camera_coords.y, v.metadata.camera_coords.z)
+            if #(playerCoords - camCoords) <= renderDist then
+                LoadDoorbellCameraProp(k)
+            end
         end
 
         if v.metadata and v.metadata.garage_data then
@@ -1845,5 +1919,32 @@ RegisterNetEvent('LNS_Housing:client:triggerHouseDoorbell', function(entranceCoo
     activeDoorbellsCount = activeDoorbellsCount - 1
     if activeDoorbellsCount == 0 then
         ReleaseScriptAudioBank()
+    end
+end)
+
+CreateThread(function()
+    while true do
+        Wait(2000)
+        if Properties and NetworkIsPlayerActive(PlayerId()) then
+            local playerPed = cache.ped or PlayerPedId()
+            local playerCoords = GetEntityCoords(playerPed)
+            local renderDist = (Settings.Security and Settings.Security.DoorbellCameraRenderDistance) or 80.0
+
+            for propertyId, p in pairs(Properties) do
+                if not p.isApartment and p.metadata and p.metadata.doorbell_camera and p.metadata.camera_coords then
+                    local camCoords = vec3(p.metadata.camera_coords.x, p.metadata.camera_coords.y, p.metadata.camera_coords.z)
+                    local dist = #(playerCoords - camCoords)
+                    if dist <= renderDist then
+                        if not LoadedCameraProps[propertyId] then
+                            LoadDoorbellCameraProp(propertyId)
+                        end
+                    else
+                        if LoadedCameraProps[propertyId] then
+                            UnloadDoorbellCameraProp(propertyId)
+                        end
+                    end
+                end
+            end
+        end
     end
 end)

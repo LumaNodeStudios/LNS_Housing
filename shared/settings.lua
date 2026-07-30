@@ -88,6 +88,25 @@ return {
             [4] = 40000,
             [5] = 50000
         },
+        doorbellCameraPrice = 1000,
+        DoorbellCameraRenderDistance = 30.0, -- Distance (in meters) at which doorbell camera props will render for players
+        -- List of camera prop models available when placing a doorbell camera.
+        -- While placing a camera, press LEFT/RIGHT arrow to cycle through this list.
+        -- Index 1 is used as the fallback model for any camera saved before this list existed.
+        CameraProps = {
+            `prop_cctv_cam_06a`,
+            `prop_cctv_cam_04a`,
+            `prop_cctv_cam_05a`,
+            `prop_cctv_cam_02a`,
+            `prop_cctv_cam_01a`,
+            `prop_cctv_cam_07a`,
+            `prop_cctv_pole_03`,
+            `prop_cctv_cam_01b`,
+            `prop_cctv_cam_04b`,
+            `prop_cctv_cam_03a`,
+            `prop_cctv_cam_04c`,
+            `prop_cs_cctv`,
+        },
         AlarmDuration = 30000,        -- Duration of burglar alarm in milliseconds (30 seconds)
         AlarmFailThreshold = {        -- Number of failed attempts allowed before alarm triggers
             [0] = 999, -- Level 0: No alarm
@@ -108,7 +127,7 @@ return {
         },
         -- Physical key item settings
         PhysicalKeys = {
-            Enabled = true,           -- If true, 'entry' access (enter/lock/unlock) for houses AND apartments requires holding a physical key item bound (via metadata) to that specific property/apartment
+            Enabled = false,           -- If true, 'entry' access (enter/lock/unlock) for houses AND apartments requires holding a physical key item bound (via metadata) to that specific property/apartment
             Item = 'house_key',        -- Item name used as the physical key. Every copy MUST be given via GivePhysicalKey/GiveApartmentPhysicalKey or the locksmith, or it will not open anything.
             RequireKeyholder = false,  -- If true, having the key item is not enough on its own. The person must ALSO be a listed keyholder (owner, or in permissions.entry) on that property/apartment. If false, the key alone is sufficient (so a stolen key still works).
         },
