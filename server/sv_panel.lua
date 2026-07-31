@@ -322,6 +322,7 @@ lib.callback.register('LNS_Housing:server:respondToContract', function(source, c
         SyncPropertyDoor(propertyId)
 
         TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
+        exports.LNS_Housing:GivePhysicalKey(propertyId, src)
         Bridge.Server.Notify(src, "Congratulations! You accepted the contract and now have access to " .. p.label .. ".", "success")
         return true
     end

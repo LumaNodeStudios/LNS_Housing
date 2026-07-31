@@ -296,6 +296,7 @@ local function OnPlayerLoaded(src)
                     json.encode(initialFurniture),
                     0
                 })
+                exports.LNS_Housing:GiveApartmentPhysicalKey(roomId, src)
             end
             
             SyncApartmentDoor(roomId)
@@ -380,6 +381,7 @@ lib.callback.register('LNS_Housing:server:claimNewCharacterSpawn', function(sour
 
     if result and result.is_new == 1 then
         MySQL.update.await('UPDATE apartments SET is_new = 0 WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
+        exports.LNS_Housing:GiveApartmentPhysicalKey(roomId, source)
         
         local roomData = getRoomDataById(roomId)
         if roomData then

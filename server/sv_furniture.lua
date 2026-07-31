@@ -62,7 +62,7 @@ end)
 
 lib.callback.register('LNS_Housing:server:getFurnitureImages', function(source)
     local success, mappings = pcall(function()
-        return exports[GetCurrentResourceName()]:GetImageMappings()
+        return exports.LNS_Housing:GetImageMappings()
     end)
     if success and mappings then
         return mappings

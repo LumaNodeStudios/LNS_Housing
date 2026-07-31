@@ -314,6 +314,7 @@ lib.callback.register('LNS_Housing:server:buyHouse', function(source, propertyId
         MySQL.update.await('UPDATE housing_contracts SET status = ? WHERE property_id = ? AND status = ?', {'declined', propertyId, 'pending'})
 
         TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
+        exports.LNS_Housing:GivePhysicalKey(propertyId, source)
         return true
     end
     return false

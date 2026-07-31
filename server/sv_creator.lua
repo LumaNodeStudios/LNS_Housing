@@ -235,6 +235,7 @@ RegisterNetEvent('LNS_Housing:server:controlAuction', function(data)
             p.auction_data.status = 'ended'
             if bidder then
                 Bridge.Server.Notify(bidder.PlayerData.source, 'Congratulations! Your bid for ' .. p.label .. ' was confirmed!', 'success')
+                exports.LNS_Housing:GivePhysicalKey(propertyId, bidder.PlayerData.source)
             end
             SyncPropertyDoor(propertyId)
 

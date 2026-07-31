@@ -112,6 +112,7 @@ function CreateProperty(data)
             camera_coords = data.camera_coords or nil,
             camera_aim = data.camera_aim or nil,
             camera_model = data.camera_model or nil,
+            camera_heading = data.camera_heading or 0.0,
             doorbell_camera = data.doorbell_camera or false
         }),
         json.encode(data.yard_zone_data or nil),
@@ -147,6 +148,7 @@ function CreateProperty(data)
                 camera_coords = data.camera_coords or nil,
                 camera_aim = data.camera_aim or nil,
                 camera_model = data.camera_model or nil,
+                camera_heading = data.camera_heading or 0.0,
                 doorbell_camera = data.doorbell_camera or false
             },
             image = data.image or nil,
