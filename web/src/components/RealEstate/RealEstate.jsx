@@ -206,7 +206,10 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         garageCoords: null,
         garageSpawnCoords: null,
         cameraPosition: null,
-        cameraAim: null
+        cameraAim: null,
+        cameraHeading: null,
+        cameraModel: null,
+        cameraFov: null
     });
 
     const [editingHasDoorbellCamera, setEditingHasDoorbellCamera] = useState(false);
@@ -385,7 +388,8 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             cameraPosition: p.metadata && p.metadata.camera_coords ? p.metadata.camera_coords : null,
             cameraAim: p.metadata && p.metadata.camera_aim ? p.metadata.camera_aim : null,
             cameraHeading: p.metadata && p.metadata.camera_heading != null ? p.metadata.camera_heading : null,
-            cameraModel: p.metadata && p.metadata.camera_model ? p.metadata.camera_model : null
+            cameraModel: p.metadata && p.metadata.camera_model ? p.metadata.camera_model : null,
+            cameraFov: p.metadata && p.metadata.camera_fov ? p.metadata.camera_fov : null
         });
         setActiveTab('creator');
     };
@@ -421,7 +425,8 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 cameraPosition: formData.cameraPosition,
                 cameraAim: formData.cameraAim,
                 cameraHeading: formData.cameraHeading,
-                cameraModel: formData.cameraModel
+                cameraModel: formData.cameraModel,
+                cameraFov: formData.cameraFov
             })
         }).then(() => {
             setEditingPropertyId(null);
@@ -681,7 +686,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             .then(resp => resp.json())
             .then(result => {
                 if (result) {
-                    setFormData(prev => ({ ...prev, cameraPosition: result.position, cameraAim: result.aim, cameraHeading: result.heading ?? null, cameraModel: result.model ?? null }));
+                    setFormData(prev => ({ ...prev, cameraPosition: result.position, cameraAim: result.aim, cameraHeading: result.heading ?? null, cameraModel: result.model ?? null, cameraFov: result.fov ?? null }));
                 }
             });
     };
@@ -707,7 +712,9 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             garageSpawnCoords: null,
             cameraPosition: null,
             cameraAim: null,
-            cameraHeading: null
+            cameraHeading: null,
+            cameraModel: null,
+            cameraFov: null
         });
         setEditingPropertyId(null);
         setEditingHasDoorbellCamera(false);

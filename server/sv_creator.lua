@@ -29,6 +29,7 @@ function calculateSquareFootage(zoneData)
 end
 
 lib.callback.register('LNS_Housing:server:uploadPhoto', function(source, base64Data)
+    debugPrint('info', 'LNS_Housing:server:uploadPhoto called', {source = source})
     local promise = promise.new()
     
     TriggerEvent('LNS_Housing:server:uploadPropertyPhotoJS', base64Data, function(url)
@@ -39,6 +40,7 @@ lib.callback.register('LNS_Housing:server:uploadPhoto', function(source, base64D
 end)
 
 lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
+    debugPrint('info', 'LNS_Housing:server:createHouse called', {source = source, label = data and data.label})
     local playerJob = Bridge.Server.GetPlayerJob(source)
     local citizenid = Bridge.Server.GetIdentifier(source)
 
@@ -145,13 +147,16 @@ lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
         data.camera_model = data.cameraModel
     end
 
+    if data.cameraFov ~= nil then
+        data.camera_fov = data.cameraFov
+    end
+
     local newHouse = CreateProperty(data)
     if newHouse then
         if newHouse.metadata and newHouse.metadata.garage_data then
             Bridge.Server.RegisterGarage(newHouse.id, newHouse.label, newHouse.metadata.garage_data)
         end
         TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
-        print('cameraModel received:', data.cameraModel)
         return newHouse
     end
     return nil
@@ -159,6 +164,7 @@ end)
 
 RegisterNetEvent('LNS_Housing:server:placeBid', function(data)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:placeBid received', {src = src, data = data})
     local propertyId = data.id
     local amount = tonumber(data.amount)
     local p = Properties[propertyId]
@@ -174,7 +180,7 @@ RegisterNetEvent('LNS_Housing:server:placeBid', function(data)
         return
     end
 
-    local bankMoney = Bridge.Server.GetBankMoney(src)
+    local bankMoney = Bridge.Server.GetMoney(src, 'bank')
     if bankMoney < amount then
         Bridge.Server.Notify(src, 'Not enough money in bank to place this bid!', 'error')
         return
@@ -206,6 +212,7 @@ end)
 
 RegisterNetEvent('LNS_Housing:server:controlAuction', function(data)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:controlAuction received', {src = src, data = data})
     local propertyId = data.id
     local action = data.action
     local p = Properties[propertyId]

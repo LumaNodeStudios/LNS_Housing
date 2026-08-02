@@ -6,6 +6,7 @@ local activeUploads = {}
 local activeUploadCount = 0
 
 RegisterNetEvent('LNS_Housing:client:screenshotProcessed', function(model)
+    debugPrint('info', 'LNS_Housing:client:screenshotProcessed received', {model = model})
     currentProcessedModel = model
     if activeUploads[model] then
         activeUploads[model] = nil
@@ -72,6 +73,7 @@ local function DrawGreenScreenAndLights(pos)
 end
 
 RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
+    debugPrint('info', 'LNS_Housing:client:startScreenshots received', {targetModel = targetModel})
     if Modeler and Modeler.IsMenuActive then
         Modeler:CloseMenu()
     end

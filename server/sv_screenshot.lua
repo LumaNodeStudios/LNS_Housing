@@ -9,6 +9,7 @@ lib.addCommand('takeshots', {
         },
     },
 }, function(source, args, raw)
+    debugPrint('info', 'Command /takeshots executed', {source = source, model = args.model})
     if not CheckPermission(source, 'admin') then
         Bridge.Server.Notify(source, 'You do not have permission to use this command.', 'error')
         return

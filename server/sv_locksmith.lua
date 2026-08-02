@@ -54,6 +54,7 @@ local function GetKeyholderApartments(identifier)
 end
 
 lib.callback.register('LNS_Housing:server:getMyKeyableProperties', function(source)
+    debugPrint('info', 'LNS_Housing:server:getMyKeyableProperties called', {source = source})
     local identifier = Bridge.Server.GetIdentifier(source)
     if not identifier then return {} end
 
@@ -66,8 +67,75 @@ lib.callback.register('LNS_Housing:server:getMyKeyableProperties', function(sour
     return list
 end)
 
-RegisterNetEvent('LNS_Housing:server:cutPhysicalKey', function(propertyId, isApartment, targetSource)
+local function MatchPropertyId(metaVal, targetVal)
+    if not metaVal or not targetVal then return false end
+    if metaVal == targetVal then return true end
+    if tonumber(metaVal) and tonumber(targetVal) and tonumber(metaVal) == tonumber(targetVal) then return true end
+    if tostring(metaVal) == tostring(targetVal) then return true end
+    return false
+end
+
+local function GetPhysicalKeyCount(propertyId, isApartment)
+    local pk = Settings.Security.PhysicalKeys
+    if not pk or not pk.Enabled then return 0 end
+
+    local count = 0
+    local onlineIdentifiers = {}
+
+    local players = GetPlayers()
+    for i = 1, #players do
+        local pId = tonumber(players[i])
+        if pId then
+            local identifier = Bridge.Server.GetIdentifier(pId)
+            if identifier then
+                onlineIdentifiers[identifier] = true
+            end
+
+            local slots = exports.ox_inventory:Search(pId, 'slots', pk.Item)
+            if slots then
+                for _, slot in ipairs(slots) do
+                    local meta = slot.metadata or {}
+                    if MatchPropertyId(meta.propertyId, propertyId) and (meta.isApartment == true) == (isApartment == true) then
+                        count = count + (slot.count or 1)
+                    end
+                end
+            end
+        end
+    end
+
+    local success, rows = pcall(MySQL.query.await, 'SELECT name, data FROM ox_inventory WHERE data LIKE ?', {'%' .. pk.Item .. '%'})
+    if success and rows then
+        for _, row in ipairs(rows) do
+            local isOnline = false
+            for onlineId in pairs(onlineIdentifiers) do
+                if string.find(row.name, onlineId, 1, true) then
+                    isOnline = true
+                    break
+                end
+            end
+
+            if not isOnline then
+                local data = json.decode(row.data)
+                if data then
+                    for _, item in pairs(data) do
+                        if item.name == pk.Item and item.metadata then
+                            local meta = item.metadata
+                            if MatchPropertyId(meta.propertyId, propertyId) and (meta.isApartment == true) == (isApartment == true) then
+                                count = count + (item.count or 1)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return count
+end
+
+RegisterNetEvent('LNS_Housing:server:cutPhysicalKey', function(propertyId, isApartment)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:cutPhysicalKey received', {src = src, propertyId = propertyId, isApartment = isApartment})
     local pk = Settings.Security.PhysicalKeys
 
     if not pk or not pk.Enabled then
@@ -80,10 +148,10 @@ RegisterNetEvent('LNS_Housing:server:cutPhysicalKey', function(propertyId, isApa
         return
     end
 
-    local recipient = targetSource or src
-
-    if recipient ~= src and not IsKeyholder(recipient, propertyId, isApartment) then
-        Bridge.Server.Notify(src, 'That player is not a keyholder for this property.', 'error')
+    local maxKeys = Settings.MaxKeys or 5
+    local keyCount = GetPhysicalKeyCount(propertyId, isApartment)
+    if keyCount >= maxKeys then
+        Bridge.Server.Notify(src, 'You have reached the maximum number of keys (' .. maxKeys .. ') for this property!', 'error')
         return
     end
 
@@ -101,7 +169,7 @@ RegisterNetEvent('LNS_Housing:server:cutPhysicalKey', function(propertyId, isApa
 
     local label = isApartment and ('Apartment Room #' .. propertyId) or (Properties[propertyId] and Properties[propertyId].label or 'Property')
 
-    local given = exports.ox_inventory:AddItem(recipient, pk.Item, 1, {
+    local given = exports.ox_inventory:AddItem(src, pk.Item, 1, {
         propertyId = propertyId,
         isApartment = isApartment,
         description = 'Key to: ' .. label
@@ -113,10 +181,5 @@ RegisterNetEvent('LNS_Housing:server:cutPhysicalKey', function(propertyId, isApa
         return
     end
 
-    if recipient == src then
-        Bridge.Server.Notify(src, 'You cut a new key for ' .. label .. '.', 'success')
-    else
-        Bridge.Server.Notify(src, 'You cut a key for ' .. label .. ' and gave it to the nearby player.', 'success')
-        Bridge.Server.Notify(recipient, 'You were given a key to ' .. label .. '.', 'success')
-    end
+    Bridge.Server.Notify(src, 'You cut a new key for ' .. label .. '.', 'success')
 end)

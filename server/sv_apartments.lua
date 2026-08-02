@@ -1,9 +1,18 @@
 local Settings = lib.load('shared.settings')
 
 if not Settings.Apartments or not Settings.Apartments.Enabled then
-    lib.callback.register('LNS_Housing:server:getMyApartment', function(source) return nil end)
-    lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, roomId) return nil end)
-    lib.callback.register('LNS_Housing:server:claimNewCharacterSpawn', function(source) return { shouldSpawn = false } end)
+    lib.callback.register('LNS_Housing:server:getMyApartment', function(source)
+        debugPrint('info', 'getMyApartment fallback called', {source = source})
+        return nil
+    end)
+    lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, roomId)
+        debugPrint('info', 'getApartmentInfo fallback called', {source = source, roomId = roomId})
+        return nil
+    end)
+    lib.callback.register('LNS_Housing:server:claimNewCharacterSpawn', function(source)
+        debugPrint('info', 'claimNewCharacterSpawn fallback called', {source = source})
+        return { shouldSpawn = false }
+    end)
     return
 end
 
@@ -333,6 +342,7 @@ AddEventHandler('onResourceStart', function(resourceName)
 end)
 
 lib.callback.register('LNS_Housing:server:getMyApartment', function(source)
+    debugPrint('info', 'LNS_Housing:server:getMyApartment called', {source = source})
     WaitForDb()
     local citizenid = Bridge.Server.GetIdentifier(source)
     if not citizenid then return nil end
@@ -346,6 +356,7 @@ lib.callback.register('LNS_Housing:server:getMyApartment', function(source)
 end)
 
 lib.callback.register('LNS_Housing:server:claimNewCharacterSpawn', function(source)
+    debugPrint('info', 'LNS_Housing:server:claimNewCharacterSpawn called', {source = source})
     WaitForDb()
     local citizenid = Bridge.Server.GetIdentifier(source)
     if not citizenid then return { shouldSpawn = false } end
@@ -397,6 +408,7 @@ lib.callback.register('LNS_Housing:server:claimNewCharacterSpawn', function(sour
 end)
 
 lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, roomId)
+    debugPrint('info', 'LNS_Housing:server:getApartmentInfo called', {source = source, roomId = roomId})
     WaitForDb()
     local citizenid = Bridge.Server.GetIdentifier(source)
     if not citizenid then return nil end
@@ -797,6 +809,7 @@ local function GetPlayerSpawnsServer(source)
 end
 
 lib.callback.register('LNS_Housing:server:getPlayerSpawns', function(source)
+    debugPrint('info', 'LNS_Housing:server:getPlayerSpawns called', {source = source})
     WaitForDb()
     return GetPlayerSpawnsServer(source)
 end)
@@ -819,6 +832,7 @@ function IsApartmentAdmin(source)
 end
 
 lib.callback.register('LNS_Housing:server:doesApartmentExist', function(source, roomId)
+    debugPrint('info', 'LNS_Housing:server:doesApartmentExist called', {source = source, roomId = roomId})
     for _, room in ipairs(Settings.Rooms) do
         if room.id == roomId then
             return true
@@ -828,6 +842,7 @@ lib.callback.register('LNS_Housing:server:doesApartmentExist', function(source, 
 end)
 
 lib.callback.register('LNS_Housing:server:getApartmentRooms', function(source)
+    debugPrint('info', 'LNS_Housing:server:getApartmentRooms called', {source = source})
     WaitForDb()
     local Rooms = MySQL.query.await('SELECT * FROM apartment_rooms')
     local formatted = {}
@@ -862,6 +877,7 @@ lib.callback.register('LNS_Housing:server:getApartmentRooms', function(source)
 end)
 
 lib.callback.register('LNS_Housing:server:createApartment', function(source, data)
+    debugPrint('info', 'LNS_Housing:server:createApartment called', {source = source, data = data})
     WaitForDb()
     if not IsApartmentAdmin(source) then return false end
 
@@ -997,6 +1013,7 @@ lib.callback.register('LNS_Housing:server:createApartment', function(source, dat
 end)
 
 lib.callback.register('LNS_Housing:server:updateApartment', function(source, data)
+    debugPrint('info', 'LNS_Housing:server:updateApartment called', {source = source, data = data})
     WaitForDb()
     if not IsApartmentAdmin(source) then return false end
 

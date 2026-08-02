@@ -9,6 +9,7 @@ function WaitForDb()
 end
 
 function LoadProperties()
+    debugPrint('info', 'Loading properties from database...')
     local result = MySQL.query.await('SELECT * FROM housing_properties')
     if result then
         for _, v in ipairs(result) do
@@ -52,6 +53,7 @@ function LoadProperties()
                 end
             end
             Properties[v.id] = v
+            EnrichPropertyDoorlockData(v)
 
             if v.owner and v.sale_type == 'rent' and (not v.metadata or not v.metadata.last_rent_paid or v.metadata.last_rent_paid == 0) then
                 v.metadata = v.metadata or {}
@@ -69,11 +71,12 @@ function LoadProperties()
                 end
             end
         end
-        print('^2[Housing] ^7Loaded ' .. #result .. ' properties.')
+        debugPrint('info', 'Loaded ' .. #result .. ' properties.')
     end
 end
 
 function CreateProperty(data)
+    debugPrint('info', 'CreateProperty called', {label = data and data.label})
     local spawnData = nil
     if data.spawn_coords then
         spawnData = {
@@ -170,12 +173,14 @@ function CreateProperty(data)
         }
         Properties[id].size = Properties[id].metadata.size
         Properties[id].region = Properties[id].metadata.region
+        EnrichPropertyDoorlockData(Properties[id])
         return Properties[id]
     end
     return nil
 end
 
 function SaveProperty(id)
+    debugPrint('info', 'SaveProperty called', {id = id})
     local p = Properties[id]
     if not p then return end
     
@@ -402,9 +407,11 @@ MySQL.ready(function()
     end
 
     DbReady = true
+    debugPrint('info', 'Database ready, properties initialized.')
 end)
 
 function ResetPropertyOwnershipData(id)
+    debugPrint('info', 'ResetPropertyOwnershipData called', {id = id})
     local p = Properties[id]
     if not p then return end
 
@@ -432,3 +439,63 @@ function ResetPropertyOwnershipData(id)
         Bridge.Server.RegisterPropertyStashes(id, p.furniture)
     end
 end
+
+function GetDoorlockDbData(doorId)
+    local success, result = pcall(function()
+        return MySQL.single.await('SELECT data FROM ox_doorlock WHERE id = ?', { doorId })
+    end)
+    if success and result and result.data then
+        local ok, data = pcall(json.decode, result.data)
+        if ok and data then
+            return data
+        end
+    end
+    return nil
+end
+
+function EnrichPropertyDoorlockData(p)
+    if not p then return end
+    local doorId = p.door_id
+    if (not doorId or doorId == 0) and p.doors and #p.doors > 0 then
+        doorId = p.doors[1]
+    end
+    if not doorId or doorId == 0 then return end
+
+    local success, door = pcall(function()
+        return exports.ox_doorlock:getDoor(doorId)
+    end)
+    if success and door then
+        local doorCoords = door.coords
+        local doorModel = door.model
+        local doorHeading = door.heading
+
+        local dbData = GetDoorlockDbData(doorId)
+        if dbData then
+            if dbData.doors and dbData.doors[1] then
+                if not doorCoords then doorCoords = dbData.doors[1].coords end
+                if not doorModel then doorModel = dbData.doors[1].model end
+                if not doorHeading then doorHeading = dbData.doors[1].heading end
+            else
+                if not doorCoords then doorCoords = dbData.coords end
+                if not doorModel then doorModel = dbData.model end
+                if not doorHeading then doorHeading = dbData.heading end
+            end
+        end
+
+        p.metadata = p.metadata or {}
+        p.metadata.doorCoords = doorCoords
+        p.metadata.doorModel = doorModel
+        p.metadata.doorHeading = doorHeading
+    end
+end
+
+CreateThread(function()
+    while GetResourceState('ox_doorlock') ~= 'started' do
+        Wait(1000)
+    end
+    Wait(5000)
+    for _, p in pairs(Properties) do
+        EnrichPropertyDoorlockData(p)
+    end
+    TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
+end)

@@ -128,11 +128,16 @@ function AddSecurityLog(propertyId, title, desc, color)
 end
 
 lib.callback.register('LNS_Housing:server:getProperties', function(source)
+    debugPrint('info', 'LNS_Housing:server:getProperties called', {source = source})
     WaitForDb()
+    for _, p in pairs(Properties) do
+        EnrichPropertyDoorlockData(p)
+    end
     return Properties
 end)
 
 lib.callback.register('LNS_Housing:server:isDoorBreached', function(source, propertyId)
+    debugPrint('info', 'LNS_Housing:server:isDoorBreached called', {source = source, propertyId = propertyId})
     if TemporaryAccess.doors[propertyId] and next(TemporaryAccess.doors[propertyId]) then
         return true
     end
@@ -145,6 +150,7 @@ end
 
 RegisterNetEvent('LNS_Housing:server:lockpickSuccess', function(propertyId, type, stashId)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:lockpickSuccess received', {src = src, propertyId = propertyId, type = type, stashId = stashId})
     local identifier = Bridge.Server.GetIdentifier(src)
     local isApartment = Properties[propertyId] == nil
 
@@ -224,6 +230,7 @@ end)
 
 RegisterNetEvent('LNS_Housing:server:policeRaidDoor', function(propertyId, propertyType, doorId)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:policeRaidDoor received', {src = src, propertyId = propertyId, propertyType = propertyType, doorId = doorId})
     local playerJob = Bridge.Server.GetPlayerJob(src)
     if not playerJob or playerJob.name ~= 'police' then
         return
@@ -271,6 +278,7 @@ end)
 
 RegisterNetEvent('LNS_Housing:server:policeRaidStash', function(propertyId)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:policeRaidStash received', {src = src, propertyId = propertyId})
     local playerJob = Bridge.Server.GetPlayerJob(src)
     if not playerJob or playerJob.name ~= 'police' then
         return
@@ -291,6 +299,7 @@ RegisterNetEvent('LNS_Housing:server:policeRaidStash', function(propertyId)
 end)
 
 lib.callback.register('LNS_Housing:server:buyHouse', function(source, propertyId)
+    debugPrint('info', 'LNS_Housing:server:buyHouse called', {source = source, propertyId = propertyId})
     WaitForDb()
     if Settings.RealEstate and Settings.RealEstate.OnlyBuyViaContracts then
         return false
@@ -471,6 +480,7 @@ end)
 
 RegisterNetEvent('LNS_Housing:server:toggleLock', function(propertyId)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:toggleLock received', {src = src, propertyId = propertyId})
     local p = Properties[propertyId]
     if not p then return end
 
@@ -526,6 +536,7 @@ end)
 
 RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgradeId)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:upgradeSecurity received', {src = src, propertyId = propertyId, upgradeId = upgradeId})
     local p = Properties[propertyId]
     if not p or p.isApartment then return end
 
@@ -597,9 +608,10 @@ local MotionAlertCooldown = {}
 
 RegisterNetEvent('LNS_Housing:server:motionDetected', function(propertyId)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:motionDetected received', {src = src, propertyId = propertyId})
     local p = Properties[propertyId]
     if not p or p.isApartment then return end
-    if not (p.metadata and p.metadata.doorbell_camera) then return end
+    if not (p.metadata and p.metadata.doorbell_camera == true) then return end
 
     local now = os.time()
     if MotionAlertCooldown[propertyId] and (now - MotionAlertCooldown[propertyId]) < 20 then
@@ -623,11 +635,13 @@ end)
 
 RegisterNetEvent('LNS_Housing:server:enterPropertyBucket', function(propertyId)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:enterPropertyBucket received', {src = src, propertyId = propertyId})
     SetPlayerRoutingBucket(src, propertyId)
 end)
 
 RegisterNetEvent('LNS_Housing:server:leavePropertyBucket', function()
     local src = source
+    debugPrint('info', 'LNS_Housing:server:leavePropertyBucket received', {src = src})
     SetPlayerRoutingBucket(src, 0)
 end)
 
@@ -720,11 +734,14 @@ function TriggerHouseDoorbell(propertyId)
 end
 
 RegisterNetEvent('LNS_Housing:server:ringDoorbell', function(propertyId)
+    local src = source
+    debugPrint('info', 'LNS_Housing:server:ringDoorbell received', {src = src, propertyId = propertyId})
     TriggerHouseDoorbell(propertyId)
 end)
 
 RegisterNetEvent('LNS_Housing:server:lockpickFailed', function(propertyId)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:lockpickFailed received', {src = src, propertyId = propertyId})
     local isApartment = Properties[propertyId] == nil
     if isApartment then return end
 
@@ -748,6 +765,8 @@ RegisterNetEvent('LNS_Housing:server:lockpickFailed', function(propertyId)
 end)
 
 RegisterNetEvent('LNS_Housing:server:notifyPoliceFallback', function(message)
+    local src = source
+    debugPrint('info', 'LNS_Housing:server:notifyPoliceFallback received', {src = src, message = message})
     local players = GetPlayers()
     for i = 1, #players do
         local pId = tonumber(players[i])
@@ -832,6 +851,7 @@ local LockedStashes = {}
 
 RegisterNetEvent('LNS_Housing:server:toggleStashLock', function(propertyId, stashId)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:toggleStashLock received', {src = src, propertyId = propertyId, stashId = stashId})
     local isApartment = Properties[propertyId] == nil
     local hasAccess = CheckPermission(src, isApartment and 'apartment' or 'house', propertyId, 'storage')
 
@@ -846,6 +866,7 @@ RegisterNetEvent('LNS_Housing:server:toggleStashLock', function(propertyId, stas
 end)
 
 lib.callback.register('LNS_Housing:server:isStashLocked', function(source, stashId)
+    debugPrint('info', 'LNS_Housing:server:isStashLocked called', {source = source, stashId = stashId})
     if LockedStashes[stashId] == nil then
         LockedStashes[stashId] = true
     end
@@ -866,4 +887,28 @@ exports('GivePhysicalKey', function(propertyId, targetSource)
     })
 
     return added and true or false
+end)
+
+RegisterNetEvent('LNS_Housing:server:saveDoorbellCamera', function(propertyId, data)
+    local src = source
+    local p = Properties[propertyId]
+    if not p or p.isApartment then return end
+
+    if not HasPermissionAccess(src, propertyId, 'manage') then
+        Bridge.Server.Notify(src, 'You do not have permission to manage this property.', 'error')
+        return
+    end
+
+    if not p.metadata then p.metadata = {} end
+
+    p.metadata.camera_coords = { x = data.position.x, y = data.position.y, z = data.position.z }
+    p.metadata.camera_aim = { x = data.aim.x, y = data.aim.y, z = data.aim.z }
+    p.metadata.camera_heading = data.heading
+    p.metadata.camera_model = data.model
+    p.metadata.camera_fov = data.fov or 50.0
+
+    SaveProperty(propertyId)
+    AddSecurityLog(propertyId, 'Doorbell Camera Repositioned', 'The doorbell camera placement and angle were updated.', '#3b82f6')
+    TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
+    Bridge.Server.Notify(src, 'Doorbell camera position updated successfully!', 'success')
 end)

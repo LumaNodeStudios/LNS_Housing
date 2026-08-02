@@ -20,6 +20,7 @@ local db = DB_CONFIG[Bridge.Framework]
 
 -- Offline Player Money Management
 function Bridge.Server.GetOfflineBankMoney(identifier)
+    debugPrint('info', 'Bridge.Server.GetOfflineBankMoney', {identifier = identifier})
     local onlinePlayer = Bridge.Server.IsPlayerOnline(identifier)
     if onlinePlayer then
         return Bridge.Server.GetBankMoney(onlinePlayer.PlayerData.source)
@@ -36,6 +37,7 @@ function Bridge.Server.GetOfflineBankMoney(identifier)
 end
 
 function Bridge.Server.RemoveOfflineBankMoney(identifier, amount)
+    debugPrint('info', 'Bridge.Server.RemoveOfflineBankMoney', {identifier = identifier, amount = amount})
     local safeAmount = normalizeAmount(amount)
     if not safeAmount or safeAmount <= 0 then return false end
 
@@ -51,6 +53,7 @@ function Bridge.Server.RemoveOfflineBankMoney(identifier, amount)
 end
 
 function Bridge.Server.AddOfflineBankMoney(identifier, amount)
+    debugPrint('info', 'Bridge.Server.AddOfflineBankMoney', {identifier = identifier, amount = amount})
     local safeAmount = normalizeAmount(amount)
     if not safeAmount or safeAmount <= 0 then return false end
 
@@ -177,6 +180,7 @@ function Bridge.Server.GetMoney(source, moneyType)
 end
 
 function Bridge.Server.RemoveBankMoney(source, amount, reason)
+    debugPrint('info', 'Bridge.Server.RemoveBankMoney', {source = source, amount = amount, reason = reason})
     local safeAmount = normalizeAmount(amount)
     if not safeAmount or safeAmount <= 0 then return false end
 
@@ -193,6 +197,7 @@ function Bridge.Server.RemoveBankMoney(source, amount, reason)
 end
 
 function Bridge.Server.RemoveMoney(source, moneyType, amount, reason)
+    debugPrint('info', 'Bridge.Server.RemoveMoney', {source = source, moneyType = moneyType, amount = amount, reason = reason})
     local safeAmount = normalizeAmount(amount)
     if not safeAmount or safeAmount <= 0 then return false end
 
@@ -217,6 +222,7 @@ function Bridge.Server.RemoveMoney(source, moneyType, amount, reason)
 end
 
 function Bridge.Server.AddBankMoney(source, amount, reason)
+    debugPrint('info', 'Bridge.Server.AddBankMoney', {source = source, amount = amount, reason = reason})
     local safeAmount = normalizeAmount(amount)
     if not safeAmount or safeAmount <= 0 then return false end
 
@@ -271,19 +277,23 @@ local function handleSocietyMoney(job, amount, action)
 end
 
 function Bridge.Server.AddSocietyMoney(job, amount)
+    debugPrint('info', 'Bridge.Server.AddSocietyMoney', {job = job, amount = amount})
     handleSocietyMoney(job, amount, 'add')
 end
 
 function Bridge.Server.RemoveSocietyMoney(job, amount)
+    debugPrint('info', 'Bridge.Server.RemoveSocietyMoney', {job = job, amount = amount})
     handleSocietyMoney(job, amount, 'remove')
 end
 
 function Bridge.Server.GetSocietyMoney(job)
+    debugPrint('info', 'Bridge.Server.GetSocietyMoney', {job = job})
     return handleSocietyMoney(job, nil, 'get')
 end
 
 -- Stash / Inventory Integrations
 function Bridge.Server.RegisterStash(propertyId, furnitureId, storageConfig, label)
+    debugPrint('info', 'Bridge.Server.RegisterStash', {propertyId = propertyId, furnitureId = furnitureId, storageConfig = storageConfig, label = label})
     if GetResourceState('ox_inventory') == 'started' then
         local stashId = string.format('housing_%d_%s', propertyId, furnitureId)
         local slots = storageConfig and storageConfig.slots or Settings.Stash.slots
@@ -317,6 +327,7 @@ end
 
 -- Job updates (Supports online players & database updates for offline players)
 function Bridge.Server.SetPlayerJob(identifier, jobName, grade)
+    debugPrint('info', 'Bridge.Server.SetPlayerJob', {identifier = identifier, jobName = jobName, grade = grade})
     local onlinePlayer = Bridge.Server.IsPlayerOnline(identifier)
     if onlinePlayer then
         local src = onlinePlayer.PlayerData.source
@@ -351,6 +362,7 @@ end
 
 -- Server-side Notifications
 function Bridge.Server.Notify(source, msg, type)
+    debugPrint('info', 'Bridge.Server.Notify', {source = source, msg = msg, type = type})
     lib.notify(source, {
         description = msg,
         type = type or 'inform'
@@ -359,6 +371,7 @@ end
 
 -- Server-side Garage Registration
 function Bridge.Server.RegisterGarage(propertyId, label, garageData)
+    debugPrint('info', 'Bridge.Server.RegisterGarage', {propertyId = propertyId, label = label, garageData = garageData})
     if Bridge.GarageScript == 'qbx_garages' then
         local garageName = string.format("property-%s-garage", propertyId)
         local spawn = garageData.spawn or garageData
@@ -381,11 +394,13 @@ function Bridge.Server.RegisterGarage(propertyId, label, garageData)
 end
 
 function Bridge.Server.UnregisterGarage(propertyId)
+    debugPrint('info', 'Bridge.Server.UnregisterGarage', {propertyId = propertyId})
     -- Bomboclat
 end
 
 -- Phone Scripts
 function Bridge.Server.PhoneNotification(source, data)
+    debugPrint('info', 'Bridge.Server.PhoneNotification', {source = source, data = data})
     if Bridge.PhoneScript == 'yseries' then
         exports.yseries:SendNotification({
             title = data.title,
@@ -398,6 +413,7 @@ end
 
 RegisterNetEvent('LNS_Housing:server:motionAlert', function(propertyLabel)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:motionAlert event received', {src = src, propertyLabel = propertyLabel})
     if type(propertyLabel) ~= 'string' then return end
 
     Bridge.Server.PhoneNotification(src, {

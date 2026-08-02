@@ -58,6 +58,7 @@ function HasPhysicalKey(source, targetId, isApartment)
 end
 
 function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
+    debugPrint('info', 'CheckPermission called', {source = source, permType = permType, targetId = targetId, actionType = actionType, ignoreTemp = ignoreTemp})
     if permType == 'admin' then
         if Bridge.Framework == 'esx' then
             local ESX = exports['es_extended']:getSharedObject()

@@ -2,6 +2,7 @@ local Settings = lib.load('shared.settings')
 
 RegisterNetEvent('LNS_Housing:server:buyFurniture', function(propertyId, items, totalPrice, paymentMethod)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:buyFurniture received', {src = src, propertyId = propertyId, totalPrice = totalPrice, paymentMethod = paymentMethod})
     local p = Properties[propertyId]
     if not p then return end
 
@@ -34,6 +35,7 @@ end)
 
 RegisterNetEvent('LNS_Housing:server:saveFurniture', function(propertyId, furnitureData)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:saveFurniture received', {src = src, propertyId = propertyId, itemsCount = furnitureData and #furnitureData or 0})
     local p = Properties[propertyId]
     if not p then return end
 
@@ -56,11 +58,13 @@ end
 
 RegisterNetEvent('LNS_Housing:server:logoutPlayer', function()
     local src = source
+    debugPrint('info', 'LNS_Housing:server:logoutPlayer received', {src = src})
     SetPlayerRoutingBucket(src, 0)
     Bridge.Server.Logout(src)
 end)
 
 lib.callback.register('LNS_Housing:server:getFurnitureImages', function(source)
+    debugPrint('info', 'LNS_Housing:server:getFurnitureImages called', {source = source})
     local success, mappings = pcall(function()
         return exports.LNS_Housing:GetImageMappings()
     end)

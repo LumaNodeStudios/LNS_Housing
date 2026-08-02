@@ -1,6 +1,5 @@
 local Settings = lib.load('shared.settings')
 
--- Register real estate item if enabled in settings
 if Settings.RealEstate.Item and Settings.RealEstate.Item.Enabled and Settings.RealEstate.Item.Name then
     Bridge.Server.CreateUseableItem(Settings.RealEstate.Item.Name, function(source)
         TriggerClientEvent('LNS_Housing:client:openRealEstateFromItem', source)
@@ -9,6 +8,7 @@ end
 
 RegisterNetEvent('LNS_Housing:server:updatePermissions', function(propertyId, permissions)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:updatePermissions received', {src = src, propertyId = propertyId, permissions = permissions})
     local p = Properties[propertyId]
     if not p or p.owner ~= Bridge.Server.GetIdentifier(src) then return end
 
@@ -20,6 +20,7 @@ end)
 
 RegisterNetEvent('LNS_Housing:server:updateWallColor', function(propertyId, color)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:updateWallColor received', {src = src, propertyId = propertyId, color = color})
     local p = Properties[propertyId]
     if not p or p.owner ~= Bridge.Server.GetIdentifier(src) then return end
 
@@ -29,6 +30,7 @@ end)
 
 RegisterNetEvent('LNS_Housing:server:payRent', function(propertyId, payAmount)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:payRent received', {src = src, propertyId = propertyId, payAmount = payAmount})
     local id = tonumber(propertyId)
     local p = Properties[id]
     
@@ -117,6 +119,7 @@ RegisterNetEvent('LNS_Housing:server:payRent', function(propertyId, payAmount)
 end)
 
 lib.callback.register('LNS_Housing:server:getPendingContracts', function(source)
+    debugPrint('info', 'LNS_Housing:server:getPendingContracts called', {source = source})
     local cid = Bridge.Server.GetIdentifier(source)
     local results = MySQL.query.await([[
         SELECT c.*, p.label as property_label, p.image as property_image
@@ -128,6 +131,7 @@ lib.callback.register('LNS_Housing:server:getPendingContracts', function(source)
 end)
 
 lib.callback.register('LNS_Housing:server:getAgencyContracts', function(source, agencyName)
+    debugPrint('info', 'LNS_Housing:server:getAgencyContracts called', {source = source, agencyName = agencyName})
     local results = MySQL.query.await([[
         SELECT c.*, p.label as property_label, p.image as property_image
         FROM housing_contracts c
@@ -140,6 +144,7 @@ lib.callback.register('LNS_Housing:server:getAgencyContracts', function(source, 
 end)
 
 lib.callback.register('LNS_Housing:server:resolvePlayerNames', function(source, playerIds)
+    debugPrint('info', 'LNS_Housing:server:resolvePlayerNames called', {source = source, playerIds = playerIds})
     local results = {}
     for _, sid in ipairs(playerIds) do
         local name = Bridge.Server.GetPlayerName(sid)
@@ -150,6 +155,7 @@ end)
 
 RegisterNetEvent('LNS_Housing:server:createContract', function(data)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:createContract received', {src = src, data = data})
     local playerJob = Bridge.Server.GetPlayerJob(src)
     if not playerJob then return end
 
@@ -351,19 +357,20 @@ lib.callback.register('LNS_Housing:server:updateListingDetails', function(source
     p.metadata.shell = data.mlo and 'mlo' or (data.shell or p.metadata.shell or 'Standard Motel')
     p.metadata.allow_wall_colors = data.allowWallColors or false
 
-    if p.metadata.doorbell_camera then
-        if data.cameraPosition then
-            p.metadata.camera_coords = data.cameraPosition
-        end
-        if data.cameraAim then
-            p.metadata.camera_aim = data.cameraAim
-        end
-        if data.cameraHeading ~= nil then
-            p.metadata.camera_heading = data.cameraHeading
-        end
-        if data.cameraModel then
-            p.metadata.camera_model = data.cameraModel
-        end
+    if data.cameraPosition then
+        p.metadata.camera_coords = data.cameraPosition
+    end
+    if data.cameraAim then
+        p.metadata.camera_aim = data.cameraAim
+    end
+    if data.cameraHeading ~= nil then
+        p.metadata.camera_heading = data.cameraHeading
+    end
+    if data.cameraModel then
+        p.metadata.camera_model = data.cameraModel
+    end
+    if data.cameraFov ~= nil then
+        p.metadata.camera_fov = data.cameraFov
     end
 
     if data.entranceType == 'coords' then
@@ -422,7 +429,6 @@ lib.callback.register('LNS_Housing:server:updateListingDetails', function(source
     end
 
     TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
-    print('cameraModel received:', data.cameraModel)
     return true
 end)
 
@@ -510,12 +516,14 @@ lib.callback.register('LNS_Housing:server:terminateOwnLease', function(source, p
 end)
 
 lib.callback.register('LNS_Housing:server:getBlacklist', function(source)
+    debugPrint('info', 'LNS_Housing:server:getBlacklist called', {source = source})
     local results = MySQL.query.await('SELECT * FROM housing_blacklist ORDER BY created_at DESC')
     return results or {}
 end)
 
 RegisterNetEvent('LNS_Housing:server:addBlacklist', function(citizenid, name, reason)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:addBlacklist received', {src = src, citizenid = citizenid, name = name, reason = reason})
     local jobPerm = GetRealEstatePermission(src)
     if not jobPerm or not jobPerm.permissions.manageListings then return end
 
@@ -536,6 +544,7 @@ end)
 
 RegisterNetEvent('LNS_Housing:server:removeBlacklist', function(citizenid)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:removeBlacklist received', {src = src, citizenid = citizenid})
     local jobPerm = GetRealEstatePermission(src)
     if not jobPerm or not jobPerm.permissions.manageListings then return end
 
@@ -549,6 +558,7 @@ end)
 
 RegisterNetEvent('LNS_Housing:server:toggleAutoPay', function(propertyId, enabled)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:toggleAutoPay received', {src = src, propertyId = propertyId, enabled = enabled})
     local id = tonumber(propertyId)
     local p = Properties[id]
     if not p or p.owner ~= Bridge.Server.GetIdentifier(src) then return end

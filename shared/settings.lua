@@ -1,27 +1,37 @@
 return {
-    -- Debugging options to toggle print logs and visible boundaries/draw zones
+    ----------------------------------------------------------------------------
+    -- Core & Debug Settings
+    ----------------------------------------------------------------------------
     Debug = {
-        BuyHouses = true, 
-        LawnGrowth = true, 
+        Prints = false,
+        LawnGrowth = false, 
         Zones = false 
     },
 
-    -- Real estate job and agency management settings
+    -- Spawn elevation (Z coordinate) for shell-based interior templates
+    ShellSpawningZ = -100.0,
+
+    -- Maximum number of physical key copies that can be shared per property/apartment
+    MaxKeys = 5,
+
+    ----------------------------------------------------------------------------
+    -- Real Estate Agency & Agent Settings
+    ----------------------------------------------------------------------------
     RealEstate = {
-        Command = nil,                     -- Command to open the real estate menu (set to nil to disable)
+        Command = nil,                      -- Command to open the real estate menu (set to nil to disable)
         Item = {
-            Enabled = true,                        -- If true, players can use the item below to open the real estate menu
-            Name = 'lockpick',           -- Item name that opens the real estate (properties) menu when used
+            Enabled = true,                 -- If true, players can use the item below to open the real estate menu
+            Name = 'lockpick',              -- Item name that opens the real estate (properties) menu when used
         },
-        ContractDistance = 5.0, -- Max distance to draft a contract (in meters)
-        OnlyBuyViaContracts = false,                -- If true, players can only buy houses through a signed contract with an agent
-        Jobs = { 'realestate', 'luxuryestate' },    -- Jobs allowed to access the real estate agent actions
-        Groups = { --[['admin', 'god', 'superadmin']] },  -- Admin groups that have full agent permissions
+        ContractDistance = 5.0,             -- Max distance to draft a contract (in meters)
+        OnlyBuyViaContracts = false,        -- If true, players can only buy houses through a signed contract with an agent
+        Jobs = { 'realestate', 'luxuryestate' }, -- Jobs allowed to access the real estate agent actions
+        Groups = {},                        -- Admin groups that have full agent permissions (e.g. {'admin', 'god', 'superadmin'})
         Agencies = {
             ['realestate'] = {
                 label = 'Dynasty 8 Real Estate',
-                society = 'realestate',             -- Society account name for deposits/payments
-                defaultCommission = 10              -- Default commission percentage for sales
+                society = 'realestate',     -- Society account name for deposits/payments
+                defaultCommission = 10      -- Default commission percentage for sales
             },
             ['luxuryestate'] = {
                 label = 'Luxury Real Estate',
@@ -38,118 +48,24 @@ return {
         }
     },
 
-    -- Locksmith NPC settings, used to cut new physical key items for a property/apartment
-    Locksmith = {
-        Enabled = true,
-        BlankKeyItem = 'blank_house_key',  -- Item required and consumed to cut a new key
-        Distance = 2.0,                    -- Interaction distance for the target option
-        Ped = {
-            Model = 'a_m_m_business_01',
-            Coords = vec4(170.06, -1799.52, 29.32, 321.68), -- Adjust to your locksmith location
-            Scenario = 'WORLD_HUMAN_STAND_IMPATIENT',
-        },
-        Blip = {
-            Enabled = true,
-            Sprite = 186,
-            Color = 1,
-            Scale = 0.8,
-            Label = 'Locksmith'
-        }
-    },
-
-    -- Default properties for the personal stash/storage in houses
-    Stash = {
-        label = 'Property Storage', -- Display label when opening the stash
-        slots = 50,                 -- Number of storage slots
-        weight = 100000             -- Maximum weight capacity of the stash (e.g., in grams)
-    },
-
-    -- Rent system, grace periods, late fees, and eviction settings
-    Rent = {
-        RentPeriod = 604800,        -- 7 days (in seconds)
-        GracePeriod = 259200,       -- 3 days to pay after cycle due before lockout (in seconds)
-        RetrievalPeriod = 604800,   -- 7 days of temporary stash retrieval after lockout (in seconds)
-        LateFee = 250,              -- Flat late fee added to debt on missed payment
-        MaxMissedPayments = 3,      -- Max missed payments threshold for eviction
-        AutoEvict = true,           -- Auto evict player after retrieval period expires
-    },
-
-    -- Security, burglary, and property raid settings
-    Security = {
-        LockpickItem = 'lockpick',   -- Item needed for ordinary house lockpicking
-        RaidItem = 'police_ram',        -- Item needed by police/authorized factions to raid properties
-        RaidDuration = 50000,         -- Time in milliseconds required to break open a door during a raid
-        RaidStorageDuration = 10000,  -- Time in milliseconds to break open a property stash
-        MaxLevel = 5,                 -- Maximum upgradable lock level for houses
-        UpgradePrice = {             -- Upgrade price for each security level
-            [1] = 10000,
-            [2] = 20000,
-            [3] = 30000,
-            [4] = 40000,
-            [5] = 50000
-        },
-        doorbellCameraPrice = 1000,
-        DoorbellCameraRenderDistance = 30.0, -- Distance (in meters) at which doorbell camera props will render for players
-        -- List of camera prop models available when placing a doorbell camera.
-        -- While placing a camera, press LEFT/RIGHT arrow to cycle through this list.
-        -- Index 1 is used as the fallback model for any camera saved before this list existed.
-        CameraProps = {
-            `prop_cctv_cam_06a`,
-            `prop_cctv_cam_04a`,
-            `prop_cctv_cam_05a`,
-            `prop_cctv_cam_02a`,
-            `prop_cctv_cam_01a`,
-            `prop_cctv_cam_07a`,
-            `prop_cctv_pole_03`,
-            `prop_cctv_cam_01b`,
-            `prop_cctv_cam_04b`,
-            `prop_cctv_cam_03a`,
-            `prop_cctv_cam_04c`,
-            `prop_cs_cctv`,
-        },
-        AlarmDuration = 30000,        -- Duration of burglar alarm in milliseconds (30 seconds)
-        AlarmFailThreshold = {        -- Number of failed attempts allowed before alarm triggers
-            [0] = 999, -- Level 0: No alarm
-            [1] = 4,   -- Level 1: alarm triggers on 4th fail
-            [2] = 3,   -- Level 2: alarm triggers on 3rd fail
-            [3] = 2,   -- Level 3: alarm triggers on 2nd fail
-            [4] = 2,   -- Level 4: alarm triggers on 2nd fail
-            [5] = 1,   -- Level 5 (max): alarm triggers on 1st fail
-        },
-        -- Lockpicking minigame difficulty settings based on security/lock levels
-        Difficulty = {
-            [0] = { rounds = 1, speed = 1.0, area = 50 }, -- Level 0: 1 round, normal speed, very large target area
-            [1] = { rounds = 2, speed = 1.1, area = 40 }, -- Level 1: 2 rounds, slightly faster, large target area
-            [2] = { rounds = 3, speed = 1.2, area = 35 }, -- Level 2: 3 rounds, medium speed, medium-large area
-            [3] = { rounds = 3, speed = 1.3, area = 30 }, -- Level 3: 3 rounds, faster, medium area
-            [4] = { rounds = 4, speed = 1.4, area = 25 }, -- Level 4: 4 rounds, medium-fast speed, medium-small area
-            [5] = { rounds = 4, speed = 1.4, area = 25 }, -- Level 5: 4 rounds, fast speed, small area
-        },
-        -- Physical key item settings
-        PhysicalKeys = {
-            Enabled = false,           -- If true, 'entry' access (enter/lock/unlock) for houses AND apartments requires holding a physical key item bound (via metadata) to that specific property/apartment
-            Item = 'house_key',        -- Item name used as the physical key. Every copy MUST be given via GivePhysicalKey/GiveApartmentPhysicalKey or the locksmith, or it will not open anything.
-            RequireKeyholder = false,  -- If true, having the key item is not enough on its own. The person must ALSO be a listed keyholder (owner, or in permissions.entry) on that property/apartment. If false, the key alone is sufficient (so a stolen key still works).
-        },
-    },
-
-    MaxKeys = 5, -- Maximum number of copies that can be shared per property
-
-    -- Housing specific settings
+    ----------------------------------------------------------------------------
+    -- Housing System Settings
+    ----------------------------------------------------------------------------
     Housing = {
+        -- Access configurations for the house creator tool
         Creator = {
-            Command = 'createhouse', -- Command to initiate house creation
-            Group = 'admin'          -- User group permitted to run this command
+            Command = 'createhouse',        -- Command to initiate house creation
+            Group = 'admin'                 -- User group permitted to run this command
         },
 
         -- Lawn mowing and grass growth simulation settings
         Lawn = {
             Enabled = true,
-            GrowthTime = 120,      -- Time (in minutes) for grass to fully grow
-            MaxSink = 0.25,        -- Maximum distance grass models can sink into the ground
-            Spacing = 1.5,         -- Distance spacing between individual grass props
-            RenderDistance = 80.0, -- Distance (in meters) at which grass props will render for players
-            Models = {             -- Grass prop models spawned on unmaintained lawns
+            GrowthTime = 120,               -- Time (in minutes) for grass to fully grow
+            MaxSink = 0.25,                 -- Maximum distance grass models can sink into the ground
+            Spacing = 1.5,                  -- Distance spacing between individual grass props
+            RenderDistance = 80.0,          -- Distance (in meters) at which grass props will render for players
+            Models = {                      -- Grass prop models spawned on unmaintained lawns
                 { model = 'prop_veg_grass_01_a', zOffset = 0.0 },
                 { model = 'prop_grass_dry_02',   zOffset = -0.3 },
                 { model = 'prop_veg_grass_01_c', zOffset = 0.0 },
@@ -165,46 +81,155 @@ return {
         Blips = {
             ReadyToBuy = {
                 Enabled = true,
-                Sprite = 350,   -- Blip icon ID (350 is house icon)
-                Color = 2,      -- Blip color ID (2 is green)
-                Scale = 0.5,    -- Size of the blip icon
+                Sprite = 350,               -- Blip icon ID (350 is house icon)
+                Color = 2,                  -- Blip color ID (2 is green)
+                Scale = 0.5,                -- Size of the blip icon
                 Label = "Property For Sale"
             },
             Owned = {
                 Enabled = true,
-                ShowOnlyMyOwned = true, -- Only display owned properties belonging to the local player
-                Sprite = 40,    -- Blip icon ID (40 is safehouse icon)
-                Color = 3,      -- Blip color ID (3 is blue)
+                ShowOnlyMyOwned = true,     -- Only display owned properties belonging to the local player
+                Sprite = 40,                -- Blip icon ID (40 is safehouse icon)
+                Color = 3,                  -- Blip color ID (3 is blue)
                 Scale = 0.5,
                 Label = "Owned Property"
             }
         }
     },
 
-    -- Apartment specific settings
+    ----------------------------------------------------------------------------
+    -- Apartment System Settings
+    ----------------------------------------------------------------------------
     Apartments = {
-        Enabled = true, -- Toggle for enabling or disabling apartment system
-        CanBreakIn = true, -- If true, apartments can be lockpicked/broken into
+        Enabled = true,                     -- Toggle for enabling or disabling apartment system
+        CanBreakIn = true,                  -- If true, apartments can be lockpicked/broken into
 
         Creator = {
-            Command = 'createapartment', -- Command to initiate apartment creation
-            EditCommand = 'editapartment', -- Command to edit existing apartments
-            Group = 'admin'              -- User group permitted to run this command
+            Command = 'createapartment',    -- Command to initiate apartment creation
+            EditCommand = 'editapartment',  -- Command to edit existing apartments
+            Group = 'admin'                 -- User group permitted to run this command
         },
 
         -- Configuration for the main apartment building lobby/reception
         Building = {
-            sprite = 475,               -- Blip icon ID for apartments
-            color = 3,                  -- Blip color ID
+            sprite = 475,                   -- Blip icon ID for apartments
+            color = 3,                      -- Blip color ID
             scale = 0.8,
             label = "WIWANG Apartments",
             coords = vec3(-826.53, -700.2, 27.06), -- Entrance vector coordinate
-            postal = '8083'             -- Postal map code
+            postal = '8083'                 -- Postal map code
         }
     },
 
-    -- Shell/Interior template configurations (interiors spawned under the map)
-    ShellSpawningZ = -100.0, -- Z coordinate to spawn shells
+    ----------------------------------------------------------------------------
+    -- Stash & Storage Settings
+    ----------------------------------------------------------------------------
+    Stash = {
+        label = 'Property Storage',         -- Display label when opening the stash
+        slots = 50,                         -- Number of storage slots
+        weight = 100000                     -- Maximum weight capacity of the stash (e.g., in grams)
+    },
+
+    ----------------------------------------------------------------------------
+    -- Rent & Eviction Management
+    ----------------------------------------------------------------------------
+    Rent = {
+        RentPeriod = 604800,                -- 7 days (in seconds)
+        GracePeriod = 259200,               -- 3 days to pay after cycle due before lockout (in seconds)
+        RetrievalPeriod = 604800,           -- 7 days of temporary stash retrieval after lockout (in seconds)
+        LateFee = 250,                      -- Flat late fee added to debt on missed payment
+        MaxMissedPayments = 3,              -- Max missed payments threshold for eviction
+        AutoEvict = true,                   -- Auto evict player after retrieval period expires
+    },
+
+    ----------------------------------------------------------------------------
+    -- Security, Burglary & Key Settings
+    ----------------------------------------------------------------------------
+    Security = {
+        LockpickItem = 'lockpick',          -- Item needed for ordinary house lockpicking
+        RaidItem = 'police_ram',            -- Item needed by police/authorized factions to raid properties
+        RaidDuration = 50000,               -- Time in milliseconds required to break open a door during a raid
+        RaidStorageDuration = 10000,        -- Time in milliseconds to break open a property stash
+        MaxLevel = 5,                       -- Maximum upgradable lock level for houses
+        UpgradePrice = {                    -- Upgrade price for each security level
+            [1] = 10000,
+            [2] = 20000,
+            [3] = 30000,
+            [4] = 40000,
+            [5] = 50000
+        },
+        doorbellCameraPrice = 1000,
+        DoorbellCameraRenderDistance = 30.0, -- Distance (in meters) at which doorbell camera props will render for players
+        CameraProps = {
+            `prop_cctv_cam_07a`,
+        },
+        AlarmDuration = 30000,              -- Duration of burglar alarm in milliseconds (30 seconds)
+        AlarmFailThreshold = {              -- Number of failed attempts allowed before alarm triggers
+            [0] = 999,                      -- Level 0: No alarm
+            [1] = 4,                        -- Level 1: alarm triggers on 4th fail
+            [2] = 3,                        -- Level 2: alarm triggers on 3rd fail
+            [3] = 2,                        -- Level 3: alarm triggers on 2nd fail
+            [4] = 2,                        -- Level 4: alarm triggers on 2nd fail
+            [5] = 1,                        -- Level 5 (max): alarm triggers on 1st fail
+        },
+        -- Lockpicking minigame difficulty settings based on security/lock levels
+        Difficulty = {
+            [0] = { rounds = 1, speed = 1.0, area = 50 }, -- Level 0: 1 round, normal speed, very large target area
+            [1] = { rounds = 2, speed = 1.1, area = 40 }, -- Level 1: 2 rounds, slightly faster, large target area
+            [2] = { rounds = 3, speed = 1.2, area = 35 }, -- Level 2: 3 rounds, medium speed, medium-large area
+            [3] = { rounds = 3, speed = 1.3, area = 30 }, -- Level 3: 3 rounds, faster, medium area
+            [4] = { rounds = 4, speed = 1.4, area = 25 }, -- Level 4: 4 rounds, medium-fast speed, medium-small area
+            [5] = { rounds = 4, speed = 1.4, area = 25 }, -- Level 5: 4 rounds, fast speed, small area
+        },
+        -- Physical key item settings
+        PhysicalKeys = {
+            Enabled = true,                 -- If true, 'entry' access (enter/lock/unlock) for houses AND apartments requires holding a physical key item bound (via metadata) to that specific property/apartment
+            Item = 'house_key',             -- Item name used as the physical key. Every copy MUST be given via GivePhysicalKey/GiveApartmentPhysicalKey or the locksmith, or it will not open anything.
+            RequireKeyholder = false,       -- If true, having the key item is not enough on its own. The person must ALSO be a listed keyholder (owner, or in permissions.entry) on that property/apartment. If false, the key alone is sufficient (so a stolen key still works).
+        },
+    },
+
+    ----------------------------------------------------------------------------
+    -- NPC Locksmith Settings
+    ----------------------------------------------------------------------------
+    Locksmith = {
+        Enabled = true,
+        BlankKeyItem = 'blank_house_key',   -- Item required and consumed to cut a new key
+        Distance = 2.0,                     -- Interaction distance for the target option
+        Ped = {
+            Model = 'a_m_m_business_01',
+            Coords = vec4(170.06, -1799.52, 29.32, 321.68), -- Adjust to your locksmith location
+            Scenario = 'WORLD_HUMAN_STAND_IMPATIENT',
+        },
+        Blip = {
+            Enabled = true,
+            Sprite = 186,
+            Color = 1,
+            Scale = 0.8,
+            Label = 'Locksmith'
+        }
+    },
+
+    ----------------------------------------------------------------------------
+    -- Furniture System Settings
+    ----------------------------------------------------------------------------
+    FurnitureMenu = {
+        Radial = {
+            Enabled = true,                 -- Enable/disable opening the furniture menu via radial menu
+        },
+        Command = {
+            Enabled = false,                 -- Enable/disable opening the furniture menu via a command
+            Name = 'furniture'              -- The command name (e.g. /furniture)
+        },
+        Keybind = {
+            Enabled = false,                 -- Enable/disable opening the furniture menu via a keybind
+            DefaultKey = 'F6'               -- Default key mapping (can be reconfigured in game settings)
+        }
+    },
+
+    ----------------------------------------------------------------------------
+    -- Shell / Interior Template Configurations
+    ----------------------------------------------------------------------------
     Shells = {
         ["Standard Motel"] = {
             label = "Standard Motel",
@@ -288,6 +313,9 @@ return {
         }
     },
 
+    ----------------------------------------------------------------------------
+    -- IPL / Interior Teleport Configurations
+    ----------------------------------------------------------------------------
     IPLs = {
         ["Eclipse Penthouse 1"] = {
             label = "Eclipse Penthouse 1",

@@ -6,6 +6,8 @@ local CurrentInterior = 0
 local PropertyBlips = {}
 local ClearPropertyBlips, UpdatePropertyBlips
 local PropertyZones = {}
+InsidePropertyId = nil
+HasFurnitureManagePermission = false
 local activeAlarmsCount = 0
 local activeAlarmsCount = 0
 local activeDoorbellsCount = 0
@@ -23,6 +25,7 @@ EntranceTargets = {}
 LoadedFurniture = {}
 
 RegisterCommand(Settings.Housing.Creator.Command, function(source, args, rawCommand)
+    debugPrint('info', 'Creator command run', {args = args})
     local hasPermission = lib.callback.await('LNS_Housing:server:checkPermission', false, 'realestate')
     if not hasPermission then
         Bridge.Client.Notify('You do not have permission to use this command.', 'error')
@@ -44,6 +47,7 @@ end, false)
 
 
 RegisterNUICallback('createHouse', function(data, cb)
+    debugPrint('info', 'NUI callback: createHouse', data)
     SetNuiFocus(false, false)
 
     local zoneCoords = nil
@@ -76,22 +80,26 @@ RegisterNUICallback('createHouse', function(data, cb)
 end)
 
 RegisterNUICallback('closeUI', function(_, cb)
+    debugPrint('info', 'NUI callback: closeUI')
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'closeUI' })
     cb('ok')
 end)
 
 RegisterNUICallback('placeBid', function(data, cb)
+    debugPrint('info', 'NUI callback: placeBid', data)
     TriggerServerEvent('LNS_Housing:server:placeBid', data)
     cb('ok')
 end)
 
 RegisterNUICallback('controlAuction', function(data, cb)
+    debugPrint('info', 'NUI callback: controlAuction', data)
     TriggerServerEvent('LNS_Housing:server:controlAuction', data)
     cb('ok')
 end)
 
 RegisterNUICallback('getNearbyPlayers', function(_, cb)
+    debugPrint('info', 'NUI callback: getNearbyPlayers')
     local players = GetActivePlayers()
     local playerIds = {}
     for _, player in ipairs(players) do
@@ -103,6 +111,7 @@ RegisterNUICallback('getNearbyPlayers', function(_, cb)
 end)
 
 RegisterNUICallback('createContract', function(data, cb)
+    debugPrint('info', 'NUI callback: createContract', data)
     SetNuiFocus(false, false)
     TriggerServerEvent('LNS_Housing:server:createContract', data)
     SendNUIMessage({ action = 'closeUI' })
@@ -110,16 +119,19 @@ RegisterNUICallback('createContract', function(data, cb)
 end)
 
 RegisterNUICallback('getPendingContracts', function(_, cb)
+    debugPrint('info', 'NUI callback: getPendingContracts')
     local results = lib.callback.await('LNS_Housing:server:getPendingContracts', false)
     cb(results or {})
 end)
 
 RegisterNUICallback('getAgencyContracts', function(data, cb)
+    debugPrint('info', 'NUI callback: getAgencyContracts', data)
     local results = lib.callback.await('LNS_Housing:server:getAgencyContracts', false, data.agency)
     cb(results or {})
 end)
 
 RegisterNUICallback('respondToContract', function(data, cb)
+    debugPrint('info', 'NUI callback: respondToContract', data)
     SetNuiFocus(false, false)
     local success = lib.callback.await('LNS_Housing:server:respondToContract', false, data.id, data.action)
     SendNUIMessage({ action = 'closeUI' })
@@ -127,15 +139,48 @@ RegisterNUICallback('respondToContract', function(data, cb)
 end)
 
 RegisterNUICallback('viewDoorbellCamera', function(data, cb)
+    debugPrint('info', 'NUI callback: viewDoorbellCamera', data)
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'closeUI' })
     OpenDoorbellCamera(data.propertyId)
     cb('ok')
 end)
 
-function OpenDoorbellCamera(propertyId)
+RegisterNUICallback('repositionDoorbellCamera', function(data, cb)
+    debugPrint('info', 'NUI callback: repositionDoorbellCamera', data)
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'closeUI' })
+    
+    local propertyId = data.propertyId
     local p = Properties[propertyId]
-    if not p or p.isApartment or not (p.metadata and p.metadata.doorbell_camera) then
+    if p then
+        StartDoorbellCameraPlacement(propertyId, false, function(result)
+            if result then
+                TriggerServerEvent('LNS_Housing:server:saveDoorbellCamera', propertyId, result)
+            end
+        end)
+    end
+    cb('ok')
+end)
+
+RegisterNetEvent('LNS_Housing:client:startDoorbellCameraSetup', function(propertyId)
+    debugPrint('info', 'LNS_Housing:client:startDoorbellCameraSetup received', {propertyId = propertyId})
+    local p = Properties[propertyId]
+    if not p then return end
+    
+    Bridge.Client.Notify('Please place your doorbell camera. Look at a wall near the door.', 'inform')
+    
+    StartDoorbellCameraPlacement(propertyId, false, function(result)
+        if result then
+            TriggerServerEvent('LNS_Housing:server:saveDoorbellCamera', propertyId, result)
+        end
+    end)
+end)
+
+function OpenDoorbellCamera(propertyId)
+    debugPrint('info', 'OpenDoorbellCamera called', {propertyId = propertyId})
+    local p = Properties[propertyId]
+    if not p or p.isApartment or not (p.metadata and p.metadata.doorbell_camera == true) then
         Bridge.Client.Notify('This property does not have a doorbell camera installed.', 'error')
         return
     end
@@ -168,28 +213,33 @@ function OpenDoorbellCamera(propertyId)
         DoorbellCam = nil
     end
 
-    DoScreenFadeOut(1000)
-
+    DoScreenFadeOut(500)
     while not IsScreenFadedOut() do
         Wait(0)
     end
 
+    local dir = aimCoords - camCoords
+    local distance = #dir
+    local baseYaw = (distance > 0.0) and math.deg(math.atan2(-dir.x, dir.y)) or ((tonumber(p.metadata.camera_heading) or 0.0) + 180.0) % 360.0
+    local basePitch = (distance > 0.0) and math.deg(math.asin(dir.z / distance)) or -15.0
+    local panOffset = 0.0
+    local tiltOffset = 0.0
+    local currentFov = p.metadata.camera_fov or 50.0
+    local nightVisionActive = false
+
     DoorbellCam = CreateCam("DEFAULT_SCRIPTED_CAMERA", true)
-
     SetCamCoord(DoorbellCam, camCoords.x, camCoords.y, camCoords.z)
-    PointCamAtCoord(DoorbellCam, aimCoords.x, aimCoords.y, aimCoords.z)
-
+    SetCamRot(DoorbellCam, basePitch + tiltOffset, 0.0, baseYaw + panOffset, 2)
+    SetCamFov(DoorbellCam, currentFov)
     SetCamActive(DoorbellCam, true)
 
     RenderScriptCams(true, false, 0, true, false)
-
     SetTimecycleModifier("CAMERA_secuirity")
 
-    Wait(100)
+    Wait(200)
+    DoScreenFadeIn(500)
 
-    DoScreenFadeIn(1000)
-
-    lib.showTextUI('[G] Close Camera Feed', { position = 'top-center' })
+    lib.showTextUI('[Mouse] Pan/Tilt  \n[Scroll] Zoom  \n[N] Night Vision  \n[G] Exit Feed', { position = 'top-center' })
 
     CreateThread(function()
         local startTime = GetGameTimer()
@@ -197,23 +247,48 @@ function OpenDoorbellCamera(propertyId)
         while DoorbellCam do
             Wait(0)
 
-            DisableControlAction(0, 1, true)
-            DisableControlAction(0, 2, true)
+            DisableAllControlActions(0)
+            EnableControlAction(0, 1, true) -- Look L/R
+            EnableControlAction(0, 2, true) -- Look U/D
 
-            DrawCameraOverlay(startTime)
+            DrawCameraOverlay(startTime, currentFov, nightVisionActive)
 
-            if IsControlJustPressed(0, 47) then -- G
+            local mouseX = GetDisabledControlNormal(0, 1)
+            local mouseY = GetDisabledControlNormal(0, 2)
+            local sens = 1.8
+
+            panOffset = math.max(-60.0, math.min(60.0, panOffset - mouseX * sens * 10.0))
+            tiltOffset = math.max(-45.0, math.min(15.0, tiltOffset - mouseY * sens * 10.0))
+
+            SetCamRot(DoorbellCam, basePitch + tiltOffset, 0.0, baseYaw + panOffset, 2)
+
+            if IsDisabledControlJustPressed(0, 15) then -- Scroll Up (Zoom In)
+                currentFov = math.max(30.0, currentFov - 3.0)
+                SetCamFov(DoorbellCam, currentFov)
+            elseif IsDisabledControlJustPressed(0, 14) then -- Scroll Down (Zoom Out)
+                currentFov = math.min(75.0, currentFov + 3.0)
+                SetCamFov(DoorbellCam, currentFov)
+            end
+
+            if IsDisabledControlJustPressed(0, 306) then
+                nightVisionActive = not nightVisionActive
+                SetNightvision(nightVisionActive)
+            end
+
+            if IsDisabledControlJustPressed(0, 47) or IsDisabledControlJustPressed(0, 194) then
                 break
             end
         end
 
-        DoScreenFadeOut(1000)
-
+        DoScreenFadeOut(500)
         while not IsScreenFadedOut() do
             Wait(0)
         end
 
         ClearTimecycleModifier()
+        if nightVisionActive then
+            SetNightvision(false)
+        end
         lib.hideTextUI()
 
         RenderScriptCams(false, false, 0, true, false)
@@ -223,14 +298,13 @@ function OpenDoorbellCamera(propertyId)
             DoorbellCam = nil
         end
 
-        Wait(100)
-
-        DoScreenFadeIn(1000)
+        Wait(200)
+        DoScreenFadeIn(500)
     end)
 end
 
-function DrawCameraOverlay(startTime)
-    DrawRect(0.5, 0.5, 1.0, 1.0, 0, 0, 0, 20)
+function DrawCameraOverlay(startTime, currentFov, nightVisionActive)
+    DrawRect(0.5, 0.5, 1.0, 1.0, 0, 0, 0, 15)
 
     local elapsed = GetGameTimer() - startTime
     if (elapsed % 1000) < 600 then
@@ -242,8 +316,27 @@ function DrawCameraOverlay(startTime)
     SetTextColour(255, 255, 255, 220)
     SetTextOutline()
     SetTextEntry("STRING")
-    AddTextComponentString("REC")
+    AddTextComponentString("DOORBELL CAM - LIVE")
     DrawText(0.045, 0.068, 0.0)
+
+    local zoomPercent = math.floor(((75.0 - currentFov) / (75.0 - 30.0)) * 100)
+    SetTextFont(4)
+    SetTextScale(0.28, 0.28)
+    SetTextColour(255, 255, 255, 200)
+    SetTextOutline()
+    SetTextEntry("STRING")
+    AddTextComponentString(string.format("ZOOM: %d%%", zoomPercent))
+    DrawText(0.045, 0.9, 0.0)
+
+    if nightVisionActive then
+        SetTextFont(4)
+        SetTextScale(0.28, 0.28)
+        SetTextColour(50, 255, 50, 200)
+        SetTextOutline()
+        SetTextEntry("STRING")
+        AddTextComponentString("NIGHT VISION ACTIVE")
+        DrawText(0.2, 0.068, 0.0)
+    end
 
     local year, month, day, hour, minute, second = GetLocalTime()
     local dateStr = string.format("%02d/%02d/%04d  %02d:%02d:%02d", day, month, year, hour, minute, second)
@@ -255,19 +348,11 @@ function DrawCameraOverlay(startTime)
     SetTextEntry("STRING")
     AddTextComponentString(dateStr)
     DrawText(0.83, 0.9, 0.0)
-
-    SetTextFont(4)
-    SetTextScale(0.28, 0.28)
-    SetTextColour(255, 255, 255, 200)
-    SetTextOutline()
-    SetTextEntry("STRING")
-    AddTextComponentString("DOORBELL CAM - LIVE")
-    DrawText(0.045, 0.9, 0.0)
 end
 
 function RegisterDoorbellMotionZone(p)
     if not p or p.isApartment then return end
-    if not (p.metadata and p.metadata.doorbell_camera) then return end
+    if not (p.metadata and p.metadata.doorbell_camera == true) then return end
     if MotionZones[p.id] then return end
 
     local entranceCoords = GetEntranceCoords(p)
@@ -674,12 +759,14 @@ end
 function LoadDoorbellCameraProp(propertyId)
     local p = Properties[propertyId]
     if not p or p.isApartment then return end
-    if not (p.metadata and p.metadata.doorbell_camera) then return end
+    if not (p.metadata and p.metadata.doorbell_camera == true) then return end
     if not p.metadata.camera_coords then return end
     if LoadedCameraProps[propertyId] then return end
 
-    local coords = p.metadata.camera_coords
-    local heading = p.metadata.camera_heading or 0.0
+    LoadedCameraProps[propertyId] = true
+
+    local coords = ParseVector3(p.metadata.camera_coords)
+    local heading = tonumber(p.metadata.camera_heading) or 0.0
     local model = p.metadata.camera_model or DEFAULT_CAMERA_PROP
 
     if not IsModelValid(model) then
@@ -689,17 +776,35 @@ function LoadDoorbellCameraProp(propertyId)
     lib.requestModel(model)
 
     local obj = CreateObjectNoOffset(model, coords.x, coords.y, coords.z, false, false, false)
-    SetEntityRotation(obj, 0.0, 0.0, heading, 2, true)
-    FreezeEntityPosition(obj, true)
-    SetEntityCollision(obj, false, false)
+    
+    if DoesEntityExist(obj) then
+        SetEntityRotation(obj, 0.0, 0.0, heading, 2, true)
+        SetEntityHeading(obj, heading)
+        FreezeEntityPosition(obj, true)
+        SetEntityCollision(obj, false, false)
+        SetEntityAlpha(obj, 255, false)
+
+        Wait(0)
+
+        if DoesEntityExist(obj) then
+            local spawnedRot = GetEntityRotation(obj, 2)
+            local spawnedHeading = GetEntityHeading(obj)
+        end
+    end
     SetModelAsNoLongerNeeded(model)
 
-    LoadedCameraProps[propertyId] = obj
+    if LoadedCameraProps[propertyId] == nil then
+        if DoesEntityExist(obj) then
+            DeleteEntity(obj)
+        end
+    else
+        LoadedCameraProps[propertyId] = obj
+    end
 end
 
 function UnloadDoorbellCameraProp(propertyId)
     local obj = LoadedCameraProps[propertyId]
-    if obj and DoesEntityExist(obj) then
+    if obj and obj ~= true and DoesEntityExist(obj) then
         DeleteEntity(obj)
     end
     LoadedCameraProps[propertyId] = nil
@@ -747,19 +852,27 @@ function RegisterPropertyZones(p, forceShell)
                         TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', p.id)
 
                         if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'manage') then
-                            lib.addRadialItem({
-                                id = 'housing_furniture',
-                                icon = 'couch',
-                                label = 'Furniture Menu',
-                                onSelect = function()
-                                    TriggerEvent('LNS_Housing:client:openFurnitureMenu', p.id)
-                                end
-                            })
+                            InsidePropertyId = p.id
+                            HasFurnitureManagePermission = true
+                            if not Settings.FurnitureMenu or not Settings.FurnitureMenu.Radial or Settings.FurnitureMenu.Radial.Enabled then
+                                lib.addRadialItem({
+                                    id = 'housing_furniture',
+                                    icon = 'couch',
+                                    label = 'Furniture Menu',
+                                    onSelect = function()
+                                        TriggerEvent('LNS_Housing:client:openFurnitureMenu', p.id)
+                                    end
+                                })
+                            end
                         end
                     end,
                     onExit = function()
                         UnloadFurnitures(p.id)
                         lib.removeRadialItem('housing_furniture')
+                        if InsidePropertyId == p.id then
+                            InsidePropertyId = nil
+                            HasFurnitureManagePermission = false
+                        end
                         TriggerServerEvent('LNS_Housing:server:leavePropertyBucket')
                         
                         SetTimeout(0, function()
@@ -791,32 +904,9 @@ function RegisterPropertyZones(p, forceShell)
             onEnter = function()
                 LoadFurnitures(p.id)
                 if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'manage') then
-                    lib.addRadialItem({
-                        id = 'housing_furniture',
-                        icon = 'couch',
-                        label = 'Furniture Menu',
-                        onSelect = function()
-                            TriggerEvent('LNS_Housing:client:openFurnitureMenu', p.id)
-                        end
-                    })
-                end
-            end,
-            onExit = function()
-                UnloadFurnitures(p.id)
-                lib.removeRadialItem('housing_furniture')
-            end
-        })
-    else
-        
-        local door = p.door_id and GetOxDoorlockDoor(p.door_id)
-        if door and door.coords then
-            local doorCoords = vec3(door.coords.x, door.coords.y, door.coords.z)
-            PropertyZones[p.id] = lib.points.new({
-                coords = doorCoords,
-                distance = 40,
-                onEnter = function()
-                    LoadFurnitures(p.id)
-                    if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'manage') then
+                    InsidePropertyId = p.id
+                    HasFurnitureManagePermission = true
+                    if not Settings.FurnitureMenu or not Settings.FurnitureMenu.Radial or Settings.FurnitureMenu.Radial.Enabled then
                         lib.addRadialItem({
                             id = 'housing_furniture',
                             icon = 'couch',
@@ -826,23 +916,109 @@ function RegisterPropertyZones(p, forceShell)
                             end
                         })
                     end
+                end
+            end,
+            onExit = function()
+                UnloadFurnitures(p.id)
+                lib.removeRadialItem('housing_furniture')
+                if InsidePropertyId == p.id then
+                    InsidePropertyId = nil
+                    HasFurnitureManagePermission = false
+                end
+            end
+        })
+    else
+        
+        local door = p.door_id and GetOxDoorlockDoor(p.door_id)
+        local doorCoords = door and door.coords and vec3(door.coords.x, door.coords.y, door.coords.z)
+        if not doorCoords and p.metadata and p.metadata.doorCoords then
+            local dc = p.metadata.doorCoords
+            doorCoords = vec3(dc.x, dc.y, dc.z)
+        end
+
+        if doorCoords then
+            PropertyZones[p.id] = lib.points.new({
+                coords = doorCoords,
+                distance = 40,
+                onEnter = function()
+                    LoadFurnitures(p.id)
+                    if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'manage') then
+                        InsidePropertyId = p.id
+                        HasFurnitureManagePermission = true
+                        if not Settings.FurnitureMenu or not Settings.FurnitureMenu.Radial or Settings.FurnitureMenu.Radial.Enabled then
+                            lib.addRadialItem({
+                                id = 'housing_furniture',
+                                icon = 'couch',
+                                label = 'Furniture Menu',
+                                onSelect = function()
+                                    TriggerEvent('LNS_Housing:client:openFurnitureMenu', p.id)
+                                end
+                            })
+                        end
+                    end
                 end,
                 onExit = function()
                     UnloadFurnitures(p.id)
                     lib.removeRadialItem('housing_furniture')
+                    if InsidePropertyId == p.id then
+                        InsidePropertyId = nil
+                        HasFurnitureManagePermission = false
+                    end
                 end
             })
         end
     end
 end
 
+local function HasPropertyAccessLocal(p, action)
+    if not p then return false end
+    
+    local identifier = Bridge.Client.GetIdentifier()
+    local job = Bridge.Client.GetPlayerJob()
+    local isAgent = false
+
+    if job and Settings.RealEstate and Settings.RealEstate.Jobs then
+        for _, rJob in ipairs(Settings.RealEstate.Jobs) do
+            if job.name == rJob then
+                isAgent = true
+                break
+            end
+        end
+    end
+
+    if not p.owner or p.owner == "" then
+        return false
+    end
+
+    if p.owner == identifier then
+        return true
+    end
+
+    if p.permissions and p.permissions.entry then
+        for _, cid in ipairs(p.permissions.entry) do
+            if cid == identifier then
+                return true
+            end
+        end
+    end
+
+    if job and job.name == 'police' then
+        if action ~= 'storage' and action ~= 'stash' then
+            return true
+        end
+    end
+
+    return false
+end
+
 function RegisterPropertyEntranceTargets(p)
     if not p then return end
     local id = p.id
     
-    
     if EntranceTargets[id] then
-        exports.ox_target:removeZone(EntranceTargets[id])
+        pcall(function()
+            exports.ox_target:removeZone(EntranceTargets[id])
+        end)
         EntranceTargets[id] = nil
     end
 
@@ -851,250 +1027,149 @@ function RegisterPropertyEntranceTargets(p)
         doorId = p.doors[1]
     end
 
+    local targetCoords, targetHeading
+    local isShell = p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo'
+
     if doorId and doorId ~= 0 then
         local door = GetOxDoorlockDoor(doorId)
+        local dModel = door and door.model or (p.metadata and p.metadata.doorModel)
+        local dCoords = door and door.coords or (p.metadata and p.metadata.doorCoords)
+        local dHeading = door and door.heading or (p.metadata and p.metadata.doorHeading) or 0.0
 
-        if door and door.coords then
-            local targetCoords, targetHeading = ResolveDoorTargetPlacement(door.model, door.coords, door.heading, door)
-
-            if targetCoords then
-                local isShell = p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo'
-                if isShell then
-                    EntranceTargets[id] = exports.ox_target:addBoxZone({
-                        coords = targetCoords,
-                        size = vec3(1.2, 1.5, 2.0),
-                        rotation = targetHeading,
-                        debug = Settings.Debug.Zones,
-                        options = {
-                            {
-                                label = 'Enter ' .. p.label,
-                                icon = 'fas fa-door-open',
-                                canInteract = function()
-                                    return true
-                                end,
-                                onSelect = function()
-                                    if Settings.Security.PhysicalKeys and Settings.Security.PhysicalKeys.Enabled then
-                                        local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry')
-                                        if not hasAccess then
-                                            Bridge.Client.Notify('You need a key to enter this property.', 'error')
-                                            return
-                                        end
-                                    else
-                                        local doorState = exports.ox_doorlock:getDoor(doorId).state
-                                        local isUnlocked = doorState == 0
-                                        if not isUnlocked then
-                                            local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry')
-                                            if not hasAccess then
-                                                Bridge.Client.Notify('This property is locked.', 'error')
-                                                return
-                                            end
-                                        end
-                                    end
-
-                                    EnterShellProperty(id)
-                                end
-                            },
-                            --[[ Idk what i should do ... {
-                                label = 'Pay Rent / Debt',
-                                icon = 'fas fa-dollar-sign',
-                                canInteract = function()
-                                    local prop = Properties[id]
-                                    if not prop or prop.sale_type ~= 'rent' or prop.owner ~= Bridge.Client.GetIdentifier() then return false end
-                                    local hasDebt = (prop.metadata.rent_debt and prop.metadata.rent_debt > 0) or (prop.metadata.last_rent_paid and (GetCloudTimeAsInt() - prop.metadata.last_rent_paid > (Settings.Rent and Settings.Rent.RentPeriod or 604800)))
-                                    return hasDebt
-                                end,
-                                onSelect = function()
-                                    local prop = Properties[id]
-                                    prop.focusTab = 'rent'
-                                    TriggerEvent('LNS_Housing:client:openPanel', prop)
-                                end
-                            },]]
-                            {
-                                label = 'Retrieve Belongings',
-                                icon = 'fas fa-box-open',
-                                canInteract = function()
-                                    local prop = Properties[id]
-                                    if not prop or prop.sale_type ~= 'rent' or prop.owner ~= Bridge.Client.GetIdentifier() then return false end
-                                    local isOverdue = prop.metadata and prop.metadata.due_by and (GetCloudTimeAsInt() > prop.metadata.due_by)
-                                    return isOverdue
-                                end,
-                                onSelect = function()
-                                    OpenBelongingsRetrieval(id)
-                                end
-                            }
-                        }
-                    })
-                end
-
-                
-                if Settings.Debug and Settings.Debug.BuyHouses then
-                    exports.ox_target:addSphereZone({
-                        coords = targetCoords,
-                        radius = 1.2,
-                        debug = Settings.Debug.Zones,
-                        options = {
-                            {
-                                label = 'Lockpick ' .. p.label,
-                                icon = 'fas fa-mask',
-                                items = Settings.Security.LockpickItem,
-                                canInteract = function()
-                                    return lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'lockpick')
-                                end,
-                                onSelect = function()
-                                    LockpickDoor(id)
-                                end
-                            }
-                        }
-                    })
-                end
-
-                
-                exports.ox_target:addBoxZone({
-                    coords = targetCoords,
-                    size = vec3(1.0, 1.5, 2.0),
-                    rotation = targetHeading,
-                    debug = Settings.Debug.Zones,
-                    distance = 40,
-                    options = {
-                        {
-                            label = 'Ring Doorbell',
-                            icon = 'fas fa-bell',
-                            onSelect = function()
-                                TriggerServerEvent('LNS_Housing:server:ringDoorbell', id)
-                            end
-                        },
-                        {
-                            label = 'Raid House',
-                            icon = 'fas fa-shield-halved',
-                            items = Settings.Security.RaidItem,
-                            canInteract = function()
-                                local job = Bridge.Client.GetPlayerJob()
-                                return job and job.name == 'police'
-                            end,
-                            onSelect = function()
-                                StartPoliceRaid(id, 'house', doorId)
-                            end
-                        }
-                    }
-                })
-            end
-        end
-    else
-        
-        local isShell = p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo'
-        local entranceCoords = p.metadata and p.metadata.entrance
-        if isShell and entranceCoords then
-            local targetCoords = vec3(entranceCoords.x, entranceCoords.y, entranceCoords.z)
-            local targetHeading = entranceCoords.h or 0.0
-
-            EntranceTargets[id] = exports.ox_target:addBoxZone({
-                coords = targetCoords,
-                size = vec3(1.5, 1.5, 2.0),
-                rotation = targetHeading,
-                debug = Settings.Debug.Zones,
-                distance = 40,
-                options = {
-                    {
-                        label = 'Enter ' .. p.label,
-                        icon = 'fas fa-door-open',
-                        canInteract = function()
-                            return true
-                        end,
-                        onSelect = function()
-                            if Settings.Security.PhysicalKeys and Settings.Security.PhysicalKeys.Enabled then
-                                local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry')
-                                if not hasAccess then
-                                    Bridge.Client.Notify('You need a key to enter this property.', 'error')
-                                    return
-                                end
-                            else
-                                local isLocked = p.metadata.locked ~= false
-                                if isLocked then
-                                    local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry')
-                                    if not hasAccess then
-                                        Bridge.Client.Notify('This property is locked.', 'error')
-                                        return
-                                    end
-                                end
-                            end
-
-                            EnterShellProperty(id)
-                        end
-                    },
-                    {
-                        label = 'Pay Rent / Debt',
-                        icon = 'fas fa-dollar-sign',
-                        canInteract = function()
-                            local prop = Properties[id]
-                            if not prop or prop.sale_type ~= 'rent' or prop.owner ~= Bridge.Client.GetIdentifier() then return false end
-                            local hasDebt = (prop.metadata.rent_debt and prop.metadata.rent_debt > 0) or (prop.metadata.last_rent_paid and (GetCloudTimeAsInt() - prop.metadata.last_rent_paid > (Settings.Rent and Settings.Rent.RentPeriod or 604800)))
-                            return hasDebt
-                        end,
-                        onSelect = function()
-                            local prop = Properties[id]
-                            prop.focusTab = 'rent'
-                            TriggerEvent('LNS_Housing:client:openPanel', prop)
-                        end
-                    },
-                    {
-                        label = 'Retrieve Belongings',
-                        icon = 'fas fa-box-open',
-                        canInteract = function()
-                            local prop = Properties[id]
-                            if not prop or prop.sale_type ~= 'rent' or prop.owner ~= Bridge.Client.GetIdentifier() then return false end
-                            local isOverdue = prop.metadata and prop.metadata.due_by and (GetCloudTimeAsInt() > prop.metadata.due_by)
-                            return isOverdue
-                        end,
-                        onSelect = function()
-                            OpenBelongingsRetrieval(id)
-                        end
-                    },
-                    {
-                        label = 'Lock/Unlock ' .. p.label,
-                        icon = 'fas fa-key',
-                        canInteract = function()
-                            return true
-                        end,
-                        onSelect = function()
-                            TriggerServerEvent('LNS_Housing:server:toggleLock', id)
-                        end
-                    },
-                    {
-                        label = 'Lockpick ' .. p.label,
-                        icon = 'fas fa-mask',
-                        items = Settings.Security.LockpickItem,
-                        canInteract = function()
-                            local isLocked = p.metadata.locked ~= false
-                            if not isLocked then return false end
-                            return lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'lockpick')
-                        end,
-                        onSelect = function()
-                            LockpickDoor(id)
-                        end
-                    },
-                    {
-                        label = 'Raid House',
-                        icon = 'fas fa-shield-halved',
-                        items = Settings.Security.RaidItem,
-                        canInteract = function()
-                            local job = Bridge.Client.GetPlayerJob()
-                            return job and job.name == 'police'
-                        end,
-                        onSelect = function()
-                            StartPoliceRaid(id, 'house', nil)
-                        end
-                    },
-                    {
-                        label = 'Ring Doorbell',
-                        icon = 'fas fa-bell',
-                        onSelect = function()
-                            TriggerServerEvent('LNS_Housing:server:ringDoorbell', id)
-                        end
-                    },
-                }
-            })
+        if dCoords then
+            targetCoords, targetHeading = ResolveDoorTargetPlacement(dModel, dCoords, dHeading, door)
         end
     end
+
+    if not targetCoords then
+        local entranceCoords = p.metadata and p.metadata.entrance
+        if entranceCoords then
+            targetCoords = vec3(entranceCoords.x, entranceCoords.y, entranceCoords.z)
+            targetHeading = entranceCoords.h or 0.0
+        end
+    end
+
+    if not targetCoords then return end
+
+    local options = {}
+
+    table.insert(options, {
+        label = 'Enter ' .. p.label,
+        icon = 'fas fa-door-open',
+        canInteract = function()
+            if not isShell then return false end
+            return HasPropertyAccessLocal(Properties[id], 'entry')
+        end,
+        onSelect = function()
+            if Settings.Security.PhysicalKeys and Settings.Security.PhysicalKeys.Enabled then
+                local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry')
+                if not hasAccess then
+                    Bridge.Client.Notify('You need a key to enter this property.', 'error')
+                    return
+                end
+            else
+                local prop = Properties[id]
+                local isLocked = prop and prop.metadata and prop.metadata.locked ~= false
+                if isLocked then
+                    local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry')
+                    if not hasAccess then
+                        Bridge.Client.Notify('This property is locked.', 'error')
+                        return
+                    end
+                end
+            end
+
+            EnterShellProperty(id)
+        end
+    })
+
+    table.insert(options, {
+        label = 'Pay Rent / Debt',
+        icon = 'fas fa-dollar-sign',
+        canInteract = function()
+            local prop = Properties[id]
+            if not prop or prop.sale_type ~= 'rent' or prop.owner ~= Bridge.Client.GetIdentifier() then return false end
+            local hasDebt = (prop.metadata.rent_debt and prop.metadata.rent_debt > 0) or (prop.metadata.last_rent_paid and (GetCloudTimeAsInt() - prop.metadata.last_rent_paid > (Settings.Rent and Settings.Rent.RentPeriod or 604800)))
+            return hasDebt
+        end,
+        onSelect = function()
+            local prop = Properties[id]
+            prop.focusTab = 'rent'
+            TriggerEvent('LNS_Housing:client:openPanel', prop)
+        end
+    })
+
+    table.insert(options, {
+        label = 'Retrieve Belongings',
+        icon = 'fas fa-box-open',
+        canInteract = function()
+            local prop = Properties[id]
+            if not prop or prop.sale_type ~= 'rent' or prop.owner ~= Bridge.Client.GetIdentifier() then return false end
+            if not isShell then return false end
+            local isOverdue = prop.metadata and prop.metadata.due_by and (GetCloudTimeAsInt() > prop.metadata.due_by)
+            return isOverdue
+        end,
+        onSelect = function()
+            OpenBelongingsRetrieval(id)
+        end
+    })
+
+    table.insert(options, {
+        label = 'Lock/Unlock ' .. p.label,
+        icon = 'fas fa-key',
+        canInteract = function()
+            if doorId and doorId ~= 0 then return false end
+            return HasPropertyAccessLocal(Properties[id], 'entry')
+        end,
+        onSelect = function()
+            TriggerServerEvent('LNS_Housing:server:toggleLock', id)
+        end
+    })
+
+    table.insert(options, {
+        label = 'Lockpick ' .. p.label,
+        icon = 'fas fa-mask',
+        items = Settings.Security.LockpickItem,
+        canInteract = function()
+            local prop = Properties[id]
+            if not prop then return false end
+            local isLocked = prop.metadata.locked ~= false
+            if not isLocked then return false end
+            return lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'lockpick')
+        end,
+        onSelect = function()
+            LockpickDoor(id)
+        end
+    })
+
+    table.insert(options, {
+        label = 'Raid House',
+        icon = 'fas fa-shield-halved',
+        items = Settings.Security.RaidItem,
+        canInteract = function()
+            local job = Bridge.Client.GetPlayerJob()
+            return job and job.name == 'police'
+        end,
+        onSelect = function()
+            StartPoliceRaid(id, 'house', doorId)
+        end
+    })
+
+    table.insert(options, {
+        label = 'Ring Doorbell',
+        icon = 'fas fa-bell',
+        onSelect = function()
+            TriggerServerEvent('LNS_Housing:server:ringDoorbell', id)
+        end
+    })
+
+    EntranceTargets[id] = exports.ox_target:addBoxZone({
+        coords = targetCoords,
+        size = isShell and vec3(1.2, 1.5, 2.0) or vec3(1.5, 1.5, 2.0),
+        rotation = targetHeading,
+        debug = Settings.Debug.Zones,
+        options = options
+    })
 end
 
 function CleanUpHousingSession()
@@ -1316,18 +1391,22 @@ end)
 
 
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    debugPrint('info', 'QBCore:Client:OnPlayerLoaded received')
     InitializeHousing()
 end)
 
 RegisterNetEvent('esx:playerLoaded', function(xPlayer)
+    debugPrint('info', 'esx:playerLoaded received', {identifier = xPlayer and xPlayer.identifier})
     InitializeHousing()
 end)
 
 RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
+    debugPrint('info', 'QBCore:Client:OnPlayerUnload received')
     CleanUpHousingSession()
 end)
 
 RegisterNetEvent('esx:onPlayerLogout', function()
+    debugPrint('info', 'esx:onPlayerLogout received')
     CleanUpHousingSession()
 end)
 
@@ -1358,6 +1437,7 @@ CreateThread(function()
 end)
 
 RegisterNetEvent('LNS_Housing:client:updateFurniture', function(propertyId, furniture)
+    debugPrint('info', 'LNS_Housing:client:updateFurniture received', {propertyId = propertyId, furnitureCount = furniture and #furniture or 0})
     if Properties[propertyId] then
         Properties[propertyId].furniture = furniture
         
@@ -1374,6 +1454,7 @@ RegisterNetEvent('LNS_Housing:client:updateFurniture', function(propertyId, furn
 end)
 
 RegisterNetEvent('LNS_Housing:client:updateProperties', function(allProperties)
+    debugPrint('info', 'LNS_Housing:client:updateProperties received', {propertiesCount = allProperties and table.type(allProperties) == 'table' and #allProperties or 'many'})
     for k, v in pairs(allProperties) do
         local isNew = Properties[k] == nil
         Properties[k] = v
@@ -1389,9 +1470,8 @@ RegisterNetEvent('LNS_Housing:client:updateProperties', function(allProperties)
             RegisterDoorbellMotionZone(v)
         end
 
-        -- Handle doorbell camera prop loading/unloading based on distance or properties update
         if LoadedCameraProps[k] then
-            if not v.metadata or not v.metadata.doorbell_camera or not v.metadata.camera_coords then
+            if not v.metadata or v.metadata.doorbell_camera ~= true or not v.metadata.camera_coords then
                 UnloadDoorbellCameraProp(k)
             else
                 if DoesEntityExist(LoadedCameraProps[k]) then
@@ -1410,7 +1490,7 @@ RegisterNetEvent('LNS_Housing:client:updateProperties', function(allProperties)
             end
         end
 
-        if not LoadedCameraProps[k] and v.metadata and v.metadata.doorbell_camera and v.metadata.camera_coords then
+        if not LoadedCameraProps[k] and v.metadata and v.metadata.doorbell_camera == true and v.metadata.camera_coords then
             local playerPed = cache.ped or PlayerPedId()
             local playerCoords = GetEntityCoords(playerPed)
             local renderDist = (Settings.Security and Settings.Security.DoorbellCameraRenderDistance) or 80.0
@@ -1516,6 +1596,10 @@ function GetEntranceCoords(p)
         local door = GetOxDoorlockDoor(doorId)
         if door and door.coords then
             return vec3(door.coords.x, door.coords.y, door.coords.z)
+        end
+        if p.metadata and p.metadata.doorCoords then
+            local dc = p.metadata.doorCoords
+            return vec3(dc.x, dc.y, dc.z)
         end
     end
 
@@ -1728,7 +1812,6 @@ function EnterShellProperty(propertyId)
         SetEntityCoords(ped, spawnCoords.x, spawnCoords.y, spawnCoords.z, false, false, false, false)
         SetEntityHeading(ped, heading)
 
-        -- Temp fix for 50/50 chance to fall thru
         RequestCollisionAtCoord(spawnCoords.x, spawnCoords.y, spawnCoords.z)
         local start = GetGameTimer()
         while not HasCollisionLoadedAroundEntity(PlayerPedId()) and (GetGameTimer() - start) < 2000 do
@@ -1784,7 +1867,6 @@ function LeaveShellProperty(propertyId)
     FreezeEntityPosition(ped, true)
     SetEntityCoords(ped, doorCoords.x, doorCoords.y, doorCoords.z, false, false, false, false)
 
-    -- Temp fix for 50/50 chance to fall thru
     RequestCollisionAtCoord(doorCoords.x, doorCoords.y, doorCoords.z)
     local start = GetGameTimer()
     while not HasCollisionLoadedAroundEntity(PlayerPedId()) and (GetGameTimer() - start) < 2000 do
@@ -1800,6 +1882,7 @@ function LeaveShellProperty(propertyId)
 end
 
 RegisterNetEvent('LNS_Housing:client:triggerHouseAlarm', function(coords, durationMs)
+    debugPrint('info', 'LNS_Housing:client:triggerHouseAlarm received', {coords = coords, durationMs = durationMs})
     local playerCoords = GetEntityCoords(PlayerPedId())
     local alarmCoords = vec3(coords.x, coords.y, coords.z)
     local shellCoords = vec3(coords.x, coords.y, Settings.ShellSpawningZ or -100.0)
@@ -1861,6 +1944,7 @@ RegisterNetEvent('LNS_Housing:client:triggerHouseAlarm', function(coords, durati
 end)
  
 RegisterNetEvent('LNS_Housing:client:triggerHouseDoorbell', function(entranceCoords, insideCoords)
+    debugPrint('info', 'LNS_Housing:client:triggerHouseDoorbell received', {entranceCoords = entranceCoords, insideCoords = insideCoords})
     if not entranceCoords then return end
  
     local playerCoords = GetEntityCoords(PlayerPedId())
@@ -1931,7 +2015,7 @@ CreateThread(function()
             local renderDist = (Settings.Security and Settings.Security.DoorbellCameraRenderDistance) or 80.0
 
             for propertyId, p in pairs(Properties) do
-                if not p.isApartment and p.metadata and p.metadata.doorbell_camera and p.metadata.camera_coords then
+                if not p.isApartment and p.metadata and p.metadata.doorbell_camera == true and p.metadata.camera_coords then
                     local camCoords = vec3(p.metadata.camera_coords.x, p.metadata.camera_coords.y, p.metadata.camera_coords.z)
                     local dist = #(playerCoords - camCoords)
                     if dist <= renderDist then

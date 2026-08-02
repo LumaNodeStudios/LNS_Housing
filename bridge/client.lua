@@ -62,6 +62,7 @@ end
 
 -- Integrations & Utility Wrappers
 function Bridge.Client.OpenWardrobe(propertyId, furnitureId)
+    debugPrint('info', 'Opening wardrobe', {propertyId = propertyId, furnitureId = furnitureId})
     if GetResourceState('illenium-appearance') == 'started' then
         TriggerEvent('illenium-appearance:client:openOutfitMenu')
     else
@@ -70,15 +71,17 @@ function Bridge.Client.OpenWardrobe(propertyId, furnitureId)
 end
 
 function Bridge.Client.OpenStash(propertyId, furnitureId)
+    debugPrint('info', 'Opening stash', {propertyId = propertyId, furnitureId = furnitureId})
     if GetResourceState('ox_inventory') == 'started' then
         local stashId = string.format('housing_%d_%s', propertyId, furnitureId)
         exports.ox_inventory:openInventory('stash', stashId)
     else
-        print('No inventory found!')
+        debugPrint('error', 'No inventory found!')
     end
 end
 
 function Bridge.Client.Notify(msg, type)
+    debugPrint('info', 'Client notification', {msg = msg, type = type})
     lib.notify({
         description = msg,
         type = type or 'inform'
@@ -87,6 +90,7 @@ end
 
 -- Dispatch Alerts
 function Bridge.Client.Dispatch(coords, title, message)
+    debugPrint('info', 'Dispatch alert triggered', {coords = coords, title = title, message = message})
     if GetResourceState('ps-dispatch') == 'started' then
         exports['ps-dispatch']:CustomAlert({
             coords = coords,
@@ -147,11 +151,13 @@ function Bridge.Client.Dispatch(coords, title, message)
 end
 
 RegisterNetEvent('LNS_Housing:client:triggerDispatch', function(coords, title, message)
+    debugPrint('debug', 'LNS_Housing:client:triggerDispatch event received', {coords = coords, title = title, message = message})
     Bridge.Client.Dispatch(coords, title, message)
 end)
 
 -- Garage Zone Management
 function Bridge.Client.RegisterGarage(propertyId, label, garageData)
+    debugPrint('info', 'Registering garage', {propertyId = propertyId, label = label, garageData = garageData})
     if Bridge.GarageScript == 'jg-advancedgarages' or Bridge.GarageScript == 'cd_garage' or Bridge.GarageScript == 'op-garages' then
         local garageName = string.format("property-%s-garage", propertyId)
         if clientGarageZones[propertyId] then
@@ -166,6 +172,7 @@ function Bridge.Client.RegisterGarage(propertyId, label, garageData)
             rotation = garageData.h or 0.0,
             debug = Settings.Debug.Zones,
             onEnter = function()
+                debugPrint('debug', 'Garage zone onEnter', {propertyId = propertyId})
                 hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'entry')
                 if not hasAccess then return end
                 
@@ -178,6 +185,7 @@ function Bridge.Client.RegisterGarage(propertyId, label, garageData)
             inside = function()
                 if not hasAccess then return end
                 if IsControlJustReleased(0, 38) then
+                    debugPrint('debug', 'Garage zone interaction triggered', {propertyId = propertyId})
                     Wait(100)
                     if Bridge.GarageScript == 'op-garages' then
                         local spawn = garageData.spawn or garageData
@@ -203,6 +211,7 @@ function Bridge.Client.RegisterGarage(propertyId, label, garageData)
                 end
             end,
             onExit = function()
+                debugPrint('debug', 'Garage zone onExit', {propertyId = propertyId})
                 hasAccess = false
                 lib.hideTextUI()
             end
@@ -211,6 +220,7 @@ function Bridge.Client.RegisterGarage(propertyId, label, garageData)
 end
 
 function Bridge.Client.UnregisterGarage(propertyId)
+    debugPrint('info', 'Unregistering garage', {propertyId = propertyId})
     if clientGarageZones[propertyId] then
         clientGarageZones[propertyId]:remove()
         clientGarageZones[propertyId] = nil
@@ -220,6 +230,7 @@ end
 -- Phone Scripts
 -- Phone Scripts
 function Bridge.Client.PhoneNotification(data)
+    debugPrint('info', 'Sending phone notification', data)
     if Bridge.PhoneScript == 'sd-phone' then
         exports['sd-phone']:showNotification({
             title = data.title,

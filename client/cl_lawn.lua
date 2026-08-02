@@ -453,6 +453,7 @@ function StartMowing(propertyId, isAuto)
 end
 
 RegisterNetEvent('LNS_Housing:client:useMower', function()
+    debugPrint('info', 'LNS_Housing:client:useMower received')
     if MowingActive then
         StopMowing()
         Bridge.Client.Notify('You put away the mower.', 'inform')
@@ -658,6 +659,7 @@ CreateThread(function()
 end)
 
 RegisterNetEvent('LNS_Housing:client:syncCutGrass', function(propertyId, indices)
+    debugPrint('info', 'LNS_Housing:client:syncCutGrass received', {propertyId = propertyId, indicesCount = indices and #indices or 0})
     local p = Properties[propertyId]
     if p then
         if not p.lawn_data then p.lawn_data = {} end
@@ -681,6 +683,7 @@ RegisterNetEvent('LNS_Housing:client:syncCutGrass', function(propertyId, indices
 end)
 
 RegisterNetEvent('LNS_Housing:client:syncLawnUpdate', function(propertyId, lawnData, lastMowed)
+    debugPrint('info', 'LNS_Housing:client:syncLawnUpdate received', {propertyId = propertyId, lastMowed = lastMowed})
     local p = Properties[propertyId]
     if p then
         p.lawn_data = lawnData

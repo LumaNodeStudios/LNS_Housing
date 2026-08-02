@@ -2,6 +2,7 @@ local Settings = lib.load('shared.settings')
 local CAMERA_PROPS = Settings.Security.CameraProps or { `prop_cctv_cam_07a` }
 
 RegisterNUICallback('pickDoor', function(_, cb)
+    debugPrint('info', 'NUI callback: pickDoor')
     SendNUIMessage({ action = 'toggleVisibility', data = { visible = false } })
     SetNuiFocus(false, false) 
     
@@ -25,6 +26,7 @@ RegisterNUICallback('pickDoor', function(_, cb)
 end)
 
 RegisterNUICallback('pickEntranceCoords', function(_, cb)
+    debugPrint('info', 'NUI callback: pickEntranceCoords')
     SendNUIMessage({ action = 'toggleVisibility', data = { visible = false } })
     SetNuiFocus(false, false) 
     
@@ -72,18 +74,23 @@ RegisterNUICallback('pickEntranceCoords', function(_, cb)
 end)
 
 RegisterNUICallback('pickCameraPlacement', function(data, cb)
+    debugPrint('info', 'NUI callback: pickCameraPlacement', data)
     SendNUIMessage({ action = 'toggleVisibility', data = { visible = false } })
     SetNuiFocus(false, false)
-    local result = StartCameraPlacementMode()
-    SendNUIMessage({ action = 'toggleVisibility', data = { visible = true } })
-    SetNuiFocus(true, true)
-    cb(result)
+    
+    StartDoorbellCameraPlacement(nil, true, function(result)
+        SendNUIMessage({ action = 'toggleVisibility', data = { visible = true } })
+        SetNuiFocus(true, true)
+        cb(result)
+    end)
 end)
 
-function StartCameraPlacementMode()
+function StartDoorbellCameraPlacement(propertyId, isRealEstate, cb)
+    debugPrint('info', 'StartDoorbellCameraPlacement called', {propertyId = propertyId, isRealEstate = isRealEstate})
     if not CAMERA_PROPS or #CAMERA_PROPS == 0 then
         Bridge.Client.Notify('No camera props configured, contact an admin.', 'error')
-        return nil
+        if cb then cb(nil) end
+        return
     end
 
     local propIndex = 1
@@ -98,126 +105,215 @@ function StartCameraPlacementMode()
 
     if not foundValid then
         Bridge.Client.Notify('Camera prop models are invalid, contact an admin.', 'error')
-        return nil
+        if cb then cb(nil) end
+        return
     end
-
-    Bridge.Client.Notify('Aim and press [E] to place the camera. Scroll to rotate, [<-]/[->] to change model. [BACKSPACE] to cancel.', 'inform')
 
     local currentModel = CAMERA_PROPS[propIndex]
     lib.requestModel(currentModel)
 
-    local previewProp = CreateObject(currentModel, GetEntityCoords(cache.ped), false, false, false)
-    SetEntityAlpha(previewProp, 200, false)
+    local playerPed = cache.ped or PlayerPedId()
+    local previewProp = CreateObjectNoOffset(currentModel, GetEntityCoords(playerPed), false, true, false)
+    SetEntityAlpha(previewProp, 180, false)
     SetEntityCollision(previewProp, false, false)
     FreezeEntityPosition(previewProp, true)
 
-    local function swapPreviewModel(newIndex, coords, heading)
-        local newModel = CAMERA_PROPS[newIndex]
-        if not IsModelValid(newModel) then return false end
+    local camPos = nil
+    local wallHeading = 0.0
+    local rotationOffset = 0.0
 
-        lib.requestModel(newModel)
+    lib.showTextUI('[E] Confirm Position  \n[Scroll] Rotate Prop  \n[BACKSPACE] Cancel', { position = 'top-center' })
 
-        if DoesEntityExist(previewProp) then
-            DeleteEntity(previewProp)
-        end
-        SetModelAsNoLongerNeeded(currentModel)
-
-        previewProp = CreateObject(newModel, coords, false, false, false)
-        SetEntityAlpha(previewProp, 200, false)
-        SetEntityCollision(previewProp, false, false)
-        FreezeEntityPosition(previewProp, true)
-        SetEntityRotation(previewProp, 0.0, 0.0, heading, 2, true)
-
-        currentModel = newModel
-        propIndex = newIndex
-        return true
-    end
-
-    local camPos, aimPos = nil, nil
-    local manualHeading = 0.0
-    local cycleCooldown = 0
-
-    while not camPos do
+    while true do
         Wait(0)
         DisableControlAction(0, 14, true)  -- INPUT_SCROLL_UP
         DisableControlAction(0, 15, true)  -- INPUT_SCROLL_DOWN
-        DisableControlAction(0, 174, true) -- INPUT_FRONTEND_LEFT (Left Arrow)
-        DisableControlAction(0, 175, true) -- INPUT_FRONTEND_RIGHT (Right Arrow)
 
-        local hit, coords = GetPlayerRaycastCoords(10.0)
+        local hit, coords, surfaceNormal = GetPlayerRaycastCoords(10.0)
+        
+        local finalHeading = 0.0
+        local finalPitch = 0.0
         if hit then
+            wallHeading = math.deg(math.atan2(-surfaceNormal.x, surfaceNormal.y))
+            finalHeading = (wallHeading + rotationOffset) % 360.0
+            
+            finalPitch = math.deg(math.asin(surfaceNormal.z))
+
             SetEntityCoords(previewProp, coords.x, coords.y, coords.z, false, false, false, false)
-            SetEntityRotation(previewProp, 0.0, 0.0, manualHeading, 2, true)
-            DrawText3D(coords.x, coords.y, coords.z + 0.15, ('[E] Place | Scroll to Rotate | [<-]/[->] Model %d/%d | [BACKSPACE] Cancel'):format(propIndex, #CAMERA_PROPS))
+            SetEntityRotation(previewProp, finalPitch, 0.0, finalHeading, 2, true)
+            SetEntityHeading(previewProp, finalHeading)
         end
 
         if IsDisabledControlJustPressed(0, 14) then
-            manualHeading = manualHeading + 5.0
+            rotationOffset = (rotationOffset + 5.0) % 360.0
         elseif IsDisabledControlJustPressed(0, 15) then
-            manualHeading = manualHeading - 5.0
+            rotationOffset = (rotationOffset - 5.0) % 360.0
         end
-
-        local now = GetGameTimer()
-        if now > cycleCooldown then
-            local placeCoords = hit and coords or GetEntityCoords(previewProp)
-            if IsDisabledControlJustPressed(0, 174) then -- Left Arrow
-                local nextIndex = propIndex - 1
-                if nextIndex < 1 then nextIndex = #CAMERA_PROPS end
-                if swapPreviewModel(nextIndex, placeCoords, manualHeading) then
-                    cycleCooldown = now + 200
-                end
-            elseif IsDisabledControlJustPressed(0, 175) then -- Right Arrow
-                local nextIndex = propIndex + 1
-                if nextIndex > #CAMERA_PROPS then nextIndex = 1 end
-                if swapPreviewModel(nextIndex, placeCoords, manualHeading) then
-                    cycleCooldown = now + 200
-                end
-            end
-        end
-
-        SetEntityHeading(previewProp, manualHeading)
 
         if IsControlJustPressed(0, 38) then -- E
-            camPos = coords
+            if hit then
+                camPos = coords
+                wallHeading = finalHeading
+                break
+            else
+                Bridge.Client.Notify('Please aim at a valid wall surface.', 'error')
+            end
         elseif IsControlJustPressed(0, 194) then -- Backspace
             DeleteEntity(previewProp)
             SetModelAsNoLongerNeeded(currentModel)
-            return nil
+            lib.hideTextUI()
+            if cb then cb(nil) end
+            return
         end
     end
 
-    SetEntityCoords(previewProp, camPos.x, camPos.y, camPos.z, false, false, false, false)
-    SetEntityRotation(previewProp, 0.0, 0.0, manualHeading, 2, true)
-    FreezeEntityPosition(previewProp, true)
+    lib.hideTextUI()
+    if DoesEntityExist(previewProp) then
+        DeleteEntity(previewProp)
+    end
 
-    Bridge.Client.Notify('Now aim where the camera should look and press [E] to confirm. [BACKSPACE] to cancel.', 'inform')
+    DoScreenFadeOut(500)
+    while not IsScreenFadedOut() do Wait(0) end
 
-    while not aimPos do
+    local setupProp = CreateObjectNoOffset(currentModel, camPos.x, camPos.y, camPos.z, false, true, false)
+    SetEntityCollision(setupProp, false, false)
+    FreezeEntityPosition(setupProp, true)
+    SetEntityRotation(setupProp, 0.0, 0.0, wallHeading, 2, true)
+    SetEntityHeading(setupProp, wallHeading)
+
+    local viewCam = CreateCam("DEFAULT_SCRIPTED_CAMERA", true)
+    SetCamCoord(viewCam, camPos.x, camPos.y, camPos.z)
+    
+    local baseYaw = (wallHeading + 180.0) % 360.0
+    local panOffset = 0.0
+    local tiltOffset = -15.0
+    local currentFov = 50.0
+
+    SetCamRot(viewCam, tiltOffset, 0.0, baseYaw + panOffset, 2)
+    SetCamFov(viewCam, currentFov)
+    SetCamActive(viewCam, true)
+    RenderScriptCams(true, false, 0, true, false)
+    SetTimecycleModifier("CAMERA_secuirity")
+
+    Wait(200)
+    DoScreenFadeIn(500)
+
+    lib.showTextUI('[Mouse] Aim Camera  \n[Scroll] Zoom (FOV)  \n[E] Confirm View  \n[BACKSPACE] Cancel/Back', { position = 'top-center' })
+
+    local startTime = GetGameTimer()
+
+    while true do
         Wait(0)
-        local hit, coords = GetPlayerRaycastCoords(15.0)
-        if hit then
-            DrawLine(camPos.x, camPos.y, camPos.z, coords.x, coords.y, coords.z, 255, 60, 60, 200)
-            DrawText3D(coords.x, coords.y, coords.z + 0.15, '[E] Confirm Aim Point | [BACKSPACE] Cancel')
+
+        DisableAllControlActions(0)
+        EnableControlAction(0, 1, true) -- Look L/R
+        EnableControlAction(0, 2, true) -- Look U/D
+        EnableControlAction(0, 249, true) -- Push to talk
+
+        DrawCameraSetupOverlay(startTime, currentFov)
+
+        local mouseX = GetDisabledControlNormal(0, 1)
+        local mouseY = GetDisabledControlNormal(0, 2)
+        local sens = 1.8
+
+        panOffset = math.max(-60.0, math.min(60.0, panOffset - mouseX * sens * 10.0))
+        tiltOffset = math.max(-45.0, math.min(15.0, tiltOffset - mouseY * sens * 10.0))
+
+        SetCamRot(viewCam, tiltOffset, 0.0, baseYaw + panOffset, 2)
+
+        if IsDisabledControlJustPressed(0, 15) then -- Scroll Up (Zoom In)
+            currentFov = math.max(30.0, currentFov - 3.0)
+            SetCamFov(viewCam, currentFov)
+        elseif IsDisabledControlJustPressed(0, 14) then -- Scroll Down (Zoom Out)
+            currentFov = math.min(75.0, currentFov + 3.0)
+            SetCamFov(viewCam, currentFov)
         end
 
-        if IsControlJustPressed(0, 38) then
-            aimPos = coords
-        elseif IsControlJustPressed(0, 194) then
-            DeleteEntity(previewProp)
+        if IsDisabledControlJustPressed(0, 38) then
+            break
+        elseif IsDisabledControlJustPressed(0, 194) then -- Backspace to restart
+            DoScreenFadeOut(500)
+            while not IsScreenFadedOut() do Wait(0) end
+
+            ClearTimecycleModifier()
+            RenderScriptCams(false, false, 0, true, false)
+            DestroyCam(viewCam, false)
+            if DoesEntityExist(setupProp) then
+                DeleteEntity(setupProp)
+            end
+
+            DoScreenFadeIn(500)
+            
             SetModelAsNoLongerNeeded(currentModel)
-            return nil
+            StartDoorbellCameraPlacement(propertyId, isRealEstate, cb)
+            return
         end
     end
 
-    DeleteEntity(previewProp)
-    SetModelAsNoLongerNeeded(currentModel)
+    local finalRot = GetCamRot(viewCam, 2)
+    local direction = RotationToDirection(finalRot)
+    local aimPos = camPos + direction * 10.0
 
-    return {
+    DoScreenFadeOut(500)
+    while not IsScreenFadedOut() do Wait(0) end
+
+    ClearTimecycleModifier()
+    RenderScriptCams(false, false, 0, true, false)
+    DestroyCam(viewCam, false)
+    if DoesEntityExist(setupProp) then
+        DeleteEntity(setupProp)
+    end
+    SetModelAsNoLongerNeeded(currentModel)
+    lib.hideTextUI()
+
+    DoScreenFadeIn(500)
+
+    local result = {
         position = { x = camPos.x, y = camPos.y, z = camPos.z },
         aim = { x = aimPos.x, y = aimPos.y, z = aimPos.z },
-        heading = manualHeading,
-        model = currentModel -- NEW: which prop the player picked
+        heading = wallHeading,
+        model = currentModel,
+        fov = currentFov
     }
+
+    if cb then cb(result) end
+end
+
+function DrawCameraSetupOverlay(startTime, currentFov)
+    DrawRect(0.5, 0.5, 1.0, 1.0, 0, 0, 0, 15)
+
+    local elapsed = GetGameTimer() - startTime
+    if (elapsed % 1000) < 600 then
+        DrawRect(0.028, 0.075, 0.012, 0.02, 220, 20, 20, 255)
+    end
+
+    SetTextFont(4)
+    SetTextScale(0.32, 0.32)
+    SetTextColour(255, 255, 255, 220)
+    SetTextOutline()
+    SetTextEntry("STRING")
+    AddTextComponentString("DOORBELL SETUP")
+    DrawText(0.045, 0.068, 0.0)
+
+    local zoomPercent = math.floor(((75.0 - currentFov) / (75.0 - 30.0)) * 100)
+    SetTextFont(4)
+    SetTextScale(0.28, 0.28)
+    SetTextColour(255, 255, 255, 200)
+    SetTextOutline()
+    SetTextEntry("STRING")
+    AddTextComponentString(string.format("ZOOM: %d%%", zoomPercent))
+    DrawText(0.045, 0.9, 0.0)
+
+    local year, month, day, hour, minute, second = GetLocalTime()
+    local dateStr = string.format("%02d/%02d/%04d  %02d:%02d:%02d", day, month, year, hour, minute, second)
+
+    SetTextFont(4)
+    SetTextScale(0.28, 0.28)
+    SetTextColour(255, 255, 255, 200)
+    SetTextOutline()
+    SetTextEntry("STRING")
+    AddTextComponentString(dateStr)
+    DrawText(0.83, 0.9, 0.0)
 end
 
 function GetPlayerRaycastCoords(distance)
@@ -227,12 +323,12 @@ function GetPlayerRaycastCoords(distance)
     local destination = camCoords + direction * distance
 
     local rayHandle = StartShapeTestRay(camCoords.x, camCoords.y, camCoords.z, destination.x, destination.y, destination.z, -1, cache.ped, 0)
-    local _, hit, endCoords = GetShapeTestResult(rayHandle)
+    local _, hit, endCoords, surfaceNormal, entityHit = GetShapeTestResult(rayHandle)
 
     if hit == 1 then
-        return true, endCoords
+        return true, endCoords, surfaceNormal, entityHit
     end
-    return true, destination
+    return true, destination, vector3(0.0, 0.0, 1.0), 0
 end
 
 function RotationToDirection(rotation)

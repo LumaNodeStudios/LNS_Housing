@@ -217,6 +217,14 @@ const Panel = ({ data: initialData }) => {
     });
   };
 
+  const handleRepositionCamera = () => {
+    handleClose();
+    fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/repositionDoorbellCamera`, {
+      method: 'POST',
+      body: JSON.stringify({ propertyId: propertyData.id })
+    });
+  };
+
   const handlePayRent = (amount) => {
     fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/payRent`, {
       method: 'POST',
@@ -496,9 +504,14 @@ const Panel = ({ data: initialData }) => {
                           <p>{upgrade.desc}</p>
                           <div className="upgrade-action-row">
                             {upgrade.id === 'doorbell_camera' && upgrade.level >= upgrade.maxLevel ? (
-                              <button className="camera-view-btn" onClick={handleViewCamera}>
-                                <Camera size={12} /> View Live Feed
-                              </button>
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                <button className="camera-view-btn" onClick={handleViewCamera}>
+                                  <Camera size={12} /> View Live Feed
+                                </button>
+                                <button className="camera-view-btn" onClick={handleRepositionCamera}>
+                                  <Settings size={12} /> Reposition
+                                </button>
+                              </div>
                             ) : (
                               <>
                                 <span className="price-tag">${upgrade.price.toLocaleString()}</span>

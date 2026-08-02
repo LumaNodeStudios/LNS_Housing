@@ -34,3 +34,23 @@ elseif GetResourceState('roadphone') == 'started' then
 elseif GetResourceState('yseries') == 'started' then
     Bridge.PhoneScript = 'yseries'
 end
+
+-- Global Debug Print Utility using ox_lib print
+function debugPrint(level, ...)
+    local Settings = lib.load('shared.settings')
+    if Settings and Settings.Debug and Settings.Debug.Prints then
+        if level == 'error' then
+            lib.print.error(...)
+        elseif level == 'warn' then
+            lib.print.warn(...)
+        elseif level == 'info' then
+            lib.print.info(...)
+        elseif level == 'verbose' then
+            lib.print.verbose(...)
+        elseif level == 'debug' then
+            lib.print.debug(...)
+        else
+            lib.print.debug(level, ...)
+        end
+    end
+end

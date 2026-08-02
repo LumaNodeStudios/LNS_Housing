@@ -22,7 +22,8 @@ Modeler = {
         local property = Properties[propertyId]
         if not property then return end
 
-        self.shellPos = property.door_id and exports.ox_doorlock:getDoor(property.door_id).coords or GetEntityCoords(cache.ped)
+        local entranceCoords = GetEntranceCoords(property)
+        self.shellPos = entranceCoords or GetEntityCoords(cache.ped)
         self.property_id = propertyId
         self.IsMenuActive = true
         self.MenuOpen = true
@@ -803,58 +804,69 @@ function SetFreecamModeState(bool)
 end
 
 RegisterNUICallback("freecamMode", function(data, cb)
+    debugPrint('info', 'Furniture NUI: freecamMode', data)
     SetFreecamModeState(data)
     cb("ok")
 end)
 
 RegisterNUICallback("addToCart", function(data, cb)
+    debugPrint('info', 'Furniture NUI: addToCart', data)
     Modeler:AddToCart(data)
     cb("ok")
 end)
 
 RegisterNUICallback("removeCartItem", function(data, cb)
+    debugPrint('info', 'Furniture NUI: removeCartItem', data)
     Modeler:RemoveCartItem(data)
     cb("ok")
 end)
 
 RegisterNUICallback("buyCartItems", function(data, cb)
+    debugPrint('info', 'Furniture NUI: buyCartItems', data)
     local paymentMethod = data and data.paymentMethod or "bank"
     Modeler:BuyCart(paymentMethod)
     cb("ok")
 end)
 
 RegisterNUICallback("hoverIn", function(data, cb)
+    debugPrint('verbose', 'Furniture NUI: hoverIn', data)
     Modeler:HoverIn(data)
     cb("ok")
 end)
 
 RegisterNUICallback("hoverOut", function(data, cb)
+    debugPrint('verbose', 'Furniture NUI: hoverOut')
     Modeler:HoverOut()
     cb("ok")
 end)
 
 RegisterNUICallback("hoverOwnedItem", function(data, cb)
+    debugPrint('verbose', 'Furniture NUI: hoverOwnedItem', data)
     Modeler:HoverOwnedItem(data)
     cb("ok")
 end)
 
 RegisterNUICallback("unhoverOwnedItem", function(data, cb)
+    debugPrint('verbose', 'Furniture NUI: unhoverOwnedItem')
     Modeler:UnhoverOwnedItem()
     cb("ok")
 end)
 
 RegisterNUICallback("removeOwnedItem", function(data, cb)
+    debugPrint('info', 'Furniture NUI: removeOwnedItem', data)
     Modeler:RemoveOwnedItem(data)
     cb("ok")
 end)
 
 RegisterNUICallback("toggleCursor", function(data, cb)
+    debugPrint('info', 'Furniture NUI: toggleCursor')
     local isFocused = IsNuiFocused()
     SetNuiFocus(not isFocused, not isFocused)
     cb("ok")
 end)
 
 RegisterNetEvent('LNS_Housing:client:openFurnitureMenu', function(propertyId)
+    debugPrint('info', 'LNS_Housing:client:openFurnitureMenu received', {propertyId = propertyId})
     Modeler:OpenMenu(propertyId)
 end)
 
@@ -905,3 +917,33 @@ RegisterCommand('checkfurniture', function()
 
     print(string.format('^2[LNS_Housing] Check finished. Valid models: %d, Non-existent models: %d^0', validCount, invalidCount))
 end, false)
+
+local function TryOpenFurnitureMenu()
+    if not HasFurnitureManagePermission then return end
+
+    local propertyId = InsidePropertyId or (insideApartment and MyApartmentId)
+    if propertyId then
+        TriggerEvent('LNS_Housing:client:openFurnitureMenu', propertyId)
+    end
+end
+
+CreateThread(function()
+    if Settings.FurnitureMenu then
+        if Settings.FurnitureMenu.Command and Settings.FurnitureMenu.Command.Enabled then
+            RegisterCommand(Settings.FurnitureMenu.Command.Name, function()
+                TryOpenFurnitureMenu()
+            end, false)
+        end
+
+        if Settings.FurnitureMenu.Keybind and Settings.FurnitureMenu.Keybind.Enabled then
+            lib.addKeybind({
+                name = 'open_furniture_menu',
+                description = 'Open Furniture Menu',
+                defaultKey = Settings.FurnitureMenu.Keybind.DefaultKey or 'F6',
+                onPressed = function()
+                    TryOpenFurnitureMenu()
+                end
+            })
+        end
+    end
+end)

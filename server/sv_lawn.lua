@@ -2,6 +2,7 @@ local Settings = lib.load('shared.settings')
 
 RegisterNetEvent('LNS_Housing:server:finishMowing', function(propertyId, mowedIndices, isFullMow)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:finishMowing received', {src = src, propertyId = propertyId, mowedCount = mowedIndices and #mowedIndices or 0, isFullMow = isFullMow})
     local p = Properties[propertyId]
     if not p then return end
 
@@ -25,6 +26,7 @@ end)
 
 RegisterNetEvent('LNS_Housing:server:saveMowedBlades', function(propertyId, mowedIndices, isEnd)
     local src = source
+    debugPrint('info', 'LNS_Housing:server:saveMowedBlades received', {src = src, propertyId = propertyId, mowedCount = mowedIndices and #mowedIndices or 0, isEnd = isEnd})
     local p = Properties[propertyId]
     if not p or not mowedIndices or #mowedIndices == 0 then return end
 
@@ -43,9 +45,11 @@ RegisterNetEvent('LNS_Housing:server:saveMowedBlades', function(propertyId, mowe
 end)
 
 lib.callback.register('LNS_Housing:server:getServerTime', function(source)
+    debugPrint('info', 'LNS_Housing:server:getServerTime called', {source = source})
     return os.time()
 end)
 
 Bridge.Server.CreateUseableItem(Settings.Housing.Lawn.RequireItem, function(source)
+    debugPrint('info', 'Lawnmower item used', {source = source})
     TriggerClientEvent('LNS_Housing:client:useMower', source)
 end)

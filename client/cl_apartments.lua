@@ -166,18 +166,22 @@ local function createApartmentZone(roomData)
 
             local hasManageAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', MyApartmentId, 'manage')
             if hasManageAccess then
-                lib.addRadialItem({
-                    id = 'housing_furniture',
-                    icon = 'couch',
-                    label = 'Furniture Menu',
-                    onSelect = function()
-                        TriggerEvent('LNS_Housing:client:openFurnitureMenu', MyApartmentId)
-                    end
-                })
+                HasFurnitureManagePermission = true
+                if not Settings.FurnitureMenu or not Settings.FurnitureMenu.Radial or Settings.FurnitureMenu.Radial.Enabled then
+                    lib.addRadialItem({
+                        id = 'housing_furniture',
+                        icon = 'couch',
+                        label = 'Furniture Menu',
+                        onSelect = function()
+                            TriggerEvent('LNS_Housing:client:openFurnitureMenu', MyApartmentId)
+                        end
+                    })
+                end
             end
         end,
         onExit = function()
             insideApartment = false
+            HasFurnitureManagePermission = false
             if MyApartmentId then
                 UnloadFurnitures(MyApartmentId)
             end
@@ -234,6 +238,7 @@ end
 exports('TeleportToStarterApartment', teleportToStarterApartment)
 
 RegisterNetEvent('LNS_Housing:client:setApartmentData', function(roomId, roomData)
+    debugPrint('info', 'LNS_Housing:client:setApartmentData received', {roomId = roomId, roomData = roomData})
     MyApartmentId = roomId
     MyRoomData = roomData
 
@@ -273,6 +278,7 @@ RegisterNetEvent('LNS_Housing:client:setApartmentData', function(roomId, roomDat
 end)
 
 RegisterNetEvent('LNS_Housing:client:updateApartmentFurniture', function(roomId, furniture)
+    debugPrint('info', 'LNS_Housing:client:updateApartmentFurniture received', {roomId = roomId, furnitureCount = furniture and #furniture or 0})
     if MyApartmentId == roomId and Properties[roomId] then
         Properties[roomId].furniture = furniture
         
@@ -288,6 +294,7 @@ RegisterNetEvent('LNS_Housing:client:updateApartmentFurniture', function(roomId,
 end)
 
 RegisterNetEvent('LNS_Housing:client:updateApartmentProperties', function(roomId, roomInfo)
+    debugPrint('info', 'LNS_Housing:client:updateApartmentProperties received', {roomId = roomId, roomInfo = roomInfo})
     if MyApartmentId == roomId and Properties[roomId] then
         Properties[roomId].owner = roomInfo.owner
         Properties[roomId].ownerName = roomInfo.ownerName
@@ -437,18 +444,21 @@ local function RegisterApartmentDoors(delay)
 end
 
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    debugPrint('info', 'Apartments QBCore:Client:OnPlayerLoaded received')
     LoadCustomApartments()
     initApartmentForPlayer()
     RegisterApartmentDoors(true)
 end)
 
 RegisterNetEvent('esx:playerLoaded', function(xPlayer)
+    debugPrint('info', 'Apartments esx:playerLoaded received', {identifier = xPlayer and xPlayer.identifier})
     LoadCustomApartments()
     initApartmentForPlayer()
     RegisterApartmentDoors(true)
 end)
 
 RegisterNetEvent('LNS_Housing:client:spawnInStarterApartment', function()
+    debugPrint('info', 'LNS_Housing:client:spawnInStarterApartment received')
     teleportToStarterApartment()
 end)
 
@@ -541,10 +551,12 @@ local function CleanUpApartmentSession()
 end
 
 RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
+    debugPrint('info', 'Apartments QBCore:Client:OnPlayerUnload received')
     CleanUpApartmentSession()
 end)
 
 RegisterNetEvent('esx:onPlayerLogout', function()
+    debugPrint('info', 'Apartments esx:onPlayerLogout received')
     CleanUpApartmentSession()
 end)
 
@@ -765,6 +777,7 @@ exports('SpawnInProperty', function(type, id)
 end)
 
 RegisterNetEvent('LNS_Housing:client:addApartmentRoom', function(roomData)
+    debugPrint('info', 'LNS_Housing:client:addApartmentRoom received', {roomData = roomData})
     local exists = false
     for _, room in ipairs(Settings.Rooms) do
         if room.id == roomData.id then
@@ -797,6 +810,7 @@ RegisterNetEvent('LNS_Housing:client:addApartmentRoom', function(roomData)
 end)
 
 RegisterNetEvent('LNS_Housing:client:updateApartmentRoom', function(roomData)
+    debugPrint('info', 'LNS_Housing:client:updateApartmentRoom received', {roomData = roomData})
     local foundIndex = nil
     for idx, room in ipairs(Settings.Rooms) do
         if room.id == roomData.id then

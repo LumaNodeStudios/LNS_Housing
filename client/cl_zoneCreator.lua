@@ -233,6 +233,7 @@ local function render()
 end
 
 RegisterCommand('+usePoint', function()
+    debugPrint('info', 'Command: +usePoint triggered')
     if not zoneCreator.active then return end
     if not zoneCreator.cursor then return end
 
@@ -244,6 +245,7 @@ RegisterCommand('+usePoint', function()
 end, false)
 
 RegisterCommand('+editPoint', function()
+    debugPrint('info', 'Command: +editPoint triggered')
     if not zoneCreator.active then return end
     if not zoneCreator.cursor then return end
     zoneCreator.editPoint()
@@ -253,6 +255,7 @@ RegisterKeyMapping('+editPoint', 'Edit Point', 'keyboard', 'k')
 RegisterKeyMapping('+usePoint', 'Add/Remove Point', 'keyboard', 'c')
 
 local function polyCreator()
+    debugPrint('info', 'PolyCreator export called')
     zoneCreator.freecamMode(false)
     Wait(100)
 
@@ -268,12 +271,15 @@ local function polyCreator()
     lib.hideTextUI()
     
     if result and #result.points > 2 then
+        debugPrint('info', 'PolyCreator finished', {pointsCount = #result.points})
         return result
     end
+    debugPrint('info', 'PolyCreator cancelled or too few points')
     return nil
 end
 
 local function mloDoor()
+    debugPrint('info', 'DoorPicker export called')
 	local lastEntity = 0
     local doorId = nil
 
@@ -284,7 +290,26 @@ local function mloDoor()
         Wait(0)
         DisableControlAction(0, 38, true)
         DisableControlAction(0, 104, true)
-        local hit, entity, coords = lib.raycast.cam(1|16)
+        
+        local cameraRotation = GetGameplayCamRot(2)
+        local cameraCoord = GetGameplayCamCoord()
+        local direction = RotationToDirection(cameraRotation)
+        local destination = {
+            x = cameraCoord.x + direction.x * 15.0,
+            y = cameraCoord.y + direction.y * 15.0,
+            z = cameraCoord.z + direction.z * 15.0
+        }
+
+        local rayHandle = StartShapeTestRay(
+            cameraCoord.x, cameraCoord.y, cameraCoord.z,
+            destination.x, destination.y, destination.z,
+            1 | 16,
+            cache.ped,
+            4
+        )
+        local _, hit, coords, _, entity = GetShapeTestResult(rayHandle)
+        local isHit = (hit == 1 or hit == true)
+
         local changedEntity = lastEntity ~= entity
 
         if lastEntity ~= 0 and changedEntity then
@@ -293,14 +318,14 @@ local function mloDoor()
 
         lastEntity = entity
 
-        if hit then
+        if isHit then
             DrawMarker(28, coords.x, coords.y, coords.z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.2, 0.2, 0.2, 255, 42, 24, 100, false, false, 0, true, false, false, false)
 
-            if changedEntity then
+            if changedEntity and entity and entity > 0 then
 				SetEntityDrawOutline(entity, true)
 			end
 
-            if IsDisabledControlJustPressed(0, 38) and entity > 0 and GetEntityType(entity) == 3 then
+            if IsDisabledControlJustPressed(0, 38) and entity and entity > 0 and GetEntityType(entity) == 3 then
                 doorId = exports.ox_doorlock:getDoorIdFromEntity(entity)
                 
                 if not doorId then
@@ -316,18 +341,18 @@ local function mloDoor()
                     }
                 end
 
-                if lastEntity then
+                if lastEntity and lastEntity > 0 then
                     SetEntityDrawOutline(lastEntity, false)
                 end
                 break
 			end
+        end
 
-			if IsDisabledControlJustPressed(0, 104) then 
-                if lastEntity then
-                    SetEntityDrawOutline(lastEntity, false)
-                end
-				break
+        if IsDisabledControlJustPressed(0, 104) then 
+            if lastEntity and lastEntity > 0 then
+                SetEntityDrawOutline(lastEntity, false)
             end
+            break
         end
     end
     lib.hideTextUI()

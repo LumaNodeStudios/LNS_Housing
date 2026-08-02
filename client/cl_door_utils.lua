@@ -6,6 +6,7 @@ local function ToVec3(coords)
 end
 
 function GetOxDoorlockDoor(doorId)
+    debugPrint('debug', 'GetOxDoorlockDoor called', {doorId = doorId})
     if not doorId or doorId == 0 or GetResourceState('ox_doorlock') ~= 'started' then
         return nil
     end
@@ -24,6 +25,7 @@ function GetOxDoorlockDoor(doorId)
 end
 
 function GetDoorInteractionPoint(model, coords, heading)
+    debugPrint('debug', 'GetDoorInteractionPoint called', {model = model, coords = coords, heading = heading})
     coords = ToVec3(coords)
     if not model or not coords then
         return coords, heading or 0.0
@@ -38,15 +40,17 @@ function GetDoorInteractionPoint(model, coords, heading)
         end)
         if ok and HasModelLoaded(hash) then
             loadedModel = true
-        else
-            return coords, heading or 0.0
         end
     end
 
-    local min, max = GetModelDimensions(hash)
-    local centerX = (min.x + max.x) * 0.5
-    local centerY = (min.y + max.y) * 0.5
-    local centerZ = (min.z + max.z) * 0.5
+    local min, max
+    if HasModelLoaded(hash) then
+        min, max = GetModelDimensions(hash)
+    end
+
+    local centerX = min and (min.x + max.x) * 0.5 or 0.45
+    local centerY = min and (min.y + max.y) * 0.5 or 0.0
+    local centerZ = min and (min.z + max.z) * 0.5 or 1.1
 
     local entity = GetClosestObjectOfType(coords.x, coords.y, coords.z, 3.0, hash, false, false, false)
     if entity ~= 0 then
@@ -58,7 +62,7 @@ function GetDoorInteractionPoint(model, coords, heading)
         return resCoords, resHeading
     end
 
-    local rad = math.rad(-(heading or 0.0))
+    local rad = math.rad(heading or 0.0)
     local cosRad = math.cos(rad)
     local sinRad = math.sin(rad)
     local rx = centerX * cosRad - centerY * sinRad
@@ -73,6 +77,7 @@ function GetDoorInteractionPoint(model, coords, heading)
 end
 
 function ResolveDoorTargetPlacement(model, coords, heading, door)
+    debugPrint('debug', 'ResolveDoorTargetPlacement called', {model = model, coords = coords, heading = heading, door = door})
     if door and door.doors and door.doors[1] and door.doors[2] then
         local c1 = ToVec3(door.doors[1].coords)
         local c2 = ToVec3(door.doors[2].coords)
