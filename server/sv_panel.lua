@@ -10,7 +10,23 @@ RegisterNetEvent('LNS_Housing:server:updatePermissions', function(propertyId, pe
     local src = source
     debugPrint('info', 'LNS_Housing:server:updatePermissions received', {src = src, propertyId = propertyId, permissions = permissions})
     local p = Properties[propertyId]
-    if not p or p.owner ~= Bridge.Server.GetIdentifier(src) then return end
+    local ownerCid = Bridge.Server.GetIdentifier(src)
+    if not p or p.owner ~= ownerCid then return end
+
+    -- Ensure owner cannot add themselves into sub-permission tables
+    if type(permissions) == 'table' then
+        for category, cids in pairs(permissions) do
+            if type(cids) == 'table' then
+                local filtered = {}
+                for _, cid in ipairs(cids) do
+                    if cid ~= ownerCid then
+                        table.insert(filtered, cid)
+                    end
+                end
+                permissions[category] = filtered
+            end
+        end
+    end
 
     p.permissions = permissions
     SaveProperty(propertyId)
@@ -161,6 +177,10 @@ lib.callback.register('LNS_Housing:server:resolvePlayerByServerId', function(sou
         return { success = false, message = "Invalid Server ID." }
     end
 
+    if sid == source then
+        return { success = false, message = "You cannot add yourself as a resident." }
+    end
+
     local ped = GetPlayerPed(sid)
     if not ped or ped == 0 then
         return { success = false, message = "Player is offline or server ID is invalid." }
@@ -169,6 +189,11 @@ lib.callback.register('LNS_Housing:server:resolvePlayerByServerId', function(sou
     local cid = Bridge.Server.GetIdentifier(sid)
     if not cid then
         return { success = false, message = "Could not resolve player identifier." }
+    end
+
+    local sourceCid = Bridge.Server.GetIdentifier(source)
+    if cid == sourceCid then
+        return { success = false, message = "You cannot add yourself as a resident." }
     end
 
     local name = Bridge.Server.GetPlayerName(sid) or cid
@@ -190,6 +215,10 @@ RegisterNetEvent('LNS_Housing:server:createContract', function(data)
 
     local propertyId = tonumber(data.propertyId)
     local targetId = tonumber(data.targetId)
+    if targetId == src then
+        Bridge.Server.Notify(src, "You cannot draft a contract for yourself.", "error")
+        return
+    end
     local price = tonumber(data.price)
     local contractType = data.type or 'buy'
     local commissionRate = tonumber(data.commissionRate) or 10

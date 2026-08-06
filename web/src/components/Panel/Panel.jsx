@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './Panel.css';
+import CustomSelect from '../Common/CustomSelect';
 
 const Panel = ({ data: initialData }) => {
   const [activeTab, setActiveTab] = useState('home');
@@ -382,6 +383,11 @@ const Panel = ({ data: initialData }) => {
 
     if (!resolved || !resolved.success) {
       alert(resolved?.message || 'Failed to find player with that Server ID.');
+      return;
+    }
+
+    if (resolved.citizenid && propertyData && resolved.citizenid === propertyData.owner) {
+      alert('You cannot add yourself as a resident.');
       return;
     }
 
@@ -946,31 +952,18 @@ const Panel = ({ data: initialData }) => {
               </div>
               <div className="modal-body">
                 <p>Enter the Server ID of the resident you wish to grant property permissions to, or select from nearby players.</p>
-                {nearbyPlayers.length > 0 && (
-                  <div className="modal-input-group" style={{ marginBottom: '12px' }}>
-                    <label>Select Nearby Player</label>
-                    <select
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '8px',
-                        color: '#fff',
-                        outline: 'none',
-                        fontSize: '13px'
-                      }}
-                      onChange={(e) => setNewRoommateId(e.target.value)}
-                    >
-                      <option value="" style={{ background: '#1a1a24' }}>-- Select Online Player --</option>
-                      {nearbyPlayers.map(p => (
-                        <option key={p.id} value={p.id} style={{ background: '#1a1a24' }}>
-                          {p.name} (ID: {p.id})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                <div className="modal-input-group" style={{ marginBottom: '12px' }}>
+                  <CustomSelect
+                    label="Select Nearby Player"
+                    value={newRoommateId}
+                    placeholder={nearbyPlayers.length > 0 ? "Select Online Player" : "No Nearby Players"}
+                    options={nearbyPlayers.map(p => ({
+                      value: p.id,
+                      label: `${p.name} (ID: ${p.id})`
+                    }))}
+                    onChange={(e) => setNewRoommateId(e.target.value)}
+                  />
+                </div>
                 <div className="modal-input-group">
                   <label>Server ID (Source)</label>
                   <input

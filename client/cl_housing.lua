@@ -102,8 +102,12 @@ RegisterNUICallback('getNearbyPlayers', function(_, cb)
     debugPrint('info', 'NUI callback: getNearbyPlayers')
     local players = GetActivePlayers()
     local playerIds = {}
+    local myServerId = GetPlayerServerId(PlayerId())
     for _, player in ipairs(players) do
-        table.insert(playerIds, GetPlayerServerId(player))
+        local sid = GetPlayerServerId(player)
+        if sid ~= myServerId then
+            table.insert(playerIds, sid)
+        end
     end
     
     local resolved = lib.callback.await('LNS_Housing:server:resolvePlayerNames', false, playerIds)
