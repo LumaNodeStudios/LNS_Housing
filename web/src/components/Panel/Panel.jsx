@@ -27,6 +27,19 @@ const Panel = ({ data: initialData }) => {
   const [privacyMode, setPrivacyMode] = useState(false);
   const [securityHistory, setSecurityHistory] = useState([]);
   const [roommates, setRoommates] = useState([]);
+  const [nearbyPlayers, setNearbyPlayers] = useState([]);
+
+  useEffect(() => {
+    if (showAddModal && window.GetParentResourceName) {
+      fetch(`https://${window.GetParentResourceName()}/getNearbyPlayers`, {
+        method: 'POST',
+        body: JSON.stringify({})
+      })
+        .then(res => res.json())
+        .then(data => setNearbyPlayers(data || []))
+        .catch(() => setNearbyPlayers([]));
+    }
+  }, [showAddModal]);
 
   const WALL_COLORS = [
     { id: 0, name: 'White', hex: '#F1F1F1' },
@@ -349,12 +362,36 @@ const Panel = ({ data: initialData }) => {
     });
   };
 
-  const handleAddRoommate = () => {
+  const handleAddRoommate = async () => {
     if (!newRoommateId) return;
+
+    let resolved = null;
+    if (window.GetParentResourceName) {
+      try {
+        const res = await fetch(`https://${window.GetParentResourceName()}/resolvePlayerByServerId`, {
+          method: 'POST',
+          body: JSON.stringify({ serverId: newRoommateId })
+        });
+        resolved = await res.json();
+      } catch (err) {
+        console.error("Failed to resolve player:", err);
+      }
+    } else {
+      resolved = { success: true, citizenid: newRoommateId, name: `Player ${newRoommateId}`, serverId: newRoommateId };
+    }
+
+    if (!resolved || !resolved.success) {
+      alert(resolved?.message || 'Failed to find player with that Server ID.');
+      return;
+    }
+
+    const cid = resolved.citizenid;
+    const displayName = `${resolved.name} (ID: ${resolved.serverId})`;
+
     const newRoommate = {
-      id: Date.now(),
-      name: 'New Roommate',
-      citizenid: newRoommateId,
+      id: cid,
+      name: displayName,
+      citizenid: cid,
       permissions: {
         doors: initialPermissions.doors,
         storage: initialPermissions.storage,
@@ -362,11 +399,14 @@ const Panel = ({ data: initialData }) => {
         panel: initialPermissions.panel
       }
     };
+
     setRoommates(prev => {
-      const updated = [...prev, newRoommate];
+      const filtered = prev.filter(r => r.citizenid !== cid);
+      const updated = [...filtered, newRoommate];
       syncPermissions(updated);
       return updated;
     });
+
     setNewRoommateId('');
     setInitialPermissions({
       doors: true,
@@ -905,12 +945,37 @@ const Panel = ({ data: initialData }) => {
                 </button>
               </div>
               <div className="modal-body">
-                <p>Enter the Citizen ID of the resident you wish to grant property permissions to.</p>
+                <p>Enter the Server ID of the resident you wish to grant property permissions to, or select from nearby players.</p>
+                {nearbyPlayers.length > 0 && (
+                  <div className="modal-input-group" style={{ marginBottom: '12px' }}>
+                    <label>Select Nearby Player</label>
+                    <select
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        outline: 'none',
+                        fontSize: '13px'
+                      }}
+                      onChange={(e) => setNewRoommateId(e.target.value)}
+                    >
+                      <option value="" style={{ background: '#1a1a24' }}>-- Select Online Player --</option>
+                      {nearbyPlayers.map(p => (
+                        <option key={p.id} value={p.id} style={{ background: '#1a1a24' }}>
+                          {p.name} (ID: {p.id})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div className="modal-input-group">
-                  <label>Citizen ID</label>
+                  <label>Server ID (Source)</label>
                   <input
                     type="text"
-                    placeholder="e.g. ABC12345"
+                    placeholder="e.g. 1"
                     value={newRoommateId}
                     onChange={(e) => setNewRoommateId(e.target.value)}
                   />

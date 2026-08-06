@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Sofa, Bed, Lamp, Tv, Utensils, Bath, Search, Package, Check, Trash2, Camera, Move, RotateCw, X, ShoppingCart, ShoppingBag, Hammer, ArrowLeft, Grid, ArrowDown, CreditCard, Banknote } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Modeler3D from './Modeler3D';
@@ -181,6 +181,54 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
     }
   };
 
+  const hoverTimeoutRef = useRef(null);
+  const activeHoverItemRef = useRef(null);
+  const activeHoverOwnedRef = useRef(null);
+
+  const handleHoverIn = (item) => {
+    if (isPlacing) return;
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    
+    hoverTimeoutRef.current = setTimeout(() => {
+      activeHoverItemRef.current = item;
+      post('hoverIn', item);
+    }, 150);
+  };
+
+  const handleHoverOut = () => {
+    if (isPlacing) return;
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    if (activeHoverItemRef.current) {
+      activeHoverItemRef.current = null;
+      post('hoverOut');
+    }
+  };
+
+  const handleHoverOwnedIn = (item) => {
+    if (isPlacing) return;
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+
+    hoverTimeoutRef.current = setTimeout(() => {
+      activeHoverOwnedRef.current = item;
+      post('hoverOwnedItem', { entity: item.entity, id: item.id });
+    }, 150);
+  };
+
+  const handleHoverOwnedOut = () => {
+    if (isPlacing) return;
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    if (activeHoverOwnedRef.current) {
+      activeHoverOwnedRef.current = null;
+      post('unhoverOwnedItem');
+    }
+  };
+
   const handlePreview = (item) => {
     if (isPlacing) return;
     setIsPlacing(true);
@@ -316,8 +364,8 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                               ItemIcon={ItemIcon}
                               isPlacing={isPlacing}
                               isThisPlacing={placingItem?.id === item.id}
-                              onHoverIn={() => !isPlacing && post('hoverIn', item)}
-                              onHoverOut={() => !isPlacing && post('hoverOut')}
+                              onHoverIn={() => handleHoverIn(item)}
+                              onHoverOut={handleHoverOut}
                               onClick={() => handlePreview(item)}
                             />
                           );
@@ -460,8 +508,8 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 exit={{ opacity: 0, x: -50, scale: 0.95 }}
                                 transition={{ duration: 0.2 }}
-                                onMouseEnter={() => !isPlacing && post('hoverOwnedItem', { entity: item.entity, id: item.id })}
-                                onMouseLeave={() => !isPlacing && post('unhoverOwnedItem')}
+                                onMouseEnter={() => handleHoverOwnedIn(item)}
+                                onMouseLeave={handleHoverOwnedOut}
                               >
                                 <div className="editor-item-preview">
                                   <FurnitureImage item={item} ItemIcon={ItemIcon} />

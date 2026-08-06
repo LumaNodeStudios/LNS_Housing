@@ -16,10 +16,17 @@ RegisterNUICallback('pickDoor', function(_, cb)
             action = 'addDoor',
             data = doorId
         })
-        if type(doorId) == 'table' then
+        if type(doorId) == 'table' and doorId.isDouble then
+            local c = doorId.doors and doorId.doors[1] and doorId.doors[1].coords
+            if c then
+                Bridge.Client.Notify('New Double Door selected at ' .. math.floor(c.x) .. ', ' .. math.floor(c.y), 'success')
+            else
+                Bridge.Client.Notify('New Double Door added to list.', 'success')
+            end
+        elseif type(doorId) == 'table' and doorId.coords then
             Bridge.Client.Notify('New Door selected at ' .. math.floor(doorId.coords.x) .. ', ' .. math.floor(doorId.coords.y), 'success')
         else
-            Bridge.Client.Notify('Door ID ' .. doorId .. ' added to list.', 'success')
+            Bridge.Client.Notify('Door ID ' .. tostring(doorId) .. ' added to list.', 'success')
         end
     end
     cb('ok')

@@ -35,9 +35,10 @@ elseif GetResourceState('yseries') == 'started' then
     Bridge.PhoneScript = 'yseries'
 end
 
+local Settings = lib.load('shared.settings')
+
 -- Global Debug Print Utility using ox_lib print
 function debugPrint(level, ...)
-    local Settings = lib.load('shared.settings')
     if Settings and Settings.Debug and Settings.Debug.Prints then
         if level == 'error' then
             lib.print.error(...)

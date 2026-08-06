@@ -412,6 +412,18 @@ function LockpickDoor(propertyId)
         isApartment = p.isApartment
     end
 
+    if isApartment then
+        if Settings.Apartments and not Settings.Apartments.CanBreakIn then
+            Bridge.Client.Notify('Apartment break-ins are disabled.', 'error')
+            return
+        end
+    else
+        if Settings.Housing and not Settings.Housing.CanBreakIn then
+            Bridge.Client.Notify('House break-ins are disabled.', 'error')
+            return
+        end
+    end
+
     if not p and not isApartment then return end
 
     local permType = isApartment and 'apartment' or 'house'
@@ -504,6 +516,18 @@ function LockpickStash(propertyId, stashId)
         end
     else
         isApartment = p.isApartment
+    end
+
+    if isApartment then
+        if Settings.Apartments and not Settings.Apartments.CanBreakIn then
+            Bridge.Client.Notify('Apartment break-ins are disabled.', 'error')
+            return
+        end
+    else
+        if Settings.Housing and not Settings.Housing.CanBreakIn then
+            Bridge.Client.Notify('House break-ins are disabled.', 'error')
+            return
+        end
     end
 
     if not p and not isApartment then return end
@@ -646,7 +670,11 @@ function LoadFurnitures(propertyId)
                     end,
                     canInteract = function()
                         if itemData.canLockpick == false or itemData.canlockpick == false then return false end
-                        if p.isApartment and not Settings.Apartments.CanBreakIn then return false end
+                        if p.isApartment then
+                            if Settings.Apartments and not Settings.Apartments.CanBreakIn then return false end
+                        else
+                            if Settings.Housing and not Settings.Housing.CanBreakIn then return false end
+                        end
 
                         local isLocked = lib.callback.await('LNS_Housing:server:isStashLocked', false, stashId)
                         if not isLocked then return false end
@@ -1126,21 +1154,23 @@ function RegisterPropertyEntranceTargets(p)
         end
     })
 
-    table.insert(options, {
-        label = 'Lockpick ' .. p.label,
-        icon = 'fas fa-mask',
-        items = Settings.Security.LockpickItem,
-        canInteract = function()
-            local prop = Properties[id]
-            if not prop then return false end
-            local isLocked = prop.metadata.locked ~= false
-            if not isLocked then return false end
-            return lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'lockpick')
-        end,
-        onSelect = function()
-            LockpickDoor(id)
-        end
-    })
+    if Settings.Housing and Settings.Housing.CanBreakIn then
+        table.insert(options, {
+            label = 'Lockpick ' .. p.label,
+            icon = 'fas fa-mask',
+            items = Settings.Security.LockpickItem,
+            canInteract = function()
+                local prop = Properties[id]
+                if not prop then return false end
+                local isLocked = prop.metadata.locked ~= false
+                if not isLocked then return false end
+                return lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'lockpick')
+            end,
+            onSelect = function()
+                LockpickDoor(id)
+            end
+        })
+    end
 
     table.insert(options, {
         label = 'Raid House',
@@ -1413,14 +1443,13 @@ end)
 
 CreateThread(function()
     while true do
-        local ped = cache.ped
-        local interiorId = GetInteriorFromEntity(ped)
+        local ped = cache.ped or PlayerPedId()
         
+        local interiorId = GetInteriorFromEntity(ped)
         if interiorId ~= CurrentInterior then
             CurrentInterior = interiorId
             
             if interiorId ~= 0 then
-                
                 for id, p in pairs(Properties) do
                     local door = p.door_id and GetOxDoorlockDoor(p.door_id)
                     if door and door.coords and #(GetEntityCoords(ped) - vec3(door.coords.x, door.coords.y, door.coords.z)) < 30.0 then
@@ -1432,6 +1461,28 @@ CreateThread(function()
                 end
             end
         end
+
+        if Properties and NetworkIsPlayerActive(PlayerId()) then
+            local playerCoords = GetEntityCoords(ped)
+            local renderDist = (Settings.Security and Settings.Security.DoorbellCameraRenderDistance) or 80.0
+
+            for propertyId, p in pairs(Properties) do
+                if not p.isApartment and p.metadata and p.metadata.doorbell_camera == true and p.metadata.camera_coords then
+                    local camCoords = vec3(p.metadata.camera_coords.x, p.metadata.camera_coords.y, p.metadata.camera_coords.z)
+                    local dist = #(playerCoords - camCoords)
+                    if dist <= renderDist then
+                        if not LoadedCameraProps[propertyId] then
+                            LoadDoorbellCameraProp(propertyId)
+                        end
+                    else
+                        if LoadedCameraProps[propertyId] then
+                            UnloadDoorbellCameraProp(propertyId)
+                        end
+                    end
+                end
+            end
+        end
+
         Wait(2000)
     end
 end)
@@ -2003,32 +2054,5 @@ RegisterNetEvent('LNS_Housing:client:triggerHouseDoorbell', function(entranceCoo
     activeDoorbellsCount = activeDoorbellsCount - 1
     if activeDoorbellsCount == 0 then
         ReleaseScriptAudioBank()
-    end
-end)
-
-CreateThread(function()
-    while true do
-        Wait(2000)
-        if Properties and NetworkIsPlayerActive(PlayerId()) then
-            local playerPed = cache.ped or PlayerPedId()
-            local playerCoords = GetEntityCoords(playerPed)
-            local renderDist = (Settings.Security and Settings.Security.DoorbellCameraRenderDistance) or 80.0
-
-            for propertyId, p in pairs(Properties) do
-                if not p.isApartment and p.metadata and p.metadata.doorbell_camera == true and p.metadata.camera_coords then
-                    local camCoords = vec3(p.metadata.camera_coords.x, p.metadata.camera_coords.y, p.metadata.camera_coords.z)
-                    local dist = #(playerCoords - camCoords)
-                    if dist <= renderDist then
-                        if not LoadedCameraProps[propertyId] then
-                            LoadDoorbellCameraProp(propertyId)
-                        end
-                    else
-                        if LoadedCameraProps[propertyId] then
-                            UnloadDoorbellCameraProp(propertyId)
-                        end
-                    end
-                end
-            end
-        end
     end
 end)

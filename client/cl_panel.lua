@@ -40,6 +40,17 @@ RegisterNUICallback('updateProperty', function(data, cb)
     cb('ok')
 end)
 
+RegisterNUICallback('resolvePlayerByServerId', function(data, cb)
+    debugPrint('info', 'Panel NUI: resolvePlayerByServerId', data)
+    local targetId = tonumber(data.serverId)
+    if not targetId then
+        cb({ success = false, message = 'Invalid Server ID.' })
+        return
+    end
+    local res = lib.callback.await('LNS_Housing:server:resolvePlayerByServerId', false, targetId)
+    cb(res or { success = false, message = 'Player not found.' })
+end)
+
 RegisterNUICallback('changeWallColor', function(data, cb)
     debugPrint('info', 'Panel NUI: changeWallColor', data)
     local interiorId = GetInteriorFromEntity(cache.ped)

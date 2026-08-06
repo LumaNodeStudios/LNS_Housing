@@ -877,15 +877,31 @@ RegisterNUICallback('pickApartmentDoor', function(_, cb)
     SetNuiFocus(true, true)
     
     if doorId then
-        if type(doorId) == 'table' and doorId.coords then
+        if type(doorId) == 'table' and doorId.isDouble then
+            if doorId.doors then
+                for i = 1, 2 do
+                    local d = doorId.doors[i]
+                    if d and type(d) == 'table' and d.coords then
+                        local c = d.coords
+                        d.coords = { x = c.x, y = c.y, z = c.z }
+                    end
+                end
+            end
+            cb(doorId)
+            local c = doorId.doors and doorId.doors[1] and doorId.doors[1].coords
+            if c then
+                Bridge.Client.Notify('New Double Door selected at ' .. math.floor(c.x) .. ', ' .. math.floor(c.y), 'success')
+            else
+                Bridge.Client.Notify('New Double Door selected.', 'success')
+            end
+        elseif type(doorId) == 'table' and doorId.coords then
             local c = doorId.coords
             doorId.coords = { x = c.x, y = c.y, z = c.z }
-        end
-        cb(doorId)
-        if type(doorId) == 'table' then
+            cb(doorId)
             Bridge.Client.Notify('New Door selected at ' .. math.floor(doorId.coords.x) .. ', ' .. math.floor(doorId.coords.y), 'success')
         else
-            Bridge.Client.Notify('Door ID ' .. doorId .. ' selected.', 'success')
+            cb(doorId)
+            Bridge.Client.Notify('Door ID ' .. tostring(doorId) .. ' selected.', 'success')
         end
     else
         cb(nil)
@@ -962,7 +978,8 @@ local function PlaceDefaultTablet()
                     }
                 })
             end
-            Wait(33)
+            local sleep = TabletPlacement.IsFreecamMode and 150 or 60
+            Wait(sleep)
         end
     end)
 

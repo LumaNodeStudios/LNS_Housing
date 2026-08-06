@@ -48,10 +48,30 @@ local function UpdateCamera()
   TriggerEvent('freecam:onTick')
 end
 
-CreateThread(function ()
-  while true do
-    Wait(0)
-    UpdateCamera()
+local active = false
+
+local function StartLoop()
+  if active then return end
+  active = true
+  CreateThread(function()
+    while active do
+      UpdateCamera()
+      Wait(0)
+    end
+  end)
+end
+
+local function StopLoop()
+  active = false
+end
+
+AddEventHandler('freecam:onEnter', StartLoop)
+AddEventHandler('freecam:onExit', StopLoop)
+
+CreateThread(function()
+  Wait(500)
+  if IsFreecamActive() then
+    StartLoop()
   end
 end)
 

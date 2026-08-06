@@ -154,6 +154,12 @@ RegisterNetEvent('LNS_Housing:server:lockpickSuccess', function(propertyId, type
     local identifier = Bridge.Server.GetIdentifier(src)
     local isApartment = Properties[propertyId] == nil
 
+    if isApartment then
+        if Settings.Apartments and not Settings.Apartments.CanBreakIn then return end
+    else
+        if Settings.Housing and not Settings.Housing.CanBreakIn then return end
+    end
+
     if not isApartment then
         local p = Properties[propertyId]
         if not p then return end
@@ -619,9 +625,9 @@ RegisterNetEvent('LNS_Housing:server:motionDetected', function(propertyId)
     end
     MotionAlertCooldown[propertyId] = now
 
-    --[[if HasPermissionAccess(src, propertyId, 'entry') then
+    if HasPermissionAccess(src, propertyId, 'entry') then
         return
-    end]]
+    end
 
     if p.owner then
         local onlineOwner = Bridge.Server.IsPlayerOnline(p.owner)
@@ -745,6 +751,8 @@ RegisterNetEvent('LNS_Housing:server:lockpickFailed', function(propertyId)
     local isApartment = Properties[propertyId] == nil
     if isApartment then return end
 
+    if Settings.Housing and not Settings.Housing.CanBreakIn then return end
+
     local p = Properties[propertyId]
     if not p then return end
 
@@ -809,13 +817,20 @@ exports('GiveKey', function(propertyId, targetIdentifier)
     end
     if not p.permissions.entry then p.permissions.entry = {} end
 
-    for _, cid in ipairs(p.permissions.entry) do
-        if cid == targetIdentifier then
+    local cid = tostring(targetIdentifier)
+    local sid = tonumber(targetIdentifier)
+    if sid then
+        local foundCid = Bridge.Server.GetIdentifier(sid)
+        if foundCid then cid = foundCid end
+    end
+
+    for _, existingCid in ipairs(p.permissions.entry) do
+        if existingCid == cid then
             return true
         end
     end
 
-    table.insert(p.permissions.entry, targetIdentifier)
+    table.insert(p.permissions.entry, cid)
     SaveProperty(propertyId)
     SyncPropertyDoor(propertyId)
     TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
@@ -826,11 +841,18 @@ exports('RemoveKey', function(propertyId, targetIdentifier)
     local p = Properties[propertyId]
     if not p or not p.permissions then return false end
 
+    local cid = tostring(targetIdentifier)
+    local sid = tonumber(targetIdentifier)
+    if sid then
+        local foundCid = Bridge.Server.GetIdentifier(sid)
+        if foundCid then cid = foundCid end
+    end
+
     local removed = false
     for category, list in pairs(p.permissions) do
         if type(list) == 'table' then
             for i = #list, 1, -1 do
-                if list[i] == targetIdentifier then
+                if list[i] == cid or list[i] == tostring(targetIdentifier) then
                     table.remove(list, i)
                     removed = true
                 end

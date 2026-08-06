@@ -200,7 +200,6 @@ Modeler = {
             Freecam:SetFrozen(false)
             SetNuiFocus(false, false)
             exports.ox_target:disableTargeting(true)
-            self:StartFreecamUpdateThread()
         else
             Freecam:SetFrozen(true)
             exports.ox_target:disableTargeting(false)
@@ -238,39 +237,6 @@ Modeler = {
         end
 
         return camPos
-    end,
-
-    StartFreecamUpdateThread = function(self)
-        if self.FreecamThreadActive then return end
-        self.FreecamThreadActive = true
-        
-        CreateThread(function()
-            local lastCamPos = nil
-            local lastCamTarget = nil
-
-            while self.IsFreecamMode do
-                local camPos = Freecam:GetPosition()
-                local lookAt = Freecam:GetTarget(5.0)
-
-                camPos = self:ConstrainCamera(camPos, lastCamPos)
-
-                if not lastCamPos or #(lastCamPos - camPos) > 0.001 or #(lastCamTarget - lookAt) > 0.001 then
-                    lastCamPos = camPos
-                    lastCamTarget = lookAt
-
-                    SendNUIMessage({
-                        action = "updateCamera",
-                        data = {
-                            cameraPosition = camPos,
-                            cameraLookAt = lookAt,
-                            cameraFov = GetGameplayCamFov(),
-                        }
-                    })
-                end
-                Wait(33) 
-            end
-            self.FreecamThreadActive = false
-        end)
     end,
 
     StartPlacement = function(self, data)
@@ -365,7 +331,8 @@ Modeler = {
                         }
                     })
                 end
-                Wait(33) 
+                local sleep = self.IsFreecamMode and 150 or 60
+                Wait(sleep) 
             end
             self.PlacementThreadActive = false
         end)
@@ -596,11 +563,25 @@ Modeler = {
     HoverIn = function(self, data)
         self:HoverOut()
         self.HoverSession = self.HoverSession + 1
-        local currentSession = self.HoverSession
+        self.PendingHoverItem = data
+        self.PendingHoverTime = GetGameTimer() + 150
+    end,
 
+    HoverOut = function(self)
+        self.HoverSession = self.HoverSession + 1
+        self.PendingHoverItem = nil
+        if self.HoverObject then
+            DeleteEntity(self.HoverObject)
+            self.HoverObject = nil
+        end
+        self.IsHovering = false
+    end,
+
+    SpawnHoverObject = function(self, data)
+        local currentSession = self.HoverSession
         local hash = GetHashKey(data.model)
-        lib.requestModel(hash)
         
+        lib.requestModel(hash)
         
         if currentSession ~= self.HoverSession then
             return
@@ -621,15 +602,6 @@ Modeler = {
                 Wait(10)
             end
         end)
-    end,
-
-    HoverOut = function(self)
-        self.HoverSession = self.HoverSession + 1 
-        if self.HoverObject then
-            DeleteEntity(self.HoverObject)
-            self.HoverObject = nil
-        end
-        self.IsHovering = false
     end,
 
     HoverOwnedItem = function(self, data)
@@ -876,6 +848,14 @@ CreateThread(function()
         local isTabletActive = TabletPlacement and TabletPlacement.Active
         if Modeler.IsMenuActive or isTabletActive then
             sleep = 0
+            
+            if Modeler.PendingHoverItem and GetGameTimer() >= Modeler.PendingHoverTime then
+                local data = Modeler.PendingHoverItem
+                Modeler.PendingHoverItem = nil
+                CreateThread(function()
+                    Modeler:SpawnHoverObject(data)
+                end)
+            end
             
             DisableControlAction(0, 19, true)
 

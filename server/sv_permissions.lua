@@ -172,6 +172,7 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
         if not p then return false end
 
         if accessType == 'lockpick' then
+            if Settings.Housing and not Settings.Housing.CanBreakIn then return false end
             local identifier = Bridge.Server.GetIdentifier(source)
             if not p.owner then return false end
             if p.owner == identifier then return false end
@@ -184,6 +185,7 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
         end
 
         if accessType == 'lockpickStash' then
+            if Settings.Housing and not Settings.Housing.CanBreakIn then return false end
             local identifier = Bridge.Server.GetIdentifier(source)
             if not p.owner then return false end
             if p.owner == identifier then return false end
@@ -289,6 +291,7 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
         end
 
         if accessType == 'lockpick' then
+            if Settings.Apartments and not Settings.Apartments.CanBreakIn then return false end
             if isOwner then return false end
             local result = MySQL.single.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ?', {roomId})
             if not result then return false end
@@ -302,6 +305,7 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
         end
 
         if accessType == 'lockpickStash' then
+            if Settings.Apartments and not Settings.Apartments.CanBreakIn then return false end
             if isOwner then return false end
             local result = MySQL.single.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ?', {roomId})
             if not result then return false end

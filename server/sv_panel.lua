@@ -148,10 +148,33 @@ lib.callback.register('LNS_Housing:server:resolvePlayerNames', function(source, 
     local results = {}
     for _, sid in ipairs(playerIds) do
         local name = Bridge.Server.GetPlayerName(sid)
-        table.insert(results, { id = sid, name = name })
+        local cid = Bridge.Server.GetIdentifier(sid)
+        table.insert(results, { id = sid, name = name, citizenid = cid })
     end
     return results
 end)
+
+lib.callback.register('LNS_Housing:server:resolvePlayerByServerId', function(source, targetId)
+    debugPrint('info', 'LNS_Housing:server:resolvePlayerByServerId called', {source = source, targetId = targetId})
+    local sid = tonumber(targetId)
+    if not sid then
+        return { success = false, message = "Invalid Server ID." }
+    end
+
+    local ped = GetPlayerPed(sid)
+    if not ped or ped == 0 then
+        return { success = false, message = "Player is offline or server ID is invalid." }
+    end
+
+    local cid = Bridge.Server.GetIdentifier(sid)
+    if not cid then
+        return { success = false, message = "Could not resolve player identifier." }
+    end
+
+    local name = Bridge.Server.GetPlayerName(sid) or cid
+    return { success = true, citizenid = cid, name = name, serverId = sid }
+end)
+
 
 RegisterNetEvent('LNS_Housing:server:createContract', function(data)
     local src = source
@@ -521,22 +544,40 @@ lib.callback.register('LNS_Housing:server:getBlacklist', function(source)
     return results or {}
 end)
 
-RegisterNetEvent('LNS_Housing:server:addBlacklist', function(citizenid, name, reason)
+RegisterNetEvent('LNS_Housing:server:addBlacklist', function(targetIdentifier, name, reason)
     local src = source
-    debugPrint('info', 'LNS_Housing:server:addBlacklist received', {src = src, citizenid = citizenid, name = name, reason = reason})
+    debugPrint('info', 'LNS_Housing:server:addBlacklist received', {src = src, targetIdentifier = targetIdentifier, name = name, reason = reason})
     local jobPerm = GetRealEstatePermission(src)
     if not jobPerm or not jobPerm.permissions.manageListings then return end
+
+    local citizenid = tostring(targetIdentifier)
+    local targetName = name
+
+    local sid = tonumber(targetIdentifier)
+    if sid then
+        local foundCid = Bridge.Server.GetIdentifier(sid)
+        if foundCid then
+            citizenid = foundCid
+            if not targetName or targetName == '' then
+                targetName = Bridge.Server.GetPlayerName(sid)
+            end
+        end
+    end
+
+    if not targetName or targetName == '' then
+        targetName = citizenid
+    end
 
     local agentName = Bridge.Server.GetPlayerName(src)
 
     local success = MySQL.insert.await([[
         INSERT INTO housing_blacklist (citizenid, name, reason, blacklisted_by)
         VALUES (?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE reason = ?, blacklisted_by = ?
-    ]], { citizenid, name, reason, agentName, reason, agentName })
+        ON DUPLICATE KEY UPDATE name = ?, reason = ?, blacklisted_by = ?
+    ]], { citizenid, targetName, reason, agentName, targetName, reason, agentName })
 
     if success then
-        Bridge.Server.Notify(src, "Successfully blacklisted " .. name .. " (" .. citizenid .. ")", "success")
+        Bridge.Server.Notify(src, "Successfully blacklisted " .. targetName .. " (" .. citizenid .. ")", "success")
     else
         Bridge.Server.Notify(src, "Failed to blacklist player.", "error")
     end

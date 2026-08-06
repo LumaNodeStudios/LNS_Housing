@@ -280,17 +280,18 @@ end
 
 local function mloDoor()
     debugPrint('info', 'DoorPicker export called')
-	local lastEntity = 0
-    local doorId = nil
+    local selectedDoors = {}
+    local lastEntity = 0
 
-    Wait(500) 
-    lib.showTextUI('[E] - to pick door | [H] cancel')
+    Wait(500)
+    lib.showTextUI('[E] - Pick Single | [G] - Pick Double (1/2) | [H] - Cancel')
 
     while true do
         Wait(0)
-        DisableControlAction(0, 38, true)
-        DisableControlAction(0, 104, true)
-        
+        DisableControlAction(0, 38, true) -- E
+        DisableControlAction(0, 47, true) -- G
+        DisableControlAction(0, 74, true) -- H
+
         local cameraRotation = GetGameplayCamRot(2)
         local cameraCoord = GetGameplayCamCoord()
         local direction = RotationToDirection(cameraRotation)
@@ -309,54 +310,79 @@ local function mloDoor()
         )
         local _, hit, coords, _, entity = GetShapeTestResult(rayHandle)
         local isHit = (hit == 1 or hit == true)
-
         local changedEntity = lastEntity ~= entity
+        local door1Entity = selectedDoors[1] and selectedDoors[1]._entity or nil
 
-        if lastEntity ~= 0 and changedEntity then
+        if lastEntity ~= 0 and changedEntity and lastEntity ~= door1Entity then
             SetEntityDrawOutline(lastEntity, false)
         end
-
         lastEntity = entity
 
-        if isHit then
+        if isHit and entity and entity > 0 and GetEntityType(entity) == 3 then
             DrawMarker(28, coords.x, coords.y, coords.z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.2, 0.2, 0.2, 255, 42, 24, 100, false, false, 0, true, false, false, false)
+            if changedEntity then SetEntityDrawOutline(entity, true) end
 
-            if changedEntity and entity and entity > 0 then
-				SetEntityDrawOutline(entity, true)
-			end
-
-            if IsDisabledControlJustPressed(0, 38) and entity and entity > 0 and GetEntityType(entity) == 3 then
-                doorId = exports.ox_doorlock:getDoorIdFromEntity(entity)
-                
-                if not doorId then
-                    
-                    local model = GetEntityModel(entity)
-                    local coords = GetEntityCoords(entity)
-                    local heading = GetEntityHeading(entity)
-                    doorId = {
-                        isNew = true,
-                        model = model,
-                        coords = coords,
-                        heading = heading
-                    }
+            local function getDoorData(ent)
+                local existingId = exports.ox_doorlock:getDoorIdFromEntity(ent)
+                if existingId then
+                    return { _existingId = existingId, _entity = ent }
                 end
+                local c = GetEntityCoords(ent)
+                return {
+                    isNew = true,
+                    model = GetEntityModel(ent),
+                    coords = { x = c.x, y = c.y, z = c.z },
+                    heading = GetEntityHeading(ent),
+                    _entity = ent
+                }
+            end
 
-                if lastEntity and lastEntity > 0 then
-                    SetEntityDrawOutline(lastEntity, false)
+            if IsDisabledControlJustPressed(0, 38) and #selectedDoors == 0 then
+                if lastEntity and lastEntity > 0 then SetEntityDrawOutline(lastEntity, false) end
+                lib.hideTextUI()
+                local data = getDoorData(entity)
+                if data._existingId then return data._existingId end
+                data._entity = nil
+                return data
+            end
+
+            if IsDisabledControlJustPressed(0, 47) then
+                local alreadyPicked = door1Entity == entity
+                if not alreadyPicked then
+                    local data = getDoorData(entity)
+                    table.insert(selectedDoors, data)
+
+                    if #selectedDoors == 1 then
+                        lib.hideTextUI()
+                        lib.showTextUI('[G] - Pick 2nd Door (2/2) | [H] - Cancel')
+                    elseif #selectedDoors == 2 then
+                        if lastEntity and lastEntity > 0 then SetEntityDrawOutline(lastEntity, false) end
+                        if door1Entity and door1Entity > 0 then SetEntityDrawOutline(door1Entity, false) end
+                        lib.hideTextUI()
+
+                        local function resolveDoor(d)
+                            if d._existingId then return d._existingId end
+                            d._entity = nil
+                            return d
+                        end
+
+                        return {
+                            isDouble = true,
+                            doors = { resolveDoor(selectedDoors[1]), resolveDoor(selectedDoors[2]) }
+                        }
+                    end
                 end
-                break
-			end
+            end
         end
 
-        if IsDisabledControlJustPressed(0, 104) then 
-            if lastEntity and lastEntity > 0 then
-                SetEntityDrawOutline(lastEntity, false)
-            end
+        if IsDisabledControlJustPressed(0, 74) then
+            if lastEntity and lastEntity > 0 then SetEntityDrawOutline(lastEntity, false) end
+            if door1Entity and door1Entity > 0 then SetEntityDrawOutline(door1Entity, false) end
             break
         end
     end
     lib.hideTextUI()
-    return doorId
+    return nil
 end
 
 exports('PolyCreator', polyCreator)

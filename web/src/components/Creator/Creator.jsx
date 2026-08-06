@@ -93,7 +93,11 @@ const Creator = () => {
       if (action === 'addDoor') {
         setFormData(prev => {
           const alreadyExists = prev.doors.some(door => {
-            if (typeof door === 'object' && typeof data === 'object') {
+            if (data?.isDouble && door?.isDouble) {
+              return door.doors?.[0]?.coords?.x === data.doors?.[0]?.coords?.x &&
+                door.doors?.[0]?.coords?.y === data.doors?.[0]?.coords?.y;
+            }
+            if (typeof door === 'object' && typeof data === 'object' && !data.isDouble) {
               return door.coords?.x === data.coords?.x && door.coords?.y === data.coords?.y;
             }
             return door === data;
@@ -291,7 +295,13 @@ const Creator = () => {
                     <div className="doors-tags">
                       {formData.doors.map((door, index) => (
                         <div key={index} className="door-tag">
-                          <span>{typeof door === 'object' ? `New Door (${Math.floor(door.coords.x)}, ${Math.floor(door.coords.y)})` : `ID: ${door}`}</span>
+                          <span>
+                            {door?.isDouble
+                              ? `New Double Door (${Math.floor(door.doors?.[0]?.coords?.x ?? 0)}, ${Math.floor(door.doors?.[0]?.coords?.y ?? 0)})`
+                              : typeof door === 'object' && door?.coords
+                                ? `New Door (${Math.floor(door.coords.x)}, ${Math.floor(door.coords.y)})`
+                                : `ID: ${door}`}
+                          </span>
                           <button
                             className="remove-door-btn"
                             onClick={() => setFormData(prev => ({ ...prev, doors: prev.doors.filter(d => d !== door) }))}

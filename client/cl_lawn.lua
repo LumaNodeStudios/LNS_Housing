@@ -577,23 +577,47 @@ function RegisterYardZone(p)
 end
 
 CreateThread(function()
+    local tickCount = 0
     while true do
-        Wait(2000)
-        if not Settings.Housing.Lawn or not Settings.Housing.Lawn.Enabled then goto skip end
+        Wait(1000)
+        if Settings.Housing.Lawn and Settings.Housing.Lawn.Enabled then
+            local ped = cache.ped or PlayerPedId()
 
-        local playerCoords = GetEntityCoords(cache.ped)
-        local renderDist = Settings.Housing.Lawn.RenderDistance or 80.0
+            if ActiveYardPropertyId and not MowingActive then
+                local vehicle = GetVehiclePedIsIn(ped, false)
+                if vehicle ~= 0 then
+                    local model = GetEntityModel(vehicle)
+                    local isVehicleMower = false
+                    local mowerVehs = Settings.Housing.Lawn.MowerVehicles or { 'mower' }
+                    for i = 1, #mowerVehs do
+                        if model == GetHashKey(mowerVehs[i]) then
+                            isVehicleMower = true
+                            break
+                        end
+                    end
+                    
+                    if isVehicleMower then
+                        StartMowing(ActiveYardPropertyId, true)
+                    end
+                end
+            end
 
-        for propertyId, center in pairs(YardCenters) do
-            local dist = #(playerCoords - center)
-            if dist <= renderDist then
-                LoadGrassForProperty(propertyId)
-            else
-                UnloadGrassForProperty(propertyId)
+            tickCount = tickCount + 1
+            if tickCount >= 2 then
+                tickCount = 0
+                local playerCoords = GetEntityCoords(ped)
+                local renderDist = Settings.Housing.Lawn.RenderDistance or 80.0
+
+                for propertyId, center in pairs(YardCenters) do
+                    local dist = #(playerCoords - center)
+                    if dist <= renderDist then
+                        LoadGrassForProperty(propertyId)
+                    else
+                        UnloadGrassForProperty(propertyId)
+                    end
+                end
             end
         end
-
-        ::skip::
     end
 end)
 
@@ -632,31 +656,6 @@ function CleanUpLawn()
     end
     YardZones = {}
 end
-
-CreateThread(function()
-    while true do
-        Wait(1000)
-        if Settings.Housing.Lawn and Settings.Housing.Lawn.Enabled and ActiveYardPropertyId and not MowingActive then
-            local ped = cache.ped
-            local vehicle = GetVehiclePedIsIn(ped, false)
-            if vehicle ~= 0 then
-                local model = GetEntityModel(vehicle)
-                local isVehicleMower = false
-                local mowerVehs = Settings.Housing.Lawn.MowerVehicles or { 'mower' }
-                for _, name in ipairs(mowerVehs) do
-                    if model == GetHashKey(name) then
-                        isVehicleMower = true
-                        break
-                    end
-                end
-                
-                if isVehicleMower then
-                    StartMowing(ActiveYardPropertyId, true)
-                end
-            end
-        end
-    end
-end)
 
 RegisterNetEvent('LNS_Housing:client:syncCutGrass', function(propertyId, indices)
     debugPrint('info', 'LNS_Housing:client:syncCutGrass received', {propertyId = propertyId, indicesCount = indices and #indices or 0})

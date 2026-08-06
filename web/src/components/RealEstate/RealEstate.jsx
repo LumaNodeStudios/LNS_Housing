@@ -143,7 +143,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
 
     const handleAddBlacklist = (e) => {
         e.preventDefault();
-        if (!newBlacklistCid || !newBlacklistName) return;
+        if (!newBlacklistCid) return;
 
         if (!window.GetParentResourceName) {
             setBlacklist(prev => [...prev, {
@@ -238,7 +238,11 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             if (action === 'addDoor') {
                 setFormData(prev => {
                     const alreadyExists = prev.doors.some(door => {
-                        if (typeof door === 'object' && typeof data === 'object') {
+                        if (data?.isDouble && door?.isDouble) {
+                            return door.doors?.[0]?.coords?.x === data.doors?.[0]?.coords?.x &&
+                                   door.doors?.[0]?.coords?.y === data.doors?.[0]?.coords?.y;
+                        }
+                        if (typeof door === 'object' && typeof data === 'object' && !data.isDouble) {
                             return door.coords?.x === data.coords?.x && door.coords?.y === data.coords?.y;
                         }
                         return door === data;
@@ -1110,6 +1114,16 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                 />
 
                                                 <div className="re-creator-input-field">
+                                                    <label><UserCheck size={12} /> Or Enter Client Server ID (Source)</label>
+                                                    <input
+                                                        type="number"
+                                                        placeholder="e.g. 1"
+                                                        value={selectedNearbyPlayer}
+                                                        onChange={(e) => setSelectedNearbyPlayer(e.target.value)}
+                                                    />
+                                                </div>
+
+                                                <div className="re-creator-input-field">
                                                     <label><DollarSign size={12} /> Contract Value ($)</label>
                                                     <input
                                                         required
@@ -1218,19 +1232,18 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     <div className="re-creator-input-field">
-                                        <label>Citizen ID</label>
+                                        <label>Server ID (Source)</label>
                                         <input
                                             required
                                             type="text"
-                                            placeholder="e.g. ABC12345"
+                                            placeholder="e.g. 1"
                                             value={newBlacklistCid}
-                                            onChange={(e) => setNewBlacklistCid(e.target.value.toUpperCase())}
+                                            onChange={(e) => setNewBlacklistCid(e.target.value)}
                                         />
                                     </div>
                                     <div className="re-creator-input-field">
-                                        <label>Resident Full Name</label>
+                                        <label>Resident Full Name (Optional if Online)</label>
                                         <input
-                                            required
                                             type="text"
                                             placeholder="e.g. James Doe"
                                             value={newBlacklistName}
@@ -1476,7 +1489,13 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                         ) : (
                                                             formData.doors.map((door, index) => (
                                                                 <div key={index} className="door-tag">
-                                                                    <span>{typeof door === 'object' ? `New Door (${Math.floor(door.coords.x)}, ${Math.floor(door.coords.y)})` : `ID: ${door}`}</span>
+                                                                    <span>
+                                                                        {door?.isDouble
+                                                                            ? `New Double Door (${Math.floor(door.doors?.[0]?.coords?.x ?? 0)}, ${Math.floor(door.doors?.[0]?.coords?.y ?? 0)})`
+                                                                            : typeof door === 'object' && door?.coords
+                                                                                ? `New Door (${Math.floor(door.coords.x)}, ${Math.floor(door.coords.y)})`
+                                                                                : `ID: ${door}`}
+                                                                    </span>
                                                                     <button
                                                                         className="remove-door-btn"
                                                                         type="button"

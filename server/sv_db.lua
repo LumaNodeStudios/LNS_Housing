@@ -189,8 +189,31 @@ function SaveProperty(id)
     })
 end
 
+local function GetPlayerProperties(source)
+    if not source then return {} end
+    local src = tonumber(source) or source
+    local identifier = nil
+
+    if type(src) == 'number' then
+        identifier = Bridge.Server.GetIdentifier(src)
+    elseif type(src) == 'string' then
+        identifier = Bridge.Server.GetIdentifier(src) or src
+    end
+
+    if not identifier then return {} end
+
+    local playerProps = {}
+    for _, p in pairs(Properties) do
+        if p.owner == identifier then
+            table.insert(playerProps, p)
+        end
+    end
+    return playerProps
+end
+
 exports('GetProperties', function() return Properties end)
 exports('GetProperty', function(id) return Properties[id] end)
+exports('GetPlayerProperties', GetPlayerProperties)
 
 MySQL.ready(function()
     MySQL.query.await([[

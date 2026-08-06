@@ -18,10 +18,10 @@ return {
     -- Real Estate Agency & Agent Settings
     ----------------------------------------------------------------------------
     RealEstate = {
-        Command = nil,                      -- Command to open the real estate menu (set to nil to disable)
+        Command = 'housing',                      -- Command to open the real estate menu (set to nil to disable)
         Item = {
-            Enabled = true,                 -- If true, players can use the item below to open the real estate menu
-            Name = 'lockpick',              -- Item name that opens the real estate (properties) menu when used
+            Enabled = false,                 -- If true, players can use the item below to open the real estate menu
+            Name = 'realestate_tablet',              -- Item name that opens the real estate (properties) menu when used
         },
         ContractDistance = 5.0,             -- Max distance to draft a contract (in meters)
         OnlyBuyViaContracts = false,        -- If true, players can only buy houses through a signed contract with an agent
@@ -52,6 +52,8 @@ return {
     -- Housing System Settings
     ----------------------------------------------------------------------------
     Housing = {
+        CanBreakIn = true,                  -- If true, houses can be lockpicked/broken into
+
         -- Access configurations for the house creator tool
         Creator = {
             Command = 'createhouse',        -- Command to initiate house creation
@@ -116,13 +118,12 @@ return {
             color = 3,                      -- Blip color ID
             scale = 0.8,
             label = "WIWANG Apartments",
-            coords = vec3(-826.53, -700.2, 27.06), -- Entrance vector coordinate
-            postal = '8083'                 -- Postal map code
+            coords = vec3(-826.53, -700.2, 27.06) -- Entrance vector coordinate
         }
     },
 
     ----------------------------------------------------------------------------
-    -- Stash & Storage Settings
+    -- Default Stash & Storage Settings
     ----------------------------------------------------------------------------
     Stash = {
         label = 'Property Storage',         -- Display label when opening the stash

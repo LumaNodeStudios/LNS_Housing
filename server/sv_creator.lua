@@ -59,7 +59,41 @@ lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
     elseif data.doors and #data.doors > 0 then
         local doorIds = {}
         for i, door in ipairs(data.doors) do
-            if type(door) == 'table' and door.isNew then
+            if type(door) == 'table' and door.isDouble then
+                local doorPanels = {}
+                for j, panel in ipairs(door.doors) do
+                    if type(panel) == 'table' and panel.isNew then
+                        doorPanels[j] = {
+                            model = panel.model,
+                            coords = vector3(panel.coords.x, panel.coords.y, panel.coords.z),
+                            heading = panel.heading
+                        }
+                    elseif type(panel) == 'number' then
+                        local panelData = nil
+                        if exports.ox_doorlock and exports.ox_doorlock.getDoor then
+                            pcall(function() panelData = exports.ox_doorlock:getDoor(panel) end)
+                        end
+                        if panelData and panelData.coords then
+                            doorPanels[j] = {
+                                model = panelData.model,
+                                coords = vector3(panelData.coords.x, panelData.coords.y, panelData.coords.z),
+                                heading = panelData.heading
+                            }
+                        end
+                    end
+                end
+                local newDoorId = exports.ox_doorlock:createDoor({
+                    name = (data.name or data.label or 'Property') .. ' Double Door ' .. i,
+                    doors = doorPanels,
+                    state = 1,
+                    maxDistance = 2.0
+                })
+                doorIds[#doorIds+1] = newDoorId
+                if i == 1 and door.doors and door.doors[1] and door.doors[1].coords then
+                    local c = door.doors[1].coords
+                    spawnCoords = vector4(c.x, c.y, c.z, door.doors[1].heading or 0.0)
+                end
+            elseif type(door) == 'table' and door.isNew then
                 local newDoorId = exports.ox_doorlock:createDoor({
                     name = (data.name or data.label or 'Property') .. ' Door ' .. i,
                     model = door.model,
