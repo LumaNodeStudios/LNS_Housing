@@ -67,3 +67,13 @@ dependencies {
 data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/starter_shells_k4mb1.ytyp'
 data_file 'AUDIO_WAVEPACK'  'sound/audiodirectory'
 data_file 'AUDIO_SOUNDDATA' 'sound/data/lns_data.dat'
+
+escrow_ignore {
+    'shared/*.lua',
+    'bridge/*.lua',
+    'stream/[Shells]/*.ydr',
+    'stream/[Shells]/*.ymf',
+    'stream/[Shells]/*.ytyp',
+    'stream/[Shells]/*.ymap',
+    'stream/[Shells]/*.ymap',
+}
