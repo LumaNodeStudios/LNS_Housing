@@ -15,6 +15,7 @@ const Panel = ({ data: initialData }) => {
     doors: true,
     storage: true,
     wardrobe: false,
+    furniture: false,
     panel: false
   });
   const [propertyData, setPropertyData] = useState(initialData || {
@@ -29,9 +30,11 @@ const Panel = ({ data: initialData }) => {
   const [securityHistory, setSecurityHistory] = useState([]);
   const [roommates, setRoommates] = useState([]);
   const [nearbyPlayers, setNearbyPlayers] = useState([]);
+  const [modalError, setModalError] = useState('');
 
   useEffect(() => {
     if (showAddModal && window.GetParentResourceName) {
+      setModalError('');
       fetch(`https://${window.GetParentResourceName()}/getNearbyPlayers`, {
         method: 'POST',
         body: JSON.stringify({})
@@ -152,22 +155,43 @@ const Panel = ({ data: initialData }) => {
         ...(data.permissions.entry || []),
         ...(data.permissions.storage || []),
         ...(data.permissions.wardrobe || []),
+        ...(data.permissions.furniture || []),
         ...(data.permissions.manage || [])
       ]);
 
       const residentList = Array.from(allCids).map(cid => ({
         id: cid,
-        name: cid === data.owner ? (data.ownerName || 'Owner') : (cid),
+        name: cid === data.owner ? (data.ownerName || 'Owner') : cid,
         citizenid: cid,
         isOwner: cid === data.owner,
         permissions: {
           doors: (data.permissions.entry || []).includes(cid),
           storage: (data.permissions.storage || []).includes(cid),
           wardrobe: (data.permissions.wardrobe || []).includes(cid),
+          furniture: (data.permissions.furniture || []).includes(cid),
           panel: (data.permissions.manage || []).includes(cid)
         }
       }));
       setRoommates(residentList);
+
+      // Resolve real names for all non-owner CIDs from the server (online + offline DB lookup).
+      const nonOwnerCids = Array.from(allCids).filter(cid => cid !== data.owner);
+      if (nonOwnerCids.length > 0 && window.GetParentResourceName) {
+        fetch(`https://${window.GetParentResourceName()}/resolveIdentifiers`, {
+          method: 'POST',
+          body: JSON.stringify({ citizenids: nonOwnerCids })
+        })
+          .then(res => res.json())
+          .then(resolved => {
+            if (!Array.isArray(resolved)) return;
+            const nameMap = {};
+            resolved.forEach(r => { if (r.citizenid) nameMap[r.citizenid] = r.name; });
+            setRoommates(prev => prev.map(r =>
+              r.isOwner ? r : { ...r, name: nameMap[r.citizenid] ?? r.name }
+            ));
+          })
+          .catch(() => { /* keep CID fallback names */ });
+      }
     }
   };
 
@@ -325,13 +349,14 @@ const Panel = ({ data: initialData }) => {
     const entry = updatedRoommates.filter(r => r.permissions.doors).map(r => r.citizenid);
     const storage = updatedRoommates.filter(r => r.permissions.storage).map(r => r.citizenid);
     const wardrobe = updatedRoommates.filter(r => r.permissions.wardrobe).map(r => r.citizenid);
+    const furniture = updatedRoommates.filter(r => r.permissions.furniture).map(r => r.citizenid);
     const manage = updatedRoommates.filter(r => r.permissions.panel).map(r => r.citizenid);
 
     fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/updateProperty`, {
       method: 'POST',
       body: JSON.stringify({
         id: propertyData.id,
-        permissions: { entry, storage, wardrobe, manage }
+        permissions: { entry, storage, wardrobe, furniture, manage }
       })
     });
   };
@@ -382,17 +407,17 @@ const Panel = ({ data: initialData }) => {
     }
 
     if (!resolved || !resolved.success) {
-      alert(resolved?.message || 'Failed to find player with that Server ID.');
+      setModalError(resolved?.message || 'Failed to find player with that Server ID.');
       return;
     }
 
     if (resolved.citizenid && propertyData && resolved.citizenid === propertyData.owner) {
-      alert('You cannot add yourself as a resident.');
+      setModalError('You cannot add yourself as a resident.');
       return;
     }
 
     const cid = resolved.citizenid;
-    const displayName = `${resolved.name} (ID: ${resolved.serverId})`;
+    const displayName = resolved.name;
 
     const newRoommate = {
       id: cid,
@@ -402,6 +427,7 @@ const Panel = ({ data: initialData }) => {
         doors: initialPermissions.doors,
         storage: initialPermissions.storage,
         wardrobe: initialPermissions.wardrobe,
+        furniture: initialPermissions.furniture,
         panel: initialPermissions.panel
       }
     };
@@ -418,6 +444,7 @@ const Panel = ({ data: initialData }) => {
       doors: true,
       storage: true,
       wardrobe: false,
+      furniture: false,
       panel: false
     });
     setShowAddModal(false);
@@ -680,6 +707,13 @@ const Panel = ({ data: initialData }) => {
                           disabled={person.isOwner}
                         >
                           <Shirt size={12} /> Wardrobe
+                        </button>
+                        <button
+                          className={`perm-toggle-btn ${person.permissions.furniture ? 'active' : ''}`}
+                          onClick={() => handleTogglePermission(person.id, 'furniture')}
+                          disabled={person.isOwner}
+                        >
+                          <Palette size={12} /> Furniture
                         </button>
                         <button
                           className={`perm-toggle-btn ${person.permissions.panel ? 'active' : ''}`}
@@ -946,12 +980,28 @@ const Panel = ({ data: initialData }) => {
             >
               <div className="modal-header">
                 <h3>Add New Resident</h3>
-                <button className="close-modal" onClick={() => setShowAddModal(false)}>
+                <button className="close-modal" onClick={() => { setShowAddModal(false); setModalError(''); }}>
                   <X size={16} />
                 </button>
               </div>
               <div className="modal-body">
                 <p>Enter the Server ID of the resident you wish to grant property permissions to, or select from nearby players.</p>
+                {modalError && (
+                  <div style={{
+                    background: 'rgba(239,68,68,0.12)',
+                    border: '1px solid rgba(239,68,68,0.35)',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    marginBottom: '10px',
+                    fontSize: '12px',
+                    color: '#fca5a5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    <span style={{ fontWeight: 700 }}>⚠</span> {modalError}
+                  </div>
+                )}
                 <div className="modal-input-group" style={{ marginBottom: '12px' }}>
                   <CustomSelect
                     label="Select Nearby Player"
@@ -993,6 +1043,12 @@ const Panel = ({ data: initialData }) => {
                       onClick={() => setInitialPermissions(prev => ({ ...prev, wardrobe: !prev.wardrobe }))}
                     >
                       <Shirt size={12} /> Wardrobe
+                    </div>
+                    <div
+                      className={`perm-toggle ${initialPermissions.furniture ? 'active' : ''}`}
+                      onClick={() => setInitialPermissions(prev => ({ ...prev, furniture: !prev.furniture }))}
+                    >
+                      <Palette size={12} /> Furniture
                     </div>
                     <div
                       className={`perm-toggle ${initialPermissions.panel ? 'active' : ''}`}

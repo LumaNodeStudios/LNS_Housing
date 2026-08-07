@@ -164,7 +164,7 @@ local function createApartmentZone(roomData)
                 LoadFurnitures(MyApartmentId)
             end
 
-            local hasManageAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', MyApartmentId, 'manage')
+            local hasManageAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', MyApartmentId, 'furniture')
             if hasManageAccess then
                 HasFurnitureManagePermission = true
                 if not Settings.FurnitureMenu or not Settings.FurnitureMenu.Radial or Settings.FurnitureMenu.Radial.Enabled then

@@ -42,7 +42,6 @@ async function loadFurnitureMappingsCache() {
         for (const row of rows || []) {
             furnitureMappingsCache[row.model] = row.url;
         }
-        console.log(`^2[LNS_Housing]^0 Loaded ${Object.keys(furnitureMappingsCache).length} furniture image mapping(s)`);
     } catch (e) {
         console.log('^1[LNS_Housing]^0 Failed to load furniture mappings: ' + e.message);
     }

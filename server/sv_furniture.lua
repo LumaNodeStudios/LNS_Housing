@@ -16,7 +16,7 @@ RegisterNetEvent('LNS_Housing:server:buyFurniture', function(propertyId, items, 
         return
     end
 
-    local hasAccess = CheckPermission(src, 'house', propertyId, 'manage')
+    local hasAccess = CheckPermission(src, 'house', propertyId, 'furniture')
     if not hasAccess then return end
 
     Bridge.Server.RemoveMoney(src, payType, totalPrice, "Bought furniture for house #" .. propertyId)
@@ -40,7 +40,7 @@ RegisterNetEvent('LNS_Housing:server:saveFurniture', function(propertyId, furnit
     if not p then return end
 
     local identifier = Bridge.Server.GetIdentifier(src)
-    local hasAccess = CheckPermission(src, 'house', propertyId, 'manage')
+    local hasAccess = CheckPermission(src, 'house', propertyId, 'furniture')
     if not hasAccess then return end
 
     p.furniture = furnitureData

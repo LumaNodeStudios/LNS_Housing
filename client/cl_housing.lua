@@ -883,7 +883,7 @@ function RegisterPropertyZones(p, forceShell)
                         LoadFurnitures(p.id)
                         TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', p.id)
 
-                        if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'manage') then
+                        if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'furniture') then
                             InsidePropertyId = p.id
                             HasFurnitureManagePermission = true
                             if not Settings.FurnitureMenu or not Settings.FurnitureMenu.Radial or Settings.FurnitureMenu.Radial.Enabled then
@@ -935,7 +935,7 @@ function RegisterPropertyZones(p, forceShell)
             debug = Settings.Debug.Zones,
             onEnter = function()
                 LoadFurnitures(p.id)
-                if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'manage') then
+                if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'furniture') then
                     InsidePropertyId = p.id
                     HasFurnitureManagePermission = true
                     if not Settings.FurnitureMenu or not Settings.FurnitureMenu.Radial or Settings.FurnitureMenu.Radial.Enabled then
@@ -974,7 +974,7 @@ function RegisterPropertyZones(p, forceShell)
                 distance = 40,
                 onEnter = function()
                     LoadFurnitures(p.id)
-                    if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'manage') then
+                    if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'furniture') then
                         InsidePropertyId = p.id
                         HasFurnitureManagePermission = true
                         if not Settings.FurnitureMenu or not Settings.FurnitureMenu.Radial or Settings.FurnitureMenu.Radial.Enabled then

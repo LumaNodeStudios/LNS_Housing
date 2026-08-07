@@ -32,6 +32,12 @@ RegisterNetEvent('LNS_Housing:server:updatePermissions', function(propertyId, pe
     SaveProperty(propertyId)
     SyncPropertyDoor(propertyId)
     TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
+    -- Bug 2 fix: notify sd-phone on every connected player to refresh their homes list.
+    -- This ensures a keyholder removed via the LNS_Housing panel UI immediately loses
+    -- the property from their phone without requiring sd-phone to track the old list.
+    if GetResourceState('sd-phone') == 'started' then
+        TriggerClientEvent('sd-phone:client:homes:refresh', -1)
+    end
 end)
 
 RegisterNetEvent('LNS_Housing:server:updateWallColor', function(propertyId, color)
@@ -166,6 +172,63 @@ lib.callback.register('LNS_Housing:server:resolvePlayerNames', function(source, 
         local name = Bridge.Server.GetPlayerName(sid)
         local cid = Bridge.Server.GetIdentifier(sid)
         table.insert(results, { id = sid, name = name, citizenid = cid })
+    end
+    return results
+end)
+
+--- Resolve a list of citizenids to { citizenid, name } records for the panel's keyholder display.
+--- Prefers online player names; falls back to the framework DB for offline residents.
+lib.callback.register('LNS_Housing:server:resolveIdentifiers', function(source, citizenids)
+    debugPrint('info', 'LNS_Housing:server:resolveIdentifiers called', {source = source, citizenids = citizenids})
+    if type(citizenids) ~= 'table' then return {} end
+
+    -- Build a cid → source map for all online players once.
+    local onlineMap = {}
+    for _, srcStr in ipairs(GetPlayers()) do
+        local sid = tonumber(srcStr)
+        if sid then
+            local cid = Bridge.Server.GetIdentifier(sid)
+            if cid then onlineMap[cid] = sid end
+        end
+    end
+
+    local results = {}
+    for _, cid in ipairs(citizenids) do
+        cid = tostring(cid)
+        local name = nil
+
+        -- Online fast-path.
+        local sid = onlineMap[cid]
+        if sid then
+            name = Bridge.Server.GetPlayerName(sid)
+        end
+
+        -- Offline DB fallback.
+        if not name or name == 'Unknown' then
+            if Bridge.Framework == 'esx' then
+                local ok, rows = pcall(MySQL.query.await, 'SELECT firstname, lastname FROM users WHERE identifier = ? LIMIT 1', { cid })
+                if ok and rows and rows[1] then
+                    local first = rows[1].firstname or ''
+                    local last  = rows[1].lastname or ''
+                    if first ~= '' or last ~= '' then name = first .. ' ' .. last end
+                end
+            else
+                local ok, rows = pcall(MySQL.query.await, 'SELECT charinfo FROM players WHERE citizenid = ? LIMIT 1', { cid })
+                if ok and rows and rows[1] then
+                    local ci = rows[1].charinfo
+                    if type(ci) == 'string' then
+                        local decoded = json.decode(ci)
+                        if decoded then
+                            local first = decoded.firstname or ''
+                            local last  = decoded.lastname or ''
+                            if first ~= '' or last ~= '' then name = first .. ' ' .. last end
+                        end
+                    end
+                end
+            end
+        end
+
+        table.insert(results, { citizenid = cid, name = name or cid })
     end
     return results
 end)

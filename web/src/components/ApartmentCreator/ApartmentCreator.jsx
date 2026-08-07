@@ -262,7 +262,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
         }
 
         if (!window.GetParentResourceName) {
-            alert(`Apartment Room #${numericId} ${isEdit ? 'updated' : 'created'} successfully in mock environment!`);
+            console.log(`Apartment Room #${numericId} ${isEdit ? 'updated' : 'created'} successfully in mock environment!`);
             onClose();
             return;
         }

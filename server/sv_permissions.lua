@@ -197,6 +197,18 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
             return true
         end
 
+        if accessType == 'furniture' then
+            local identifier = Bridge.Server.GetIdentifier(source)
+            if not p.owner then return false end
+            if p.owner == identifier then return true end
+            if p.permissions and p.permissions['furniture'] then
+                for _, cid in ipairs(p.permissions['furniture']) do
+                    if cid == identifier then return true end
+                end
+            end
+            return false
+        end
+
         if not ignoreTemp then
             local playerJob = Bridge.Server.GetPlayerJob(source)
             if playerJob and playerJob.name == 'police' then
@@ -295,7 +307,7 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
             if isOwner then return false end
             local result = MySQL.single.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ?', {roomId})
             if not result then return false end
-            local permissions = json.decode(result.permissions or '{"entry":[], "storage":[], "wardrobe":[], "manage":[]}')
+            local permissions = json.decode(result.permissions or '{"entry":[], "storage":[], "wardrobe":[], "furniture":[], "manage":[]}')
             if permissions['entry'] then
                 for _, cid in ipairs(permissions['entry']) do
                     if cid == citizenid then return false end
@@ -309,7 +321,7 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
             if isOwner then return false end
             local result = MySQL.single.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ?', {roomId})
             if not result then return false end
-            local permissions = json.decode(result.permissions or '{"entry":[], "storage":[], "wardrobe":[], "manage":[]}')
+            local permissions = json.decode(result.permissions or '{"entry":[], "storage":[], "wardrobe":[], "furniture":[], "manage":[]}')
             if permissions['storage'] then
                 for _, cid in ipairs(permissions['storage']) do
                     if cid == citizenid then return false end
@@ -334,7 +346,7 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
         if result then
             if result.citizenid == citizenid then return true end
             
-            local permissions = json.decode(result.permissions or '{"entry":[], "storage":[], "wardrobe":[], "manage":[]}')
+            local permissions = json.decode(result.permissions or '{"entry":[], "storage":[], "wardrobe":[], "furniture":[], "manage":[]}')
             if permissions[accessType] then
                 for _, cid in ipairs(permissions[accessType]) do
                     if cid == citizenid then return true end

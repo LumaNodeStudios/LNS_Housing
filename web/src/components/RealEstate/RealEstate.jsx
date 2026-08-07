@@ -272,7 +272,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         if (!targetId) return;
 
         if (!window.GetParentResourceName) {
-            alert(`Contract drafted for Player ID: ${targetId}`);
+            console.log(`Contract drafted for Player ID: ${targetId}`);
             setActiveTab('browse');
             return;
         }
@@ -332,7 +332,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
 
     const handleUpdateProperty = () => {
         if (!window.GetParentResourceName) {
-            alert(`Listing updated locally: ${formData.name}`);
+            console.log(`Listing updated locally: ${formData.name}`);
             setEditingPropertyId(null);
             resetCreatorForm();
             return;
@@ -380,7 +380,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             confirmTextColor: '#fda4af',
             onConfirm: () => {
                 if (!window.GetParentResourceName) {
-                    alert(`Deleted locally: #${id}`);
+                    console.log(`Deleted locally: #${id}`);
                     setConfirmModal(null);
                     return;
                 }
@@ -404,7 +404,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             confirmTextColor: '#fda4af',
             onConfirm: () => {
                 if (!window.GetParentResourceName) {
-                    alert(`Tenant evicted locally: #${id}`);
+                    console.log(`Tenant evicted locally: #${id}`);
                     setConfirmModal(null);
                     return;
                 }
@@ -428,7 +428,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             confirmTextColor: '#fda4af',
             onConfirm: () => {
                 if (!window.GetParentResourceName) {
-                    alert(`Lease terminated locally: #${id}`);
+                    console.log(`Lease terminated locally: #${id}`);
                     setConfirmModal(null);
                     return;
                 }
@@ -918,7 +918,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                                         </button>
                                                                         <button className="accept-btn" onClick={() => {
                                                                             if (!window.GetParentResourceName) {
-                                                                                alert('Rent paid locally!');
+                                                                                console.log('Rent paid locally!');
                                                                                 return;
                                                                             }
                                                                             fetch(`https://${window.GetParentResourceName()}/payRent`, {
