@@ -1054,6 +1054,9 @@ function RegisterPropertyEntranceTargets(p)
         EntranceTargets[id] = nil
     end
 
+    if p.isApartment then return end
+
+
     local doorId = p.door_id
     if (not doorId or doorId == 0) and p.doors and #p.doors > 0 then
         doorId = p.doors[1]

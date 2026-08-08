@@ -1168,45 +1168,6 @@ lib.callback.register('LNS_Housing:server:updateApartment', function(source, dat
     return false
 end)
 
-RegisterNetEvent('LNS_Housing:server:toggleApartmentLock', function(roomId)
-    local src = source
-    local pk = Settings.Security.PhysicalKeys
-    local hasAccess
-
-    if pk and pk.Enabled then
-        hasAccess = CheckPermission(src, 'apartment', roomId, 'entry')
-    else
-        hasAccess = CheckPermission(src, 'apartment', roomId, 'entry') or CheckPermission(src, 'apartment', roomId, 'manage')
-    end
-
-    if not hasAccess then
-        Bridge.Server.Notify(src, 'You do not have key access to lock/unlock this apartment.', 'error')
-        return
-    end
-
-    local doorId = roomDoors[roomId]
-    if doorId then
-        local currentState = 1
-        local doorData = nil
-        if exports.ox_doorlock and exports.ox_doorlock.getDoor then
-            pcall(function() doorData = exports.ox_doorlock:getDoor(doorId) end)
-        elseif exports.ox_doorlock and exports.ox_doorlock.getDoorData then
-            pcall(function() doorData = exports.ox_doorlock:getDoorData(doorId) end)
-        end
-        if doorData then
-            currentState = doorData.state
-        end
-
-        local newState = currentState == 1 and 0 or 1
-        exports.ox_doorlock:setDoorState(doorId, newState)
-
-        local stateStr = newState == 1 and 'locked' or 'unlocked'
-        Bridge.Server.Notify(src, 'Apartment is now ' .. stateStr .. '.', 'success')
-    else
-        Bridge.Server.Notify(src, 'Door lock not found for this apartment.', 'error')
-    end
-end)
-
 RegisterNetEvent('LNS_Housing:server:ringApartmentDoorbell', function(roomId)
     local roomData = getRoomDataById(roomId)
     if not roomData or not roomData.doorCoords then return end
