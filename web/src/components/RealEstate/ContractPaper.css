@@ -1,0 +1,426 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Cinzel:wght@600;700;800&family=Dancing+Script:wght@700&family=Outfit:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&display=swap');
+
+/* Standalone Contract Paper NUI Overlay */
+.re-paper-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  padding: 16px;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+/* Grand Executive Portrait Paper Sheet - 480px Portrait Canvas */
+.re-paper-document {
+  width: 480px;
+  max-width: 94vw;
+  max-height: 85vh;
+  background: #ffffff;
+  background-image: linear-gradient(180deg, #ffffff 0%, #faf8f5 100%);
+  border-radius: 10px;
+  padding: 26px 32px 22px 32px;
+  color: #0f172a;
+  font-family: var(--font-main);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  box-sizing: border-box;
+  position: relative;
+  pointer-events: auto;
+}
+
+.re-paper-document::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Top Crest Header */
+.doc-crest-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.doc-crest-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--primary);
+  box-shadow: 0 3px 10px rgba(var(--primary-rgb), 0.12);
+  margin-bottom: 4px;
+}
+
+.doc-crest-title {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.doc-crest-sub {
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.9px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.doc-header-divider {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.doc-header-divider .divider-line {
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.doc-header-divider .divider-badge {
+  font-family: 'Cinzel', serif;
+  font-size: 7.5px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  color: #94a3b8;
+  background: #ffffff;
+  padding: 0 4px;
+}
+
+/* Metadata Bar */
+.doc-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+}
+
+.doc-meta-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.doc-meta-item.right {
+  align-items: flex-end;
+}
+
+.meta-lbl {
+  font-size: 7.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #64748b;
+}
+
+.meta-val {
+  font-family: monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Title & Status Row */
+.doc-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #e2e8f0;
+  gap: 12px;
+}
+
+.doc-main-heading {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+.doc-status-pill {
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  width: fit-content;
+  flex-shrink: 0;
+}
+
+.doc-status-pill.signed {
+  background: rgba(var(--success-rgb), 0.1);
+  color: var(--success);
+  border: 1px solid rgba(var(--success-rgb), 0.3);
+}
+
+.doc-status-pill.pending {
+  background: rgba(var(--warning-rgb), 0.1);
+  color: var(--warning);
+  border: 1px solid rgba(var(--warning-rgb), 0.3);
+}
+
+/* Legal Preamble */
+.doc-paragraph {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #334155;
+  margin: 0 0 7px 0;
+}
+
+.doc-paragraph.preamble {
+  font-size: 11.5px;
+  background: #fafaf9;
+  padding: 7px 11px;
+  border-left: 3px solid var(--primary);
+  border-radius: 0 5px 5px 0;
+  margin-bottom: 8px;
+}
+
+.doc-paragraph strong {
+  color: #0f172a;
+}
+
+/* Official Deed Summary Table - Single Column Stacked (No Internal Clipping) */
+.doc-summary-table {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.doc-summary-table .table-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 10.5px;
+}
+
+.doc-summary-table .table-row:last-child {
+  border-bottom: none;
+}
+
+.doc-summary-table .table-row.total {
+  background: rgba(var(--primary-rgb), 0.08);
+  font-weight: 800;
+  padding: 6px 10px;
+  border-top: 1.5px solid #cbd5e1;
+}
+
+.doc-summary-table .cell-lbl {
+  color: #64748b;
+  font-size: 10px;
+}
+
+.doc-summary-table .table-row.total .cell-lbl {
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.doc-summary-table .cell-val {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+/* Terms & Covenants Note */
+.doc-paragraph.terms-note {
+  font-size: 9.5px;
+  line-height: 1.4;
+  color: #475569;
+  background: #fafaf9;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  padding: 6px 10px;
+  margin-top: 4px;
+  margin-bottom: 10px;
+}
+
+/* Formal Signature Blocks */
+.doc-signatures-wrapper {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 6px;
+  margin-bottom: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.sig-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.sig-header {
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+.sig-cursive-area {
+  height: 30px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.sig-handwritten {
+  font-family: 'Dancing Script', 'Caveat', cursive;
+  font-size: 22px;
+  line-height: 1;
+  user-select: none;
+}
+
+.sig-handwritten.agent {
+  color: #0f172a;
+}
+
+.sig-handwritten.client {
+  color: var(--primary-dark);
+}
+
+.sig-action-btn {
+  width: 100%;
+  height: 28px;
+  border-radius: 4px;
+  background: rgba(var(--primary-rgb), 0.08);
+  border: 1px dashed var(--primary);
+  color: var(--primary-dark);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.sig-action-btn:hover {
+  background: rgba(var(--primary-rgb), 0.18);
+  border-style: solid;
+}
+
+.sig-action-btn.signing {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.sig-underline {
+  width: 100%;
+  height: 1px;
+  background: #94a3b8;
+  margin: 3px 0 2px 0;
+}
+
+.sig-caption {
+  font-size: 8.5px;
+  color: #64748b;
+}
+
+/* Footer Action Buttons */
+.doc-footer-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 2px double #e2e8f0;
+}
+
+.footer-right {
+  display: flex;
+  gap: 6px;
+}
+
+.doc-btn {
+  padding: 7.5px 16px;
+  border-radius: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  border: none;
+  font-family: var(--font-main);
+}
+
+.doc-btn.decline {
+  background: rgba(var(--danger-rgb), 0.08);
+  color: var(--danger);
+  border: 1px solid rgba(var(--danger-rgb), 0.25);
+}
+
+.doc-btn.decline:hover {
+  background: rgba(var(--danger-rgb), 0.18);
+  border-color: var(--danger);
+}
+
+.doc-btn.close {
+  background: #1e293b;
+  color: #ffffff;
+  border: none;
+}
+
+.doc-btn.close:hover {
+  background: #0f172a;
+}
+
+.doc-btn.sign {
+  background: var(--primary);
+  color: var(--primary-text);
+  font-weight: 800;
+  box-shadow: 0 3px 12px var(--primary-glow);
+}
+
+.doc-btn.sign:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px var(--primary-glow);
+}
+
+.doc-btn.sign:disabled {
+  opacity: 0.7;
+  pointer-events: none;
+  transform: none;
+}

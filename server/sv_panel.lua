@@ -144,7 +144,7 @@ lib.callback.register('LNS_Housing:server:getPendingContracts', function(source)
     debugPrint('info', 'LNS_Housing:server:getPendingContracts called', {source = source})
     local cid = Bridge.Server.GetIdentifier(source)
     local results = MySQL.query.await([[
-        SELECT c.*, p.label as property_label, p.image as property_image
+        SELECT c.*, p.label as property_label, p.image as property_image, p.garage as garage, p.metadata as property_metadata
         FROM housing_contracts c
         JOIN housing_properties p ON c.property_id = p.id
         WHERE c.client_cid = ? AND c.status = 'pending'
@@ -155,7 +155,7 @@ end)
 lib.callback.register('LNS_Housing:server:getAgencyContracts', function(source, agencyName)
     debugPrint('info', 'LNS_Housing:server:getAgencyContracts called', {source = source, agencyName = agencyName})
     local results = MySQL.query.await([[
-        SELECT c.*, p.label as property_label, p.image as property_image
+        SELECT c.*, p.label as property_label, p.image as property_image, p.garage as garage, p.metadata as property_metadata
         FROM housing_contracts c
         JOIN housing_properties p ON c.property_id = p.id
         WHERE c.agency = ?
@@ -278,19 +278,20 @@ RegisterNetEvent('LNS_Housing:server:createContract', function(data)
 
     local propertyId = tonumber(data.propertyId)
     local targetId = tonumber(data.targetId)
-    if targetId == src then
+    --[[if targetId == src then
         Bridge.Server.Notify(src, "You cannot draft a contract for yourself.", "error")
         return
-    end
-    local price = tonumber(data.price)
-    local contractType = data.type or 'buy'
-    local commissionRate = tonumber(data.commissionRate) or 10
-
+    end]]
     local p = Properties[propertyId]
     if not p or p.owner then
         Bridge.Server.Notify(src, "Property is not available or already owned.", "error")
         return
     end
+
+    -- Strictly enforce the property's configured market/rental price from server state
+    local price = tonumber(p.price) or tonumber(data.price)
+    local contractType = p.sale_type or data.type or 'buy'
+    local commissionRate = tonumber(data.commissionRate) or 10
 
     local targetPed = GetPlayerPed(targetId)
     if not targetPed or targetPed == 0 then

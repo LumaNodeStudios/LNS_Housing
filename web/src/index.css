@@ -133,8 +133,8 @@ button:hover {
 
 .panel-container,
 .re-container,
+.re-paper-overlay,
 .apt-creator-modal,
 .furniture-menu-container {
   pointer-events: auto;
 }
-
