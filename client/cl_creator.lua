@@ -1,6 +1,39 @@
 local Settings = lib.load('shared.settings')
 local CAMERA_PROPS = Settings.Security.CameraProps or { `prop_cctv_cam_07a` }
 
+RegisterNUICallback('createHouse', function(data, cb)
+    debugPrint('info', 'NUI callback: createHouse', data)
+    SetNuiFocus(false, false)
+
+    local zoneCoords = nil
+
+    if data.zone_data and data.zone_data.points and #data.zone_data.points > 0 then
+        local sumX, sumY, sumZ = 0, 0, 0
+        local count = #data.zone_data.points
+        for _, pt in ipairs(data.zone_data.points) do
+            sumX = sumX + pt.x
+            sumY = sumY + pt.y
+            sumZ = sumZ + pt.z
+        end
+        zoneCoords = vec3(sumX / count, sumY / count, sumZ / count)
+    elseif data.entranceCoords then
+        zoneCoords = vec3(data.entranceCoords.x, data.entranceCoords.y, data.entranceCoords.z)
+    else
+        zoneCoords = GetEntityCoords(cache.ped)
+    end
+
+    data.region = GetLabelText(GetNameOfZone(zoneCoords.x, zoneCoords.y, zoneCoords.z))
+
+    local success = lib.callback.await('LNS_Housing:server:createHouse', false, data)
+    if success then
+        Bridge.Client.Notify('House created successfully!', 'success')
+    else
+        Bridge.Client.Notify('Failed to create house.', 'error')
+    end
+    SendNUIMessage({ action = 'closeUI' })
+    cb('ok')
+end)
+
 RegisterNUICallback('pickDoor', function(_, cb)
     debugPrint('info', 'NUI callback: pickDoor')
     SendNUIMessage({ action = 'toggleVisibility', data = { visible = false } })
@@ -574,3 +607,26 @@ RegisterNUICallback('pickGarageSpawnCoords', function(_, cb)
         cb(nil)
     end
 end)
+
+if Settings.Housing and Settings.Housing.Creator and Settings.Housing.Creator.Command then
+    RegisterCommand(Settings.Housing.Creator.Command, function(source, args, rawCommand)
+        debugPrint('info', 'Creator command run', {args = args})
+        local hasPermission = lib.callback.await('LNS_Housing:server:checkPermission', false, 'realestate')
+        if not hasPermission then
+            Bridge.Client.Notify('You do not have permission to use this command.', 'error')
+            return
+        end
+
+        local properties = lib.callback.await('LNS_Housing:server:getProperties', false)
+        SendNUIMessage({
+            action = 'openRealEstate',
+            data = {
+                properties = properties,
+                hasPermission = true,
+                activeTab = 'creator',
+                onlyBuyViaContracts = Settings.RealEstate.OnlyBuyViaContracts
+            }
+        })
+        SetNuiFocus(true, true)
+    end, false)
+end

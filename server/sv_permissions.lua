@@ -19,7 +19,6 @@ function GetAgencyLabel(jobName)
     return formatted
 end
 
-
 function IsKeyholder(source, targetId, isApartment)
     local identifier = Bridge.Server.GetIdentifier(source)
     if not identifier then return false end

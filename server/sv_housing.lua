@@ -1,10 +1,9 @@
 local Settings = lib.load('shared.settings')
-
-TemporaryAccess = {
-    doors = {},
-    stashes = {}
-}
-
+local MotionAlertCooldown = {}
+local ActiveAlarms = {}
+local LockedStashes = {}
+TemporaryAccess = { doors = {}, stashes = {} }
+FailedAttempts = {}
 
 function IsRentOverdue(p)
     if not p or p.sale_type ~= 'rent' or not p.owner then return false end
@@ -610,8 +609,6 @@ RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgr
     end
 end)
 
-local MotionAlertCooldown = {}
-
 RegisterNetEvent('LNS_Housing:server:motionDetected', function(propertyId)
     local src = source
     debugPrint('info', 'LNS_Housing:server:motionDetected received', {src = src, propertyId = propertyId})
@@ -651,8 +648,6 @@ RegisterNetEvent('LNS_Housing:server:leavePropertyBucket', function()
     SetPlayerRoutingBucket(src, 0)
 end)
 
-FailedAttempts = {}
-
 local function GetEntranceCoordsServer(p)
     if not p then return nil end
 
@@ -686,8 +681,6 @@ local function GetEntranceCoordsServer(p)
 
     return nil
 end
-
-local ActiveAlarms = {}
 
 function TriggerHouseAlarm(propertyId)
     if ActiveAlarms[propertyId] then return end
@@ -800,7 +793,6 @@ exports('ToggleLock', function(propertyId)
     local p = Properties[propertyId]
     if not p then return nil end
 
-    -- Collect all door IDs for this property (supports both single door_id and multi-door arrays)
     local doorsToToggle = {}
     if p.doors and #p.doors > 0 then
         doorsToToggle = p.doors
@@ -811,7 +803,6 @@ exports('ToggleLock', function(propertyId)
     local newLockedState
 
     if #doorsToToggle > 0 then
-        -- Derive new state from the first door's current ox_doorlock state
         local firstDoorId = doorsToToggle[1]
         local doorData = nil
         if exports.ox_doorlock and exports.ox_doorlock.getDoor then
@@ -821,13 +812,11 @@ exports('ToggleLock', function(propertyId)
         end
         local currentState = doorData and doorData.state or (p.metadata.locked and 1 or 0)
         local newState = currentState == 1 and 0 or 1
-        -- Apply to every door on the property
         for _, doorId in ipairs(doorsToToggle) do
             pcall(function() exports.ox_doorlock:setDoorState(doorId, newState) end)
         end
         newLockedState = newState == 1
     else
-        -- No ox_doorlock door registered; just flip the metadata flag
         if p.metadata.locked == nil then
             p.metadata.locked = true
         end
@@ -901,8 +890,6 @@ exports('RemoveKey', function(propertyId, targetIdentifier)
     end
     return false
 end)
-
-local LockedStashes = {}
 
 RegisterNetEvent('LNS_Housing:server:toggleStashLock', function(propertyId, stashId)
     local src = source

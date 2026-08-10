@@ -24,122 +24,11 @@ Properties = {}
 EntranceTargets = {}
 LoadedFurniture = {}
 
-RegisterCommand(Settings.Housing.Creator.Command, function(source, args, rawCommand)
-    debugPrint('info', 'Creator command run', {args = args})
-    local hasPermission = lib.callback.await('LNS_Housing:server:checkPermission', false, 'realestate')
-    if not hasPermission then
-        Bridge.Client.Notify('You do not have permission to use this command.', 'error')
-        return
-    end
-
-    local properties = lib.callback.await('LNS_Housing:server:getProperties', false)
-    SendNUIMessage({
-        action = 'openRealEstate',
-        data = {
-            properties = properties,
-            hasPermission = true,
-            activeTab = 'creator',
-            onlyBuyViaContracts = Settings.RealEstate.OnlyBuyViaContracts
-        }
-    })
-    SetNuiFocus(true, true)
-end, false)
-
-
-RegisterNUICallback('createHouse', function(data, cb)
-    debugPrint('info', 'NUI callback: createHouse', data)
-    SetNuiFocus(false, false)
-
-    local zoneCoords = nil
-
-    if data.zone_data and data.zone_data.points and #data.zone_data.points > 0 then
-        local sumX, sumY, sumZ = 0, 0, 0
-        local count = #data.zone_data.points
-        for _, pt in ipairs(data.zone_data.points) do
-            sumX = sumX + pt.x
-            sumY = sumY + pt.y
-            sumZ = sumZ + pt.z
-        end
-        zoneCoords = vec3(sumX / count, sumY / count, sumZ / count)
-    elseif data.entranceCoords then
-        zoneCoords = vec3(data.entranceCoords.x, data.entranceCoords.y, data.entranceCoords.z)
-    else
-        zoneCoords = GetEntityCoords(cache.ped)
-    end
-
-    data.region = GetLabelText(GetNameOfZone(zoneCoords.x, zoneCoords.y, zoneCoords.z))
-
-    local success = lib.callback.await('LNS_Housing:server:createHouse', false, data)
-    if success then
-        Bridge.Client.Notify('House created successfully!', 'success')
-    else
-        Bridge.Client.Notify('Failed to create house.', 'error')
-    end
-    SendNUIMessage({ action = 'closeUI' })
-    cb('ok')
-end)
-
 RegisterNUICallback('closeUI', function(_, cb)
     debugPrint('info', 'NUI callback: closeUI')
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'closeUI' })
     cb('ok')
-end)
-
-RegisterNUICallback('placeBid', function(data, cb)
-    debugPrint('info', 'NUI callback: placeBid', data)
-    TriggerServerEvent('LNS_Housing:server:placeBid', data)
-    cb('ok')
-end)
-
-RegisterNUICallback('controlAuction', function(data, cb)
-    debugPrint('info', 'NUI callback: controlAuction', data)
-    TriggerServerEvent('LNS_Housing:server:controlAuction', data)
-    cb('ok')
-end)
-
-RegisterNUICallback('getNearbyPlayers', function(_, cb)
-    debugPrint('info', 'NUI callback: getNearbyPlayers')
-    local players = GetActivePlayers()
-    local playerIds = {}
-    local myServerId = GetPlayerServerId(PlayerId())
-    for _, player in ipairs(players) do
-        local sid = GetPlayerServerId(player)
-        if sid ~= myServerId then
-            table.insert(playerIds, sid)
-        end
-    end
-    
-    local resolved = lib.callback.await('LNS_Housing:server:resolvePlayerNames', false, playerIds)
-    cb(resolved or {})
-end)
-
-RegisterNUICallback('createContract', function(data, cb)
-    debugPrint('info', 'NUI callback: createContract', data)
-    SetNuiFocus(false, false)
-    TriggerServerEvent('LNS_Housing:server:createContract', data)
-    SendNUIMessage({ action = 'closeUI' })
-    cb('ok')
-end)
-
-RegisterNUICallback('getPendingContracts', function(_, cb)
-    debugPrint('info', 'NUI callback: getPendingContracts')
-    local results = lib.callback.await('LNS_Housing:server:getPendingContracts', false)
-    cb(results or {})
-end)
-
-RegisterNUICallback('getAgencyContracts', function(data, cb)
-    debugPrint('info', 'NUI callback: getAgencyContracts', data)
-    local results = lib.callback.await('LNS_Housing:server:getAgencyContracts', false, data.agency)
-    cb(results or {})
-end)
-
-RegisterNUICallback('respondToContract', function(data, cb)
-    debugPrint('info', 'NUI callback: respondToContract', data)
-    SetNuiFocus(false, false)
-    local success = lib.callback.await('LNS_Housing:server:respondToContract', false, data.id, data.action)
-    SendNUIMessage({ action = 'closeUI' })
-    cb(success)
 end)
 
 RegisterNUICallback('viewDoorbellCamera', function(data, cb)
@@ -2063,3 +1952,161 @@ RegisterNetEvent('LNS_Housing:client:triggerHouseDoorbell', function(entranceCoo
         ReleaseScriptAudioBank()
     end
 end)
+
+function GetPropertyCoords(p)
+    if not p then return nil end
+    
+    if p.metadata and p.metadata.spawn then
+        local sp = p.metadata.spawn
+        return vector4(sp.x, sp.y, sp.z, sp.h or sp.w or 0.0)
+    end
+    
+    return nil
+end
+
+function GetEntranceCoordsAndHeading(p)
+    if not p then return nil, 0.0 end
+
+    if p.metadata and p.metadata.entrance then
+        local ent = p.metadata.entrance
+        return vec3(ent.x, ent.y, ent.z), ent.h or ent.w or 0.0
+    end
+
+    local doorId = p.door_id
+    if (not doorId or doorId == 0) and p.doors and #p.doors > 0 then
+        doorId = p.doors[1]
+    end
+
+    if doorId and doorId ~= 0 then
+        local door = GetOxDoorlockDoor(doorId)
+        if door and door.coords then
+            return vec3(door.coords.x, door.coords.y, door.coords.z), door.heading or 0.0
+        end
+    end
+
+    local propCoords = GetPropertyCoords(p)
+    if propCoords then
+        return vec3(propCoords.x, propCoords.y, propCoords.z), propCoords.w or 0.0
+    end
+
+    if p.zone_data and p.zone_data.points and #p.zone_data.points > 0 then
+        local sumX, sumY, sumZ = 0, 0, 0
+        local count = #p.zone_data.points
+        for _, pt in ipairs(p.zone_data.points) do
+            sumX = sumX + pt.x
+            sumY = sumY + pt.y
+            sumZ = sumZ + pt.z
+        end
+        return vec3(sumX / count, sumY / count, sumZ / count), 0.0
+    end
+
+    return nil, 0.0
+end
+
+function GetPropertyInsideCoords(p)
+    if not p then return nil end
+
+    if p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
+        local shellName = p.metadata.shell or 'Standard Motel'
+        local shellData = (Settings.IPLs and Settings.IPLs[shellName]) or Settings.Shells[shellName]
+        if shellData then
+            if shellData.ipls then
+                return vector4(shellData.coords.x, shellData.coords.y, shellData.coords.z, shellData.coords.w or 0.0)
+            end
+            local doorCoords = GetEntranceCoords(p)
+            if doorCoords then
+                local shellCoords = vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0)
+                local doorOffset = shellData.doorOffset
+                return vector4(
+                    shellCoords.x + doorOffset.x,
+                    shellCoords.y + doorOffset.y,
+                    shellCoords.z + doorOffset.z,
+                    doorOffset.h or 0.0
+                )
+            end
+        end
+    else
+        local coords = GetPropertyCoords(p)
+        local heading = coords and coords.w or 0.0
+
+        local entranceCoords, entranceHeading = GetEntranceCoordsAndHeading(p)
+        local isCustomSpawn = false
+        if coords and entranceCoords then
+            if #(vec3(coords.x, coords.y, coords.z) - entranceCoords) > 2.5 then
+                isCustomSpawn = true
+            end
+        end
+
+        if not isCustomSpawn and entranceCoords then
+            local rad = math.rad(entranceHeading)
+            local forward = vec3(-math.sin(rad), math.cos(rad), 0.0)
+            local pointForward = entranceCoords + forward * 1.5
+            local pointBackward = entranceCoords - forward * 1.5
+
+            if IsCoordsInsidePropertyZone(p.id, pointForward) then
+                return vector4(pointForward.x, pointForward.y, pointForward.z, entranceHeading)
+            elseif IsCoordsInsidePropertyZone(p.id, pointBackward) then
+                return vector4(pointBackward.x, pointBackward.y, pointBackward.z, (entranceHeading + 180.0) % 360.0)
+            end
+        end
+
+        return coords
+    end
+
+    return GetPropertyCoords(p)
+end
+
+function SpawnInHouse(id)
+    if not Properties or not Properties[id] then
+        Properties = lib.callback.await('LNS_Housing:server:getProperties', false) or {}
+    end
+    local p = Properties[id]
+    if p then
+        RegisterPropertyZones(p, true)
+
+        if p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
+            local shellName = p.metadata.shell or 'Standard Motel'
+            local shellData = (Settings.IPLs and Settings.IPLs[shellName]) or Settings.Shells[shellName]
+            local isIpl = shellData and shellData.ipls ~= nil
+            local doorCoords = GetEntranceCoords(p)
+            if doorCoords or isIpl then
+                local shellCoords
+                if isIpl and shellData then
+                    shellCoords = vec3(shellData.coords.x, shellData.coords.y, shellData.coords.z)
+                else
+                    shellCoords = doorCoords and vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0) or vec3(0,0,0)
+                end
+                SpawnShellForProperty(id, p.metadata.shell, shellCoords)
+            end
+        end
+        local coords = GetPropertyInsideCoords(p)
+        if coords then
+            local ped = cache.ped
+            DoScreenFadeOut(500)
+            while not IsScreenFadedOut() do Wait(0) end
+            
+            FreezeEntityPosition(PlayerPedId(), true)
+            SetEntityCoords(PlayerPedId(), coords.x, coords.y, coords.z, false, false, false, false)
+            SetEntityHeading(PlayerPedId(), coords.w)
+            
+            TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', id)
+            LoadFurnitures(id)
+            
+            -- Temp fix for 50/50 chance to fall thru
+            RequestCollisionAtCoord(coords.x, coords.y, coords.z)
+            local start = GetGameTimer()
+            while not HasCollisionLoadedAroundEntity(PlayerPedId()) and (GetGameTimer() - start) < 2000 do
+                Wait(50)
+                RequestCollisionAtCoord(coords.x, coords.y, coords.z)
+            end
+            Wait(150)
+            
+            SetEntityCoords(PlayerPedId(), coords.x, coords.y, coords.z, false, false, false, false)
+            FreezeEntityPosition(PlayerPedId(), false)
+            
+            DoScreenFadeIn(1000)
+            return true
+        end
+    end
+    return false
+end

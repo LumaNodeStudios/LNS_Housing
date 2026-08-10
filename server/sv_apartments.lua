@@ -1,4 +1,8 @@
 local Settings = lib.load('shared.settings')
+local activeRooms = {}
+local playerRooms = {}
+local roomDoors = {}
+local assignedRoomIds = {}
 
 if not Settings.Apartments or not Settings.Apartments.Enabled then
     lib.callback.register('LNS_Housing:server:getMyApartment', function(source)
@@ -15,11 +19,6 @@ if not Settings.Apartments or not Settings.Apartments.Enabled then
     end)
     return
 end
-
-local activeRooms = {}
-local playerRooms = {}
-local roomDoors = {}
-local assignedRoomIds = {}
 
 local function GetPlayerLicense(src)
     local license = GetPlayerIdentifierByType(src, 'license2')
@@ -487,8 +486,6 @@ lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, ro
     return nil
 end)
 
-
-
 RegisterNetEvent('LNS_Housing:server:updateApartmentPermissions', function(roomId, permissions)
     local src = source
     local citizenid = Bridge.Server.GetIdentifier(src)
@@ -752,7 +749,6 @@ local function GetPropertyCoords(p)
     
     return nil
 end
-
 
 local function GetPlayerSpawnsServer(source)
     local spawns = {}
