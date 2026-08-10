@@ -148,8 +148,14 @@ lib.callback.register('LNS_Housing:server:getPendingContracts', function(source)
         FROM housing_contracts c
         JOIN housing_properties p ON c.property_id = p.id
         WHERE c.client_cid = ? AND c.status = 'pending'
-    ]], {cid})
-    return results or {}
+    ]], {cid}) or {}
+
+    for i = 1, #results do
+        local c = results[i]
+        c.agency_label = GetAgencyLabel(c.agency)
+        c.agencyLabel = c.agency_label
+    end
+    return results
 end)
 
 lib.callback.register('LNS_Housing:server:getAgencyContracts', function(source, agencyName)
@@ -161,8 +167,14 @@ lib.callback.register('LNS_Housing:server:getAgencyContracts', function(source, 
         WHERE c.agency = ?
         ORDER BY c.created_at DESC
         LIMIT 50
-    ]], {agencyName})
-    return results or {}
+    ]], {agencyName}) or {}
+
+    for i = 1, #results do
+        local c = results[i]
+        c.agency_label = GetAgencyLabel(c.agency)
+        c.agencyLabel = c.agency_label
+    end
+    return results
 end)
 
 lib.callback.register('LNS_Housing:server:resolvePlayerNames', function(source, playerIds)
@@ -290,7 +302,7 @@ RegisterNetEvent('LNS_Housing:server:createContract', function(data)
 
     -- Strictly enforce the property's configured market/rental price from server state
     local price = tonumber(p.price) or tonumber(data.price)
-    local contractType = p.sale_type or data.type or 'buy'
+    local contractType = (data and (data.type == 'rent' or data.type == 'buy') and data.type) or p.sale_type or 'buy'
     local commissionRate = tonumber(data.commissionRate) or 10
 
     local targetPed = GetPlayerPed(targetId)

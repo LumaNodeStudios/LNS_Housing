@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './ContractPaper.css';
 import { motion } from 'framer-motion';
 import {
@@ -11,24 +11,20 @@ import {
     PenTool
 } from 'lucide-react';
 
-const AGENCY_MAPPINGS = {
-    'realestate': 'Dynasty 8 Real Estate',
-    'luxuryestate': 'Luxury Real Estate',
-    'dynasty8': 'Dynasty 8 Real Estate',
-    'luxury': 'Luxury Real Estate'
-};
-
 const resolveAgencyName = (contract) => {
-    if (!contract) return 'DYNASTY 8 REAL ESTATE';
+    if (!contract) return 'REAL ESTATE';
     if (contract.agency_label) return contract.agency_label;
     if (contract.agencyLabel) return contract.agencyLabel;
     if (contract.agency_name) return contract.agency_name;
-    const raw = String(contract.agency || contract.job || 'realestate').toLowerCase();
-    if (AGENCY_MAPPINGS[raw]) return AGENCY_MAPPINGS[raw];
-    return raw
+    const raw = String(contract.agency || contract.job || 'realestate');
+    const formatted = raw
         .split('_')
         .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(' ') + ' Real Estate';
+        .join(' ');
+    if (!formatted.toLowerCase().includes('real estate') && !formatted.toLowerCase().includes('agency')) {
+        return formatted + ' Real Estate';
+    }
+    return formatted;
 };
 
 const ContractPaper = ({ contract, onClose, onRespond }) => {
@@ -46,6 +42,17 @@ const ContractPaper = ({ contract, onClose, onRespond }) => {
         }
         if (onClose) onClose();
     };
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape' || e.keyCode === 27) {
+                handleCloseNui();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     const handleSignContract = () => {
         if (isSigning || isSigned) return;
@@ -94,10 +101,10 @@ const ContractPaper = ({ contract, onClose, onRespond }) => {
     const depositAmount = contract.deposit !== undefined ? tonumberSafe(contract.deposit) : (isRent ? Math.floor(priceAmount * 0.2) : 0);
     const totalUpfront = isRent ? (priceAmount + depositAmount) : priceAmount;
     const dateFormatted = contract.date || new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
-    const contractRef = contract.id ? `REF-#D8-${String(contract.id).toUpperCase().slice(-6)}` : `REF-#D8-CONTRACT`;
+    const contractRef = contract.id ? `REF-#RE-${String(contract.id).toUpperCase().slice(-6)}` : `REF-#RE-CONTRACT`;
 
     return (
-        <div className="re-paper-overlay">
+        <div className="re-paper-overlay" onClick={handleCloseNui}>
             <motion.div
                 className="re-paper-document"
                 initial={{ opacity: 0, scale: 0.94, y: 30 }}
@@ -106,10 +113,9 @@ const ContractPaper = ({ contract, onClose, onRespond }) => {
                 onClick={(e) => e.stopPropagation()}
                 transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             >
-                {/* Crest Header */}
                 <div className="doc-crest-header">
                     <div className="doc-crest-logo">
-                        <Building2 size={18} />
+                        <Building2 size={24} />
                     </div>
                     <div className="doc-crest-title">{agencyName.toUpperCase()}</div>
                     <div className="doc-crest-sub">LICENSED REAL ESTATE INSTRUMENT</div>
@@ -120,7 +126,6 @@ const ContractPaper = ({ contract, onClose, onRespond }) => {
                     </div>
                 </div>
 
-                {/* Metadata Row */}
                 <div className="doc-meta-row">
                     <div className="doc-meta-item">
                         <span className="meta-lbl">DOCUMENT ID</span>
@@ -128,27 +133,24 @@ const ContractPaper = ({ contract, onClose, onRespond }) => {
                     </div>
                     <div className="doc-meta-item right">
                         <span className="meta-lbl">EXECUTION DATE</span>
-                        <span className="meta-val"><Calendar size={9} /> {dateFormatted}</span>
+                        <span className="meta-val"><Calendar size={13} /> {dateFormatted}</span>
                     </div>
                 </div>
 
-                {/* Main Heading & Status Bar */}
                 <div className="doc-title-row">
                     <h1 className="doc-main-heading">
                         {isRent ? 'RESIDENTIAL LEASE AGREEMENT' : 'PROPERTY PURCHASE DEED'}
                     </h1>
                     <div className={`doc-status-pill ${isSigned ? 'signed' : 'pending'}`}>
-                        {isSigned ? <CheckCircle2 size={11} /> : <ShieldCheck size={11} />}
+                        {isSigned ? <CheckCircle2 size={14} /> : <ShieldCheck size={14} />}
                         <span>{isSigned ? 'EXECUTED & VALIDATED' : 'AWAITING SIGNATURE'}</span>
                     </div>
                 </div>
 
-                {/* Legal Preamble */}
                 <p className="doc-paragraph preamble">
-                    This Agreement is entered into on <strong>{dateFormatted}</strong> by and between <strong>{agencyName}</strong> (Realtor <strong>{agentName}</strong>), hereinafter the <em>Lessor/Seller</em>, and <strong>{clientName}</strong>, hereinafter the <em>Lessee/Buyer</em>.
+                    This Agreement is entered into on <strong>{dateFormatted}</strong> by and between <strong>{agencyName}</strong> (Realtor <strong>{agentName}</strong>), hereinafter the <em>{isRent ? 'Lessor' : 'Seller'}</em>, and <strong>{clientName}</strong>, hereinafter the <em>{isRent ? 'Lessee' : 'Buyer'}</em>.
                 </p>
 
-                {/* Official Deed Summary Table - Single Column Stacked */}
                 <div className="doc-summary-table">
                     <div className="table-row">
                         <span className="cell-lbl">Issuing Agency</span>
@@ -164,7 +166,7 @@ const ContractPaper = ({ contract, onClose, onRespond }) => {
                     </div>
                     <div className="table-row">
                         <span className="cell-lbl">{isRent ? 'Weekly Lease Rate' : 'Total Purchase Price'}</span>
-                        <span className="cell-val">${priceAmount.toLocaleString()}</span>
+                        <span className="cell-val">${priceAmount.toLocaleString()}{isRent ? ' / week' : ''}</span>
                     </div>
                     {isRent && (
                         <div className="table-row">
@@ -173,17 +175,15 @@ const ContractPaper = ({ contract, onClose, onRespond }) => {
                         </div>
                     )}
                     <div className="table-row total">
-                        <span className="cell-lbl">Total Upfront Due</span>
+                        <span className="cell-lbl">{isRent ? 'Total Upfront Due' : 'Total Purchase Amount'}</span>
                         <span className="cell-val">${totalUpfront.toLocaleString()}</span>
                     </div>
                 </div>
 
-                {/* Governing Terms & Covenants Note */}
                 <p className="doc-paragraph terms-note">
-                    <strong>COVENANTS & GOVERNING LAW:</strong> Occupancy and title conveyance are subject to San Andreas real estate regulations. Lessee/Buyer agrees to maintain payment obligations. Failure to comply may result in automated repossession or legal eviction.
+                    <strong>COVENANTS & GOVERNING LAW:</strong> Occupancy and title conveyance are subject to San Andreas real estate regulations. {isRent ? 'Lessee agrees to maintain weekly payment obligations. Failure to comply may result in automated repossession or legal eviction.' : 'Buyer acquires full property ownership title upon transaction execution and payment completion.'}
                 </p>
 
-                {/* Formal Signature Blocks */}
                 <div className="doc-signatures-wrapper">
                     <div className="sig-column">
                         <span className="sig-header">AUTHORIZED REALTOR SIGNATURE</span>
@@ -195,7 +195,7 @@ const ContractPaper = ({ contract, onClose, onRespond }) => {
                     </div>
 
                     <div className="sig-column">
-                        <span className="sig-header">LESSEE / BUYER SIGNATURE</span>
+                        <span className="sig-header">{isRent ? 'LESSEE SIGNATURE' : 'BUYER SIGNATURE'}</span>
                         <div className="sig-cursive-area">
                             {isSigned ? (
                                 <motion.span
@@ -217,11 +217,10 @@ const ContractPaper = ({ contract, onClose, onRespond }) => {
                             )}
                         </div>
                         <div className="sig-underline" />
-                        <span className="sig-caption">Client: {clientName}</span>
+                        <span className="sig-caption">{isRent ? 'Lessee' : 'Buyer'}: {clientName}</span>
                     </div>
                 </div>
 
-                {/* Bottom Action Footer */}
                 <div className="doc-footer-actions">
                     <button type="button" className="doc-btn decline" onClick={handleDeclineContract}>
                         <span>Decline Contract</span>

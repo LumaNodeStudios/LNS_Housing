@@ -214,7 +214,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                     price: 500,
                     type: 'rent',
                     agent_name: 'Marcus Vance',
-                    agency_name: 'DYNASTY 8',
+                    agency_label: 'Luxury Real Estate',
                     client_name: 'Jordan Kahaku',
                     citizenid: 'Y5412212',
                     shell: 'Eclipse Apartment 22',
@@ -736,7 +736,6 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             exit={{ opacity: 0, scale: 0.98, y: 12 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
         >
-            {/* Top Header Navigation Bar */}
             <header className="re-header-bar">
                 <div className="re-hdr-left">
                     <div className="re-hdr-titles">
@@ -786,7 +785,6 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 </div>
             </header>
 
-            {/* Sub-Header Bar (Filter Chips & Sort Selectors for Browse View) */}
             {activeTab === 'browse' && (
                 <div className="re-filter-subbar">
                     <div className="filter-chips-group">
@@ -808,7 +806,6 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 </div>
             )}
 
-            {/* Main Viewport Content Area */}
             <main className="re-content-viewport">
                 <AnimatePresence mode="wait">
                     {activeTab === 'browse' && (
@@ -1052,8 +1049,8 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                 <div key={c.id} className="offer-card">
                                                     <div className="offer-info">
                                                         <h4>{c.property_label}</h4>
-                                                        <span className="offer-meta">Drafted by agent {c.agent_name}</span>
-                                                        <span className="offer-price">${(c.price || 0).toLocaleString()} / week</span>
+                                                        <span className="offer-meta">Drafted by agent {c.agent_name} • {(c.type === 'rent' || c.sale_type === 'rent') ? 'Lease Agreement' : 'Outright Purchase'}</span>
+                                                        <span className="offer-price">${(c.price || 0).toLocaleString()}{(c.type === 'rent' || c.sale_type === 'rent') ? ' / week' : ''}</span>
                                                     </div>
                                                     <div className="offer-actions">
                                                         <button className="btn-accept paper-view-btn" onClick={() => handleOpenPaperContract(c)}>
@@ -1177,7 +1174,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                         price: parseFloat(draftData.price),
                                                         type: draftData.type,
                                                         agent_name: hasPermission?.name || 'Realtor Agent',
-                                                        agency_name: hasPermission?.agencyLabel || 'DYNASTY 8',
+                                                        agency_label: hasPermission?.agencyLabel || 'Real Estate',
                                                         client_name: client ? client.name : 'Target Client',
                                                         citizenid: selectedNearbyPlayer || 'CID_CLIENT',
                                                         shell: prop ? (prop.metadata?.shell || prop.type || 'Standard Interior') : 'Standard Interior',
@@ -1462,7 +1459,6 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                             )}
                                                         </div>
 
-                                                        {/* MLO Door Target Selection & Door List */}
                                                         <div className="mlo-doors-picker-card">
                                                             <div className="doors-hdr-row">
                                                                 <div>
@@ -1512,7 +1508,6 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                     </>
                                                 )}
 
-                                                {/* Common Camera & Garage Coords for both MLO and Shell */}
                                                 <div className="interactive-coord-box">
                                                     <div className="coord-row">
                                                         <div>
@@ -1605,7 +1600,6 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 </AnimatePresence>
             </main>
 
-            {/* Property Action & Purchase Modal */}
             <AnimatePresence>
                 {selectedProperty && (
                     <div className="re-modal-bg" onClick={() => setSelectedProperty(null)}>
@@ -1671,7 +1665,6 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 )}
             </AnimatePresence>
 
-            {/* Confirmation Alert Dialog Modal */}
             <AnimatePresence>
                 {confirmModal && (
                     <div className="re-modal-bg" onClick={() => setConfirmModal(null)}>

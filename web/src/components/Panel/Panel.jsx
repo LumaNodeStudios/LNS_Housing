@@ -428,9 +428,7 @@ const Panel = ({ data: initialData }) => {
       exit={{ opacity: 0, scale: 0.98, y: 12 }}
       transition={{ duration: 0.22, ease: 'easeOut' }}
     >
-      {/* Top Header Navigation Bar */}
       <header className="panel-header-bar">
-        {/* Left Side: Property Info & Title */}
         <div className="hdr-left">
           <div className="hdr-title-box">
             <h2 className="hdr-prop-name">{propertyData.streetName || propertyData.label || 'Property'}</h2>
@@ -446,7 +444,6 @@ const Panel = ({ data: initialData }) => {
           )}
         </div>
 
-        {/* Center: Segmented Pill Tab Switcher */}
         <nav className="hdr-pill-tabs">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
@@ -469,7 +466,6 @@ const Panel = ({ data: initialData }) => {
           })}
         </nav>
 
-        {/* Right Side: Clock & Exit Button */}
         <div className="hdr-right">
           <div className="hdr-time-display">
             <span>{formatTime(currentTime)}</span>
@@ -482,7 +478,6 @@ const Panel = ({ data: initialData }) => {
         </div>
       </header>
 
-      {/* Main Viewport Content Area */}
       <main className="panel-content-viewport">
         <AnimatePresence mode="wait">
           {activeTab === 'home' && (
@@ -494,7 +489,6 @@ const Panel = ({ data: initialData }) => {
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.15 }}
             >
-              {/* 4 Stat Metric Tiles Header */}
               <div className="stats-row">
                 <div className="stat-tile">
                   <span className="stat-label">Location</span>
@@ -519,7 +513,6 @@ const Panel = ({ data: initialData }) => {
                 )}
               </div>
 
-              {/* Dual Overview Cards */}
               <div className="home-dual-grid">
                 <div className="section-card">
                   <div className="card-header-bar">
@@ -667,7 +660,6 @@ const Panel = ({ data: initialData }) => {
               transition={{ duration: 0.15 }}
             >
               <div className="security-split-grid">
-                {/* Hardware Upgrades */}
                 <div className="sec-column">
                   <h3 className="column-title">System Hardware & Upgrades</h3>
                   <div className="upgrades-stack">
@@ -706,7 +698,6 @@ const Panel = ({ data: initialData }) => {
                   </div>
                 </div>
 
-                {/* Audit Security Log */}
                 <div className="sec-column">
                   <h3 className="column-title">Security Activity Log</h3>
                   <div className="audit-log-container">
@@ -745,7 +736,6 @@ const Panel = ({ data: initialData }) => {
               transition={{ duration: 0.15 }}
             >
               <div className="rent-split-grid">
-                {/* Billing Payment Center */}
                 <div className="rent-column">
                   {propertyData.metadata?.rent_debt > 0 && (
                     <div className="debt-alert-card">
@@ -828,7 +818,6 @@ const Panel = ({ data: initialData }) => {
                   </div>
                 </div>
 
-                {/* History Table */}
                 <div className="rent-column">
                   <h3 className="column-title">Payment History</h3>
                   <div className="history-table-container">
@@ -934,7 +923,6 @@ const Panel = ({ data: initialData }) => {
         </AnimatePresence>
       </main>
 
-      {/* Add Resident Modal */}
       <AnimatePresence>
         {showAddModal && (
           <motion.div

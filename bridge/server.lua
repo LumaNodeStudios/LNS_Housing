@@ -117,6 +117,24 @@ function Bridge.Server.GetPlayerJob(source)
     return nil
 end
 
+function Bridge.Server.GetJobLabel(jobName)
+    if not jobName then return nil end
+    if Bridge.Framework == 'qbx' then
+        local ok, jobs = pcall(function() return exports.qbx_core:GetJobs() end)
+        if ok and jobs and jobs[jobName] and jobs[jobName].label then
+            return jobs[jobName].label
+        end
+    elseif Bridge.Framework == 'esx' then
+        if ESX and ESX.GetJobs then
+            local ok, jobs = pcall(function() return ESX.GetJobs() end)
+            if ok and jobs and jobs[jobName] and jobs[jobName].label then
+                return jobs[jobName].label
+            end
+        end
+    end
+    return nil
+end
+
 function Bridge.Server.IsPlayerOnline(identifier)
     if Bridge.Framework == 'qbx' then
         return exports.qbx_core:GetPlayerByCitizenId(identifier)

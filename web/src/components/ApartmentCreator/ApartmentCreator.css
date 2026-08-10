@@ -251,7 +251,6 @@
     cursor: not-allowed;
 }
 
-/* Edit Mode Styles */
 .apt-creator-modal.edit-mode {
     width: 800px;
     padding: 0;
@@ -465,7 +464,6 @@
     border-color: rgba(239, 68, 68, 0.5);
 }
 
-/* Tablet Placement Centering and Alignment Overrides */
 .freecam-hint.apt-creator-placement,
 .placement-controls.apt-creator-placement {
     left: 50% !important;
@@ -476,7 +474,6 @@
     bottom: 220px !important;
 }
 
-/* Edit Mode Layout Styles */
 .apt-sidebar-header {
     display: flex;
     flex-direction: column;

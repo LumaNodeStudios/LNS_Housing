@@ -1,5 +1,25 @@
 local Settings = lib.load('shared.settings')
 
+function GetAgencyLabel(jobName)
+    if not jobName then return 'Real Estate' end
+    local agencyConfig = Settings.RealEstate.Agencies and Settings.RealEstate.Agencies[jobName]
+    if agencyConfig and agencyConfig.label and agencyConfig.label ~= '' then
+        return agencyConfig.label
+    end
+
+    local liveLabel = Bridge.Server.GetJobLabel(jobName)
+    if liveLabel and liveLabel ~= '' then
+        return liveLabel
+    end
+
+    local formatted = tostring(jobName):gsub("^%l", string.upper):gsub("_", " ")
+    if not formatted:lower():find("real estate") and not formatted:lower():find("agency") then
+        formatted = formatted .. " Real Estate"
+    end
+    return formatted
+end
+
+
 function IsKeyholder(source, targetId, isApartment)
     local identifier = Bridge.Server.GetIdentifier(source)
     if not identifier then return false end
@@ -147,7 +167,7 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
                 job = jobName,
                 grade = gradeLevel,
                 citizenid = citizenid,
-                agencyLabel = agencyConfig and agencyConfig.label or 'Real Estate',
+                agencyLabel = GetAgencyLabel(jobName),
                 societyBalance = societyBalance,
                 defaultCommission = commissionRate,
                 permissions = {

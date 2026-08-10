@@ -1,6 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Cinzel:wght@600;700;800&family=Dancing+Script:wght@700&family=Outfit:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&display=swap');
 
-/* Standalone Contract Paper NUI Overlay */
 .re-paper-overlay {
   position: fixed;
   top: 0;
@@ -11,23 +10,23 @@
   align-items: center;
   justify-content: center;
   z-index: 99999;
-  padding: 16px;
+  padding: 24px;
   box-sizing: border-box;
   pointer-events: auto;
 }
 
-/* Grand Executive Portrait Paper Sheet - 480px Portrait Canvas */
 .re-paper-document {
-  width: 480px;
-  max-width: 94vw;
-  max-height: 85vh;
+  width: 580px;
+  max-width: 92vw;
+  max-height: 88vh;
   background: #ffffff;
   background-image: linear-gradient(180deg, #ffffff 0%, #faf8f5 100%);
-  border-radius: 10px;
-  padding: 26px 32px 22px 32px;
+  border-radius: 12px;
+  padding: 32px 36px 26px 36px;
   color: #0f172a;
   font-family: var(--font-main);
-  border: 1px solid #e2e8f0;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -44,80 +43,78 @@
   height: 0 !important;
 }
 
-/* Top Crest Header */
 .doc-crest-header {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 14px;
   text-align: center;
 }
 
 .doc-crest-logo {
-  width: 34px;
-  height: 34px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: rgba(var(--primary-rgb), 0.1);
   color: var(--primary-dark);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid var(--primary);
-  box-shadow: 0 3px 10px rgba(var(--primary-rgb), 0.12);
-  margin-bottom: 4px;
+  border: 2px solid var(--primary);
+  box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.15);
+  margin-bottom: 8px;
 }
 
 .doc-crest-title {
   font-family: 'Cinzel', serif;
-  font-size: 12px;
+  font-size: 16.5px;
   font-weight: 800;
-  letter-spacing: 1.5px;
+  letter-spacing: 2px;
   color: #0f172a;
-  line-height: 1.1;
+  line-height: 1.15;
 }
 
 .doc-crest-sub {
-  font-size: 7.5px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.9px;
+  letter-spacing: 1.2px;
   color: #64748b;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .doc-header-divider {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 6px;
+  gap: 12px;
+  margin-top: 10px;
 }
 
 .doc-header-divider .divider-line {
   flex: 1;
   height: 1px;
-  background: #e2e8f0;
+  background: #cbd5e1;
 }
 
 .doc-header-divider .divider-badge {
   font-family: 'Cinzel', serif;
-  font-size: 7.5px;
+  font-size: 9.5px;
   font-weight: 800;
-  letter-spacing: 1.2px;
+  letter-spacing: 1.5px;
   color: #94a3b8;
   background: #ffffff;
-  padding: 0 4px;
+  padding: 0 8px;
 }
 
-/* Metadata Bar */
 .doc-meta-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 5px;
-  padding: 6px 10px;
-  margin-bottom: 8px;
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 14px;
 }
 
 .doc-meta-item {
@@ -130,36 +127,35 @@
 }
 
 .meta-lbl {
-  font-size: 7.5px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.8px;
   color: #64748b;
 }
 
 .meta-val {
   font-family: monospace;
-  font-size: 10.5px;
+  font-size: 13.5px;
   font-weight: 700;
   color: #0f172a;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
-/* Title & Status Row */
 .doc-title-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
-  padding-bottom: 5px;
-  border-bottom: 1px solid #e2e8f0;
-  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1.5px solid #e2e8f0;
+  gap: 16px;
 }
 
 .doc-main-heading {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 16.5px;
+  font-size: 22px;
   font-weight: 800;
   color: #0f172a;
   margin: 0;
@@ -167,14 +163,14 @@
 }
 
 .doc-status-pill {
-  padding: 4px 10px;
-  border-radius: 16px;
-  font-size: 8.5px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.7px;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   white-space: nowrap;
   width: fit-content;
   flex-shrink: 0;
@@ -192,33 +188,31 @@
   border: 1px solid rgba(var(--warning-rgb), 0.3);
 }
 
-/* Legal Preamble */
 .doc-paragraph {
-  font-size: 11.5px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.6;
   color: #334155;
-  margin: 0 0 7px 0;
+  margin: 0 0 10px 0;
 }
 
 .doc-paragraph.preamble {
-  font-size: 11.5px;
+  font-size: 14px;
   background: #fafaf9;
-  padding: 7px 11px;
-  border-left: 3px solid var(--primary);
-  border-radius: 0 5px 5px 0;
-  margin-bottom: 8px;
+  padding: 12px 16px;
+  border-left: 4px solid var(--primary);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 14px;
 }
 
 .doc-paragraph strong {
   color: #0f172a;
 }
 
-/* Official Deed Summary Table - Single Column Stacked (No Internal Clipping) */
 .doc-summary-table {
   background: #ffffff;
   border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  margin: 8px 0;
+  border-radius: 8px;
+  margin: 12px 0;
   display: flex;
   flex-direction: column;
 }
@@ -227,9 +221,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 5px 10px;
+  padding: 10px 16px;
   border-bottom: 1px solid #f1f5f9;
-  font-size: 10.5px;
+  font-size: 13.5px;
 }
 
 .doc-summary-table .table-row:last-child {
@@ -239,47 +233,51 @@
 .doc-summary-table .table-row.total {
   background: rgba(var(--primary-rgb), 0.08);
   font-weight: 800;
-  padding: 6px 10px;
+  padding: 12px 16px;
   border-top: 1.5px solid #cbd5e1;
 }
 
 .doc-summary-table .cell-lbl {
   color: #64748b;
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .doc-summary-table .table-row.total .cell-lbl {
   color: #0f172a;
   font-weight: 800;
+  font-size: 14px;
 }
 
 .doc-summary-table .cell-val {
   color: #0f172a;
   font-weight: 700;
+  font-size: 14px;
 }
 
-/* Terms & Covenants Note */
+.doc-summary-table .table-row.total .cell-val {
+  font-size: 16.5px;
+}
+
 .doc-paragraph.terms-note {
-  font-size: 9.5px;
-  line-height: 1.4;
+  font-size: 12px;
+  line-height: 1.5;
   color: #475569;
   background: #fafaf9;
   border: 1px solid #e2e8f0;
-  border-radius: 5px;
-  padding: 6px 10px;
-  margin-top: 4px;
-  margin-bottom: 10px;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 6px;
+  margin-bottom: 14px;
 }
 
-/* Formal Signature Blocks */
 .doc-signatures-wrapper {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
-  margin-top: 6px;
-  margin-bottom: 10px;
-  padding-top: 8px;
-  border-top: 1px solid #e2e8f0;
+  gap: 24px;
+  margin-top: 10px;
+  margin-bottom: 14px;
+  padding-top: 12px;
+  border-top: 1.5px solid #e2e8f0;
 }
 
 .sig-column {
@@ -290,22 +288,22 @@
 
 .sig-header {
   font-family: 'Cinzel', serif;
-  font-size: 8px;
+  font-size: 10.5px;
   font-weight: 800;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
   color: #64748b;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .sig-cursive-area {
-  height: 30px;
+  height: 42px;
   display: flex;
   align-items: flex-end;
 }
 
 .sig-handwritten {
   font-family: 'Dancing Script', 'Caveat', cursive;
-  font-size: 22px;
+  font-size: 28px;
   line-height: 1;
   user-select: none;
 }
@@ -320,17 +318,17 @@
 
 .sig-action-btn {
   width: 100%;
-  height: 28px;
-  border-radius: 4px;
+  height: 36px;
+  border-radius: 6px;
   background: rgba(var(--primary-rgb), 0.08);
-  border: 1px dashed var(--primary);
+  border: 1.5px dashed var(--primary);
   color: var(--primary-dark);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
   cursor: pointer;
   transition: var(--transition-fast);
 }
@@ -347,38 +345,38 @@
 
 .sig-underline {
   width: 100%;
-  height: 1px;
+  height: 1.5px;
   background: #94a3b8;
-  margin: 3px 0 2px 0;
+  margin: 5px 0 4px 0;
 }
 
 .sig-caption {
-  font-size: 8.5px;
+  font-size: 11.5px;
   color: #64748b;
 }
 
-/* Footer Action Buttons */
 .doc-footer-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 10px;
-  border-top: 2px double #e2e8f0;
+  padding-top: 14px;
+  border-top: 2px double #cbd5e1;
+  margin-top: 6px;
 }
 
 .footer-right {
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 
 .doc-btn {
-  padding: 7.5px 16px;
-  border-radius: 5px;
-  font-size: 11.5px;
+  padding: 10px 22px;
+  border-radius: 7px;
+  font-size: 13.5px;
   font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   cursor: pointer;
   transition: var(--transition-fast);
   border: none;

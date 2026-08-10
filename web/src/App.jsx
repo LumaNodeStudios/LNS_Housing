@@ -11,7 +11,7 @@ import { AnimatePresence } from 'framer-motion';
 function App() {
   const [showPanel, setShowPanel] = useState(false);
   const [showFurniture, setShowFurniture] = useState(false);
-  const [showRealEstate, setShowRealEstate] = useState(true);
+  const [showRealEstate, setShowRealEstate] = useState(false);
   const [showContractPaper, setShowContractPaper] = useState(false);
   const [contractPaperData, setContractPaperData] = useState(null);
   const [showApartmentCreator, setShowApartmentCreator] = useState(false);
@@ -161,7 +161,7 @@ function App() {
         price: 500,
         type: 'rent',
         garage: 0,
-        agency_label: 'Dynasty 8 Real Estate',
+        agency_label: 'Luxury Real Estate',
         date: new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })
       });
 
