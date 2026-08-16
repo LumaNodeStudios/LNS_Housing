@@ -18,56 +18,6 @@ local DB_CONFIG = {
 
 local db = DB_CONFIG[Bridge.Framework]
 
--- Offline Player Money Management
-function Bridge.Server.GetOfflineBankMoney(identifier)
-    debugPrint('info', 'Bridge.Server.GetOfflineBankMoney', {identifier = identifier})
-    local onlinePlayer = Bridge.Server.IsPlayerOnline(identifier)
-    if onlinePlayer then
-        return Bridge.Server.GetBankMoney(onlinePlayer.PlayerData.source)
-    end
-
-    if not db then return 0 end
-    local query = string.format('SELECT %s FROM %s WHERE %s = ?', db.column, db.table, db.key)
-    local result = MySQL.query.await(query, {identifier})
-    if result and result[1] then
-        local data = json.decode(result[1][db.column])
-        return data and data.bank or 0
-    end
-    return 0
-end
-
-function Bridge.Server.RemoveOfflineBankMoney(identifier, amount)
-    debugPrint('info', 'Bridge.Server.RemoveOfflineBankMoney', {identifier = identifier, amount = amount})
-    local safeAmount = normalizeAmount(amount)
-    if not safeAmount or safeAmount <= 0 then return false end
-
-    local onlinePlayer = Bridge.Server.IsPlayerOnline(identifier)
-    if onlinePlayer then
-        return Bridge.Server.RemoveBankMoney(onlinePlayer.PlayerData.source, safeAmount, "Property Transaction")
-    end
-
-    if not db then return false end
-    local query = string.format('UPDATE %s SET %s = JSON_SET(%s, "$.bank", JSON_EXTRACT(%s, "$.bank") - ?) WHERE %s = ?', db.table, db.column, db.column, db.column, db.key)
-    MySQL.update.await(query, {safeAmount, identifier})
-    return true
-end
-
-function Bridge.Server.AddOfflineBankMoney(identifier, amount)
-    debugPrint('info', 'Bridge.Server.AddOfflineBankMoney', {identifier = identifier, amount = amount})
-    local safeAmount = normalizeAmount(amount)
-    if not safeAmount or safeAmount <= 0 then return false end
-
-    local onlinePlayer = Bridge.Server.IsPlayerOnline(identifier)
-    if onlinePlayer then
-        return Bridge.Server.AddBankMoney(onlinePlayer.PlayerData.source, safeAmount, "Property Transaction Payout")
-    end
-
-    if not db then return false end
-    local query = string.format('UPDATE %s SET %s = JSON_SET(%s, "$.bank", JSON_EXTRACT(%s, "$.bank") + ?) WHERE %s = ?', db.table, db.column, db.column, db.column, db.key)
-    MySQL.update.await(query, {safeAmount, identifier})
-    return true
-end
-
 -- Player Data & Framework Getters
 function Bridge.Server.GetIdentifier(source)
     if Bridge.Framework == 'qbx' then
@@ -169,52 +119,65 @@ function Bridge.Server.Logout(source)
     end
 end
 
--- Online Player Money Management
-function Bridge.Server.GetBankMoney(source)
-    if Bridge.Framework == 'qbx' then
-        return exports.qbx_core:GetMoney(source, 'bank') or 0
-    elseif Bridge.Framework == 'esx' then
-        local player = ESX.GetPlayerFromId(source)
-        return player and player.getAccount('bank').money or 0
-    end
-end
-
+-- Unified Online Player Money Management
 function Bridge.Server.GetMoney(source, moneyType)
+    moneyType = moneyType or 'bank'
     if Bridge.Framework == 'qbx' then
         return exports.qbx_core:GetMoney(source, moneyType) or 0
     elseif Bridge.Framework == 'esx' then
         local player = ESX.GetPlayerFromId(source)
         if not player then return 0 end
-        if moneyType == 'cash' then
+        if moneyType == 'cash' or moneyType == 'money' then
             if player.getMoney then
                 return player.getMoney() or 0
             else
-                return player.getAccount('money') and player.getAccount('money').money or 0
+                local account = player.getAccount('money')
+                return account and account.money or 0
             end
         else
-            return player.getAccount('bank') and player.getAccount('bank').money or 0
+            local account = player.getAccount('bank')
+            return account and account.money or 0
         end
     end
+    return 0
 end
 
-function Bridge.Server.RemoveBankMoney(source, amount, reason)
-    debugPrint('info', 'Bridge.Server.RemoveBankMoney', {source = source, amount = amount, reason = reason})
+function Bridge.Server.GetBankMoney(source)
+    return Bridge.Server.GetMoney(source, 'bank')
+end
+
+function Bridge.Server.AddMoney(source, moneyType, amount, reason)
+    moneyType = moneyType or 'bank'
+    debugPrint('info', 'Bridge.Server.AddMoney', {source = source, moneyType = moneyType, amount = amount, reason = reason})
     local safeAmount = normalizeAmount(amount)
     if not safeAmount or safeAmount <= 0 then return false end
 
     if Bridge.Framework == 'qbx' then
-        return exports.qbx_core:RemoveMoney(source, 'bank', safeAmount, reason or "Property System")
+        return exports.qbx_core:AddMoney(source, moneyType, safeAmount, reason or "Property System Payout")
     elseif Bridge.Framework == 'esx' then
         local player = ESX.GetPlayerFromId(source)
         if player then
-            player.removeAccountMoney('bank', safeAmount)
+            if moneyType == 'cash' or moneyType == 'money' then
+                if player.addMoney then
+                    player.addMoney(safeAmount)
+                else
+                    player.addAccountMoney('money', safeAmount)
+                end
+            else
+                player.addAccountMoney('bank', safeAmount)
+            end
             return true
         end
     end
     return false
 end
 
+function Bridge.Server.AddBankMoney(source, amount, reason)
+    return Bridge.Server.AddMoney(source, 'bank', amount, reason)
+end
+
 function Bridge.Server.RemoveMoney(source, moneyType, amount, reason)
+    moneyType = moneyType or 'bank'
     debugPrint('info', 'Bridge.Server.RemoveMoney', {source = source, moneyType = moneyType, amount = amount, reason = reason})
     local safeAmount = normalizeAmount(amount)
     if not safeAmount or safeAmount <= 0 then return false end
@@ -224,7 +187,7 @@ function Bridge.Server.RemoveMoney(source, moneyType, amount, reason)
     elseif Bridge.Framework == 'esx' then
         local player = ESX.GetPlayerFromId(source)
         if player then
-            if moneyType == 'cash' then
+            if moneyType == 'cash' or moneyType == 'money' then
                 if player.removeMoney then
                     player.removeMoney(safeAmount)
                 else
@@ -239,21 +202,73 @@ function Bridge.Server.RemoveMoney(source, moneyType, amount, reason)
     return false
 end
 
-function Bridge.Server.AddBankMoney(source, amount, reason)
-    debugPrint('info', 'Bridge.Server.AddBankMoney', {source = source, amount = amount, reason = reason})
+function Bridge.Server.RemoveBankMoney(source, amount, reason)
+    return Bridge.Server.RemoveMoney(source, 'bank', amount, reason)
+end
+
+-- Unified Offline Player Money Management
+function Bridge.Server.GetOfflineMoney(identifier, moneyType)
+    moneyType = moneyType or 'bank'
+    debugPrint('info', 'Bridge.Server.GetOfflineMoney', {identifier = identifier, moneyType = moneyType})
+    local onlinePlayer = Bridge.Server.IsPlayerOnline(identifier)
+    if onlinePlayer then
+        return Bridge.Server.GetMoney(onlinePlayer.PlayerData.source, moneyType)
+    end
+
+    if not db then return 0 end
+    local query = string.format('SELECT %s FROM %s WHERE %s = ?', db.column, db.table, db.key)
+    local result = MySQL.query.await(query, {identifier})
+    if result and result[1] then
+        local data = json.decode(result[1][db.column])
+        return data and data[moneyType] or 0
+    end
+    return 0
+end
+
+function Bridge.Server.GetOfflineBankMoney(identifier)
+    return Bridge.Server.GetOfflineMoney(identifier, 'bank')
+end
+
+function Bridge.Server.RemoveOfflineMoney(identifier, moneyType, amount)
+    moneyType = moneyType or 'bank'
+    debugPrint('info', 'Bridge.Server.RemoveOfflineMoney', {identifier = identifier, moneyType = moneyType, amount = amount})
     local safeAmount = normalizeAmount(amount)
     if not safeAmount or safeAmount <= 0 then return false end
 
-    if Bridge.Framework == 'qbx' then
-        return exports.qbx_core:AddMoney(source, 'bank', safeAmount, reason or "Property Commission")
-    elseif Bridge.Framework == 'esx' then
-        local player = ESX.GetPlayerFromId(source)
-        if player then
-            player.addAccountMoney('bank', safeAmount)
-            return true
-        end
+    local onlinePlayer = Bridge.Server.IsPlayerOnline(identifier)
+    if onlinePlayer then
+        return Bridge.Server.RemoveMoney(onlinePlayer.PlayerData.source, moneyType, safeAmount, "Property Transaction")
     end
-    return false
+
+    if not db then return false end
+    local query = string.format('UPDATE %s SET %s = JSON_SET(%s, "$.%s", JSON_EXTRACT(%s, "$.%s") - ?) WHERE %s = ?', db.table, db.column, db.column, moneyType, db.column, moneyType, db.key)
+    MySQL.update.await(query, {safeAmount, identifier})
+    return true
+end
+
+function Bridge.Server.RemoveOfflineBankMoney(identifier, amount)
+    return Bridge.Server.RemoveOfflineMoney(identifier, 'bank', amount)
+end
+
+function Bridge.Server.AddOfflineMoney(identifier, moneyType, amount)
+    moneyType = moneyType or 'bank'
+    debugPrint('info', 'Bridge.Server.AddOfflineMoney', {identifier = identifier, moneyType = moneyType, amount = amount})
+    local safeAmount = normalizeAmount(amount)
+    if not safeAmount or safeAmount <= 0 then return false end
+
+    local onlinePlayer = Bridge.Server.IsPlayerOnline(identifier)
+    if onlinePlayer then
+        return Bridge.Server.AddMoney(onlinePlayer.PlayerData.source, moneyType, safeAmount, "Property Transaction Payout")
+    end
+
+    if not db then return false end
+    local query = string.format('UPDATE %s SET %s = JSON_SET(%s, "$.%s", JSON_EXTRACT(%s, "$.%s") + ?) WHERE %s = ?', db.table, db.column, db.column, moneyType, db.column, moneyType, db.key)
+    MySQL.update.await(query, {safeAmount, identifier})
+    return true
+end
+
+function Bridge.Server.AddOfflineBankMoney(identifier, amount)
+    return Bridge.Server.AddOfflineMoney(identifier, 'bank', amount)
 end
 
 -- Society / Account Management
@@ -272,7 +287,7 @@ local function handleSocietyMoney(job, amount, action)
         elseif action == 'remove' then
             exports.oneclub_banking:RemoveFromSocietyFund(job, amount)
         elseif action == 'get' then
-            -- Idk yet
+            return 0
         end
     elseif Bridge.Framework == 'esx' then
         local val = 0
@@ -289,7 +304,7 @@ local function handleSocietyMoney(job, amount, action)
         end)
         if action == 'get' then return val end
     else
-        print('No Management System Found')
+        debugPrint('warn', 'No Management System Found for society money')
         if action == 'get' then return 0 end
     end
 end
@@ -319,7 +334,7 @@ function Bridge.Server.RegisterStash(propertyId, furnitureId, storageConfig, lab
         local stashLabel = label or Settings.Stash.label
         exports.ox_inventory:RegisterStash(stashId, stashLabel, slots, weight)
     else
-        print('ox_inventory not started')
+        debugPrint('warn', 'ox_inventory not started')
     end
 end
 
@@ -413,7 +428,7 @@ end
 
 function Bridge.Server.UnregisterGarage(propertyId)
     debugPrint('info', 'Bridge.Server.UnregisterGarage', {propertyId = propertyId})
-    -- Bomboclat
+    -- Handled automatically or per garage script
 end
 
 -- Phone Scripts

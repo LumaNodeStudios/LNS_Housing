@@ -30,13 +30,93 @@ end
 
 lib.callback.register('LNS_Housing:server:uploadPhoto', function(source, base64Data)
     debugPrint('info', 'LNS_Housing:server:uploadPhoto called', {source = source})
-    local promise = promise.new()
-    
-    TriggerEvent('LNS_Housing:server:uploadPropertyPhotoJS', base64Data, function(url)
-        promise:resolve(url)
-    end)
-    
-    return Citizen.Await(promise)
+
+    local storage = SvSettings and SvSettings.FurnitureImageStorage or { Type = 'qbox' }
+    local storageType = string.lower(storage.Type or 'qbox')
+
+    if GetResourceState('screencapture') == 'started' then
+        local p = promise.new()
+        local resolved = false
+
+        local function resolvePromise(value)
+            if not resolved then
+                resolved = true
+                p:resolve(value)
+            end
+        end
+
+        if storageType == 'qbox' then
+            local config = storage.Qbox or {}
+            if not config.ApiKey or config.ApiKey == '' then
+                debugPrint('error', 'Qbox CDN ApiKey missing in sv_settings.lua')
+                return nil
+            end
+
+            exports.screencapture:remoteUpload(source, 'https://api.qbox.re/v1/file', {
+                encoding = 'webp',
+                maxWidth = 1280,
+                maxHeight = 720,
+                headers = { ['Authorization'] = config.ApiKey }
+            }, function(response)
+                local url = response and (response.url or (response.data and response.data.url) or (type(response) == 'string' and response))
+                resolvePromise(url)
+            end, 'blob')
+
+        elseif storageType == 'fivemanage' then
+            local config = storage.Fivemanage or {}
+            if not config.Token or config.Token == '' then
+                debugPrint('error', 'Fivemanage Token missing in sv_settings.lua')
+                return nil
+            end
+
+            local uploadUrl = (config.Url and config.Url ~= '') and config.Url or 'https://api.fivemanage.com/api/v3/file'
+            exports.screencapture:remoteUpload(source, uploadUrl, {
+                encoding = 'webp',
+                maxWidth = 1280,
+                maxHeight = 720,
+                headers = { ['Authorization'] = config.Token }
+            }, function(response)
+                local url = response and (response.url or (response.data and response.data.url) or (type(response) == 'string' and response))
+                resolvePromise(url)
+            end, 'blob')
+
+        else
+            -- 'r2', 'local', or custom: use serverCapture then pass to UploadPropertyPhotoJS
+            exports.screencapture:serverCapture(source, {
+                encoding = 'webp',
+                maxWidth = 1280,
+                maxHeight = 720
+            }, function(data)
+                if data and data ~= '' then
+                    local ok, url = pcall(function()
+                        return exports.LNS_Housing:UploadPropertyPhotoJS(data)
+                    end)
+                    resolvePromise(ok and url or nil)
+                else
+                    resolvePromise(nil)
+                end
+            end)
+        end
+
+        SetTimeout(15000, function()
+            if not resolved then
+                debugPrint('error', 'Photo upload timed out on server')
+                resolvePromise(nil)
+            end
+        end)
+
+        return Citizen.Await(p)
+    end
+
+    -- Fallback if client sent base64 and screencapture server export is not running
+    if base64Data and base64Data ~= '' then
+        local ok, url = pcall(function()
+            return exports.LNS_Housing:UploadPropertyPhotoJS(base64Data)
+        end)
+        return ok and url or nil
+    end
+
+    return nil
 end)
 
 lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
@@ -57,71 +137,11 @@ lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
         data.entrance = data.entranceCoords
         spawnCoords = vector4(data.entranceCoords.x, data.entranceCoords.y, data.entranceCoords.z, data.entranceCoords.h or 0.0)
     elseif data.doors and #data.doors > 0 then
-        local doorIds = {}
-        for i, door in ipairs(data.doors) do
-            if type(door) == 'table' and door.isDouble then
-                local doorPanels = {}
-                for j, panel in ipairs(door.doors) do
-                    if type(panel) == 'table' and panel.isNew then
-                        doorPanels[j] = {
-                            model = panel.model,
-                            coords = vector3(panel.coords.x, panel.coords.y, panel.coords.z),
-                            heading = panel.heading
-                        }
-                    elseif type(panel) == 'number' then
-                        local panelData = nil
-                        if exports.ox_doorlock and exports.ox_doorlock.getDoor then
-                            pcall(function() panelData = exports.ox_doorlock:getDoor(panel) end)
-                        end
-                        if panelData and panelData.coords then
-                            doorPanels[j] = {
-                                model = panelData.model,
-                                coords = vector3(panelData.coords.x, panelData.coords.y, panelData.coords.z),
-                                heading = panelData.heading
-                            }
-                        end
-                    end
-                end
-                local newDoorId = exports.ox_doorlock:createDoor({
-                    name = (data.name or data.label or 'Property') .. ' Double Door ' .. i,
-                    doors = doorPanels,
-                    state = 1,
-                    maxDistance = 2.0
-                })
-                doorIds[#doorIds+1] = newDoorId
-                if i == 1 and door.doors and door.doors[1] and door.doors[1].coords then
-                    local c = door.doors[1].coords
-                    spawnCoords = vector4(c.x, c.y, c.z, door.doors[1].heading or 0.0)
-                end
-            elseif type(door) == 'table' and door.isNew then
-                local newDoorId = exports.ox_doorlock:createDoor({
-                    name = (data.name or data.label or 'Property') .. ' Door ' .. i,
-                    model = door.model,
-                    coords = door.coords,
-                    heading = door.heading,
-                    state = 1,
-                    maxDistance = 2.0
-                })
-                doorIds[#doorIds+1] = newDoorId
-                if i == 1 then
-                    spawnCoords = vector4(door.coords.x, door.coords.y, door.coords.z, door.heading or 0.0)
-                end
-            else
-                doorIds[#doorIds+1] = door
-                if i == 1 then
-                    local doorData = nil
-                    if exports.ox_doorlock and exports.ox_doorlock.getDoor then
-                        pcall(function() doorData = exports.ox_doorlock:getDoor(door) end)
-                    elseif exports.ox_doorlock and exports.ox_doorlock.getDoorData then
-                        pcall(function() doorData = exports.ox_doorlock:getDoorData(door) end)
-                    end
-                    if doorData and doorData.coords then
-                        spawnCoords = vector4(doorData.coords.x, doorData.coords.y, doorData.coords.z, doorData.heading or 0.0)
-                    end
-                end
-            end
-        end
+        local doorIds, processedSpawn = ProcessPropertyDoors(data.doors, data.name or data.label)
         data.doors = doorIds
+        if processedSpawn then
+            spawnCoords = processedSpawn
+        end
     end
 
     if not spawnCoords and data.zone_data and data.zone_data.points and #data.zone_data.points > 0 then

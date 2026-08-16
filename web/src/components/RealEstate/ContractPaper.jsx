@@ -164,24 +164,26 @@ const ContractPaper = ({ contract, onClose, onRespond }) => {
                         <span className="cell-lbl">Garage Parking</span>
                         <span className="cell-val">{garageSlots > 0 ? `${garageSlots} Slot${garageSlots > 1 ? 's' : ''}` : 'No'}</span>
                     </div>
-                    <div className="table-row">
-                        <span className="cell-lbl">{isRent ? 'Weekly Lease Rate' : 'Total Purchase Price'}</span>
-                        <span className="cell-val">${priceAmount.toLocaleString()}{isRent ? ' / week' : ''}</span>
-                    </div>
                     {isRent && (
-                        <div className="table-row">
-                            <span className="cell-lbl">Security Deposit</span>
-                            <span className="cell-val">${depositAmount.toLocaleString()}</span>
-                        </div>
+                        <>
+                            <div className="table-row">
+                                <span className="cell-lbl">Weekly Lease Rate</span>
+                                <span className="cell-val">${priceAmount.toLocaleString()} / week</span>
+                            </div>
+                            <div className="table-row">
+                                <span className="cell-lbl">Security Deposit</span>
+                                <span className="cell-val">${depositAmount.toLocaleString()}</span>
+                            </div>
+                        </>
                     )}
                     <div className="table-row total">
-                        <span className="cell-lbl">{isRent ? 'Total Upfront Due' : 'Total Purchase Amount'}</span>
+                        <span className="cell-lbl">{isRent ? 'Total Upfront Due' : 'Total Purchase Price'}</span>
                         <span className="cell-val">${totalUpfront.toLocaleString()}</span>
                     </div>
                 </div>
 
                 <p className="doc-paragraph terms-note">
-                    <strong>COVENANTS & GOVERNING LAW:</strong> Occupancy and title conveyance are subject to San Andreas real estate regulations. {isRent ? 'Lessee agrees to maintain weekly payment obligations. Failure to comply may result in automated repossession or legal eviction.' : 'Buyer acquires full property ownership title upon transaction execution and payment completion.'}
+                    <strong>COVENANTS & GOVERNING LAW:</strong> Occupancy and title conveyance for <strong>{propertyLabel}</strong> are subject to San Andreas real estate regulations. {isRent ? `Lessee (${clientName}) agrees to maintain weekly lease obligations of $${priceAmount.toLocaleString()} to ${agencyName}. Failure to satisfy dues may result in automated repossession or legal eviction.` : `Buyer (${clientName}) acquires full, unencumbered property title to ${propertyLabel} upon transaction execution and full payment of $${priceAmount.toLocaleString()}.`}
                 </p>
 
                 <div className="doc-signatures-wrapper">

@@ -475,32 +475,21 @@ RegisterNUICallback('takePhoto', function(_, cb)
             DisableControlAction(0, 191, true)
             DisableControlAction(0, 177, true)
 
-            if IsDisabledControlJustReleased(0, 191) then
+            if IsDisabledControlJustReleased(0, 191) and not uploading then
                 uploading = true
 
-                exports.screencapture:requestScreenshot({ encoding = 'png' }, function(data)
-                    if data and data ~= '' then
-                        lib.callback('LNS_Housing:server:uploadPhoto', false, function(url)
-                            done = true
-                            SetFollowPedCamViewMode(oldCamMode)
-                            SendNUIMessage({ action = 'toggleVisibility', data = { visible = true } })
-                            SetNuiFocus(true, true)
+                lib.callback('LNS_Housing:server:uploadPhoto', false, function(url)
+                    done = true
+                    SetFollowPedCamViewMode(oldCamMode)
+                    SendNUIMessage({ action = 'toggleVisibility', data = { visible = true } })
+                    SetNuiFocus(true, true)
 
-                            if url then
-                                cb(url)
-                                Bridge.Client.Notify('Photo uploaded successfully!', 'success')
-                            else
-                                cb(nil)
-                                Bridge.Client.Notify('Failed to upload photo. Check console for errors.', 'error')
-                            end
-                        end, data)
+                    if url then
+                        cb(url)
+                        Bridge.Client.Notify('Photo uploaded successfully!', 'success')
                     else
-                        done = true
-                        SetFollowPedCamViewMode(oldCamMode)
-                        SendNUIMessage({ action = 'toggleVisibility', data = { visible = true } })
-                        SetNuiFocus(true, true)
                         cb(nil)
-                        Bridge.Client.Notify('Failed to capture property photo.', 'error')
+                        Bridge.Client.Notify('Failed to upload photo. Check console for errors.', 'error')
                     end
                 end)
 

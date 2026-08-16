@@ -1,0 +1,50 @@
+.debug-menu {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: var(--bg-card);
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid var(--border-dim);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+}
+
+.debug-title {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: 2px;
+  text-align: center;
+  margin-bottom: 5px;
+}
+
+.debug-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.debug-btn {
+  padding: 8px 12px;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.debug-btn:hover {
+  background: rgba(0, 0, 0, 0.5);
+  color: var(--text-main);
+}
+
+.debug-btn.active {
+  background: var(--primary);
+  color: var(--primary-text);
+  font-weight: 700;
+  border-color: var(--primary);
+}

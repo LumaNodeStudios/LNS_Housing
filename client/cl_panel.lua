@@ -31,7 +31,8 @@ end)
 
 RegisterNUICallback('updateProperty', function(data, cb)
     debugPrint('info', 'Panel NUI: updateProperty', data)
-    if insideApartment and MyApartmentId == data.id then
+    local isApartment = (Properties[data.id] and Properties[data.id].isApartment) or (insideApartment and (CurrentApartmentId == data.id or MyApartmentId == data.id))
+    if isApartment then
         TriggerServerEvent('LNS_Housing:server:updateApartmentPermissions', data.id, data.permissions)
     else
         TriggerServerEvent('LNS_Housing:server:updatePermissions', data.id, data.permissions)
@@ -71,7 +72,8 @@ RegisterNUICallback('changeWallColor', function(data, cb)
 
     ApplyWallColor(interiorId, data.color)
         
-    if insideApartment and MyApartmentId == data.propertyId then
+    local isApartment = (Properties[data.propertyId] and Properties[data.propertyId].isApartment) or (insideApartment and (CurrentApartmentId == data.propertyId or MyApartmentId == data.propertyId))
+    if isApartment then
         TriggerServerEvent('LNS_Housing:server:updateApartmentWallColor', data.propertyId, data.color)
     else
         TriggerServerEvent('LNS_Housing:server:updateWallColor', data.propertyId, data.color)

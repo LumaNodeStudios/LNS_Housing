@@ -5,6 +5,104 @@ local LockedStashes = {}
 TemporaryAccess = { doors = {}, stashes = {} }
 FailedAttempts = {}
 
+function ProcessPropertyDoors(doorsInput, propertyLabel)
+    if not doorsInput or type(doorsInput) ~= 'table' or #doorsInput == 0 then
+        return {}, nil
+    end
+
+    local doorIds = {}
+    local spawnCoords = nil
+
+    for i, door in ipairs(doorsInput) do
+        if type(door) == 'table' and door.isDouble then
+            local doorPanels = {}
+            if door.doors and type(door.doors) == 'table' then
+                for j, panel in ipairs(door.doors) do
+                    if type(panel) == 'table' and panel.isNew then
+                        doorPanels[j] = {
+                            model = panel.model,
+                            coords = vector3(panel.coords.x, panel.coords.y, panel.coords.z),
+                            heading = panel.heading or 0.0
+                        }
+                    elseif type(panel) == 'number' or (type(panel) == 'string' and tonumber(panel)) then
+                        local panelId = tonumber(panel)
+                        local panelData = nil
+                        if exports.ox_doorlock and exports.ox_doorlock.getDoor then
+                            pcall(function() panelData = exports.ox_doorlock:getDoor(panelId) end)
+                        elseif exports.ox_doorlock and exports.ox_doorlock.getDoorData then
+                            pcall(function() panelData = exports.ox_doorlock:getDoorData(panelId) end)
+                        end
+                        if panelData and panelData.coords then
+                            doorPanels[j] = {
+                                model = panelData.model,
+                                coords = vector3(panelData.coords.x, panelData.coords.y, panelData.coords.z),
+                                heading = panelData.heading or 0.0
+                            }
+                        end
+                    elseif type(panel) == 'table' and panel.coords then
+                        doorPanels[j] = {
+                            model = panel.model,
+                            coords = vector3(panel.coords.x, panel.coords.y, panel.coords.z),
+                            heading = panel.heading or 0.0
+                        }
+                    end
+                end
+            end
+            if exports.ox_doorlock and exports.ox_doorlock.createDoor then
+                local newDoorId = exports.ox_doorlock:createDoor({
+                    name = (propertyLabel or 'Property') .. ' Double Door ' .. i,
+                    doors = doorPanels,
+                    state = 1,
+                    maxDistance = 2.0
+                })
+                if newDoorId then
+                    doorIds[#doorIds+1] = newDoorId
+                end
+            end
+            if i == 1 and door.doors and door.doors[1] and door.doors[1].coords then
+                local c = door.doors[1].coords
+                spawnCoords = vector4(c.x, c.y, c.z, door.doors[1].heading or 0.0)
+            end
+        elseif type(door) == 'table' and door.isNew then
+            if exports.ox_doorlock and exports.ox_doorlock.createDoor then
+                local newDoorId = exports.ox_doorlock:createDoor({
+                    name = (propertyLabel or 'Property') .. ' Door ' .. i,
+                    model = door.model,
+                    coords = door.coords and vector3(door.coords.x, door.coords.y, door.coords.z) or door.coords,
+                    heading = door.heading or 0.0,
+                    state = 1,
+                    maxDistance = 2.0
+                })
+                if newDoorId then
+                    doorIds[#doorIds+1] = newDoorId
+                end
+            end
+            if i == 1 and door.coords then
+                spawnCoords = vector4(door.coords.x, door.coords.y, door.coords.z, door.heading or 0.0)
+            end
+        elseif type(door) == 'number' or (type(door) == 'string' and tonumber(door)) then
+            local doorIdNum = tonumber(door)
+            doorIds[#doorIds+1] = doorIdNum
+            if i == 1 then
+                local doorData = nil
+                if exports.ox_doorlock and exports.ox_doorlock.getDoor then
+                    pcall(function() doorData = exports.ox_doorlock:getDoor(doorIdNum) end)
+                elseif exports.ox_doorlock and exports.ox_doorlock.getDoorData then
+                    pcall(function() doorData = exports.ox_doorlock:getDoorData(doorIdNum) end)
+                end
+                if doorData and doorData.coords then
+                    spawnCoords = vector4(doorData.coords.x, doorData.coords.y, doorData.coords.z, doorData.heading or 0.0)
+                end
+            end
+        elseif type(door) == 'table' and door._existingId then
+            local doorIdNum = tonumber(door._existingId)
+            doorIds[#doorIds+1] = doorIdNum
+        end
+    end
+
+    return doorIds, spawnCoords
+end
+
 function IsRentOverdue(p)
     if not p or p.sale_type ~= 'rent' or not p.owner then return false end
     if p.metadata and p.metadata.due_by then

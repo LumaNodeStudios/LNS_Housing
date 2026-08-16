@@ -4,7 +4,7 @@ lua54 'yes'
 
 author 'LumaNode Studios'
 description 'LumaNode Studios - Advanced Housing System'
-version '0.1.2'
+version '0.1.3'
 
 ui_page 'web/dist/index.html'
 

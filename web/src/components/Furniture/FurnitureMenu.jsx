@@ -188,7 +188,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
   const handleHoverIn = (item) => {
     if (isPlacing) return;
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-
+    
     hoverTimeoutRef.current = setTimeout(() => {
       activeHoverItemRef.current = item;
       post('hoverIn', item);
@@ -557,6 +557,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
           </motion.div>
         </AnimatePresence>
 
+        {/* Payment Selection Modal — stays nested so it overlays just the sidebar */}
         <AnimatePresence>
           {showPaymentModal && (
             <motion.div
@@ -617,6 +618,14 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
           )}
         </AnimatePresence>
       </motion.div>
+
+      {/*
+        Everything below is rendered OUTSIDE .furniture-sidebar-container on purpose.
+        The sidebar is `overflow: hidden` and locked to a 350px box on the left —
+        anything positioned relative to it (or clipped by it) was either getting cut off
+        (placement-controls) or centering itself against the sidebar box instead of the
+        viewport (Modeler3D's gizmo). Rendering them as siblings fixes both.
+      */}
 
       {freecamMode && (
         <div className={`freecam-hint ${isPlacing ? 'with-placement' : ''}`}>

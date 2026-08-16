@@ -1,3 +1,4 @@
+/* Custom Dropdown / Select Component Styles */
 .re-custom-select-container {
   display: flex;
   flex-direction: column;
@@ -18,34 +19,35 @@
 }
 
 .re-custom-select-label svg {
-  color: var(--primary);
-  opacity: 0.85;
+  color: var(--primary, #3b82f6);
+  opacity: 0.8;
 }
 
 .re-custom-select-trigger {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.25);
   border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.1));
   padding: 10px 12px;
   border-radius: 8px;
   color: var(--text-main, #ffffff);
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 500;
   display: flex;
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
   user-select: none;
-  transition: all 0.18s ease;
+  transition: all 0.2s ease;
 }
 
 .re-custom-select-trigger:hover {
-  border-color: rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .re-custom-select-trigger.active {
-  border-color: var(--primary);
-  background: rgba(0, 0, 0, 0.4);
+  border-color: var(--primary, #3b82f6);
+  background: rgba(59, 130, 246, 0.05);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
 }
 
 .re-custom-select-value {
@@ -56,13 +58,10 @@
 }
 
 .re-custom-select-arrow {
-  color: var(--text-muted, #8a8a93);
+  color: var(--primary, #3b82f6);
   transition: transform 0.2s ease;
+  opacity: 0.8;
   flex-shrink: 0;
-}
-
-.re-custom-select-trigger.active .re-custom-select-arrow {
-  color: var(--primary);
 }
 
 .re-custom-select-arrow.open {
@@ -74,17 +73,18 @@
   top: calc(100% + 6px);
   left: 0;
   width: 100%;
-  background: var(--bg-card, #121214);
+  background: #14141d;
   border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.12));
   border-radius: 8px;
   max-height: 220px;
   overflow-y: auto;
   z-index: 999;
-  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.8), 0 8px 10px -6px rgba(0, 0, 0, 0.7);
 }
 
+/* Custom Scrollbar for Options Panel */
 .re-custom-select-dropdown::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
 }
 
 .re-custom-select-dropdown::-webkit-scrollbar-track {
@@ -97,7 +97,7 @@
 }
 
 .re-custom-select-dropdown::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(59, 130, 246, 0.4);
 }
 
 .re-custom-select-option {
@@ -111,7 +111,7 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .re-custom-select-option:last-child {
@@ -119,19 +119,19 @@
 }
 
 .re-custom-select-option:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
   opacity: 1;
   color: #ffffff;
 }
 
 .re-custom-select-option.selected {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--primary);
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--primary, #3b82f6);
   opacity: 1;
   font-weight: 700;
 }
 
 .re-custom-select-option .option-check {
-  color: var(--primary);
+  color: var(--primary, #3b82f6);
   flex-shrink: 0;
 }

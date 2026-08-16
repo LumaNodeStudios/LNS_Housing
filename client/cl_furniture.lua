@@ -221,8 +221,9 @@ Modeler = {
         end
         
         
-        if isInside and insideApartment and apartmentZone and apartmentZone.contains then
-            isInside = apartmentZone:contains(camPos)
+        local currentZone = apartmentZones and apartmentZones[self.property_id]
+        if isInside and insideApartment and currentZone and currentZone.contains then
+            isInside = currentZone:contains(camPos)
         end
 
         if not isInside then
@@ -901,7 +902,7 @@ end, false)
 local function TryOpenFurnitureMenu()
     if not HasFurnitureManagePermission then return end
 
-    local propertyId = InsidePropertyId or (insideApartment and MyApartmentId)
+    local propertyId = InsidePropertyId or CurrentApartmentId or (insideApartment and MyApartmentId)
     if propertyId then
         TriggerEvent('LNS_Housing:client:openFurnitureMenu', propertyId)
     end

@@ -11,7 +11,8 @@ local apartmentPed = nil
 insideApartment = false
 MyApartmentId = nil
 local MyRoomData = nil
-apartmentZone = nil
+apartmentZones = {}
+CurrentApartmentId = nil
 
 local function CreateApartmentBlip()
     if apartmentBlip then
@@ -99,9 +100,11 @@ function openKeyManagementUI()
 end
 
 local function createApartmentZone(roomData)
-    if apartmentZone then
-        apartmentZone:remove()
-        apartmentZone = nil
+    if not roomData or not roomData.id or not roomData.corners then return end
+
+    if apartmentZones[roomData.id] then
+        apartmentZones[roomData.id]:remove()
+        apartmentZones[roomData.id] = nil
     end
 
     local points = {}
@@ -111,60 +114,65 @@ local function createApartmentZone(roomData)
         points[i] = vec3(corner.x, corner.y, corner.z + zOffset + (thickness / 2))
     end
 
-    apartmentZone = lib.zones.poly({
+    apartmentZones[roomData.id] = lib.zones.poly({
         points = points,
         thickness = thickness,
         debug = Settings.Debug.Zones,
         onEnter = function()
+            CurrentApartmentId = roomData.id
             insideApartment = true
 
-            if MyApartmentId then
-                local roomInfo = lib.callback.await('LNS_Housing:server:getApartmentInfo', false, MyApartmentId)
-                if roomInfo then
-                    local roomData = MyRoomData
-                    if not roomData and Settings.Rooms then
-                        for _, r in ipairs(Settings.Rooms) do
-                            if r.id == MyApartmentId then
-                                roomData = r
-                                break
-                            end
-                        end
+            local roomInfo = lib.callback.await('LNS_Housing:server:getApartmentInfo', false, roomData.id)
+            if roomInfo then
+                local doorId = nil
+                if GetResourceState('ox_doorlock') == 'started' then
+                    local ok, result = pcall(function()
+                        return exports.ox_doorlock:getDoorFromName("Apartment Room #" .. roomData.id)
+                    end)
+                    if ok and result then
+                        doorId = result.id
                     end
-
-                    local doorId = nil
-                    if GetResourceState('ox_doorlock') == 'started' then
-                        local ok, result = pcall(function()
-                            return exports.ox_doorlock:getDoorFromName("Apartment Room #" .. MyApartmentId)
-                        end)
-                        if ok and result then
-                            doorId = result.id
-                        end
-                    end
-
-                    Properties[MyApartmentId] = {
-                        id = MyApartmentId,
-                        label = "Apartment Room #" .. MyApartmentId,
-                        owner = roomInfo.owner,
-                        ownerName = roomInfo.ownerName,
-                        permissions = roomInfo.permissions,
-                        door_id = doorId,
-                        metadata = {
-                            wall_color = roomInfo.wallColor or 0,
-                            allow_wall_colors = true,
-                            security_level = 0,
-                            shell = roomData and roomData.shell or 'Apartment Furnished',
-                            entrance = roomData and roomData.doorCoords and { x = roomData.doorCoords.x, y = roomData.doorCoords.y, z = roomData.doorCoords.z, h = roomData.doorHeading or 0.0 } or nil,
-                            spawn = roomData and roomData.spawn and { x = roomData.spawn.x, y = roomData.spawn.y, z = roomData.spawn.z, w = roomData.spawn.w or 0.0 } or nil
-                        },
-                        furniture = roomInfo.furniture or {},
-                        isApartment = true
-                    }
                 end
-                
-                LoadFurnitures(MyApartmentId)
+
+                Properties[roomData.id] = {
+                    id = roomData.id,
+                    label = "Apartment Room #" .. roomData.id,
+                    owner = roomInfo.owner,
+                    ownerName = roomInfo.ownerName,
+                    permissions = roomInfo.permissions,
+                    door_id = doorId,
+                    metadata = {
+                        wall_color = roomInfo.wallColor or 0,
+                        allow_wall_colors = true,
+                        security_level = 0,
+                        shell = roomData and roomData.shell or 'Apartment Furnished',
+                        entrance = roomData and roomData.doorCoords and { x = roomData.doorCoords.x, y = roomData.doorCoords.y, z = roomData.doorCoords.z, h = roomData.doorHeading or 0.0 } or nil,
+                        spawn = roomData and roomData.spawn and { x = roomData.spawn.x, y = roomData.spawn.y, z = roomData.spawn.z, w = roomData.spawn.w or 0.0 } or nil
+                    },
+                    furniture = roomInfo.furniture or {},
+                    isApartment = true
+                }
+
+                LoadFurnitures(roomData.id)
+
+                CreateThread(function()
+                    local attempts = 0
+                    while insideApartment and (CurrentApartmentId == roomData.id or tostring(CurrentApartmentId) == tostring(roomData.id)) and attempts < 10 do
+                        local interiorId = GetInteriorFromEntity(cache.ped)
+                        if interiorId == 0 then
+                            interiorId = GetInteriorAtCoords(GetEntityCoords(cache.ped))
+                        end
+                        if interiorId ~= 0 then
+                            ApplyWallColor(interiorId, roomInfo.wallColor or 0)
+                            break
+                        end
+                        attempts = attempts + 1
+                        Wait(200)
+                    end
+                end)
             end
 
-            local hasManageAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', MyApartmentId, 'furniture')
+            local hasManageAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', roomData.id, 'furniture')
             if hasManageAccess then
                 HasFurnitureManagePermission = true
                 if not Settings.FurnitureMenu or not Settings.FurnitureMenu.Radial or Settings.FurnitureMenu.Radial.Enabled then
@@ -173,21 +181,29 @@ local function createApartmentZone(roomData)
                         icon = 'couch',
                         label = 'Furniture Menu',
                         onSelect = function()
-                            TriggerEvent('LNS_Housing:client:openFurnitureMenu', MyApartmentId)
+                            TriggerEvent('LNS_Housing:client:openFurnitureMenu', roomData.id)
                         end
                     })
                 end
             end
         end,
         onExit = function()
+            if CurrentApartmentId == roomData.id then
+                CurrentApartmentId = nil
+            end
             insideApartment = false
             HasFurnitureManagePermission = false
-            if MyApartmentId then
-                UnloadFurnitures(MyApartmentId)
-            end
+            UnloadFurnitures(roomData.id)
             lib.removeRadialItem('housing_furniture')
         end
     })
+end
+
+local function RegisterAllApartmentZones()
+    if not Settings.Rooms then return end
+    for _, room in ipairs(Settings.Rooms) do
+        createApartmentZone(room)
+    end
 end
 
 local function teleportToStarterApartment()
@@ -242,64 +258,52 @@ RegisterNetEvent('LNS_Housing:client:setApartmentData', function(roomId, roomDat
     MyApartmentId = roomId
     MyRoomData = roomData
 
-    local roomInfo = lib.callback.await('LNS_Housing:server:getApartmentInfo', false, roomId)
-    if roomInfo then
-        local doorId = nil
-        if GetResourceState('ox_doorlock') == 'started' then
-            local ok, result = pcall(function()
-                return exports.ox_doorlock:getDoorFromName("Apartment Room #" .. roomId)
-            end)
-            if ok and result then
-                doorId = result.id
-            end
-        end
-
-        Properties[roomId] = {
-            id = roomId,
-            label = "Apartment Room #" .. roomId,
-            owner = roomInfo.owner,
-            ownerName = roomInfo.ownerName,
-            permissions = roomInfo.permissions,
-            door_id = doorId,
-            metadata = {
-                wall_color = roomInfo.wallColor or 0,
-                allow_wall_colors = true,
-                security_level = 0,
-                shell = roomData and roomData.shell or 'Apartment Furnished',
-                entrance = roomData and roomData.doorCoords and { x = roomData.doorCoords.x, y = roomData.doorCoords.y, z = roomData.doorCoords.z, h = roomData.doorHeading or 0.0 } or nil,
-                spawn = roomData and roomData.spawn and { x = roomData.spawn.x, y = roomData.spawn.y, z = roomData.spawn.z, w = roomData.spawn.w or 0.0 } or nil
-            },
-            furniture = roomInfo.furniture or {},
-            isApartment = true
-        }
-    end
-
-    createApartmentZone(roomData)
+    RegisterAllApartmentZones()
 end)
 
 RegisterNetEvent('LNS_Housing:client:updateApartmentFurniture', function(roomId, furniture)
     debugPrint('info', 'LNS_Housing:client:updateApartmentFurniture received', {roomId = roomId, furnitureCount = furniture and #furniture or 0})
-    if MyApartmentId == roomId and Properties[roomId] then
+    if Properties[roomId] then
         Properties[roomId].furniture = furniture
+    end
+    if CurrentApartmentId == roomId or (MyApartmentId == roomId and insideApartment) then
+        UnloadFurnitures(roomId)
+        LoadFurnitures(roomId)
         
-        if insideApartment then
-            UnloadFurnitures(roomId)
-            LoadFurnitures(roomId)
-            
-            if Modeler and Modeler.IsMenuActive and Modeler.property_id == roomId then
-                Modeler:UpdateOwnedItems()
-            end
+        if Modeler and Modeler.IsMenuActive and Modeler.property_id == roomId then
+            Modeler:UpdateOwnedItems()
         end
     end
 end)
 
 RegisterNetEvent('LNS_Housing:client:updateApartmentProperties', function(roomId, roomInfo)
     debugPrint('info', 'LNS_Housing:client:updateApartmentProperties received', {roomId = roomId, roomInfo = roomInfo})
-    if MyApartmentId == roomId and Properties[roomId] then
+    if Properties[roomId] then
         Properties[roomId].owner = roomInfo.owner
         Properties[roomId].ownerName = roomInfo.ownerName
         Properties[roomId].permissions = roomInfo.permissions
-        Properties[roomId].metadata.wall_color = roomInfo.wallColor
+        if Properties[roomId].metadata then
+            Properties[roomId].metadata.wall_color = roomInfo.wallColor
+        end
+    end
+end)
+
+RegisterNetEvent('LNS_Housing:client:updateApartmentWallColor', function(roomId, color)
+    debugPrint('info', 'LNS_Housing:client:updateApartmentWallColor received', {roomId = roomId, color = color})
+    if Properties[roomId] then
+        if not Properties[roomId].metadata then
+            Properties[roomId].metadata = {}
+        end
+        Properties[roomId].metadata.wall_color = color
+    end
+    if (CurrentApartmentId == roomId or tostring(CurrentApartmentId) == tostring(roomId)) and insideApartment then
+        local interiorId = GetInteriorFromEntity(cache.ped)
+        if interiorId == 0 then
+            interiorId = GetInteriorAtCoords(GetEntityCoords(cache.ped))
+        end
+        if interiorId ~= 0 then
+            ApplyWallColor(interiorId, color)
+        end
     end
 end)
 
@@ -333,6 +337,7 @@ local function LoadCustomApartments()
                 table.insert(Settings.Rooms, roomData)
             end
         end
+        RegisterAllApartmentZones()
     end
 end
 
@@ -514,12 +519,17 @@ end)
 AddEventHandler('onResourceStop', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end
     
-    if MyApartmentId then
+    if CurrentApartmentId then
+        UnloadFurnitures(CurrentApartmentId)
+    elseif MyApartmentId then
         UnloadFurnitures(MyApartmentId)
     end
     
-    if apartmentZone then
-        apartmentZone:remove()
+    if apartmentZones then
+        for _, z in pairs(apartmentZones) do
+            z:remove()
+        end
+        apartmentZones = {}
     end
 
     if apartmentPed then
@@ -538,15 +548,20 @@ AddEventHandler('onResourceStop', function(resourceName)
 end)
 
 local function CleanUpApartmentSession()
-    if MyApartmentId then
+    if CurrentApartmentId then
+        UnloadFurnitures(CurrentApartmentId)
+    elseif MyApartmentId then
         UnloadFurnitures(MyApartmentId)
     end
-    if apartmentZone then
-        apartmentZone:remove()
-        apartmentZone = nil
+    if apartmentZones then
+        for _, z in pairs(apartmentZones) do
+            z:remove()
+        end
+        apartmentZones = {}
     end
     MyApartmentId = nil
     MyRoomData = nil
+    CurrentApartmentId = nil
     insideApartment = false
 end
 

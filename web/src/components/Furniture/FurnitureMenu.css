@@ -437,6 +437,7 @@
   color: var(--text-muted);
 }
 
+/* Empty State */
 .cart-empty-container {
   display: flex;
   flex-direction: column;
@@ -498,6 +499,7 @@
   color: #fff;
 }
 
+/* Cart Items List */
 .cart-items-list {
   flex: 1;
   overflow-y: auto;
@@ -608,6 +610,7 @@
   border-color: #ef4444;
 }
 
+/* Footer Section */
 .cart-footer {
   padding: 16px;
   border-top: 1px solid var(--border-dim);
@@ -1132,6 +1135,7 @@
   border-color: var(--primary) !important;
 }
 
+/* Payment Selection Modal */
 .payment-modal-overlay {
   position: absolute;
   top: 0;
@@ -1319,6 +1323,7 @@
   color: #ef4444;
 }
 
+/* Redesigned Owned Furniture/Editor View */
 .editor-empty-container {
   display: flex;
   flex-direction: column;

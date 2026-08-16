@@ -133,8 +133,17 @@ button:hover {
 
 .panel-container,
 .re-container,
-.re-paper-overlay,
 .apt-creator-modal,
 .furniture-menu-container {
   pointer-events: auto;
+}
+
+
+.panel-single-container,
+.re-paper-overlay {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }

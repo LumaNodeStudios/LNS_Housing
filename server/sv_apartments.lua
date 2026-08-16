@@ -412,7 +412,7 @@ lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, ro
     local citizenid = Bridge.Server.GetIdentifier(source)
     if not citizenid then return nil end
 
-    local result = MySQL.single.await('SELECT * FROM apartments WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
+    local result = MySQL.single.await('SELECT * FROM apartments WHERE room_id = ? ORDER BY id ASC LIMIT 1', {roomId})
     if result then
         local furnitureList = json.decode(result.furniture or '[]')
         local roomData = getRoomDataById(roomId)
@@ -491,7 +491,7 @@ RegisterNetEvent('LNS_Housing:server:updateApartmentPermissions', function(roomI
     local citizenid = Bridge.Server.GetIdentifier(src)
     if not citizenid then return end
 
-    local result = MySQL.single.await('SELECT citizenid FROM apartments WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
+    local result = MySQL.single.await('SELECT citizenid, wall_color FROM apartments WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
     if result then
         local uniqueResidents = {}
         for category, cids in pairs(permissions) do
@@ -526,25 +526,10 @@ RegisterNetEvent('LNS_Housing:server:updateApartmentPermissions', function(roomI
             owner = citizenid,
             ownerName = ownerName,
             permissions = permissions,
-            wallColor = 0
+            wallColor = result.wall_color or 0
         })
         
         Bridge.Server.Notify(src, 'Apartment permissions updated successfully!', 'success')
-    end
-end)
-
-RegisterNetEvent('LNS_Housing:server:updateApartmentWallColor', function(roomId, color)
-    local src = source
-    local citizenid = Bridge.Server.GetIdentifier(src)
-    if not citizenid then return end
-
-    local result = MySQL.single.await('SELECT citizenid FROM apartments WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
-    if result then
-        MySQL.update.await('UPDATE apartments SET wall_color = ? WHERE room_id = ? AND citizenid = ?', {
-            color,
-            roomId,
-            citizenid
-        })
     end
 end)
 
@@ -569,6 +554,22 @@ local function FindManagedApartment(roomId, citizenid)
     end
     return nil
 end
+
+RegisterNetEvent('LNS_Housing:server:updateApartmentWallColor', function(roomId, color)
+    local src = source
+    local citizenid = Bridge.Server.GetIdentifier(src)
+    if not citizenid then return end
+
+    local row = FindManagedApartment(roomId, citizenid)
+    if row then
+        MySQL.update.await('UPDATE apartments SET wall_color = ? WHERE room_id = ? AND citizenid = ?', {
+            color,
+            roomId,
+            row.citizenid
+        })
+        TriggerClientEvent('LNS_Housing:client:updateApartmentWallColor', -1, roomId, color)
+    end
+end)
 
 RegisterNetEvent('LNS_Housing:server:saveApartmentFurniture', function(roomId, furnitureData)
     local src = source

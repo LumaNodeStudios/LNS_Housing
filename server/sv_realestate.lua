@@ -383,8 +383,13 @@ lib.callback.register('LNS_Housing:server:updateListingDetails', function(source
         end
     else
         p.metadata.entrance = nil
-        p.doors = data.doors or p.doors
+        if data.doors then
+            local doorIds = ProcessPropertyDoors(data.doors, p.label)
+            p.doors = doorIds
+        end
     end
+
+    SyncPropertyDoor(propertyId)
 
     if p.sale_type == 'auction' then
         if not p.auction_data then

@@ -458,11 +458,32 @@ function LockpickStash(propertyId, stashId)
     end
 end
 
-function ApplyWallColor(interiorId, color)
+function ApplyWallColor(interiorId, color, customEntitySet)
     if not interiorId or interiorId == 0 then return end
     
-    ActivateInteriorEntitySet(interiorId, "wall_tint")
-    SetInteriorEntitySetColor(interiorId, "wall_tint", color)
+    local setsToTry = {}
+    if customEntitySet then
+        table.insert(setsToTry, customEntitySet)
+    end
+    
+    if insideApartment and CurrentApartmentId then
+        local roomId = tonumber(CurrentApartmentId)
+        if roomId then
+            local modRoom = roomId % 100
+            if modRoom ~= roomId and modRoom > 0 then
+                table.insert(setsToTry, "wall_tint_" .. modRoom)
+            end
+            table.insert(setsToTry, "wall_tint_" .. roomId)
+        end
+    end
+
+    table.insert(setsToTry, "wall_tint")
+
+    for _, setName in ipairs(setsToTry) do
+        ActivateInteriorEntitySet(interiorId, setName)
+        SetInteriorEntitySetColor(interiorId, setName, color or 0)
+    end
+
     RefreshInterior(interiorId)
     
     pcall(function()
@@ -1353,6 +1374,13 @@ CreateThread(function()
                             ApplyWallColor(interiorId, p.metadata.wall_color)
                         end
                         break
+                    end
+                end
+
+                if insideApartment and CurrentApartmentId and Properties[CurrentApartmentId] then
+                    local p = Properties[CurrentApartmentId]
+                    if p.metadata and p.metadata.wall_color and p.metadata.allow_wall_colors then
+                        ApplyWallColor(interiorId, p.metadata.wall_color)
                     end
                 end
             end

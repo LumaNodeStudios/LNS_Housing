@@ -479,7 +479,8 @@ async function uploadPropertyPhoto(base64Data) {
 
     const storage = SvSettings.FurnitureImageStorage || { Type: 'local' };
     const storageType = (storage.Type || 'local').toLowerCase();
-    const filename = `prop_${Date.now()}.png`;
+    const ext = (typeof base64Data === 'string' && base64Data.includes('data:image/webp')) ? 'webp' : 'png';
+    const filename = `prop_${Date.now()}.${ext}`;
 
     if (storageType === 'local') {
         try {
@@ -526,9 +527,19 @@ async function uploadPropertyPhoto(base64Data) {
 on('LNS_Housing:server:uploadPropertyPhotoJS', async (base64Data, cb) => {
     try {
         const url = await uploadPropertyPhoto(base64Data);
-        cb(url);
+        if (typeof cb === 'function') cb(url);
     } catch (err) {
         console.log('^1[LNS_Housing]^0 Property photo upload failed: ' + err.message);
-        cb(null);
+        if (typeof cb === 'function') cb(null);
+    }
+});
+
+global.exports('UploadPropertyPhotoJS', async (base64Data) => {
+    try {
+        const url = await uploadPropertyPhoto(base64Data);
+        return url;
+    } catch (err) {
+        console.log('^1[LNS_Housing]^0 Property photo upload failed: ' + err.message);
+        return null;
     }
 });
