@@ -565,16 +565,10 @@ local function CleanUpApartmentSession()
     insideApartment = false
 end
 
-RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
-    debugPrint('info', 'Apartments QBCore:Client:OnPlayerUnload received')
+RegisterNetEvent('LNS_Housing:client:cleanUpApartmentSession', function()
+    debugPrint('info', 'LNS_Housing:client:cleanUpApartmentSession received')
     CleanUpApartmentSession()
 end)
-
-RegisterNetEvent('esx:onPlayerLogout', function()
-    debugPrint('info', 'Apartments esx:onPlayerLogout received')
-    CleanUpApartmentSession()
-end)
-
 
 exports('GetPlayerSpawns', function()
     if not Properties or next(Properties) == nil then

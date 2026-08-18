@@ -314,9 +314,9 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
         end
 
         local isOwner = false
-        if license then
-            local checkOwner = MySQL.single.await('SELECT room_id FROM player_apartments WHERE license = ?', {license})
-            if checkOwner and checkOwner.room_id == roomId then
+        if citizenid then
+            local checkOwner = MySQL.single.await('SELECT id FROM apartments WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
+            if checkOwner then
                 isOwner = true
             end
         end

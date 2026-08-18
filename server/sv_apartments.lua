@@ -314,10 +314,20 @@ local function OnPlayerLoaded(src)
     end
 end
 
+local function OnPlayerUnloaded(src)
+    if not src then return end
+    SetPlayerRoutingBucket(src, 0)
+    TriggerClientEvent('LNS_Housing:client:cleanUpApartmentSession', src)
+end
+
 if Bridge.Framework == 'qbx' then
     RegisterNetEvent('QBCore:Server:OnPlayerLoaded', function()
         local src = source
         OnPlayerLoaded(src)
+    end)
+    AddEventHandler('QBCore:Server:OnPlayerUnload', function(src)
+        src = src or source
+        OnPlayerUnloaded(src)
     end)
 elseif Bridge.Framework == 'esx' then
     RegisterNetEvent('esx:playerLoaded', function(playerId, xPlayer)
@@ -325,6 +335,14 @@ elseif Bridge.Framework == 'esx' then
     end)
     RegisterNetEvent('esx:onPlayerInitialised', function(playerId)
         OnPlayerLoaded(playerId)
+    end)
+    AddEventHandler('esx:playerLogout', function(playerId)
+        print(string.format("Player %s logged out.", playerId))
+        OnPlayerUnloaded(playerId)
+    end)
+    AddEventHandler('esx:playerDropped', function(playerId)
+        print(string.format("Player %s disconnected out.", playerId))
+        OnPlayerUnloaded(playerId)
     end)
 end
 
@@ -406,13 +424,41 @@ lib.callback.register('LNS_Housing:server:claimNewCharacterSpawn', function(sour
     return { shouldSpawn = false }
 end)
 
+local function FindManagedApartment(roomId, citizenid)
+    local results = MySQL.query.await('SELECT citizenid, permissions, furniture FROM apartments WHERE room_id = ?', {roomId})
+    if not results then return nil end
+
+    for _, row in ipairs(results) do
+        if row.citizenid == citizenid then
+            return row
+        end
+        if row.permissions then
+            local perms = json.decode(row.permissions)
+            if perms and perms.manage then
+                for _, cid in ipairs(perms.manage) do
+                    if cid == citizenid then
+                        return row
+                    end
+                end
+            end
+        end
+    end
+    return nil
+end
+
 lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, roomId)
     debugPrint('info', 'LNS_Housing:server:getApartmentInfo called', {source = source, roomId = roomId})
     WaitForDb()
     local citizenid = Bridge.Server.GetIdentifier(source)
     if not citizenid then return nil end
 
-    local result = MySQL.single.await('SELECT * FROM apartments WHERE room_id = ? ORDER BY id ASC LIMIT 1', {roomId})
+    local result = MySQL.single.await('SELECT * FROM apartments WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
+    if not result then
+        result = FindManagedApartment(roomId, citizenid)
+        if not result then
+            result = MySQL.single.await('SELECT * FROM apartments WHERE room_id = ? ORDER BY id ASC LIMIT 1', {roomId})
+        end
+    end
     if result then
         local furnitureList = json.decode(result.furniture or '[]')
         local roomData = getRoomDataById(roomId)
@@ -532,28 +578,6 @@ RegisterNetEvent('LNS_Housing:server:updateApartmentPermissions', function(roomI
         Bridge.Server.Notify(src, 'Apartment permissions updated successfully!', 'success')
     end
 end)
-
-local function FindManagedApartment(roomId, citizenid)
-    local results = MySQL.query.await('SELECT citizenid, permissions, furniture FROM apartments WHERE room_id = ?', {roomId})
-    if not results then return nil end
-
-    for _, row in ipairs(results) do
-        if row.citizenid == citizenid then
-            return row
-        end
-        if row.permissions then
-            local perms = json.decode(row.permissions)
-            if perms and perms.manage then
-                for _, cid in ipairs(perms.manage) do
-                    if cid == citizenid then
-                        return row
-                    end
-                end
-            end
-        end
-    end
-    return nil
-end
 
 RegisterNetEvent('LNS_Housing:server:updateApartmentWallColor', function(roomId, color)
     local src = source
