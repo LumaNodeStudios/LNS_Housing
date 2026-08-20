@@ -1090,7 +1090,7 @@ function RegisterPropertyEntranceTargets(p)
     end
 
     table.insert(options, {
-        label = 'Raid House',
+        label = 'Breach Door',
         icon = 'fas fa-shield-halved',
         items = Settings.Security.RaidItem,
         canInteract = function()
@@ -1099,6 +1099,22 @@ function RegisterPropertyEntranceTargets(p)
         end,
         onSelect = function()
             StartPoliceRaid(id, 'house', doorId)
+        end
+    })
+
+    table.insert(options, {
+        label = 'Secure Door',
+        icon = 'fas fa-lock',
+        canInteract = function()
+            local job = Bridge.Client.GetPlayerJob()
+            if not job or job.name ~= 'police' then return false end
+            local isDoorBreached = lib.callback.await('LNS_Housing:server:isDoorBreached', false, id)
+            local prop = Properties[id]
+            local isUnlocked = prop and prop.metadata and prop.metadata.locked == false
+            return isDoorBreached or isUnlocked
+        end,
+        onSelect = function()
+            TriggerServerEvent('LNS_Housing:server:policeSecureDoor', id, 'house', doorId)
         end
     })
 
@@ -1507,48 +1523,6 @@ AddEventHandler('onResourceStop', function(resourceName)
     CleanUpHousingSession()
 end)
 
-
-function StartPoliceRaid(propertyId, propertyType, doorId)
-    local duration = Settings.Security.RaidDuration or 5000
-
-    if lib.progressBar({
-        duration = duration,
-        label = 'Breaching door lock...',
-        useWhileDead = false,
-        canCancel = true,
-        disable = { car = true, move = true, combat = true },
-        anim = {
-            dict = 'missheistfbi3b_ig7',
-            clip = 'lift_fibagent_loop',
-            flags = 49,
-        },
-    }) then
-        TriggerServerEvent('LNS_Housing:server:policeRaidDoor', propertyId, propertyType, doorId)
-    else
-        Bridge.Client.Notify('Breaching cancelled.', 'error')
-    end
-end
-
-function StartPoliceStashRaid(propertyId, stashId)
-    local duration = Settings.Security.RaidStorageDuration or 5000
-
-    if lib.progressBar({
-        duration = duration,
-        label = 'Breaching storage lock...',
-        useWhileDead = false,
-        canCancel = true,
-        disable = { car = true, move = true, combat = true },
-        anim = {
-            dict = 'missheistfbi3b_ig7',
-            clip = 'lift_fibagent_loop',
-            flags = 49,
-        },
-    }) then
-        TriggerServerEvent('LNS_Housing:server:policeRaidStash', propertyId)
-    else
-        Bridge.Client.Notify('Breaching cancelled.', 'error')
-    end
-end
 
 
 SpawnedShells = {}

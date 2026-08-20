@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<CWeaponModelInfo__InitDataList>
+  <InitDatas>
+    <Item>
+      <modelName>w_me_batteringram</modelName>
+      <txdName>w_me_batteringram</txdName>
+      <ptfxAssetName>null</ptfxAssetName>
+      <lodDist value="75" />
+    </Item>
+  </InitDatas>
+</CWeaponModelInfo__InitDataList>

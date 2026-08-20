@@ -6,6 +6,7 @@ import RealEstate from './components/RealEstate/RealEstate';
 import ContractPaper from './components/RealEstate/ContractPaper';
 import ApartmentCreator from './components/ApartmentCreator/ApartmentCreator';
 import ScreenshotProgress from './components/ScreenshotProgress/ScreenshotProgress';
+import BreachMinigame from './components/BreachMinigame/BreachMinigame';
 import { AnimatePresence } from 'framer-motion';
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
   const [contractPaperData, setContractPaperData] = useState(null);
   const [showApartmentCreator, setShowApartmentCreator] = useState(false);
   const [showApartmentEditor, setShowApartmentEditor] = useState(false);
+  const [showBreachMinigame, setShowBreachMinigame] = useState(false);
   const [screenshotProgress, setScreenshotProgress] = useState(null);
 
   const [isVisible, setIsVisible] = useState(true);
@@ -36,6 +38,7 @@ function App() {
     setShowContractPaper(false);
     setShowApartmentCreator(false);
     setShowApartmentEditor(false);
+    setShowBreachMinigame(false);
   };
 
   useEffect(() => {
@@ -113,6 +116,13 @@ function App() {
           break;
         case 'closeUI':
           closeAll();
+          break;
+        case 'startBreachMinigame':
+          setIsVisible(true);
+          setShowBreachMinigame(true);
+          break;
+        case 'closeBreachMinigame':
+          setShowBreachMinigame(false);
           break;
         case 'toggleVisibility':
           setIsVisible(data.visible);
@@ -529,6 +539,8 @@ function App() {
             />
           )}
         </AnimatePresence>
+
+        <BreachMinigame active={showBreachMinigame} onClose={() => setShowBreachMinigame(false)} />
       </div>
     </div>
   );

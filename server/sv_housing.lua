@@ -233,14 +233,6 @@ lib.callback.register('LNS_Housing:server:getProperties', function(source)
     return Properties
 end)
 
-lib.callback.register('LNS_Housing:server:isDoorBreached', function(source, propertyId)
-    debugPrint('info', 'LNS_Housing:server:isDoorBreached called', {source = source, propertyId = propertyId})
-    if TemporaryAccess.doors[propertyId] and next(TemporaryAccess.doors[propertyId]) then
-        return true
-    end
-    return false
-end)
-
 local function HasPermissionAccess(source, propertyId, type)
     return CheckPermission(source, 'house', propertyId, type, true)
 end
@@ -329,76 +321,6 @@ RegisterNetEvent('LNS_Housing:server:lockpickSuccess', function(propertyId, type
             end)
         end
     end
-end)
-
-RegisterNetEvent('LNS_Housing:server:policeRaidDoor', function(propertyId, propertyType, doorId)
-    local src = source
-    debugPrint('info', 'LNS_Housing:server:policeRaidDoor received', {src = src, propertyId = propertyId, propertyType = propertyType, doorId = doorId})
-    local playerJob = Bridge.Server.GetPlayerJob(src)
-    if not playerJob or playerJob.name ~= 'police' then
-        return
-    end
-
-    local raidItem = Settings.Security.RaidItem
-    local itemCount = exports.ox_inventory:Search(src, 'count', raidItem)
-    if itemCount < 1 then
-        Bridge.Server.Notify(src, 'You do not have the required breaching item!', 'error')
-        return
-    end
-
-    if propertyType == 'apartment' then
-        local doorName = "Apartment Room #" .. propertyId
-        local existingDoor = exports.ox_doorlock:getDoorFromName(doorName)
-        if existingDoor then
-            doorId = existingDoor.id
-        end
-    end
-
-    if doorId and doorId ~= 0 then
-        exports.ox_doorlock:setDoorState(doorId, 0)
-
-        local identifier = Bridge.Server.GetIdentifier(src)
-        if not TemporaryAccess.doors[propertyId] then TemporaryAccess.doors[propertyId] = {} end
-        TemporaryAccess.doors[propertyId][identifier] = true
-
-        Bridge.Server.Notify(src, 'Door breached successfully!', 'success')
-    else
-        
-        local p = Properties[propertyId]
-        if p and p.metadata and p.metadata.entrance then
-            p.metadata.locked = false
-            SaveProperty(propertyId)
-
-            local identifier = Bridge.Server.GetIdentifier(src)
-            if not TemporaryAccess.doors[propertyId] then TemporaryAccess.doors[propertyId] = {} end
-            TemporaryAccess.doors[propertyId][identifier] = true
-
-            TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
-            Bridge.Server.Notify(src, 'Door breached successfully!', 'success')
-        end
-    end
-end)
-
-RegisterNetEvent('LNS_Housing:server:policeRaidStash', function(propertyId)
-    local src = source
-    debugPrint('info', 'LNS_Housing:server:policeRaidStash received', {src = src, propertyId = propertyId})
-    local playerJob = Bridge.Server.GetPlayerJob(src)
-    if not playerJob or playerJob.name ~= 'police' then
-        return
-    end
-
-    local raidItem = Settings.Security.RaidItem
-    local itemCount = exports.ox_inventory:Search(src, 'count', raidItem)
-    if itemCount < 1 then
-        Bridge.Server.Notify(src, 'You do not have the required breaching item!', 'error')
-        return
-    end
-
-    local identifier = Bridge.Server.GetIdentifier(src)
-    if not TemporaryAccess.stashes[propertyId] then TemporaryAccess.stashes[propertyId] = {} end
-    TemporaryAccess.stashes[propertyId][identifier] = true
-
-    Bridge.Server.Notify(src, 'Storage breached successfully!', 'success')
 end)
 
 lib.callback.register('LNS_Housing:server:buyHouse', function(source, propertyId)

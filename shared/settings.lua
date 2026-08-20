@@ -148,9 +148,12 @@ return {
     ----------------------------------------------------------------------------
     Security = {
         LockpickItem = 'lockpick',          -- Item needed for ordinary house lockpicking
-        RaidItem = 'police_ram',            -- Item needed by police/authorized factions to raid properties
-        RaidDuration = 50000,               -- Time in milliseconds required to break open a door during a raid
-        RaidStorageDuration = 10000,        -- Time in milliseconds to break open a property stash
+        RaidItem = 'WEAPON_BATTERINGRAM',   -- Item needed by police/authorized factions to raid properties
+        RequiredBreachHits = 3,             -- Minimum hits required with battering ram to breach door
+        RamProp = 'w_me_batteringram',     -- Battering ram prop model used in 3D drag minigame (custom weapon prop)
+        RamRotation = { pitch = 64.9, roll = 37.0, yawOffset = 66.8 }, -- User configured 3D modeler rotation
+        RaidDuration = 6000,                -- Time in milliseconds required to break open a door during a raid
+        RaidStorageDuration = 6000,         -- Time in milliseconds to break open a property stash
         MaxLevel = 5,                       -- Maximum upgradable lock level for houses
         UpgradePrice = {                    -- Upgrade price for each security level
             [1] = 10000,

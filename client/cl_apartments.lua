@@ -390,7 +390,7 @@ local function RegisterApartmentDoors(delay)
                                 end
                             },
                             {
-                                label = 'Raid Apartment',
+                                label = 'Breach Door',
                                 icon = 'fas fa-shield-halved',
                                 items = Settings.Security.RaidItem,
                                 canInteract = function()
@@ -399,6 +399,18 @@ local function RegisterApartmentDoors(delay)
                                 end,
                                 onSelect = function()
                                     StartPoliceRaid(room.id, 'apartment', nil)
+                                end
+                            },
+                            {
+                                label = 'Secure Door',
+                                icon = 'fas fa-lock',
+                                canInteract = function()
+                                    local job = Bridge.Client.GetPlayerJob()
+                                    if not job or job.name ~= 'police' then return false end
+                                    return lib.callback.await('LNS_Housing:server:isDoorBreached', false, room.id)
+                                end,
+                                onSelect = function()
+                                    TriggerServerEvent('LNS_Housing:server:policeSecureDoor', room.id, 'apartment', nil)
                                 end
                             },
                         }

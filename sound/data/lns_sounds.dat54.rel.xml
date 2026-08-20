@@ -5,6 +5,17 @@
   </ContainerPaths>
   <Items>
     <Item type="SimpleSound">
+      <Name>breaching_sp</Name>
+      <Header>
+        <Flags value="0x00008004" />
+        <Volume value="200" />
+        <Category>scripted</Category>
+      </Header>
+      <ContainerName>audiodirectory/lns_bank</ContainerName>
+      <FileName>breaching</FileName>
+      <WaveSlotNum value="0" />
+    </Item>
+    <Item type="SimpleSound">
       <Name>house_alarm_sp</Name>
       <Header>
         <Flags value="0x00008004" />
@@ -32,6 +43,10 @@
         <Flags value="0xAAAAAAAA" />
       </Header>
       <SoundSets>
+        <Item>
+          <ScriptName>breaching</ScriptName>
+          <ChildSound>breaching_sp</ChildSound>
+        </Item>
         <Item>
           <ScriptName>house_alarm</ScriptName>
           <ChildSound>house_alarm_sp</ChildSound>
