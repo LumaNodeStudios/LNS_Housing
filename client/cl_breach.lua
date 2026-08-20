@@ -269,7 +269,8 @@ local function ApplyBreachForceToDoor(doorId, propertyId)
                     while true do
                         local elapsed = GetGameTimer() - startTime
                         local t = math.min(1.0, elapsed / duration)
-                        local ease = 1.0 - (1.0 - t) * (1.0 - t) * (1.0 - t)
+                        --local ease = 1.0 - (1.0 - t) * (1.0 - t) * (1.0 - t)
+                        local ease = 1.0 - (1.0 - t) * (1.0 - t)
 
                         local curHeading = (doorHeading + (swingAngle * ease)) % 360.0
 
@@ -361,13 +362,7 @@ RegisterNUICallback('breachHit', function(data, cb)
     end
 
     if currentCam and DoesCamExist(currentCam) then
-        StopCamShaking(currentCam, true)
-        ShakeCam(currentCam, "SMALL_EXPLOSION_SHAKE", 0.15)
-        SetTimeout(350, function()
-            if currentCam and DoesCamExist(currentCam) then
-                StopCamShaking(currentCam, true)
-            end
-        end)
+        ShakeCam(currentCam, "SMALL_EXPLOSION_SHAKE", 0.10)
     end
 
     local requiredHits = Settings.Security.RequiredBreachHits or 3
