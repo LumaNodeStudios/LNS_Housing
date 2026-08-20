@@ -228,7 +228,6 @@ function Bridge.Client.UnregisterGarage(propertyId)
 end
 
 -- Phone Scripts
--- Phone Scripts
 function Bridge.Client.PhoneNotification(data)
     debugPrint('info', 'Sending phone notification', data)
     if Bridge.PhoneScript == 'sd-phone' then

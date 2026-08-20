@@ -30,9 +30,15 @@ function IsKeyholder(source, targetId, isApartment)
         for _, row in ipairs(rows) do
             if row.citizenid == identifier then return true end
             local perms = row.permissions and json.decode(row.permissions)
-            if perms and perms.entry then
-                for _, cid in ipairs(perms.entry) do
-                    if cid == identifier then return true end
+            if perms and type(perms) == 'table' then
+                if perms.entry and type(perms.entry) == 'table' then
+                    for _, cid in ipairs(perms.entry) do
+                        if cid == identifier then return true end
+                    end
+                elseif #perms > 0 then
+                    for _, cid in ipairs(perms) do
+                        if cid == identifier then return true end
+                    end
                 end
             end
         end
@@ -43,9 +49,15 @@ function IsKeyholder(source, targetId, isApartment)
     if not p then return false end
 
     if p.owner == identifier then return true end
-    if p.permissions and p.permissions.entry then
-        for _, cid in ipairs(p.permissions.entry) do
-            if cid == identifier then return true end
+    if p.permissions and type(p.permissions) == 'table' then
+        if p.permissions.entry and type(p.permissions.entry) == 'table' then
+            for _, cid in ipairs(p.permissions.entry) do
+                if cid == identifier then return true end
+            end
+        elseif #p.permissions > 0 then
+            for _, cid in ipairs(p.permissions) do
+                if cid == identifier then return true end
+            end
         end
     end
     return false
@@ -249,11 +261,20 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
         if not IsRentOverdue(p) then
             if p.owner == identifier then
                 hasStandardAccess = true
-            elseif p.permissions and p.permissions[accessType] then
-                for _, cid in ipairs(p.permissions[accessType]) do
-                    if cid == identifier then
-                        hasStandardAccess = true
-                        break
+            elseif p.permissions and type(p.permissions) == 'table' then
+                if p.permissions[accessType] and type(p.permissions[accessType]) == 'table' then
+                    for _, cid in ipairs(p.permissions[accessType]) do
+                        if cid == identifier then
+                            hasStandardAccess = true
+                            break
+                        end
+                    end
+                elseif (accessType == 'entry' or accessType == 'doors') and #p.permissions > 0 then
+                    for _, cid in ipairs(p.permissions) do
+                        if cid == identifier then
+                            hasStandardAccess = true
+                            break
+                        end
                     end
                 end
             end
@@ -361,14 +382,20 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
             end
         end
 
-        local result = MySQL.single.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
+        local result = MySQL.single.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ? ORDER BY id ASC LIMIT 1', {roomId})
         if result then
             if result.citizenid == citizenid then return true end
             
             local permissions = json.decode(result.permissions or '{"entry":[], "storage":[], "wardrobe":[], "furniture":[], "manage":[]}')
-            if permissions[accessType] then
-                for _, cid in ipairs(permissions[accessType]) do
-                    if cid == citizenid then return true end
+            if type(permissions) == 'table' then
+                if permissions[accessType] and type(permissions[accessType]) == 'table' then
+                    for _, cid in ipairs(permissions[accessType]) do
+                        if cid == citizenid then return true end
+                    end
+                elseif (accessType == 'entry' or accessType == 'doors') and #permissions > 0 then
+                    for _, cid in ipairs(permissions) do
+                        if cid == citizenid then return true end
+                    end
                 end
             end
         end

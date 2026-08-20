@@ -2,6 +2,20 @@ local Settings = lib.load('shared.settings')
 
 RegisterNetEvent('LNS_Housing:client:openPanel', function(propertyData)
     debugPrint('info', 'LNS_Housing:client:openPanel received', propertyData)
+    if not propertyData or not propertyData.id then return end
+
+    local isApartment = propertyData.isApartment or false
+    local targetType = isApartment and 'apartment' or 'house'
+
+    local isOwnerRentAccess = (propertyData.focusTab == 'rent' and propertyData.owner and propertyData.owner == Bridge.Client.GetIdentifier())
+    if not isOwnerRentAccess then
+        local hasManage = lib.callback.await('LNS_Housing:server:checkPermission', false, targetType, propertyData.id, 'manage')
+        if not hasManage then
+            Bridge.Client.Notify('You do not have management access for this panel.', 'error')
+            return
+        end
+    end
+
     if propertyData and propertyData.metadata then
         propertyData.wallColor = propertyData.metadata.wall_color
         propertyData.allowWallColors = propertyData.metadata.allow_wall_colors

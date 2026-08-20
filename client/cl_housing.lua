@@ -936,10 +936,19 @@ local function HasPropertyAccessLocal(p, action)
         return true
     end
 
-    if p.permissions and p.permissions.entry then
-        for _, cid in ipairs(p.permissions.entry) do
-            if cid == identifier then
-                return true
+    local act = action or 'entry'
+    if p.permissions and type(p.permissions) == 'table' then
+        if p.permissions[act] and type(p.permissions[act]) == 'table' then
+            for _, cid in ipairs(p.permissions[act]) do
+                if cid == identifier then
+                    return true
+                end
+            end
+        elseif act == 'entry' and #p.permissions > 0 then
+            for _, cid in ipairs(p.permissions) do
+                if cid == identifier then
+                    return true
+                end
             end
         end
     end
