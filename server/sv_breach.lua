@@ -103,6 +103,8 @@ RegisterNetEvent('LNS_Housing:server:policeSecureDoor', function(propertyId, pro
         exports.ox_doorlock:setDoorState(doorId, 1)
     end
 
+    TriggerClientEvent('LNS_Housing:client:breachRestoreDoor', -1, doorId, propertyId)
+
     local p = Properties[propertyId]
     if p and p.metadata then
         p.metadata.locked = true
@@ -114,6 +116,5 @@ RegisterNetEvent('LNS_Housing:server:policeSecureDoor', function(propertyId, pro
         TemporaryAccess.doors[propertyId] = nil
     end
 
-    TriggerClientEvent('LNS_Housing:client:breachRestoreDoor', -1, doorId, propertyId)
     Bridge.Server.Notify(src, 'Door secured and locked successfully.', 'success')
 end)

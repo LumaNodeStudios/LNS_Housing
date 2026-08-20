@@ -962,19 +962,26 @@ local function HasPropertyAccessLocal(p, action)
     return false
 end
 
+local function RemoveEntranceTarget(id)
+    if not EntranceTargets[id] then return end
+    pcall(function()
+        local target = EntranceTargets[id]
+        if type(target) == 'table' and target.type == 'entity' then
+            exports.ox_target:removeLocalEntity(target.entity, target.names)
+        elseif type(target) == 'number' or type(target) == 'string' then
+            exports.ox_target:removeZone(target)
+        end
+    end)
+    EntranceTargets[id] = nil
+end
+
 function RegisterPropertyEntranceTargets(p)
     if not p then return end
     local id = p.id
     
-    if EntranceTargets[id] then
-        pcall(function()
-            exports.ox_target:removeZone(EntranceTargets[id])
-        end)
-        EntranceTargets[id] = nil
-    end
+    RemoveEntranceTarget(id)
 
     if p.isApartment then return end
-
 
     local doorId = p.door_id
     if (not doorId or doorId == 0) and p.doors and #p.doors > 0 then
@@ -983,12 +990,33 @@ function RegisterPropertyEntranceTargets(p)
 
     local targetCoords, targetHeading
     local isShell = p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo'
+    local doorEnt = nil
 
     if doorId and doorId ~= 0 then
         local door = GetOxDoorlockDoor(doorId)
         local dModel = door and door.model or (p.metadata and p.metadata.doorModel)
         local dCoords = door and door.coords or (p.metadata and p.metadata.doorCoords)
         local dHeading = door and door.heading or (p.metadata and p.metadata.doorHeading) or 0.0
+
+        if door and GetResourceState('ox_doorlock') == 'started' then
+            local doorsList = door.doors or { door }
+            for _, d in ipairs(doorsList) do
+                local ent = d.object or d.entity
+                if (not ent or ent == 0 or not DoesEntityExist(ent)) and d.coords then
+                    local modelHash = d.model and (tonumber(d.model) or joaat(d.model)) or 0
+                    if modelHash ~= 0 then
+                        ent = GetClosestObjectOfType(d.coords.x, d.coords.y, d.coords.z, 3.0, modelHash, false, false, false)
+                    end
+                    if not ent or ent == 0 then
+                        ent = GetClosestObjectOfType(d.coords.x, d.coords.y, d.coords.z, 3.0, 0, false, false, false)
+                    end
+                end
+                if ent and ent ~= 0 and DoesEntityExist(ent) and GetEntityType(ent) == 3 then
+                    doorEnt = ent
+                    break
+                end
+            end
+        end
 
         if dCoords then
             targetCoords, targetHeading = ResolveDoorTargetPlacement(dModel, dCoords, dHeading, door)
@@ -1003,11 +1031,19 @@ function RegisterPropertyEntranceTargets(p)
         end
     end
 
-    if not targetCoords then return end
+    if not doorEnt and targetCoords then
+        local ent = GetClosestObjectOfType(targetCoords.x, targetCoords.y, targetCoords.z, 2.5, 0, false, false, false)
+        if ent and ent ~= 0 and DoesEntityExist(ent) and GetEntityType(ent) == 3 then
+            doorEnt = ent
+        end
+    end
+
+    if not targetCoords and not doorEnt then return end
 
     local options = {}
 
     table.insert(options, {
+        name = 'lns_house_enter_' .. id,
         label = 'Enter ' .. p.label,
         icon = 'fas fa-door-open',
         canInteract = function()
@@ -1038,6 +1074,7 @@ function RegisterPropertyEntranceTargets(p)
     })
 
     table.insert(options, {
+        name = 'lns_house_rent_' .. id,
         label = 'Pay Rent / Debt',
         icon = 'fas fa-dollar-sign',
         canInteract = function()
@@ -1054,6 +1091,7 @@ function RegisterPropertyEntranceTargets(p)
     })
 
     table.insert(options, {
+        name = 'lns_house_belongings_' .. id,
         label = 'Retrieve Belongings',
         icon = 'fas fa-box-open',
         canInteract = function()
@@ -1069,6 +1107,7 @@ function RegisterPropertyEntranceTargets(p)
     })
 
     table.insert(options, {
+        name = 'lns_house_lock_' .. id,
         label = 'Lock/Unlock ' .. p.label,
         icon = 'fas fa-key',
         canInteract = function()
@@ -1082,6 +1121,7 @@ function RegisterPropertyEntranceTargets(p)
 
     if Settings.Housing and Settings.Housing.CanBreakIn then
         table.insert(options, {
+            name = 'lns_house_lockpick_' .. id,
             label = 'Lockpick ' .. p.label,
             icon = 'fas fa-mask',
             items = Settings.Security.LockpickItem,
@@ -1099,6 +1139,7 @@ function RegisterPropertyEntranceTargets(p)
     end
 
     table.insert(options, {
+        name = 'lns_house_breach_' .. id,
         label = 'Breach Door',
         icon = 'fas fa-shield-halved',
         items = Settings.Security.RaidItem,
@@ -1112,6 +1153,7 @@ function RegisterPropertyEntranceTargets(p)
     })
 
     table.insert(options, {
+        name = 'lns_house_secure_' .. id,
         label = 'Secure Door',
         icon = 'fas fa-lock',
         canInteract = function()
@@ -1128,6 +1170,7 @@ function RegisterPropertyEntranceTargets(p)
     })
 
     table.insert(options, {
+        name = 'lns_house_doorbell_' .. id,
         label = 'Ring Doorbell',
         icon = 'fas fa-bell',
         onSelect = function()
@@ -1223,8 +1266,8 @@ function CleanUpHousingSession()
     end
     ExitTargets = {}
 
-    for propertyId, targetId in pairs(EntranceTargets) do
-        exports.ox_target:removeZone(targetId)
+    for propertyId, _ in pairs(EntranceTargets) do
+        RemoveEntranceTarget(propertyId)
     end
     EntranceTargets = {}
 
@@ -1509,10 +1552,7 @@ RegisterNetEvent('LNS_Housing:client:updateProperties', function(allProperties)
     
     for k, v in pairs(Properties) do
         if not allProperties[k] then
-            if EntranceTargets[k] then
-                exports.ox_target:removeZone(EntranceTargets[k])
-                EntranceTargets[k] = nil
-            end
+            RemoveEntranceTarget(k)
             Bridge.Client.UnregisterGarage(k)
             ClearDoorbellMotionZone(k)
             Properties[k] = nil

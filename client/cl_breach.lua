@@ -69,6 +69,16 @@ local function LoadRamPropModel(modelName)
     return nil
 end
 
+function IsEntityBreached(ent)
+    if not ent or ent == 0 then return false end
+    for _, rec in ipairs(activeBreachedDoors) do
+        if rec.originalEntity == ent then
+            return true
+        end
+    end
+    return false
+end
+
 local function RestoreBreachedDoor(doorId, propertyId)
     local remaining = {}
     for _, record in ipairs(activeBreachedDoors) do
@@ -88,11 +98,18 @@ local function RestoreBreachedDoor(doorId, propertyId)
                 SetEntityCollision(record.originalEntity, true, true)
                 FreezeEntityPosition(record.originalEntity, true)
             end
+            if record.propertyId and Properties and Properties[record.propertyId] and RegisterPropertyEntranceTargets then
+                RegisterPropertyEntranceTargets(Properties[record.propertyId])
+            end
         else
             table.insert(remaining, record)
         end
     end
     activeBreachedDoors = remaining
+
+    if propertyId and Properties and Properties[propertyId] and RegisterPropertyEntranceTargets then
+        RegisterPropertyEntranceTargets(Properties[propertyId])
+    end
 end
 
 RegisterNetEvent('LNS_Housing:client:breachRestoreDoor', function(doorId, propertyId)
@@ -201,20 +218,27 @@ local function FindDoorEntities(doorId, propertyId)
 end
 
 local function GetInwardSwingAngle(ped, doorEnt)
-    local playerForward = GetEntityForwardVector(ped)
+    local pedCoords = GetEntityCoords(ped)
+    local doorCoords = GetEntityCoords(doorEnt)
     local originalHeading = GetEntityHeading(doorEnt)
 
-    SetEntityHeading(doorEnt, (originalHeading + 105.0) % 360.0)
-    local fwdPlus = GetEntityForwardVector(doorEnt)
-    local dotPlus = (fwdPlus.x * playerForward.x) + (fwdPlus.y * playerForward.y)
+    local pedPos2D = vec2(pedCoords.x, pedCoords.y)
+    local doorPos2D = vec2(doorCoords.x, doorCoords.y)
 
-    SetEntityHeading(doorEnt, (originalHeading - 105.0) % 360.0)
-    local fwdMinus = GetEntityForwardVector(doorEnt)
-    local dotMinus = (fwdMinus.x * playerForward.x) + (fwdMinus.y * playerForward.y)
+    local function GetDoorTipPos(headingAngle)
+        local rad = math.rad(headingAngle)
+        local dirX = math.sin(rad)
+        local dirY = math.cos(rad)
+        return vec2(doorPos2D.x + dirX * 1.0, doorPos2D.y + dirY * 1.0)
+    end
 
-    SetEntityHeading(doorEnt, originalHeading)
+    local tipPlus = GetDoorTipPos(originalHeading + 105.0)
+    local distPlus = #(tipPlus - pedPos2D)
 
-    if dotPlus < dotMinus then
+    local tipMinus = GetDoorTipPos(originalHeading - 105.0)
+    local distMinus = #(tipMinus - pedPos2D)
+
+    if distPlus > distMinus then
         return 105.0
     else
         return -105.0
