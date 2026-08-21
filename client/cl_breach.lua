@@ -136,6 +136,29 @@ local function EnsureBreachedDoorState()
                     end
                     table.remove(activeBreachedDoors, i)
                 else
+                    if not rec.originalEntity or not DoesEntityExist(rec.originalEntity) then
+                        local foundEnts = FindDoorEntities(rec.doorId, rec.propertyId, rec.doorCoords, rec.breacherCoords)
+                        if #foundEnts > 0 then
+                            local doorEnt = foundEnts[1]
+                            local entCoords = GetEntityCoords(doorEnt)
+                            local doorRot = GetEntityRotation(doorEnt, 2)
+                            local doorHeading = GetEntityHeading(doorEnt)
+                            local swingAngle = GetInwardSwingAngle(rec.breacherCoords or rec.doorCoords, doorEnt)
+                            local openHeading = (doorHeading + swingAngle) % 360.0
+
+                            rec.originalEntity = doorEnt
+                            rec.originalCoords = entCoords
+                            rec.originalRot = doorRot
+                            rec.originalHeading = doorHeading
+                            rec.openHeading = openHeading
+
+                            FreezeEntityPosition(doorEnt, false)
+                            SetEntityCollision(doorEnt, false, false)
+                            SetEntityHeading(doorEnt, openHeading)
+                            FreezeEntityPosition(doorEnt, true)
+                        end
+                    end
+
                     if rec.originalEntity and DoesEntityExist(rec.originalEntity) and rec.openHeading then
                         SetEntityHeading(rec.originalEntity, rec.openHeading)
                         SetEntityCollision(rec.originalEntity, false, false)
@@ -149,7 +172,7 @@ local function EnsureBreachedDoorState()
     end)
 end
 
-local function FindDoorEntities(doorId, propertyId)
+local function FindDoorEntities(doorId, propertyId, doorCoords, breacherCoords)
     local doorEntities = {}
     local seen = {}
 
@@ -169,10 +192,10 @@ local function FindDoorEntities(doorId, propertyId)
                 if (not ent or ent == 0 or not DoesEntityExist(ent)) and d.coords then
                     local modelHash = d.model and (tonumber(d.model) or joaat(d.model)) or 0
                     if modelHash ~= 0 then
-                        ent = GetClosestObjectOfType(d.coords.x, d.coords.y, d.coords.z, 3.0, modelHash, false, false, false)
+                        ent = GetClosestObjectOfType(d.coords.x, d.coords.y, d.coords.z, 4.0, modelHash, false, false, false)
                     end
                     if not ent or ent == 0 then
-                        ent = GetClosestObjectOfType(d.coords.x, d.coords.y, d.coords.z, 3.0, 0, false, false, false)
+                        ent = GetClosestObjectOfType(d.coords.x, d.coords.y, d.coords.z, 4.0, 0, false, false, false)
                     end
                 end
                 addEnt(ent)
@@ -180,11 +203,28 @@ local function FindDoorEntities(doorId, propertyId)
         end
     end
 
-    if #doorEntities == 0 and propertyId and Properties and Properties[propertyId] then
+    local targetPos = doorCoords and vec3(doorCoords.x, doorCoords.y, doorCoords.z)
+    if not targetPos and propertyId and Properties and Properties[propertyId] then
         local p = Properties[propertyId]
         if p and p.metadata and p.metadata.entrance then
-            local eCoords = vec3(p.metadata.entrance.x, p.metadata.entrance.y, p.metadata.entrance.z)
-            local ent = GetClosestObjectOfType(eCoords.x, eCoords.y, eCoords.z, 3.0, 0, false, false, false)
+            targetPos = vec3(p.metadata.entrance.x, p.metadata.entrance.y, p.metadata.entrance.z)
+        end
+    end
+
+    if targetPos then
+        local objects = GetGamePool('CObject')
+        for i = 1, #objects do
+            local obj = objects[i]
+            if DoesEntityExist(obj) and GetEntityType(obj) == 3 then
+                local objCoords = GetEntityCoords(obj)
+                if #(objCoords - targetPos) <= 4.0 then
+                    addEnt(obj)
+                end
+            end
+        end
+
+        if #doorEntities == 0 then
+            local ent = GetClosestObjectOfType(targetPos.x, targetPos.y, targetPos.z, 4.0, 0, false, false, false)
             addEnt(ent)
         end
     end
@@ -193,11 +233,11 @@ local function FindDoorEntities(doorId, propertyId)
         local ped = cache.ped or PlayerPedId()
         local pedCoords = GetEntityCoords(ped)
         local forwardVector = GetEntityForwardVector(ped)
-        local targetPos = pedCoords + (forwardVector * 3.5)
+        local probePos = pedCoords + (forwardVector * 3.5)
 
         local raycast = StartExpensiveSynchronousShapeTestLosProbe(
             pedCoords.x, pedCoords.y, pedCoords.z + 0.3,
-            targetPos.x, targetPos.y, targetPos.z + 0.3,
+            probePos.x, probePos.y, probePos.z + 0.3,
             1 | 16 | 32,
             ped,
             7
@@ -217,12 +257,19 @@ local function FindDoorEntities(doorId, propertyId)
     return doorEntities
 end
 
-local function GetInwardSwingAngle(ped, doorEnt)
-    local pedCoords = GetEntityCoords(ped)
+local function GetInwardSwingAngle(refCoords, doorEnt)
+    local refPos
+    if refCoords then
+        refPos = vec2(refCoords.x, refCoords.y)
+    else
+        local ped = cache.ped or PlayerPedId()
+        local pedCoords = GetEntityCoords(ped)
+        refPos = vec2(pedCoords.x, pedCoords.y)
+    end
+
     local doorCoords = GetEntityCoords(doorEnt)
     local originalHeading = GetEntityHeading(doorEnt)
 
-    local pedPos2D = vec2(pedCoords.x, pedCoords.y)
     local doorPos2D = vec2(doorCoords.x, doorCoords.y)
 
     local function GetDoorTipPos(headingAngle)
@@ -233,10 +280,10 @@ local function GetInwardSwingAngle(ped, doorEnt)
     end
 
     local tipPlus = GetDoorTipPos(originalHeading + 105.0)
-    local distPlus = #(tipPlus - pedPos2D)
+    local distPlus = #(tipPlus - refPos)
 
     local tipMinus = GetDoorTipPos(originalHeading - 105.0)
-    local distMinus = #(tipMinus - pedPos2D)
+    local distMinus = #(tipMinus - refPos)
 
     if distPlus > distMinus then
         return 105.0
@@ -245,42 +292,44 @@ local function GetInwardSwingAngle(ped, doorEnt)
     end
 end
 
-local function ApplyBreachForceToDoor(doorId, propertyId)
-    local ped = cache.ped or PlayerPedId()
-    local pedCoords = GetEntityCoords(ped)
+local function ApplyBreachForceToDoor(doorId, propertyId, doorCoords, breacherCoords)
+    local existingRecord = nil
+    for _, rec in ipairs(activeBreachedDoors) do
+        if (propertyId and rec.propertyId and rec.propertyId == propertyId) or (doorId and doorId ~= 0 and rec.doorId and rec.doorId == doorId) then
+            existingRecord = rec
+            break
+        end
+    end
 
-    local doorEntities = FindDoorEntities(doorId, propertyId)
-    if #doorEntities == 0 then return end
+    if not existingRecord then
+        existingRecord = {
+            doorId = doorId,
+            propertyId = propertyId,
+            doorCoords = doorCoords,
+            breacherCoords = breacherCoords,
+            breachTime = GetGameTimer(),
+            originalEntity = nil
+        }
+        table.insert(activeBreachedDoors, existingRecord)
+    end
+
+    local doorEntities = FindDoorEntities(doorId, propertyId, doorCoords, breacherCoords)
 
     for _, doorEnt in ipairs(doorEntities) do
         if DoesEntityExist(doorEnt) then
-            local alreadyBreached = false
-            for _, rec in ipairs(activeBreachedDoors) do
-                if rec.originalEntity == doorEnt then
-                    alreadyBreached = true
-                    break
-                end
-            end
-
-            if not alreadyBreached then
-                local doorCoords = GetEntityCoords(doorEnt)
+            if not existingRecord.originalEntity then
+                local entCoords = GetEntityCoords(doorEnt)
                 local doorRot = GetEntityRotation(doorEnt, 2)
                 local doorHeading = GetEntityHeading(doorEnt)
 
-                local swingAngle = GetInwardSwingAngle(ped, doorEnt)
+                local swingAngle = GetInwardSwingAngle(breacherCoords or doorCoords, doorEnt)
                 local openHeading = (doorHeading + swingAngle) % 360.0
 
-                local record = {
-                    originalEntity = doorEnt,
-                    originalCoords = doorCoords,
-                    originalRot = doorRot,
-                    originalHeading = doorHeading,
-                    openHeading = openHeading,
-                    doorId = doorId,
-                    propertyId = propertyId,
-                    breachTime = GetGameTimer()
-                }
-                table.insert(activeBreachedDoors, record)
+                existingRecord.originalEntity = doorEnt
+                existingRecord.originalCoords = entCoords
+                existingRecord.originalRot = doorRot
+                existingRecord.originalHeading = doorHeading
+                existingRecord.openHeading = openHeading
 
                 print(('^2[LNS_Housing Breach]^0 Slamming door entity %s wide open into room (Heading: %.1f -> %.1f)'):format(tostring(doorEnt), doorHeading, openHeading))
 
@@ -293,9 +342,7 @@ local function ApplyBreachForceToDoor(doorId, propertyId)
                     while true do
                         local elapsed = GetGameTimer() - startTime
                         local t = math.min(1.0, elapsed / duration)
-                        --local ease = 1.0 - (1.0 - t) * (1.0 - t) * (1.0 - t)
                         local ease = 1.0 - (1.0 - t) * (1.0 - t)
-
                         local curHeading = (doorHeading + (swingAngle * ease)) % 360.0
 
                         if DoesEntityExist(doorEnt) then
@@ -319,8 +366,8 @@ local function ApplyBreachForceToDoor(doorId, propertyId)
     EnsureBreachedDoorState()
 end
 
-RegisterNetEvent('LNS_Housing:client:breachForceOpenDoor', function(doorId, propertyId)
-    ApplyBreachForceToDoor(doorId, propertyId)
+RegisterNetEvent('LNS_Housing:client:breachForceOpenDoor', function(doorId, propertyId, doorCoords, breacherCoords)
+    ApplyBreachForceToDoor(doorId, propertyId, doorCoords, breacherCoords)
 end)
 
 local function StopBreachingMode()
@@ -418,8 +465,9 @@ RegisterNUICallback('breachHit', function(data, cb)
         Wait(100)
         StopBreachingMode()
 
-        ApplyBreachForceToDoor(doorId, propertyId)
-        TriggerServerEvent('LNS_Housing:server:policeRaidDoor', propertyId, propertyType, doorId)
+        local ped = cache.ped or PlayerPedId()
+        local breacherCoords = GetEntityCoords(ped)
+        TriggerServerEvent('LNS_Housing:server:policeRaidDoor', propertyId, propertyType, doorId, doorCoords, breacherCoords)
     end
 
     if cb then cb('ok') end
@@ -441,6 +489,7 @@ function StartPoliceRaid(propertyId, propertyType, doorId)
 
     ClearPedTasksImmediately(ped)
     SetCurrentPedWeapon(ped, `WEAPON_UNARMED`, true)
+
     SetEntityVisible(ped, false, false)
     Wait(50)
 
@@ -514,4 +563,15 @@ AddEventHandler('onResourceStop', function(resourceName)
         StopBreachingMode()
         RestoreBreachedDoor(nil, nil)
     end
+end)
+
+CreateThread(function()
+    Wait(2000)
+    lib.callback('LNS_Housing:server:getBreachedDoors', false, function(breachedDoors)
+        if breachedDoors then
+            for propertyId, data in pairs(breachedDoors) do
+                ApplyBreachForceToDoor(data.doorId, data.propertyId, data.doorCoords, data.breacherCoords)
+            end
+        end
+    end)
 end)
