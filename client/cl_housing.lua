@@ -338,7 +338,7 @@ function LockpickDoor(propertyId)
     for i = 1, config.rounds do
         rounds[i] = { areaSize = config.area, speedMultiplier = config.speed }
     end
-    local success = lib.skillCheck(rounds, { 'w', 'a', 's', 'd' })
+    local success = Bridge.Client.SkillCheck(rounds, { 'w', 'a', 's', 'd' })
     
     ClearPedTasks(cache.ped)
 
@@ -431,6 +431,13 @@ function LockpickStash(propertyId, stashId)
         return
     end
 
+    local lockpickItem = Settings.Security.LockpickItem or 'lockpick'
+    local count = exports.ox_inventory:Search('count', lockpickItem)
+    if not count or count < 1 then
+        Bridge.Client.Notify('You need a lockpick to pick this storage lock!', 'error')
+        return
+    end
+
     local securityLevel = 0
     if p and p.metadata then
         securityLevel = p.metadata.security_level or 0
@@ -445,7 +452,7 @@ function LockpickStash(propertyId, stashId)
     for i = 1, totalRounds do
         rounds[i] = { areaSize = config.area, speedMultiplier = config.speed }
     end
-    local success = lib.skillCheck(rounds, { 'w', 'a', 's', 'd' })
+    local success = Bridge.Client.SkillCheck(rounds, { 'w', 'a', 's', 'd' })
     
     ClearPedTasks(cache.ped)
 
@@ -599,7 +606,7 @@ function LoadFurnitures(propertyId)
                 {
                     label = 'Raid Storage',
                     icon = 'fas fa-shield-halved',
-                    items = Settings.Security.RaidItem,
+                    items = Settings.Security.PoliceAccessTool or 'police_access_tool',
                     onSelect = function()
                         StartPoliceStashRaid(propertyId, f.id)
                     end,

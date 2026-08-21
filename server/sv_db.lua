@@ -71,7 +71,7 @@ function LoadProperties()
                 end
             end
         end
-        debugPrint('info', 'Loaded ' .. #result .. ' properties.')
+        lib.print.info('Loaded ' .. #result .. ' properties.')
     end
 end
 

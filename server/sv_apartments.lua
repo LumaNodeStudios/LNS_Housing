@@ -149,7 +149,7 @@ CreateThread(function()
             playerRooms[row.license] = row.room_id
             assignedRoomIds[row.room_id] = true
         end
-        print('^2[Apartments] ^7Loaded ' .. #result .. ' apartments.')
+        lib.print.info('Loaded ' .. #result .. ' apartments.')
     end
 
     CreateApartmentDoorlocks()
@@ -337,11 +337,9 @@ elseif Bridge.Framework == 'esx' then
         OnPlayerLoaded(playerId)
     end)
     AddEventHandler('esx:playerLogout', function(playerId)
-        print(string.format("Player %s logged out.", playerId))
         OnPlayerUnloaded(playerId)
     end)
     AddEventHandler('esx:playerDropped', function(playerId)
-        print(string.format("Player %s disconnected out.", playerId))
         OnPlayerUnloaded(playerId)
     end)
 end

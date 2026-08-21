@@ -66,7 +66,7 @@ function Bridge.Client.OpenWardrobe(propertyId, furnitureId)
     if GetResourceState('illenium-appearance') == 'started' then
         TriggerEvent('illenium-appearance:client:openOutfitMenu')
     else
-        print('No clothing/appearance menu found!')
+        debugPrint('error', 'No clothing/appearance menu found!')
     end
 end
 
@@ -86,6 +86,13 @@ function Bridge.Client.Notify(msg, type)
         description = msg,
         type = type or 'inform'
     })
+end
+
+--- Skill Check / Minigame
+function Bridge.Client.SkillCheck(difficulty, inputs)
+    debugPrint('info', 'SkillCheck minigame started', {difficulty = difficulty, inputs = inputs})
+    local keys = inputs or { 'w', 'a', 's', 'd' }
+    return lib.skillCheck(difficulty, keys)
 end
 
 -- Dispatch Alerts

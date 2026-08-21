@@ -41,7 +41,7 @@ Modeler = {
                 local baseUrl = imageUrls.baseUrl
 
                 if not baseUrl and next(mappings) == nil then
-                    print('^1[LNS_Housing]^0 getFurnitureImages returned no baseUrl and no mappings, not caching')
+                    lib.print.error('getFurnitureImages returned no baseUrl and no mappings, not caching')
                 else
                     self.FurnitureDataReady = true
                 end
@@ -880,7 +880,7 @@ CreateThread(function()
 end)
 
 RegisterCommand('checkfurniture', function()
-    print('^2[LNS_Housing] Starting furniture check...^0')
+    lib.print.info('Starting furniture check...')
     local invalidCount = 0
     local validCount = 0
 
@@ -890,13 +890,13 @@ RegisterCommand('checkfurniture', function()
             if IsModelInCdimage(hash) then
                 validCount = validCount + 1
             else
-                print(string.format('^1[LNS_Housing] Model NOT in game: %s (%s) under category: %s^0', item.model, item.label, category.label))
+                lib.print.error(string.format('Model NOT in game: %s (%s) under category: %s', item.model, item.label, category.label))
                 invalidCount = invalidCount + 1
             end
         end
     end
 
-    print(string.format('^2[LNS_Housing] Check finished. Valid models: %d, Non-existent models: %d^0', validCount, invalidCount))
+    lib.print.info(string.format('Check finished. Valid models: %d, Non-existent models: %d', validCount, invalidCount))
 end, false)
 
 local function TryOpenFurnitureMenu()

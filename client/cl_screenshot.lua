@@ -235,12 +235,12 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
                     Wait(50)
                 end
             else
-                print('^1[LNS_Housing]^0 Failed to screenshot model: ' .. item.model)
+                lib.print.error('Failed to screenshot model: ' .. item.model)
             end
 
             DeleteEntity(obj)
         else
-            print('^1[LNS_Housing]^0 Model load timeout: ' .. item.model)
+            lib.print.error('Model load timeout: ' .. item.model)
         end
         Wait(50)
     end

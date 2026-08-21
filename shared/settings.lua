@@ -148,7 +148,8 @@ return {
     ----------------------------------------------------------------------------
     Security = {
         LockpickItem = 'lockpick',          -- Item needed for ordinary house lockpicking
-        RaidItem = 'WEAPON_BATTERINGRAM',   -- Item needed by police/authorized factions to raid properties
+        RaidItem = 'WEAPON_BATTERINGRAM',   -- Item needed by police/authorized factions to raid door
+        PoliceAccessTool = 'police_access_tool', -- Item needed by police to raid/breach storage/stashes
         RequiredBreachHits = 3,             -- Minimum hits required with battering ram to breach door
         RamProp = 'w_me_batteringram',     -- Battering ram prop model used in 3D drag minigame (custom weapon prop)
         RamRotation = { pitch = 64.9, roll = 37.0, yawOffset = 66.8 }, -- User configured 3D modeler rotation

@@ -87,7 +87,8 @@ RegisterNetEvent('LNS_Housing:server:policeRaidDoor', function(propertyId, prope
         TriggerClientEvent('LNS_Housing:client:breachForceOpenDoor', -1, doorId, propertyId, doorCoords, breacherCoords, swingAngle)
         Bridge.Server.Notify(src, 'Door breached successfully!', 'success')
     else
-        if p and p.metadata and p.metadata.entrance then
+        if p then
+            p.metadata = p.metadata or {}
             p.metadata.locked = false
             SaveProperty(propertyId)
 
@@ -102,9 +103,9 @@ RegisterNetEvent('LNS_Housing:server:policeRaidDoor', function(propertyId, prope
     end
 end)
 
-RegisterNetEvent('LNS_Housing:server:policeRaidStash', function(propertyId)
+RegisterNetEvent('LNS_Housing:server:policeRaidStash', function(propertyId, stashId)
     local src = source
-    debugPrint('info', 'LNS_Housing:server:policeRaidStash received', {src = src, propertyId = propertyId})
+    debugPrint('info', 'LNS_Housing:server:policeRaidStash received', {src = src, propertyId = propertyId, stashId = stashId})
     
     local playerJob = Bridge.Server.GetPlayerJob(src)
     if not playerJob or playerJob.name ~= 'police' then
@@ -112,10 +113,10 @@ RegisterNetEvent('LNS_Housing:server:policeRaidStash', function(propertyId)
         return
     end
 
-    local raidItem = Settings.Security.RaidItem or 'WEAPON_BATTERINGRAM'
-    local itemCount = exports.ox_inventory:Search(src, 'count', raidItem)
+    local accessTool = Settings.Security.PoliceAccessTool or 'police_access_tool'
+    local itemCount = exports.ox_inventory:Search(src, 'count', accessTool)
     if itemCount < 1 then
-        Bridge.Server.Notify(src, 'You do not have the required breaching weapon!', 'error')
+        Bridge.Server.Notify(src, 'You do not have the required Police Access Tool!', 'error')
         return
     end
 
