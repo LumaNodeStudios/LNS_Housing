@@ -41,9 +41,9 @@ lib.callback.register('LNS_Housing:server:getBreachedDoors', function(source)
     return activeBreachedDoorsServer
 end)
 
-RegisterNetEvent('LNS_Housing:server:policeRaidDoor', function(propertyId, propertyType, doorId, doorCoords, breacherCoords)
+RegisterNetEvent('LNS_Housing:server:policeRaidDoor', function(propertyId, propertyType, doorId, doorCoords, breacherCoords, swingAngle)
     local src = source
-    debugPrint('info', 'LNS_Housing:server:policeRaidDoor received', {src = src, propertyId = propertyId, propertyType = propertyType, doorId = doorId, doorCoords = doorCoords, breacherCoords = breacherCoords})
+    debugPrint('info', 'LNS_Housing:server:policeRaidDoor received', {src = src, propertyId = propertyId, propertyType = propertyType, doorId = doorId, doorCoords = doorCoords, breacherCoords = breacherCoords, swingAngle = swingAngle})
     
     local playerJob = Bridge.Server.GetPlayerJob(src)
     if not playerJob or playerJob.name ~= 'police' then
@@ -65,6 +65,7 @@ RegisterNetEvent('LNS_Housing:server:policeRaidDoor', function(propertyId, prope
         propertyId = propertyId,
         doorCoords = doorCoords,
         breacherCoords = breacherCoords,
+        swingAngle = swingAngle,
         time = os.time()
     }
 
@@ -83,7 +84,7 @@ RegisterNetEvent('LNS_Housing:server:policeRaidDoor', function(propertyId, prope
         if not TemporaryAccess.doors[propertyId] then TemporaryAccess.doors[propertyId] = {} end
         TemporaryAccess.doors[propertyId][identifier] = true
 
-        TriggerClientEvent('LNS_Housing:client:breachForceOpenDoor', -1, doorId, propertyId, doorCoords, breacherCoords)
+        TriggerClientEvent('LNS_Housing:client:breachForceOpenDoor', -1, doorId, propertyId, doorCoords, breacherCoords, swingAngle)
         Bridge.Server.Notify(src, 'Door breached successfully!', 'success')
     else
         if p and p.metadata and p.metadata.entrance then
@@ -95,7 +96,7 @@ RegisterNetEvent('LNS_Housing:server:policeRaidDoor', function(propertyId, prope
             TemporaryAccess.doors[propertyId][identifier] = true
 
             TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
-            TriggerClientEvent('LNS_Housing:client:breachForceOpenDoor', -1, doorId, propertyId, doorCoords, breacherCoords)
+            TriggerClientEvent('LNS_Housing:client:breachForceOpenDoor', -1, doorId, propertyId, doorCoords, breacherCoords, swingAngle)
             Bridge.Server.Notify(src, 'Door breached successfully!', 'success')
         end
     end
