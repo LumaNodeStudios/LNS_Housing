@@ -151,6 +151,11 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         price: 150000,
         mlo: true,
         shell: 'mlo',
+        interiorId: null,
+        interiorCoords: null,
+        interiorCenter: null,
+        roomCount: null,
+        currentRoom: null,
         slots: 2,
         allowWallColors: true,
         saleType: 'direct',
@@ -163,6 +168,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         entranceCoords: null,
         garageCoords: null,
         garageSpawnCoords: null,
+        breakerCoords: null,
         cameraPosition: null,
         cameraAim: null,
         cameraHeading: null,
@@ -347,6 +353,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             entranceCoords: p.metadata && p.metadata.entrance ? p.metadata.entrance : null,
             garageCoords: p.metadata && p.metadata.garage_data ? { x: p.metadata.garage_data.x, y: p.metadata.garage_data.y, z: p.metadata.garage_data.z, h: p.metadata.garage_data.h } : null,
             garageSpawnCoords: p.metadata && p.metadata.garage_data && p.metadata.garage_data.spawn ? p.metadata.garage_data.spawn : null,
+            breakerCoords: p.metadata && p.metadata.breaker_coords ? p.metadata.breaker_coords : (p.breakerCoords || null),
             cameraPosition: p.metadata && p.metadata.camera_coords ? p.metadata.camera_coords : null,
             cameraAim: p.metadata && p.metadata.camera_aim ? p.metadata.camera_aim : null,
             cameraHeading: p.metadata && p.metadata.camera_heading != null ? p.metadata.camera_heading : null,
@@ -384,6 +391,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 entranceCoords: formData.entranceCoords,
                 garageCoords: formData.garageCoords,
                 garageSpawnCoords: formData.garageSpawnCoords,
+                breakerCoords: formData.breakerCoords,
                 cameraPosition: formData.cameraPosition,
                 cameraAim: formData.cameraAim,
                 cameraHeading: formData.cameraHeading,
@@ -562,6 +570,26 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         }));
     };
 
+    const handleCaptureInterior = () => {
+        fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/captureInterior`, {
+            method: 'POST',
+            body: JSON.stringify({})
+        })
+            .then(resp => resp.json())
+            .then(data => {
+                if (data && data.interiorId) {
+                    setFormData(prev => ({
+                        ...prev,
+                        interiorId: data.interiorId,
+                        interiorCoords: data.coords,
+                        interiorCenter: data.center,
+                        roomCount: data.roomCount,
+                        currentRoom: data.currentRoom
+                    }));
+                }
+            });
+    };
+
     const handleCreateZone = () => {
         fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/createZone`, {
             method: 'POST',
@@ -614,6 +642,19 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             });
     };
 
+    const handlePickBreakerCoords = () => {
+        fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/pickBreakerCoords`, {
+            method: 'POST',
+            body: JSON.stringify({})
+        })
+            .then(resp => resp.json())
+            .then(coords => {
+                if (coords) {
+                    setFormData(prev => ({ ...prev, breakerCoords: coords }));
+                }
+            });
+    };
+
     const handlePickGarageCoords = () => {
         fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/pickGarageCoords`, {
             method: 'POST',
@@ -660,6 +701,11 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             price: 150000,
             mlo: true,
             shell: 'mlo',
+            interiorId: null,
+            interiorCoords: null,
+            interiorCenter: null,
+            roomCount: null,
+            currentRoom: null,
             slots: 2,
             allowWallColors: true,
             saleType: 'direct',
@@ -672,6 +718,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             entranceCoords: null,
             garageCoords: null,
             garageSpawnCoords: null,
+            breakerCoords: null,
             cameraPosition: null,
             cameraAim: null,
             cameraHeading: null,
@@ -1421,30 +1468,30 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                         {formData.mlo ? (
                                             /* MLO Options */
                                             <>
-                                                <div className="re-creator-checkbox-field">
-                                                    <div className="re-creator-checkbox-info">
-                                                        <span className="re-creator-checkbox-label">Has Outdoor Yard Area</span>
-                                                        <span className="re-creator-checkbox-desc">Adds interactive lawn & grass.</span>
-                                                    </div>
-                                                    <input
-                                                        type="checkbox"
-                                                        name="hasYard"
-                                                        checked={formData.hasYard}
-                                                        onChange={(e) => setFormData(prev => ({ ...prev, hasYard: e.target.checked }))}
-                                                    />
-                                                </div>
-
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                                     <div className="re-interactive-row">
                                                         <div className="re-interactive-info">
-                                                            <span className="re-interactive-label">Property Poly Zone</span>
-                                                            <span className={`re-interactive-status ${formData.zone_data ? 'active' : ''}`}>
-                                                                {formData.zone_data ? 'Zone Defined' : 'Not Defined'}
+                                                            <span className="re-interactive-label">MLO Interior (Native ID & Point)</span>
+                                                            <span className={`re-interactive-status ${formData.interiorId ? 'active' : ''}`}>
+                                                                {formData.interiorId ? `Interior ID: #${formData.interiorId} (${formData.roomCount || 1} Rooms)` : 'Stand inside MLO & Capture'}
                                                             </span>
                                                         </div>
-                                                        <button type="button" className="re-btn-action" onClick={handleCreateZone}>
-                                                            {formData.zone_data ? 'Redefine' : 'Define'}
+                                                        <button type="button" className="re-btn-action" onClick={handleCaptureInterior}>
+                                                            {formData.interiorId ? 'Recapture' : 'Capture Interior'}
                                                         </button>
+                                                    </div>
+
+                                                    <div className="re-creator-checkbox-field">
+                                                        <div className="re-creator-checkbox-info">
+                                                            <span className="re-creator-checkbox-label">Has Outdoor Yard Area</span>
+                                                            <span className="re-creator-checkbox-desc">Adds interactive lawn & grass cutting zone.</span>
+                                                        </div>
+                                                        <input
+                                                            type="checkbox"
+                                                            name="hasYard"
+                                                            checked={formData.hasYard}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, hasYard: e.target.checked }))}
+                                                        />
                                                     </div>
 
                                                     {formData.hasYard && (
@@ -1492,7 +1539,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                         className="re-btn-primary"
                                                         style={{ marginTop: '6px', width: '100%' }}
                                                         type="button"
-                                                        onClick={() => fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/pickDoor`)}
+                                                        onClick={handlePickDoor}
                                                     >
                                                         <Plus size={12} /> Pick Nearby Door
                                                     </button>
@@ -1558,6 +1605,18 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                             </div>
                                             <button className="re-btn-action" type="button" onClick={handlePickGarageSpawnCoords}>
                                                 {formData.garageSpawnCoords ? 'Reselect' : 'Set Current Position'}
+                                            </button>
+                                        </div>
+
+                                        <div className="re-interactive-row">
+                                            <div className="re-interactive-info">
+                                                <span className="re-interactive-label">Circuit Breaker Box Location</span>
+                                                <span className={`re-interactive-status ${formData.breakerCoords ? 'active' : ''}`}>
+                                                    {formData.breakerCoords ? 'Coordinates Configured' : 'Default (Entrance / Shared)'}
+                                                </span>
+                                            </div>
+                                            <button className="re-btn-action" type="button" onClick={handlePickBreakerCoords}>
+                                                {formData.breakerCoords ? 'Reselect Breaker' : 'Set Current Position'}
                                             </button>
                                         </div>
 

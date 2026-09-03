@@ -113,3 +113,20 @@ RegisterNUICallback('upgradeSecurity', function(data, cb)
     TriggerServerEvent('LNS_Housing:server:upgradeSecurity', data.propertyId, data.upgradeId)
     cb('ok')
 end)
+
+RegisterNUICallback('getPropertyUsageStats', function(data, cb)
+    debugPrint('info', 'Panel NUI: getPropertyUsageStats', data)
+    local propertyId = data.propertyId or data.id
+    if not propertyId then cb({}) return end
+    local res = lib.callback.await('LNS_Housing:server:getPropertyUsageStats', false, propertyId)
+    cb(res or {})
+end)
+
+RegisterNUICallback('upgradePower', function(data, cb)
+    debugPrint('info', 'Panel NUI: upgradePower', data)
+    local propertyId = data.propertyId or data.id
+    local targetLevel = tonumber(data.targetLevel)
+    if not propertyId or not targetLevel then cb({ success = false, message = "Invalid parameters." }) return end
+    local res = lib.callback.await('LNS_Housing:server:upgradePower', false, propertyId, targetLevel)
+    cb(res or { success = false })
+end)

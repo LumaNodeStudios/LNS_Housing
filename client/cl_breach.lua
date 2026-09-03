@@ -75,6 +75,25 @@ function IsEntityBreached(ent)
         if rec.originalEntity == ent then
             return true
         end
+        if rec.entities then
+            for _, sub in ipairs(rec.entities) do
+                if sub.entity == ent then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+function IsPropertyBreached(propertyId, doorId)
+    for _, rec in ipairs(activeBreachedDoors) do
+        if propertyId and rec.propertyId and rec.propertyId == propertyId then
+            return true
+        end
+        if doorId and doorId ~= 0 and rec.doorId and rec.doorId == doorId then
+            return true
+        end
     end
     return false
 end
@@ -499,31 +518,40 @@ RegisterNetEvent('LNS_Housing:client:breachForceOpenDoor', function(doorId, prop
 end)
 
 local function StopBreachingMode()
+    local wasBreaching = isBreaching
     isBreaching = false
 
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'closeBreachMinigame' })
 
-    if currentCam and DoesCamExist(currentCam) then
-        SetCamActive(currentCam, false)
-        RenderScriptCams(false, false, 0, true, true)
-        DestroyCam(currentCam, true)
-        DestroyAllCams(true)
+    if currentCam then
+        if DoesCamExist(currentCam) then
+            SetCamActive(currentCam, false)
+            DestroyCam(currentCam, true)
+        end
         currentCam = nil
     end
+    RenderScriptCams(false, false, 0, true, true)
+    DestroyAllCams(true)
 
-    if currentRamProp and DoesEntityExist(currentRamProp) then
-        DeleteEntity(currentRamProp)
+    if currentRamProp then
+        if DoesEntityExist(currentRamProp) then
+            DetachEntity(currentRamProp, true, true)
+            SetEntityAsMissionEntity(currentRamProp, true, true)
+            DeleteEntity(currentRamProp)
+            DeleteObject(currentRamProp)
+        end
         currentRamProp = nil
     end
 
     local ped = cache.ped or PlayerPedId()
     SetEntityVisible(ped, true, false)
+    FreezeEntityPosition(ped, false)
     ClearPedTasks(ped)
     ClearPedTasksImmediately(ped)
     EnableAllControlActions(0)
 
-    if activeBreachesCount > 0 then
+    if wasBreaching and activeBreachesCount > 0 then
         activeBreachesCount = activeBreachesCount - 1
         if activeBreachesCount == 0 then
             ReleaseScriptAudioBank()
@@ -537,6 +565,13 @@ local function StopBreachingMode()
     end
 
     DisplayRadar(true)
+
+    currentStartPos = nil
+    currentImpactPos = nil
+    currentDoorId = nil
+    currentPropertyId = nil
+    currentPropertyType = nil
+    currentHitsCount = 0
 end
 
 RegisterNUICallback('breachDragUpdate', function(data, cb)
@@ -609,10 +644,8 @@ RegisterNUICallback('breachHit', function(data, cb)
 end)
 
 RegisterNUICallback('breachCancel', function(data, cb)
-    if isBreaching then
-        StopBreachingMode()
-        Bridge.Client.Notify('Breaching cancelled.', 'error')
-    end
+    StopBreachingMode()
+    Bridge.Client.Notify('Breaching cancelled.', 'error')
     if cb then cb('ok') end
 end)
 
@@ -678,7 +711,10 @@ function StartPoliceRaid(propertyId, propertyType, doorId)
             EnableControlAction(0, 239, true)
             EnableControlAction(0, 240, true)
 
-            if IsControlJustPressed(0, 322) or IsDisabledControlJustPressed(0, 73) or IsDisabledControlJustPressed(0, 25) then
+            if IsControlJustPressed(0, 200) or IsDisabledControlJustPressed(0, 200)
+               or IsControlJustPressed(0, 322) or IsDisabledControlJustPressed(0, 322)
+               or IsControlJustPressed(0, 177) or IsDisabledControlJustPressed(0, 177)
+               or IsControlJustPressed(0, 202) or IsDisabledControlJustPressed(0, 202) then
                 StopBreachingMode()
                 Bridge.Client.Notify('Breaching cancelled.', 'error')
                 break
@@ -703,7 +739,7 @@ function StartPoliceStashRaid(propertyId, stashId)
         return
     end
 
-    local isDoorBreached = lib.callback.await('LNS_Housing:server:isDoorBreached', false, propertyId)
+    local isDoorBreached = IsPropertyBreached(propertyId) or lib.callback.await('LNS_Housing:server:isDoorBreached', false, propertyId)
     if not isDoorBreached then
         Bridge.Client.Notify('You must breach the property door first before raiding storage!', 'error')
         return
@@ -725,11 +761,6 @@ function StartPoliceStashRaid(propertyId, stashId)
             move = true,
             car = true,
             combat = true,
-        },
-        anim = {
-            dict = 'anim@gangops@facility@servers@body_search@',
-            clip = 'player_search',
-            flag = 49,
         },
     })
 

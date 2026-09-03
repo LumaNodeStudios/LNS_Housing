@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, X, Home, MapPin, DollarSign, Database, Save, Trash2, Camera, Tag } from 'lucide-react';
+import { Plus, X, Home, MapPin, DollarSign, Database, Save, Trash2, Camera, Tag, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import './Creator.css';
 
@@ -10,14 +10,22 @@ const Creator = () => {
     price: 150000,
     mlo: true,
     shell: 'mlo',
+    interiorId: null,
+    interiorCoords: null,
+    interiorCenter: null,
+    roomCount: null,
+    currentRoom: null,
     slots: 2,
     allowWallColors: true,
     saleType: 'direct',
     doors: [],
     zone_data: null,
+    yard_zone_data: null,
+    hasYard: false,
     image: null,
     entranceType: 'door',
-    entranceCoords: null
+    entranceCoords: null,
+    breakerCoords: null
   });
 
   const handleClose = () => {
@@ -33,6 +41,26 @@ const Creator = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+  };
+
+  const handleCaptureInterior = () => {
+    fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/captureInterior`, {
+      method: 'POST',
+      body: JSON.stringify({})
+    })
+      .then(resp => resp.json())
+      .then(data => {
+        if (data && data.interiorId) {
+          setFormData(prev => ({
+            ...prev,
+            interiorId: data.interiorId,
+            interiorCoords: data.coords,
+            interiorCenter: data.center,
+            roomCount: data.roomCount,
+            currentRoom: data.currentRoom
+          }));
+        }
+      });
   };
 
   const handleCreateZone = () => {
@@ -83,6 +111,19 @@ const Creator = () => {
       .then(coords => {
         if (coords) {
           setFormData(prev => ({ ...prev, entranceCoords: coords }));
+        }
+      });
+  };
+
+  const handlePickBreakerCoords = () => {
+    fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/pickBreakerCoords`, {
+      method: 'POST',
+      body: JSON.stringify({})
+    })
+      .then(resp => resp.json())
+      .then(coords => {
+        if (coords) {
+          setFormData(prev => ({ ...prev, breakerCoords: coords }));
         }
       });
   };
@@ -333,19 +374,28 @@ const Creator = () => {
                   {formData.entranceCoords ? 'Redefine Location' : 'Set Standing Location'}
                 </button>
               </div>
+          <div className="input-field" style={{ marginTop: '15px' }}>
+            <label><Zap size={14} /> Breaker Box Location</label>
+            <div className="input-with-btn">
+              <div className={`zone-status ${formData.breakerCoords ? 'defined' : ''}`}>
+                {formData.breakerCoords ? `Coords Defined (${Math.floor(formData.breakerCoords.x)}, ${Math.floor(formData.breakerCoords.y)}, ${Math.floor(formData.breakerCoords.z)})` : 'Default (Entrance)'}
+              </div>
+              <button className="pick-btn" onClick={handlePickBreakerCoords}>
+                {formData.breakerCoords ? 'Redefine Breaker' : 'Set Breaker Location'}
+              </button>
             </div>
-          )}
+          </div>
 
           {formData.mlo && (
             <>
               <div className="input-field" style={{ marginTop: '15px' }}>
-                <label><MapPin size={14} /> Property Zone</label>
+                <label><MapPin size={14} /> MLO Interior (Native ID & Point)</label>
                 <div className="input-with-btn">
-                  <div className={`zone-status ${formData.zone_data ? 'defined' : ''}`}>
-                    {formData.zone_data ? 'Zone Defined' : 'Not Defined'}
+                  <div className={`zone-status ${formData.interiorId ? 'defined' : ''}`}>
+                    {formData.interiorId ? `Interior ID: #${formData.interiorId} (${formData.roomCount || 1} Rooms)` : 'Stand inside MLO & Capture'}
                   </div>
-                  <button className="pick-btn" onClick={handleCreateZone}>
-                    {formData.zone_data ? 'Redefine Zone' : 'Define Zone'}
+                  <button className="pick-btn" onClick={handleCaptureInterior}>
+                    {formData.interiorId ? 'Recapture Interior' : 'Capture Interior'}
                   </button>
                 </div>
               </div>

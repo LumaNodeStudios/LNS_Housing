@@ -215,15 +215,18 @@ Modeler = {
     ConstrainCamera = function(self, camPos, lastCamPos)
         local isInside = true
         
-        
         if IsCoordsInsidePropertyZone then
             isInside = IsCoordsInsidePropertyZone(self.property_id, camPos)
         end
         
-        
         local currentZone = apartmentZones and apartmentZones[self.property_id]
         if isInside and insideApartment and currentZone and currentZone.contains then
             isInside = currentZone:contains(camPos)
+        end
+
+        local anchor = self.shellPos or GetEntityCoords(cache.ped)
+        if isInside and #(camPos - anchor) > 50.0 then
+            isInside = false
         end
 
         if not isInside then

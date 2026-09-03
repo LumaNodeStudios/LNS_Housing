@@ -7,7 +7,6 @@ RegisterNetEvent('LNS_Housing:server:updatePermissions', function(propertyId, pe
     local ownerCid = Bridge.Server.GetIdentifier(src)
     if not p or p.owner ~= ownerCid then return end
 
-    -- Ensure owner cannot add themselves into sub-permission tables
     if type(permissions) == 'table' then
         for category, cids in pairs(permissions) do
             if type(cids) == 'table' then

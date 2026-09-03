@@ -142,8 +142,12 @@ function SyncPropertyDoor(propertyId)
                 identifiers = {},
                 items = {
                     { name = pk.Item, metadata = { propertyId = propertyId, isApartment = false } }
-                }
+                },
+                passcode = false
             })
+            if not p.owner or IsRentOverdue(p) then
+                pcall(function() exports.ox_doorlock:setDoorState(doorId, 1) end)
+            end
         end
         return
     end
@@ -169,8 +173,12 @@ function SyncPropertyDoor(propertyId)
     for _, doorId in ipairs(doorsToSync) do
         exports.ox_doorlock:editDoor(doorId, {
             identifiers = identifiers,
-            items = {}
+            items = {},
+            passcode = false
         })
+        if not p.owner or IsRentOverdue(p) then
+            pcall(function() exports.ox_doorlock:setDoorState(doorId, 1) end)
+        end
     end
 end
 
@@ -668,7 +676,7 @@ RegisterNetEvent('LNS_Housing:server:leavePropertyBucket', function()
     SetPlayerRoutingBucket(src, 0)
 end)
 
-local function GetEntranceCoordsServer(p)
+function GetEntranceCoordsServer(p)
     if not p then return nil end
 
     if p.metadata and p.metadata.entrance then

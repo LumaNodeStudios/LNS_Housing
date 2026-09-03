@@ -3,58 +3,123 @@ Bridge.Client = {}
 local Settings = lib.load('shared.settings')
 local ESX = Bridge.Framework == 'esx' and exports['es_extended']:getSharedObject() or nil
 local clientGarageZones = {}
+local cachedIdentifier = nil
+local cachedPlayerName = nil
+local cachedJob = nil
+
+if Bridge.Framework == 'qbx' then
+    AddEventHandler('QBCore:Client:OnPlayerLoaded',function()
+        cachedIdentifier = nil
+        cachedPlayerName = nil
+        cachedJob = nil
+    end)
+
+    RegisterNetEvent('qbx_core:client:playerLoggedOut', function()
+        cachedIdentifier = nil
+        cachedPlayerName = nil
+        cachedJob = nil
+    end)
+
+    RegisterNetEvent('QBCore:Client:OnJobUpdate', function(job)
+        if job then
+            cachedJob = {
+                name = job.name,
+                label = job.label,
+                grade = job.grade and job.grade.level or job.grade,
+                grade_name = job.grade and job.grade.name or job.grade_name
+            }
+        else
+            cachedJob = nil
+        end
+    end)
+elseif Bridge.Framework == 'esx' then
+    RegisterNetEvent('esx:playerLoaded', function()
+        cachedIdentifier = nil
+        cachedPlayerName = nil
+        cachedJob = nil
+    end)
+
+    RegisterNetEvent('esx:setJob', function(job)
+        if job then
+            cachedJob = {
+                name = job.name,
+                label = job.label,
+                grade = job.grade,
+                grade_name = job.grade_label
+            }
+        else
+            cachedJob = nil
+        end
+    end)
+end
 
 -- Player Data Getters
 function Bridge.Client.GetIdentifier()
+    if cachedIdentifier then return cachedIdentifier end
     if Bridge.Framework == 'qbx' then
         local data = exports.qbx_core:GetPlayerData()
-        return data and data.citizenid
+        if data and data.citizenid then
+            cachedIdentifier = data.citizenid
+            return cachedIdentifier
+        end
     elseif Bridge.Framework == 'esx' then
         local data = ESX.GetPlayerData()
-        return data and data.identifier
+        if data and data.identifier then
+            cachedIdentifier = data.identifier
+            return cachedIdentifier
+        end
     end
+    return nil
 end
 
 function Bridge.Client.GetPlayerName()
+    if cachedPlayerName then return cachedPlayerName end
     if Bridge.Framework == 'qbx' then
         local data = exports.qbx_core:GetPlayerData()
         if data and data.charinfo then
-            return data.charinfo.firstname .. ' ' .. data.charinfo.lastname
+            cachedPlayerName = data.charinfo.firstname .. ' ' .. data.charinfo.lastname
+            return cachedPlayerName
         end
         return 'Unknown'
     elseif Bridge.Framework == 'esx' then
         local data = ESX.GetPlayerData()
         if data then
             if data.firstName and data.lastName then
-                return data.firstName .. ' ' .. data.lastName
+                cachedPlayerName = data.firstName .. ' ' .. data.lastName
+                return cachedPlayerName
             elseif data.name then
-                return data.name
+                cachedPlayerName = data.name
+                return cachedPlayerName
             end
         end
         return 'Unknown'
     end
+    return 'Unknown'
 end
 
 function Bridge.Client.GetPlayerJob()
+    if cachedJob then return cachedJob end
     if Bridge.Framework == 'qbx' then
         local data = exports.qbx_core:GetPlayerData()
         if data and data.job then
-            return {
+            cachedJob = {
                 name = data.job.name,
                 label = data.job.label,
-                grade = data.job.grade.level,
-                grade_name = data.job.grade.name
+                grade = data.job.grade and data.job.grade.level or 0,
+                grade_name = data.job.grade and data.job.grade.name or ''
             }
+            return cachedJob
         end
     elseif Bridge.Framework == 'esx' then
         local data = ESX.GetPlayerData()
         if data and data.job then
-            return {
+            cachedJob = {
                 name = data.job.name,
                 label = data.job.label,
                 grade = data.job.grade,
                 grade_name = data.job.grade_label
             }
+            return cachedJob
         end
     end
     return nil

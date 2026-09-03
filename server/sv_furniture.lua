@@ -27,6 +27,7 @@ RegisterNetEvent('LNS_Housing:server:buyFurniture', function(propertyId, items, 
     end
 
     SaveProperty(propertyId)
+    if CalculatePropertyPowerAndTemp then CalculatePropertyPowerAndTemp(propertyId) end
     if Bridge and Bridge.Server and Bridge.Server.RegisterPropertyStashes then
         Bridge.Server.RegisterPropertyStashes(propertyId, p.furniture)
     end
@@ -45,6 +46,7 @@ RegisterNetEvent('LNS_Housing:server:saveFurniture', function(propertyId, furnit
 
     p.furniture = furnitureData
     SaveProperty(propertyId)
+    if CalculatePropertyPowerAndTemp then CalculatePropertyPowerAndTemp(propertyId) end
     if Bridge and Bridge.Server and Bridge.Server.RegisterPropertyStashes then
         Bridge.Server.RegisterPropertyStashes(propertyId, p.furniture)
     end

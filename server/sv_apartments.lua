@@ -609,6 +609,7 @@ RegisterNetEvent('LNS_Housing:server:saveApartmentFurniture', function(roomId, f
         if Bridge.Server.RegisterPropertyStashes then
             Bridge.Server.RegisterPropertyStashes(roomId, furnitureData)
         end
+        if CalculatePropertyPowerAndTemp then CalculatePropertyPowerAndTemp(roomId) end
         
         TriggerClientEvent('LNS_Housing:client:updateApartmentFurniture', -1, roomId, furnitureData)
     end
@@ -697,6 +698,7 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
     if Bridge.Server.RegisterPropertyStashes then
         Bridge.Server.RegisterPropertyStashes(roomId, currentFurniture)
     end
+    if CalculatePropertyPowerAndTemp then CalculatePropertyPowerAndTemp(roomId) end
 
     TriggerClientEvent('LNS_Housing:client:updateApartmentFurniture', -1, roomId, currentFurniture)
     Bridge.Server.Notify(src, 'Furniture bought successfully!', 'success')

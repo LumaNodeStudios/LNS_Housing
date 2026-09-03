@@ -4,7 +4,7 @@ local Furniture = lib.load('shared.furniture')
 local CurrentProperty = nil
 local CurrentInterior = 0
 local PropertyBlips = {}
-local ClearPropertyBlips, UpdatePropertyBlips
+local ClearPropertyBlips, UpdatePropertyBlips, HasPropertyAccessLocal
 local PropertyZones = {}
 InsidePropertyId = nil
 HasFurnitureManagePermission = false
@@ -444,17 +444,12 @@ function LockpickStash(propertyId, stashId)
     end
     local config = Settings.Security.Difficulty[securityLevel] or Settings.Security.Difficulty[0]
 
-    lib.requestAnimDict('anim@amb@prop_human_atm@interior@male@enter')
-    TaskPlayAnim(cache.ped, 'anim@amb@prop_human_atm@interior@male@enter', 'enter', 8.0, -8.0, -1, 49, 0, false, false, false)
-
     local rounds = {}
     local totalRounds = config.rounds + 1
     for i = 1, totalRounds do
         rounds[i] = { areaSize = config.area, speedMultiplier = config.speed }
     end
     local success = Bridge.Client.SkillCheck(rounds, { 'w', 'a', 's', 'd' })
-    
-    ClearPedTasks(cache.ped)
 
     if success then
         TriggerServerEvent('LNS_Housing:server:lockpickSuccess', propertyId, 'stash', stashId)
@@ -499,11 +494,47 @@ function ApplyWallColor(interiorId, color, customEntitySet)
 end
 
 function IsCoordsInsidePropertyZone(propertyId, coords)
-    if not propertyId then return true end
-    local zone = PropertyZones[propertyId]
-    if not zone then return true end
+    if not propertyId or not coords then return true end
+    local p = Properties[propertyId]
+    if not p then return true end
 
-    if zone.contains then
+    -- 1. MLO / Native Interior Check
+    local isMlo = not p.metadata or not p.metadata.shell or p.metadata.shell == 'mlo' or p.metadata.mlo == true or p.metadata.interior_id ~= nil
+    if isMlo then
+        local targetInterior = GetInteriorAtCoords(coords.x, coords.y, coords.z)
+        local entranceCoords = GetEntranceCoords(p) or (p.metadata and p.metadata.entrance and vec3(p.metadata.entrance.x, p.metadata.entrance.y, p.metadata.entrance.z))
+        local expectedInterior = (p.metadata and p.metadata.interior_id) or (entranceCoords and GetInteriorAtCoords(entranceCoords.x, entranceCoords.y, entranceCoords.z))
+
+        if expectedInterior and expectedInterior ~= 0 then
+            if targetInterior == expectedInterior then
+                if entranceCoords and #(coords - entranceCoords) > 75.0 then
+                    return false
+                end
+                return true
+            else
+                return false
+            end
+        elseif targetInterior ~= 0 and entranceCoords and #(coords - entranceCoords) <= 60.0 then
+            return true
+        end
+    end
+
+    -- 2. Shell / IPL Check
+    if p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
+        local shellName = p.metadata.shell
+        local shellData = (Settings.IPLs and Settings.IPLs[shellName]) or (Settings.Shells and Settings.Shells[shellName])
+        local isIpl = shellData and shellData.ipls ~= nil
+        local entranceCoords = GetEntranceCoords(p)
+        local shellCenter = isIpl and vec3(shellData.coords.x, shellData.coords.y, shellData.coords.z) or (entranceCoords and vec3(entranceCoords.x, entranceCoords.y, Settings.ShellSpawningZ or -100.0))
+        if shellCenter then
+            local maxRadius = (shellData and shellData.maxRadius) or (isIpl and 80.0) or 30.0
+            return #(coords - shellCenter) <= maxRadius
+        end
+    end
+
+    -- 3. Legacy PolyZone check fallback
+    local zone = PropertyZones[propertyId]
+    if zone and zone.contains then
         return zone:contains(coords)
     end
 
@@ -526,170 +557,195 @@ function LoadFurnitures(propertyId)
     
     if LoadedFurniture[propertyId] then return end
     LoadedFurniture[propertyId] = {}
+
     for _, f in ipairs(p.furniture) do
-        local hash = tonumber(f.model) or GetHashKey(f.model)
-        lib.requestModel(hash)
-        
-        if not LoadedFurniture[propertyId] then
-            break
-        end
-        
-        local pos = ParseVector3(f.position)
-        local rot = ParseVector3(f.rotation)
-        local obj = CreateObjectNoOffset(hash, pos.x, pos.y, pos.z, false, false, false)
-        SetEntityRotation(obj, rot.x, rot.y, rot.z, 2, true)
-        FreezeEntityPosition(obj, true)
+        CreateThread(function()
+            local hash = tonumber(f.model) or GetHashKey(f.model)
+            
+            if IsModelInCdimage(hash) and IsModelValid(hash) then
+                local success = pcall(lib.requestModel, hash, 1000)
+                if success then
+                    if not LoadedFurniture[propertyId] then return end
+                    
+                    local pos = ParseVector3(f.position)
+                    local rot = ParseVector3(f.rotation)
+                    local obj = CreateObjectNoOffset(hash, pos.x, pos.y, pos.z, false, false, false)
+                    if DoesEntityExist(obj) then
+                        SetEntityRotation(obj, rot.x, rot.y, rot.z, 2, true)
+                        FreezeEntityPosition(obj, true)
 
-        if f.textureVariation then
-            SetObjectTextureVariation(obj, tonumber(f.textureVariation))
-        end
-        
-        local itemData = nil
-        for _, cat in ipairs(Furniture) do
-            for _, item in ipairs(cat.items) do
-                if (tonumber(item.model) or GetHashKey(item.model)) == (tonumber(f.model) or GetHashKey(f.model)) then
-                    itemData = item
-                    break
-                end
-            end
-            if itemData then break end
-        end
+                        if f.textureVariation then
+                            SetObjectTextureVariation(obj, tonumber(f.textureVariation))
+                        end
+                        
+                        local itemData = nil
+                        for _, cat in ipairs(Furniture) do
+                            for _, item in ipairs(cat.items) do
+                                if (tonumber(item.model) or GetHashKey(item.model)) == (tonumber(f.model) or GetHashKey(f.model)) then
+                                    itemData = item
+                                    break
+                                end
+                            end
+                            if itemData then break end
+                        end
 
-        if itemData and itemData.isStorage then
-            local stashId = string.format('housing_%d_%s', propertyId, f.id)
-            exports.ox_target:addLocalEntity(obj, {
-                {
-                    label = 'Open Storage',
-                    icon = 'fas fa-box-open',
-                    debug = Settings.Debug.Zones,
-                    onSelect = function()
-                        Bridge.Client.OpenStash(propertyId, f.id)
-                    end,
-                    canInteract = function()
-                        local isLocked = lib.callback.await('LNS_Housing:server:isStashLocked', false, stashId)
-                        if not isLocked then return true end
-                        return lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'storage')
-                    end
-                },
-                {
-                    label = 'Lock/Unlock Storage',
-                    icon = 'fas fa-key',
-                    debug = Settings.Debug.Zones,
-                    onSelect = function()
-                        TriggerServerEvent('LNS_Housing:server:toggleStashLock', propertyId, stashId)
-                    end,
-                    canInteract = function()
-                        return lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'storage')
-                    end
-                },
-                {
-                    label = 'Lockpick Storage',
-                    icon = 'fas fa-mask',
-                    items = Settings.Security.LockpickItem,
-                    onSelect = function()
-                        LockpickStash(propertyId, stashId)
-                    end,
-                    canInteract = function()
-                        if itemData.canLockpick == false or itemData.canlockpick == false then return false end
-                        if p.isApartment then
-                            if Settings.Apartments and not Settings.Apartments.CanBreakIn then return false end
+                        if itemData and itemData.isStorage then
+                            local stashId = string.format('housing_%d_%s', propertyId, f.id)
+                            exports.ox_target:addLocalEntity(obj, {
+                                {
+                                    label = 'Open Storage',
+                                    icon = 'fas fa-box-open',
+                                    debug = Settings.Debug.Zones,
+                                    onSelect = function()
+                                        local isLocked = lib.callback.await('LNS_Housing:server:isStashLocked', false, stashId)
+                                        if isLocked then
+                                            local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'storage')
+                                            if not hasAccess then
+                                                Bridge.Client.Notify('This storage is locked.', 'error')
+                                                return
+                                            end
+                                        end
+                                        Bridge.Client.OpenStash(propertyId, f.id)
+                                    end,
+                                    canInteract = function()
+                                        return true
+                                    end
+                                },
+                                {
+                                    label = 'Lock/Unlock Storage',
+                                    icon = 'fas fa-key',
+                                    debug = Settings.Debug.Zones,
+                                    onSelect = function()
+                                        local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'storage')
+                                        if not hasAccess then
+                                            Bridge.Client.Notify('You do not have permission to lock/unlock this storage.', 'error')
+                                            return
+                                        end
+                                        TriggerServerEvent('LNS_Housing:server:toggleStashLock', propertyId, stashId)
+                                    end,
+                                    canInteract = function()
+                                        return HasPropertyAccessLocal(p, 'storage')
+                                    end
+                                },
+                                {
+                                    label = 'Lockpick Storage',
+                                    icon = 'fas fa-mask',
+                                    items = Settings.Security.LockpickItem,
+                                    onSelect = function()
+                                        LockpickStash(propertyId, stashId)
+                                    end,
+                                    canInteract = function()
+                                        if itemData.canLockpick == false or itemData.canlockpick == false then return false end
+                                        if p.isApartment then
+                                            if Settings.Apartments and not Settings.Apartments.CanBreakIn then return false end
+                                        else
+                                            if Settings.Housing and not Settings.Housing.CanBreakIn then return false end
+                                        end
+                                        return not HasPropertyAccessLocal(p, 'storage')
+                                    end
+                                },
+                                {
+                                    label = 'Raid Storage',
+                                    icon = 'fas fa-shield-halved',
+                                    items = Settings.Security.PoliceAccessTool or 'police_access_tool',
+                                    onSelect = function()
+                                        StartPoliceStashRaid(propertyId, f.id)
+                                    end
+                                }
+                            })
+                        end
+
+                        if itemData and itemData.isWardrobe then
+                            exports.ox_target:addLocalEntity(obj, {
+                                {
+                                    label = 'Open Wardrobe',
+                                    icon = 'fas fa-shirt',
+                                    debug = Settings.Debug.Zones,
+                                    onSelect = function()
+                                        local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'wardrobe')
+                                        if not hasAccess then
+                                            Bridge.Client.Notify('You do not have access to this wardrobe.', 'error')
+                                            return
+                                        end
+                                        Bridge.Client.OpenWardrobe(propertyId, f.id)
+                                    end,
+                                    canInteract = function()
+                                        return HasPropertyAccessLocal(p, 'wardrobe')
+                                    end
+                                }
+                            })
+                        end
+
+                        if itemData and itemData.isLogout then
+                            exports.ox_target:addLocalEntity(obj, {
+                                {
+                                    label = 'Logout',
+                                    icon = 'fas fa-right-from-bracket',
+                                    debug = Settings.Debug.Zones,
+                                    onSelect = function()
+                                        local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'entry')
+                                        if not hasAccess then
+                                            Bridge.Client.Notify('You do not have permission to log out here.', 'error')
+                                            return
+                                        end
+                                        local alert = lib.alertDialog({
+                                            header = 'Confirm Logout',
+                                            content = 'Are you sure you want to log out of your character?',
+                                            centered = true,
+                                            cancel = true,
+                                            labels = {
+                                                confirm = 'Log out',
+                                                cancel = 'Cancel'
+                                            }
+                                        })
+                                        if alert == 'confirm' then
+                                            TriggerServerEvent('LNS_Housing:server:logoutPlayer')
+                                        end
+                                    end,
+                                    canInteract = function()
+                                        return HasPropertyAccessLocal(p, 'entry')
+                                    end
+                                }
+                            })
+                        end
+
+                        if itemData and itemData.id == 'lns_housing_panel' then
+                            exports.ox_target:addLocalEntity(obj, {
+                                {
+                                    label = p.isApartment and 'Open Apartment Panel' or 'Open House Panel',
+                                    icon = p.isApartment and 'fas fa-building' or 'fas fa-house-user',
+                                    debug = Settings.Debug.Zones,
+                                    onSelect = function()
+                                        local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'manage')
+                                        if not hasAccess then
+                                            Bridge.Client.Notify('You do not have permission to manage this property.', 'error')
+                                            return
+                                        end
+                                        local propData = Properties[propertyId]
+                                        if propData then
+                                            TriggerEvent('LNS_Housing:client:openPanel', propData)
+                                        end
+                                    end,
+                                    canInteract = function()
+                                        return Properties[propertyId] and Properties[propertyId].owner and HasPropertyAccessLocal(Properties[propertyId], 'manage')
+                                    end
+                                }
+                            })
+                        end
+
+                        if LoadedFurniture[propertyId] then
+                            LoadedFurniture[propertyId][f.id] = obj
                         else
-                            if Settings.Housing and not Settings.Housing.CanBreakIn then return false end
+                            DeleteEntity(obj)
                         end
-
-                        local isLocked = lib.callback.await('LNS_Housing:server:isStashLocked', false, stashId)
-                        if not isLocked then return false end
-
-                        return lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'lockpickStash')
                     end
-                },
-                {
-                    label = 'Raid Storage',
-                    icon = 'fas fa-shield-halved',
-                    items = Settings.Security.PoliceAccessTool or 'police_access_tool',
-                    onSelect = function()
-                        StartPoliceStashRaid(propertyId, f.id)
-                    end,
-                    canInteract = function()
-                        local job = Bridge.Client.GetPlayerJob()
-                        if not job or job.name ~= 'police' then return false end
-                        
-                        
-                        local isDoorBreached = lib.callback.await('LNS_Housing:server:isDoorBreached', false, propertyId)
-                        if not isDoorBreached then return false end
-                        
-                        local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'storage')
-                        return not hasAccess
-                    end
-                }
-            })
-        end
-
-        if itemData and itemData.isWardrobe then
-            exports.ox_target:addLocalEntity(obj, {
-                {
-                    label = 'Open Wardrobe',
-                    icon = 'fas fa-shirt',
-                    debug = Settings.Debug.Zones,
-                    onSelect = function()
-                        Bridge.Client.OpenWardrobe(propertyId, f.id)
-                    end,
-                    canInteract = function()
-                        return lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'wardrobe')
-                    end
-                }
-            })
-        end
-
-        if itemData and itemData.isLogout then
-            exports.ox_target:addLocalEntity(obj, {
-                {
-                    label = 'Logout',
-                    icon = 'fas fa-right-from-bracket',
-                    debug = Settings.Debug.Zones,
-                    onSelect = function()
-                        local alert = lib.alertDialog({
-                            header = 'Confirm Logout',
-                            content = 'Are you sure you want to log out of your character?',
-                            centered = true,
-                            cancel = true,
-                            labels = {
-                                confirm = 'Log out',
-                                cancel = 'Cancel'
-                            }
-                        })
-                        if alert == 'confirm' then
-                            TriggerServerEvent('LNS_Housing:server:logoutPlayer')
-                        end
-                    end,
-                    canInteract = function()
-                        return lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'entry')
-                    end
-                }
-            })
-        end
-
-        if itemData and itemData.id == 'lns_housing_panel' then
-            exports.ox_target:addLocalEntity(obj, {
-                {
-                    label = p.isApartment and 'Open Apartment Panel' or 'Open House Panel',
-                    icon = p.isApartment and 'fas fa-building' or 'fas fa-house-user',
-                    debug = Settings.Debug.Zones,
-                    onSelect = function()
-                        local propData = Properties[propertyId]
-                        if propData then
-                            TriggerEvent('LNS_Housing:client:openPanel', propData)
-                        end
-                    end,
-                    canInteract = function()
-                        return Properties[propertyId] and Properties[propertyId].owner and 
-                            lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'manage')
-                    end
-                }
-            })
-        end
-
-        LoadedFurniture[propertyId][f.id] = obj
+                else
+                    lib.print.error(("Model '%s' (hash: %s) timed out loading. Skipping..."):format(tostring(f.model), tostring(hash)))
+                end
+            else
+                lib.print.error(("Model '%s' (hash: %s) is invalid or missing in game assets. Skipping..."):format(tostring(f.model), tostring(hash)))
+            end
+        end)
     end
 end
 
@@ -759,6 +815,92 @@ function UnloadDoorbellCameraProp(propertyId)
     LoadedCameraProps[propertyId] = nil
 end
 
+local currentWalkInProperty = nil
+
+---@param interiorId integer
+---@return integer? propertyId
+local function ResolveWalkInProperty(interiorId)
+    if not interiorId or interiorId == 0 or not Properties then return nil end
+    local ped = cache.ped or PlayerPedId()
+    local coords = GetEntityCoords(ped)
+
+    for id, p in pairs(Properties) do
+        if not p.isApartment then
+            local isMlo = not p.metadata or not p.metadata.shell or p.metadata.shell == 'mlo' or p.metadata.mlo == true or p.metadata.interior_id ~= nil
+            if isMlo then
+                local entranceCoords = GetEntranceCoords(p) or (p.metadata and p.metadata.entrance and vec3(p.metadata.entrance.x, p.metadata.entrance.y, p.metadata.entrance.z))
+                if entranceCoords and #(coords - entranceCoords) < 65.0 then
+                    local propInterior = (p.metadata and p.metadata.interior_id) or GetInteriorAtCoords(entranceCoords.x, entranceCoords.y, entranceCoords.z)
+                    if propInterior == interiorId then
+                        return id
+                    end
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function EnterWalkInProperty(propertyId)
+    if currentWalkInProperty == propertyId then return end
+    currentWalkInProperty = propertyId
+    InsidePropertyId = propertyId
+    LoadFurnitures(propertyId)
+    if CheckPropertyTemperatureNotify then CheckPropertyTemperatureNotify(propertyId) end
+
+    if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'furniture') then
+        HasFurnitureManagePermission = true
+        if not Settings.FurnitureMenu or not Settings.FurnitureMenu.Radial or Settings.FurnitureMenu.Radial.Enabled then
+            lib.addRadialItem({
+                id = 'housing_furniture',
+                icon = 'couch',
+                label = 'Furniture Menu',
+                onSelect = function()
+                    TriggerEvent('LNS_Housing:client:openFurnitureMenu', propertyId)
+                end
+            })
+        end
+    end
+end
+
+local function LeaveWalkInProperty()
+    if not currentWalkInProperty then return end
+    local oldPropId = currentWalkInProperty
+    currentWalkInProperty = nil
+    if InsidePropertyId == oldPropId then
+        InsidePropertyId = nil
+        HasFurnitureManagePermission = false
+    end
+    lib.removeRadialItem('housing_furniture')
+    UnloadFurnitures(oldPropId)
+end
+
+CreateThread(function()
+    while true do
+        Wait(500)
+        local ped = cache.ped or PlayerPedId()
+        local interiorId = GetInteriorFromEntity(ped)
+
+        if interiorId ~= 0 then
+            local matchedPropertyId = ResolveWalkInProperty(interiorId)
+            if matchedPropertyId then
+                if currentWalkInProperty ~= matchedPropertyId then
+                    LeaveWalkInProperty()
+                    EnterWalkInProperty(matchedPropertyId)
+                end
+            else
+                if currentWalkInProperty then
+                    LeaveWalkInProperty()
+                end
+            end
+        else
+            if currentWalkInProperty then
+                LeaveWalkInProperty()
+            end
+        end
+    end
+end)
+
 function RegisterPropertyZones(p, forceShell)
     if RegisterYardZone then
         RegisterYardZone(p)
@@ -799,6 +941,7 @@ function RegisterPropertyZones(p, forceShell)
 
                         LoadFurnitures(p.id)
                         TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', p.id)
+                        if CheckPropertyTemperatureNotify then CheckPropertyTemperatureNotify(p.id) end
 
                         if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'furniture') then
                             InsidePropertyId = p.id
@@ -852,6 +995,7 @@ function RegisterPropertyZones(p, forceShell)
             debug = Settings.Debug.Zones,
             onEnter = function()
                 LoadFurnitures(p.id)
+                if CheckPropertyTemperatureNotify then CheckPropertyTemperatureNotify(p.id) end
                 if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'furniture') then
                     InsidePropertyId = p.id
                     HasFurnitureManagePermission = true
@@ -876,50 +1020,10 @@ function RegisterPropertyZones(p, forceShell)
                 end
             end
         })
-    else
-        
-        local door = p.door_id and GetOxDoorlockDoor(p.door_id)
-        local doorCoords = door and door.coords and vec3(door.coords.x, door.coords.y, door.coords.z)
-        if not doorCoords and p.metadata and p.metadata.doorCoords then
-            local dc = p.metadata.doorCoords
-            doorCoords = vec3(dc.x, dc.y, dc.z)
-        end
-
-        if doorCoords then
-            PropertyZones[p.id] = lib.points.new({
-                coords = doorCoords,
-                distance = 40,
-                onEnter = function()
-                    LoadFurnitures(p.id)
-                    if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'furniture') then
-                        InsidePropertyId = p.id
-                        HasFurnitureManagePermission = true
-                        if not Settings.FurnitureMenu or not Settings.FurnitureMenu.Radial or Settings.FurnitureMenu.Radial.Enabled then
-                            lib.addRadialItem({
-                                id = 'housing_furniture',
-                                icon = 'couch',
-                                label = 'Furniture Menu',
-                                onSelect = function()
-                                    TriggerEvent('LNS_Housing:client:openFurnitureMenu', p.id)
-                                end
-                            })
-                        end
-                    end
-                end,
-                onExit = function()
-                    UnloadFurnitures(p.id)
-                    lib.removeRadialItem('housing_furniture')
-                    if InsidePropertyId == p.id then
-                        InsidePropertyId = nil
-                        HasFurnitureManagePermission = false
-                    end
-                end
-            })
-        end
     end
 end
 
-local function HasPropertyAccessLocal(p, action)
+function HasPropertyAccessLocal(p, action)
     if not p then return false end
     
     local identifier = Bridge.Client.GetIdentifier()
@@ -1137,7 +1241,7 @@ function RegisterPropertyEntranceTargets(p)
                 if not prop then return false end
                 local isLocked = prop.metadata.locked ~= false
                 if not isLocked then return false end
-                return lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'lockpick')
+                return not HasPropertyAccessLocal(prop, 'entry')
             end,
             onSelect = function()
                 LockpickDoor(id)
@@ -1152,7 +1256,11 @@ function RegisterPropertyEntranceTargets(p)
         items = Settings.Security.RaidItem,
         canInteract = function()
             local job = Bridge.Client.GetPlayerJob()
-            return job and job.name == 'police'
+            if not job or job.name ~= 'police' then return false end
+            if IsPropertyBreached and IsPropertyBreached(id, doorId) then
+                return false
+            end
+            return true
         end,
         onSelect = function()
             StartPoliceRaid(id, 'house', doorId)
@@ -1166,7 +1274,7 @@ function RegisterPropertyEntranceTargets(p)
         canInteract = function()
             local job = Bridge.Client.GetPlayerJob()
             if not job or job.name ~= 'police' then return false end
-            local isDoorBreached = lib.callback.await('LNS_Housing:server:isDoorBreached', false, id)
+            local isDoorBreached = IsPropertyBreached and IsPropertyBreached(id, doorId)
             local prop = Properties[id]
             local isUnlocked = prop and prop.metadata and prop.metadata.locked == false
             return isDoorBreached or isUnlocked
@@ -1192,6 +1300,8 @@ function RegisterPropertyEntranceTargets(p)
         debug = Settings.Debug.Zones,
         options = options
     })
+
+    if RegisterBreakerTarget then RegisterBreakerTarget(id) end
 end
 
 function CleanUpHousingSession()
@@ -1286,6 +1396,7 @@ function CleanUpHousingSession()
         end
     end
 
+    LeaveWalkInProperty()
     Properties = {}
     CurrentProperty = nil
     CurrentInterior = 0
@@ -1830,6 +1941,7 @@ function EnterShellProperty(propertyId)
     end
 
     DoScreenFadeIn(1000)
+    if CheckPropertyTemperatureNotify then CheckPropertyTemperatureNotify(propertyId) end
 end
 
 function LeaveShellProperty(propertyId)

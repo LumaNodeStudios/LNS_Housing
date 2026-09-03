@@ -144,6 +144,11 @@ lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
         end
     end
 
+    if not spawnCoords and data.interiorCoords then
+        local ic = data.interiorCoords
+        spawnCoords = vector4(ic.x, ic.y, ic.z, ic.h or 0.0)
+    end
+
     if not spawnCoords and data.zone_data and data.zone_data.points and #data.zone_data.points > 0 then
         local sumX, sumY, sumZ = 0, 0, 0
         local count = #data.zone_data.points
@@ -156,6 +161,11 @@ lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
     end
 
     data.spawn_coords = spawnCoords
+
+    data.interior_id = tonumber(data.interiorId or data.interior_id) or nil
+    data.interior_coords = data.interiorCoords or data.interior_coords or nil
+    data.interior_center = data.interiorCenter or data.interior_center or nil
+    data.room_count = tonumber(data.roomCount or data.room_count) or nil
 
     if data.garageCoords then
         local spawn = data.garageSpawnCoords or data.garageCoords
@@ -173,8 +183,12 @@ lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
         }
     end
 
-    if data.zone_data then
+    if data.zone_data and data.zone_data.points and #data.zone_data.points >= 3 then
         data.size = calculateSquareFootage(data.zone_data)
+    elseif data.room_count and data.room_count > 0 then
+        data.size = math.max(600, data.room_count * 250)
+    elseif not data.size or data.size == 0 then
+        data.size = 1200
     end
 
     if data.cameraPosition then

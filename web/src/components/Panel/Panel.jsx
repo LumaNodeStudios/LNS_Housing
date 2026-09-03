@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Clock, Calendar, MapPin, Settings, Shield, Car, Users, Camera, X, Power, Package, UserPlus, Key, Shirt, Trash2, Check, Crown, CreditCard, History, Palette, BellRing, ShieldCheck
+  Clock, Calendar, MapPin, Settings, Shield, Car, Users, Camera, X, Power, Package, UserPlus, Key, Shirt, Trash2, Check, Crown, CreditCard, History, Palette, BellRing, ShieldCheck, Zap, Thermometer, Flame, Activity, Building
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './Panel.css';
@@ -31,6 +31,37 @@ const Panel = ({ data: initialData }) => {
   const [roommates, setRoommates] = useState([]);
   const [nearbyPlayers, setNearbyPlayers] = useState([]);
   const [modalError, setModalError] = useState('');
+
+  const [usageStats, setUsageStats] = useState({
+    totalPower: 0,
+    maxPower: 5.0,
+    powerLevel: 1,
+    netTemp: 70,
+    tempDelta: 0,
+    breakerTripped: false
+  });
+
+  const fetchUsageStats = () => {
+    if (propertyData?.id && window.GetParentResourceName) {
+      fetch(`https://${window.GetParentResourceName()}/getPropertyUsageStats`, {
+        method: 'POST',
+        body: JSON.stringify({ propertyId: propertyData.id })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.totalPower !== undefined) {
+            setUsageStats(data);
+          }
+        })
+        .catch(() => {});
+    }
+  };
+
+  useEffect(() => {
+    fetchUsageStats();
+    const interval = setInterval(fetchUsageStats, 3000);
+    return () => clearInterval(interval);
+  }, [propertyData?.id]);
 
   useEffect(() => {
     if (showAddModal && window.GetParentResourceName) {
@@ -89,7 +120,7 @@ const Panel = ({ data: initialData }) => {
     { id: 'rent', label: 'Rent Due' }
   ] : [
     { id: 'home', label: 'Home' },
-    ...(!propertyData.isApartment ? [{ id: 'security', label: 'Security' }] : []),
+    { id: 'upgrades', label: 'Upgrades' },
     { id: 'access', label: 'Access' },
     ...(propertyData.sale_type === 'rent' ? [{ id: 'rent', label: 'Rent' }] : []),
     ...((!propertyData.isApartment || propertyData.allowWallColors) ? [{ id: 'settings', label: 'Settings' }] : [])
@@ -292,23 +323,21 @@ const Panel = ({ data: initialData }) => {
   };
 
   const infoBoxes = [
-    ...(!propertyData.isApartment ? [
-      {
-        id: 'protection',
-        title: 'Protection',
-        desc: 'Easily monitor locks and get notified of lockpicking attempts.',
-        icon: Shield,
-        actionLabel: 'Upgrade',
-        targetTab: 'security'
-      },
-      {
-        id: 'parking',
-        title: 'Parking Spots',
-        number: propertyData.garage ? propertyData.garage.toString() : '2',
-        desc: 'This is how many parking spots you have outside of your house.',
-        icon: Car
-      }
-    ] : []),
+    {
+      id: 'protection',
+      title: 'Protection',
+      desc: 'Easily monitor your house locks and get notified when someone tries to lockpick your lock.',
+      icon: Shield,
+      actionLabel: 'Upgrade',
+      targetTab: 'upgrades'
+    },
+    {
+      id: 'parking',
+      title: 'Parking Spots',
+      number: propertyData.garage ? propertyData.garage.toString() : '1',
+      desc: 'This is how many parking spots you have outside of your house.',
+      icon: Car
+    },
     {
       id: 'roommates',
       title: 'Manage Residents',
@@ -317,7 +346,40 @@ const Panel = ({ data: initialData }) => {
       icon: Users,
       actionLabel: 'Manage',
       targetTab: 'access'
+    },
+    {
+      id: 'rent',
+      title: propertyData.sale_type === 'rent' ? 'Rent Due' : 'Maintenance Fee',
+      desc: propertyData.sale_type === 'rent'
+        ? `Remember to pay your rent fee. Current rent is $${(propertyData.rent_price || 0).toLocaleString()}.`
+        : 'Property maintenance fee & tax payments are operating normally.',
+      icon: CreditCard,
+      ...(propertyData.sale_type === 'rent' ? { actionLabel: 'Manage', targetTab: 'rent' } : {})
     }
+  ];
+
+  const handleUpgradePower = (targetLevel) => {
+    fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/upgradePower`, {
+      method: 'POST',
+      body: JSON.stringify({
+        propertyId: propertyData.id,
+        targetLevel: targetLevel
+      })
+    })
+      .then(res => res.json())
+      .then(res => {
+        if (res && res.success) {
+          fetchUsageStats();
+        }
+      });
+  };
+
+  const powerTiers = [
+    { level: 1, maxPower: 5.0, price: 0, label: 'Standard (5.0 kWh)' },
+    { level: 2, maxPower: 10.0, price: 5000, label: 'Enhanced (10.0 kWh)' },
+    { level: 3, maxPower: 20.0, price: 12000, label: 'High-Cap (20.0 kWh)' },
+    { level: 4, maxPower: 35.0, price: 25000, label: 'Heavy-Duty (35.0 kWh)' },
+    { level: 5, maxPower: 50.0, price: 45000, label: 'Industrial (50.0 kWh)' },
   ];
 
   const upgrades = [
@@ -483,57 +545,118 @@ const Panel = ({ data: initialData }) => {
           {activeTab === 'home' && (
             <motion.div
               key="home"
-              className="home-tab-new"
+              className="home-tab-split"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.15 }}
             >
-              <div className="home-hero-section">
-                <div className="hero-content">
-                  <div className="location-badge">
-                    <MapPin size={12} />
-                    <span>{propertyData.streetName || propertyData.label || 'Unknown'}, {propertyData.zoneName || 'Los Santos'}</span>
+              {/* Left Column: Header Card + House Usage Card */}
+              <div className="home-split-left">
+                <div className="split-header-card">
+                  <div className="header-meta-row">
+                    <span className="meta-pill-item"><Clock size={12} /> {formatTime(currentTime)}</span>
+                    <span className="meta-pill-item"><Calendar size={12} /> {formatDate(currentTime)}</span>
+                    <span className="meta-pill-item"><MapPin size={12} /> {propertyData.streetName || propertyData.label || 'Unknown'}</span>
+                    <span className="meta-pill-item"><Building size={12} /> {propertyData.isApartment ? 'Apartment' : 'Residential'}</span>
                   </div>
-                  <h1 className="welcome-text">
-                    Good evening, <br />
-                    <span>{propertyData.playerName || 'Resident'}</span>
+                  <h1 className="welcome-title-hero">
+                    Welcome, <span>{propertyData.playerName || 'Resident'}</span>
                   </h1>
-                  <p className="property-type-label">{propertyData.isApartment ? 'Apartment Unit' : 'Residential Property'} • ID #{propertyData.id}</p>
                 </div>
-                <div className="hero-stats">
-                  <div className="hero-stat-item">
-                    <Clock size={18} />
-                    <div className="stat-details">
-                      <span className="s-label">Current Time</span>
-                      <span className="s-value">{formatTime(currentTime)}</span>
+
+                <div className="house-usage-card">
+                  <h2 className="usage-main-title">House Usage</h2>
+                  <div className="usage-rows-wrapper">
+                    {/* 1. Electricity Level */}
+                    <div className="usage-stat-row">
+                      <div className="usage-stat-info">
+                        <div className="stat-label-wrap">
+                          <Zap size={14} className="icon-gold" />
+                          <span>Electricity Level</span>
+                        </div>
+                        <span className="stat-value-text font-mono">
+                          {usageStats.totalPower.toFixed(1)} kWh / {usageStats.maxPower.toFixed(1)} kWh
+                        </span>
+                      </div>
+                      <div className="stat-progress-bg">
+                        <div
+                          className={`stat-progress-fill ${usageStats.totalPower > usageStats.maxPower ? 'overload' : ''}`}
+                          style={{ width: `${Math.min(100, (usageStats.totalPower / Math.max(0.1, usageStats.maxPower)) * 100)}%` }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="hero-stat-item">
-                    <Calendar size={18} />
-                    <div className="stat-details">
-                      <span className="s-label">Current Date</span>
-                      <span className="s-value">{formatDate(currentTime)}</span>
+
+                    {/* 2. Power Grid Status */}
+                    <div className="usage-stat-row">
+                      <div className="usage-stat-info">
+                        <div className="stat-label-wrap">
+                          <Activity size={14} className={usageStats.breakerTripped ? "icon-red" : "icon-green"} />
+                          <span>Power Grid Status</span>
+                        </div>
+                        <span className={`status-badge-pill ${usageStats.breakerTripped ? 'tripped' : 'online'}`}>
+                          {usageStats.breakerTripped ? 'TRIPPED (OVERLOAD)' : 'ONLINE'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 3. Temperature */}
+                    <div className="usage-stat-row">
+                      <div className="usage-stat-info">
+                        <div className="stat-label-wrap">
+                          <Thermometer size={14} className="icon-orange" />
+                          <span>Temperature</span>
+                        </div>
+                        <span className="stat-value-text font-mono">
+                          {Math.round(usageStats.displayTemp !== undefined ? usageStats.displayTemp : usageStats.netTemp)}{usageStats.unitSymbol || '°F'} / {usageStats.maxTemp ? `${usageStats.maxTemp}${usageStats.unitSymbol || '°F'}` : '100°F'}
+                        </span>
+                      </div>
+                      <div className="stat-progress-bg">
+                        <div
+                          className="stat-progress-fill temp-bar"
+                          style={{ width: `${Math.min(100, Math.max(0, ((usageStats.displayTemp !== undefined ? usageStats.displayTemp : usageStats.netTemp) / (usageStats.maxTemp || 100)) * 100))}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* 4. Heating / Cooling Level */}
+                    <div className="usage-stat-row">
+                      <div className="usage-stat-info">
+                        <div className="stat-label-wrap">
+                          <Flame size={14} className="icon-flame" />
+                          <span>Heating / Cooling Level</span>
+                        </div>
+                        <span className="usage-value-text font-mono">
+                          {(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta) > 0
+                            ? `Heating (+${(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta).toFixed(1)}${usageStats.unitSymbol || '°F'})`
+                            : (usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta) < 0
+                            ? `Cooling (${(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta).toFixed(1)}${usageStats.unitSymbol || '°F'})`
+                            : 'Disabled'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="home-grid-layout">
-                <div className="info-cards-grid">
+              {/* Right Column: 2x2 Grid of Action Cards */}
+              <div className="home-split-right">
+                <div className="action-cards-grid-2x2">
                   {infoBoxes.map((box) => (
-                    <div key={box.id} className="modern-info-card">
-                      <div className="card-icon-wrapper">
-                        <box.icon size={20} />
-                        {box.number && <span className="card-badge">{box.number}</span>}
+                    <div key={box.id} className="grid-action-card">
+                      <div className="card-top-head">
+                        <div className="card-icon-box">
+                          <box.icon size={22} />
+                        </div>
+                        {box.number && <span className="card-big-number">{box.number}</span>}
                       </div>
-                      <div className="card-body">
-                        <h3>{box.title}</h3>
-                        <p>{box.desc}</p>
+                      <div className="card-content-body">
+                        <h3 className="card-title-main">{box.title}</h3>
+                        <p className="card-desc-text">{box.desc}</p>
                       </div>
                       {box.actionLabel && (
                         <button
-                          className="card-action-btn"
+                          className="card-bottom-btn"
                           onClick={() => box.targetTab && setActiveTab(box.targetTab)}
                         >
                           {box.actionLabel}
@@ -546,9 +669,9 @@ const Panel = ({ data: initialData }) => {
             </motion.div>
           )}
 
-          {activeTab === 'security' && (
+          {activeTab === 'upgrades' && (
             <motion.div
-              key="security"
+              key="upgrades"
               className="security-tab-layout"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -556,13 +679,49 @@ const Panel = ({ data: initialData }) => {
               transition={{ duration: 0.15 }}
             >
               <div className="tab-header-block">
-                <h1 className="tab-title">Security & Protection</h1>
-                <p className="tab-subtitle">Monitor and upgrade your property's security systems.</p>
+                <h1 className="tab-title">Property Upgrades</h1>
+                <p className="tab-subtitle">Manage electrical power capacity, door locks, and climate systems.</p>
               </div>
 
               <div className="security-main-grid">
                 <div className="security-upgrades-col">
-                  <h3 className="sub-section-title">System Upgrades</h3>
+                  <h3 className="sub-section-title">Electrical Grid Upgrades</h3>
+                  <div className="upgrade-card-new power-upgrade-card">
+                    <div className="upgrade-icon-box">
+                      <Zap size={20} />
+                    </div>
+                    <div className="upgrade-content">
+                      <div className="upgrade-top-row">
+                        <h3>Electricity Max Capacity</h3>
+                        <span className="lvl-badge">LVL {usageStats.powerLevel}/5</span>
+                      </div>
+                      <p>Upgrade your property's electrical grid to power heavy appliances and avoid tripping breakers.</p>
+                      <div className="power-bar-preview">
+                        <span className="usage-val">{usageStats.totalPower.toFixed(1)} kWh / {usageStats.maxPower.toFixed(1)} kWh Max</span>
+                        <div className="usage-bar-track" style={{ height: '6px', marginTop: '4px' }}>
+                          <div
+                            className={`usage-bar-fill ${usageStats.totalPower > usageStats.maxPower ? 'overload' : ''}`}
+                            style={{ width: `${Math.min(100, (usageStats.totalPower / Math.max(0.1, usageStats.maxPower)) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div className="tier-select-grid">
+                        {powerTiers.map((tier) => (
+                          <button
+                            key={tier.level}
+                            className={`tier-btn ${usageStats.powerLevel === tier.level ? 'active' : ''}`}
+                            disabled={usageStats.powerLevel >= tier.level}
+                            onClick={() => handleUpgradePower(tier.level)}
+                          >
+                            <span className="tier-lbl">{tier.label}</span>
+                            <span className="tier-price">{tier.price === 0 ? 'DEFAULT' : `$${tier.price.toLocaleString()}`}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <h3 className="sub-section-title" style={{ marginTop: '20px' }}>Security Systems</h3>
                   <div className="upgrades-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {upgrades.map((upgrade) => (
                       <div key={upgrade.id} className="upgrade-card-new">

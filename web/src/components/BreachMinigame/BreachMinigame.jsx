@@ -33,7 +33,7 @@ export default function BreachMinigame({ active, onClose }) {
     fetchNui('breachDragUpdate', { progress: 0.0 });
 
     const handleKeyDown = (e) => {
-      if (e.key === 'x' || e.key === 'X' || e.key === 'Escape' || e.keyCode === 27) {
+      if (e.key === 'Escape' || e.keyCode === 27) {
         e.preventDefault();
         fetchNui('breachCancel');
         if (onClose) onClose();

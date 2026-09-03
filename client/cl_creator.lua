@@ -16,6 +16,8 @@ RegisterNUICallback('createHouse', function(data, cb)
             sumZ = sumZ + pt.z
         end
         zoneCoords = vec3(sumX / count, sumY / count, sumZ / count)
+    elseif data.interiorCoords then
+        zoneCoords = vec3(data.interiorCoords.x, data.interiorCoords.y, data.interiorCoords.z)
     elseif data.entranceCoords then
         zoneCoords = vec3(data.entranceCoords.x, data.entranceCoords.y, data.entranceCoords.z)
     else
@@ -32,6 +34,44 @@ RegisterNUICallback('createHouse', function(data, cb)
     end
     SendNUIMessage({ action = 'closeUI' })
     cb('ok')
+end)
+
+RegisterNUICallback('captureInterior', function(_, cb)
+    debugPrint('info', 'NUI callback: captureInterior')
+    local ped = cache.ped
+    local interiorId = GetInteriorFromEntity(ped)
+
+    if interiorId == 0 then
+        Bridge.Client.Notify('Stand inside the MLO interior first.', 'error')
+        cb(nil)
+        return
+    end
+
+    local coords = GetEntityCoords(ped)
+    local heading = GetEntityHeading(ped)
+    local roomCount = GetInteriorRoomCount(interiorId)
+    local ix, iy, iz = GetInteriorPosition(interiorId)
+    local currentRoom = nil
+
+    local key = GetRoomKeyFromEntity(ped)
+    for index = 0, roomCount - 1 do
+        local name = GetInteriorRoomName(interiorId, index)
+        if name and GetHashKey(name) == key then
+            currentRoom = name
+            break
+        end
+    end
+
+    local data = {
+        interiorId = interiorId,
+        coords = { x = coords.x, y = coords.y, z = coords.z, h = heading },
+        center = { x = ix, y = iy, z = iz },
+        roomCount = roomCount,
+        currentRoom = currentRoom or 'Main Room'
+    }
+
+    Bridge.Client.Notify(string.format('MLO interior captured (ID: %d, %d rooms)', interiorId, roomCount), 'success')
+    cb(data)
 end)
 
 RegisterNUICallback('pickDoor', function(_, cb)
@@ -107,6 +147,74 @@ RegisterNUICallback('pickEntranceCoords', function(_, cb)
     
     if pickedCoords then
         Bridge.Client.Notify('Entrance coordinates registered at standing location.', 'success')
+        cb(pickedCoords)
+    else
+        cb(nil)
+    end
+end)
+
+local function RotationToDir(rot)
+    local radX = (math.pi / 180) * rot.x
+    local radZ = (math.pi / 180) * rot.z
+    local absCosX = math.abs(math.cos(radX))
+    return vec3(-math.sin(radZ) * absCosX, math.cos(radZ) * absCosX, math.sin(radX))
+end
+
+RegisterNUICallback('pickBreakerCoords', function(_, cb)
+    debugPrint('info', 'NUI callback: pickBreakerCoords')
+    SendNUIMessage({ action = 'toggleVisibility', data = { visible = false } })
+    SetNuiFocus(false, false) 
+    
+    Wait(500)
+    lib.showTextUI('[E] - Confirm Breaker Box location on targeted wall | [H] Cancel')
+    
+    local pickedCoords = nil
+    while true do
+        Wait(0)
+        DisableControlAction(0, 38, true)  -- E
+        DisableControlAction(0, 104, true) -- H
+        
+        local camRot = GetGameplayCamRot(2)
+        local camPos = GetGameplayCamCoord()
+        local dir = RotationToDir(camRot)
+        local dest = camPos + (dir * 15.0)
+        
+        local rayHandle = StartShapeTestRay(
+            camPos.x, camPos.y, camPos.z,
+            dest.x, dest.y, dest.z,
+            -1,
+            cache.ped,
+            7
+        )
+        local _, hit, hitCoords, _, _ = GetShapeTestResult(rayHandle)
+        
+        local targetCoords = (hit == 1 or hit == true) and hitCoords or dest
+        
+        -- Draw bright 3D sphere marker directly on targeted wall spot
+        DrawMarker(28, targetCoords.x, targetCoords.y, targetCoords.z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.25, 0.25, 255, 200, 0, 200, false, false, 2, true, nil, nil, false)
+        
+        if IsDisabledControlJustPressed(0, 38) then 
+            local heading = GetEntityHeading(cache.ped)
+            pickedCoords = {
+                x = targetCoords.x,
+                y = targetCoords.y,
+                z = targetCoords.z,
+                h = heading
+            }
+            break
+        end
+        
+        if IsDisabledControlJustPressed(0, 104) then 
+            break
+        end
+    end
+    
+    lib.hideTextUI()
+    SendNUIMessage({ action = 'toggleVisibility', data = { visible = true } })
+    SetNuiFocus(true, true) 
+    
+    if pickedCoords then
+        Bridge.Client.Notify('Breaker Box wall location registered!', 'success')
         cb(pickedCoords)
     else
         cb(nil)

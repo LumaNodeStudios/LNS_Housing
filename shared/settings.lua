@@ -118,7 +118,8 @@ return {
             color = 3,                      -- Blip color ID
             scale = 0.8,
             label = "WIWANG Apartments",
-            coords = vec3(-826.53, -700.2, 27.06) -- Entrance vector coordinate
+            coords = vec3(-826.53, -700.2, 27.06), -- Entrance vector coordinate
+            breakerCoords = vec3(-828.53, -702.2, 27.06) -- Shared breaker box interaction location
         }
     },
 
@@ -141,6 +142,32 @@ return {
         LateFee = 250,                      -- Flat late fee added to debt on missed payment
         MaxMissedPayments = 3,              -- Max missed payments threshold for eviction
         AutoEvict = true,                   -- Auto evict player after retrieval period expires
+    },
+
+    ----------------------------------------------------------------------------
+    -- Electricity & Power System Settings
+    ----------------------------------------------------------------------------
+    Electricity = {
+        DefaultMaxPower = 5.0,              -- Default max kWh power capacity
+        BreakerSkillCheck = { 'easy', 'medium' }, -- Skill check difficulty for resetting tripped breaker box
+        Upgrades = {                        -- Upgradable kWh capacity tiers
+            [1] = { maxPower = 5.0,  price = 0,     label = "Standard Circuit (5.0 kWh)" },
+            [2] = { maxPower = 10.0, price = 5000,  label = "Enhanced Circuit (10.0 kWh)" },
+            [3] = { maxPower = 20.0, price = 12000, label = "High-Capacity Circuit (20.0 kWh)" },
+            [4] = { maxPower = 35.0, price = 25000, label = "Heavy-Duty Grid (35.0 kWh)" },
+            [5] = { maxPower = 50.0, price = 45000, label = "Industrial Power Grid (50.0 kWh)" }
+        }
+    },
+
+    ----------------------------------------------------------------------------
+    -- Temperature & Climate Settings
+    ----------------------------------------------------------------------------
+    Temperature = {
+        Unit = 'Celsius',                -- Temperature scale unit: 'Celsius' or 'Fahrenheit'
+        BaseTemperature = 70.0,             -- Base interior temperature in °C (21.1°C / 70.0°F)
+        MinComfortableTemp = 62.0,          -- Temperature below which property is flagged as cold
+        MaxComfortableTemp = 78.0,          -- Temperature above which property is flagged as hot
+        NotifyOnEnter = true,               -- Display climate notification toast on entering property/apartment
     },
 
     ----------------------------------------------------------------------------
@@ -188,7 +215,7 @@ return {
         },
         -- Physical key item settings
         PhysicalKeys = {
-            Enabled = true,                 -- If true, 'entry' access (enter/lock/unlock) for houses AND apartments requires holding a physical key item bound (via metadata) to that specific property/apartment
+            Enabled = false,                 -- If true, 'entry' access (enter/lock/unlock) for houses AND apartments requires holding a physical key item bound (via metadata) to that specific property/apartment
             Item = 'house_key',             -- Item name used as the physical key. Every copy MUST be given via GivePhysicalKey/GiveApartmentPhysicalKey or the locksmith, or it will not open anything.
             RequireKeyholder = false,       -- If true, having the key item is not enough on its own. The person must ALSO be a listed keyholder (owner, or in permissions.entry) on that property/apartment. If false, the key alone is sufficient (so a stolen key still works).
         },
@@ -198,7 +225,7 @@ return {
     -- NPC Locksmith Settings
     ----------------------------------------------------------------------------
     Locksmith = {
-        Enabled = true,
+        Enabled = false,
         BlankKeyItem = 'blank_house_key',   -- Item required and consumed to cut a new key
         Distance = 2.0,                     -- Interaction distance for the target option
         Ped = {

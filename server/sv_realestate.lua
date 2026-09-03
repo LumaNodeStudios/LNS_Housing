@@ -367,6 +367,10 @@ lib.callback.register('LNS_Housing:server:updateListingDetails', function(source
         p.metadata.camera_fov = data.cameraFov
     end
 
+    if data.breakerCoords then
+        p.metadata.breaker_coords = data.breakerCoords
+    end
+
     if data.entranceType == 'coords' then
         p.metadata.entrance = data.entranceCoords
         if p.metadata.locked == nil then

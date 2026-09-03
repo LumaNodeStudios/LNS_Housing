@@ -45,7 +45,8 @@ client_scripts {
     'client/cl_lawn.lua',
     'client/cl_apartments.lua',
     'client/cl_locksmith.lua',
-    'client/cl_screenshot.lua'
+    'client/cl_screenshot.lua',
+    'client/cl_electricity.lua'
 }
 
 server_scripts {
@@ -63,7 +64,8 @@ server_scripts {
     'server/sv_apartments.lua',
     'server/sv_locksmith.lua',
     'server/sv_screenshot.lua',
-    'server/sv_screenshot.js'
+    'server/sv_screenshot.js',
+    'server/sv_electricity.lua'
 }
 
 dependencies {

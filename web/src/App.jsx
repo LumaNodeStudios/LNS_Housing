@@ -440,6 +440,17 @@ function App() {
 
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
+        if (showBreachMinigame) {
+          if (window.GetParentResourceName) {
+            fetch(`https://${window.GetParentResourceName()}/breachCancel`, {
+              method: 'POST',
+              body: JSON.stringify({})
+            });
+          }
+          setShowBreachMinigame(false);
+          return;
+        }
+
         if (window.GetParentResourceName) {
           fetch(`https://${window.GetParentResourceName()}/closeUI`, {
             method: 'POST',
@@ -452,7 +463,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [showBreachMinigame]);
 
   return (
     <div className="app-container" style={{ visibility: isVisible ? 'visible' : 'hidden' }}>

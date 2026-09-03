@@ -59,6 +59,8 @@ local function CreateApartmentPed()
             end
         }
     })
+
+    if CreateApartmentBreakerTarget then CreateApartmentBreakerTarget() end
 end
 
 local function OpenApartmentCreatorUI(isEdit)
@@ -381,6 +383,11 @@ local function RegisterApartmentDoors(delay)
                             door
                         )
 
+                        local doorName = "Apartment Room #" .. room.id
+                        local _, doorData = pcall(function()
+                            return exports.ox_doorlock:getDoorFromName(doorName)
+                        end)
+
                         local options = {
                             {
                                 label = 'Ring Doorbell',
@@ -395,7 +402,11 @@ local function RegisterApartmentDoors(delay)
                                 items = Settings.Security.RaidItem,
                                 canInteract = function()
                                     local job = Bridge.Client.GetPlayerJob()
-                                    return job and job.name == 'police'
+                                    if not job or job.name ~= 'police' then return false end
+                                    if IsPropertyBreached and IsPropertyBreached(room.id, nil) then
+                                        return false
+                                    end
+                                    return true
                                 end,
                                 onSelect = function()
                                     StartPoliceRaid(room.id, 'apartment', nil)
@@ -407,7 +418,7 @@ local function RegisterApartmentDoors(delay)
                                 canInteract = function()
                                     local job = Bridge.Client.GetPlayerJob()
                                     if not job or job.name ~= 'police' then return false end
-                                    return lib.callback.await('LNS_Housing:server:isDoorBreached', false, room.id)
+                                    return IsPropertyBreached and IsPropertyBreached(room.id, nil)
                                 end,
                                 onSelect = function()
                                     TriggerServerEvent('LNS_Housing:server:policeSecureDoor', room.id, 'apartment', nil)
@@ -421,17 +432,10 @@ local function RegisterApartmentDoors(delay)
                                 icon = 'fas fa-mask',
                                 items = Settings.Security.LockpickItem,
                                 canInteract = function()
-                                    local isLocked = true
-                                    local doorName = "Apartment Room #" .. room.id
-                                    local ok, doorData = pcall(function()
-                                        return exports.ox_doorlock:getDoorFromName(doorName)
-                                    end)
-                                    if ok and doorData then
-                                        isLocked = doorData.state == 1
+                                    if doorData then
+                                        return doorData.state == 1
                                     end
-
-                                    if not isLocked then return false end
-                                    return lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', room.id, 'lockpick')
+                                    return true
                                 end,
                                 onSelect = function()
                                     LockpickDoor(room.id)
@@ -518,6 +522,7 @@ CreateThread(function()
     LoadCustomApartments()
     CreateApartmentBlip()
     CreateApartmentPed()
+    CreateApartmentBreakerTarget()
 
     initApartmentForPlayer()
 

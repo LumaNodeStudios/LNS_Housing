@@ -26,6 +26,10 @@ function LoadProperties()
             if v.metadata.partial_payment == nil then v.metadata.partial_payment = 0 end
             if v.metadata.size == nil then v.metadata.size = 0 end
             if v.metadata.region == nil then v.metadata.region = 'Unknown' end
+            if v.metadata.max_power == nil then v.metadata.max_power = (Settings.Electricity and Settings.Electricity.DefaultMaxPower) or 5.0 end
+            if v.metadata.power_level == nil then v.metadata.power_level = 1 end
+            if v.metadata.breaker_tripped == nil then v.metadata.breaker_tripped = false end
+            if v.metadata.breaker_coords == nil then v.metadata.breaker_coords = nil end
             v.size = v.metadata.size
             v.region = v.metadata.region
             
@@ -107,6 +111,11 @@ function CreateProperty(data)
             security_level = 0,
             spawn = spawnData,
             shell = data.mlo and 'mlo' or (data.shell or 'Standard Motel'),
+            interior_id = data.interior_id or nil,
+            interior_coords = data.interior_coords or nil,
+            interior_center = data.interior_center or nil,
+            room_count = data.room_count or nil,
+            mlo = data.mlo == true or data.shell == 'mlo',
             entrance = data.entrance,
             locked = true,
             garage_data = data.garage_data or nil,
@@ -116,7 +125,11 @@ function CreateProperty(data)
             camera_aim = data.camera_aim or nil,
             camera_model = data.camera_model or nil,
             camera_heading = data.camera_heading or 0.0,
-            doorbell_camera = data.doorbell_camera or false
+            doorbell_camera = data.doorbell_camera or false,
+            breaker_coords = data.breaker_coords or data.breakerCoords or nil,
+            max_power = (Settings.Electricity and Settings.Electricity.DefaultMaxPower) or 5.0,
+            power_level = 1,
+            breaker_tripped = false
         }),
         json.encode(data.yard_zone_data or nil),
         0,
@@ -143,6 +156,11 @@ function CreateProperty(data)
                 security_level = 0,
                 spawn = spawnData,
                 shell = data.mlo and 'mlo' or (data.shell or 'Standard Motel'),
+                interior_id = data.interior_id or nil,
+                interior_coords = data.interior_coords or nil,
+                interior_center = data.interior_center or nil,
+                room_count = data.room_count or nil,
+                mlo = data.mlo == true or data.shell == 'mlo',
                 entrance = data.entrance,
                 locked = true,
                 garage_data = data.garage_data or nil,
@@ -152,7 +170,11 @@ function CreateProperty(data)
                 camera_aim = data.camera_aim or nil,
                 camera_model = data.camera_model or nil,
                 camera_heading = data.camera_heading or 0.0,
-                doorbell_camera = data.doorbell_camera or false
+                doorbell_camera = data.doorbell_camera or false,
+                breaker_coords = data.breaker_coords or data.breakerCoords or nil,
+                max_power = (Settings.Electricity and Settings.Electricity.DefaultMaxPower) or 5.0,
+                power_level = 1,
+                breaker_tripped = false
             },
             image = data.image or nil,
             sale_type = data.saleType or 'direct',
@@ -457,6 +479,57 @@ function ResetPropertyOwnershipData(id)
     p.metadata.doorbell_camera = false
     p.metadata.camera_coords = nil
     p.metadata.camera_aim = nil
+
+    if TemporaryAccess then
+        if TemporaryAccess.doors then TemporaryAccess.doors[id] = nil end
+        if TemporaryAccess.stashes then TemporaryAccess.stashes[id] = nil end
+    end
+    if FailedAttempts then FailedAttempts[id] = nil end
+    if ActiveAlarms then ActiveAlarms[id] = nil end
+    if MotionAlertCooldown then MotionAlertCooldown[id] = nil end
+    if LockedStashes then LockedStashes[id] = nil end
+
+    local pk = Settings and Settings.Security and Settings.Security.PhysicalKeys
+    if pk and pk.Enabled and GetResourceState('ox_inventory') == 'started' then
+        pcall(function()
+            local players = GetPlayers()
+            for i = 1, #players do
+                local pId = tonumber(players[i])
+                if pId then
+                    local slots = exports.ox_inventory:Search(pId, 'slots', pk.Item)
+                    if slots then
+                        for _, slot in ipairs(slots) do
+                            local meta = slot.metadata or {}
+                            if (meta.propertyId == id or tonumber(meta.propertyId) == tonumber(id)) and not meta.isApartment then
+                                exports.ox_inventory:RemoveItem(pId, pk.Item, slot.count or 1, meta, slot.slot)
+                            end
+                        end
+                    end
+                end
+            end
+
+            local success, rows = pcall(MySQL.query.await, 'SELECT name, data FROM ox_inventory WHERE data LIKE ?', {'%' .. pk.Item .. '%'})
+            if success and rows then
+                for _, row in ipairs(rows) do
+                    local data = json.decode(row.data)
+                    if data then
+                        local modified = false
+                        local newItems = {}
+                        for slotIdx, item in pairs(data) do
+                            if item and item.name == pk.Item and item.metadata and (item.metadata.propertyId == id or tonumber(item.metadata.propertyId) == tonumber(id)) and not item.metadata.isApartment then
+                                modified = true
+                            else
+                                newItems[slotIdx] = item
+                            end
+                        end
+                        if modified then
+                            MySQL.update.await('UPDATE ox_inventory SET data = ? WHERE name = ?', {json.encode(newItems), row.name})
+                        end
+                    end
+                end
+            end
+        end)
+    end
 
     if Bridge and Bridge.Server and Bridge.Server.RegisterPropertyStashes then
         Bridge.Server.RegisterPropertyStashes(id, p.furniture)

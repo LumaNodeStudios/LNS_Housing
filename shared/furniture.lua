@@ -8,28 +8,34 @@ return {
                 id = 'lns_housing_panel',
                 label = 'Property Panel',
                 model = 'reh_prop_reh_tablet_01a',
-                price = 0
+                price = 0,
+                powerConsumption = 0.1,
+                tempEffect = 0.0
             },
+            {
+                id = 'v_res_tre_storagebox',
+                label = 'Storage Unit',
+                model = 'v_res_tre_storagebox',
+                price = 0,
+                type = 'storage',
+                isStorage = true,
+                storage = { slots = 50, weight = 100000 }
+            },
+            {
+                id = 'v_res_tre_wardrobe',
+                label = 'Wardrobe',
+                model = 'v_res_tre_wardrobe',
+                price = 0,
+                type = 'clothing',
+                isWardrobe = true
+            }
         }
     },
-
     {
-        id = 'sofas',
-        label = 'Sofas & Couches',
+        id = 'couches',
+        label = 'Couches',
         icon = 'Sofa',
         items = {
-            {
-                id = 'sofa_old',
-                label = 'Old Couch',
-                model = 'prop_rub_couch01',
-                price = 300
-            },
-            {
-                id = 'armchair_retro',
-                label = 'Retro Armchair',
-                model = 'prop_armchair_01',
-                price = 400
-            },
             {
                 id = 'miss_rub_couch_01',
                 label = 'Old couch',
@@ -61,6 +67,84 @@ return {
                 price = 300
             },
             {
+                id = 'v_res_d_armchair',
+                label = 'Old 1 Seat Couch Yellow',
+                model = 'v_res_d_armchair',
+                price = 300
+            },
+            {
+                id = 'v_res_fh_sofa',
+                label = 'corner sofa',
+                model = 'v_res_fh_sofa',
+                price = 3700
+            },
+            {
+                id = 'v_res_mp_sofa',
+                label = 'corner sofa 2',
+                model = 'v_res_mp_sofa',
+                price = 3700
+            },
+            {
+                id = 'v_res_d_sofa',
+                label = 'couch 1',
+                model = 'v_res_d_sofa',
+                price = 700
+            },
+            {
+                id = 'v_res_j_sofa',
+                label = 'Couch 2',
+                model = 'v_res_j_sofa',
+                price = 700
+            },
+            {
+                id = 'v_res_mp_stripchair',
+                label = 'Couch 3',
+                model = 'v_res_mp_stripchair',
+                price = 700
+            },
+            {
+                id = 'v_res_m_h_sofa_sml',
+                label = 'Couch 4',
+                model = 'v_res_m_h_sofa_sml',
+                price = 700
+            },
+            {
+                id = 'v_res_r_sofa',
+                label = 'Couch 5',
+                model = 'v_res_r_sofa',
+                price = 700
+            },
+            {
+                id = 'v_res_tre_sofa',
+                label = 'Couch 6',
+                model = 'v_res_tre_sofa',
+                price = 700
+            },
+            {
+                id = 'v_res_tre_sofa_mess_a',
+                label = 'Couch 7',
+                model = 'v_res_tre_sofa_mess_a',
+                price = 700
+            },
+            {
+                id = 'v_res_tre_sofa_mess_b',
+                label = 'Couch 8',
+                model = 'v_res_tre_sofa_mess_b',
+                price = 700
+            },
+            {
+                id = 'v_res_tre_sofa_mess_c',
+                label = 'Couch 9',
+                model = 'v_res_tre_sofa_mess_c',
+                price = 700
+            },
+            {
+                id = 'v_res_tt_sofa',
+                label = 'Couch 10',
+                model = 'v_res_tt_sofa',
+                price = 700
+            },
+            {
                 id = 'prop_rub_couch02',
                 label = 'Couch 11',
                 model = 'prop_rub_couch02',
@@ -77,6 +161,12 @@ return {
                 label = 'Lether Couch Brown',
                 model = 'v_med_p_sofa',
                 price = 1000
+            },
+            {
+                id = 'v_club_officesofa',
+                label = 'pauper Couch rood',
+                model = 'v_club_officesofa',
+                price = 500
             },
             {
                 id = 'bkr_prop_clubhouse_sofa_01a',
@@ -269,67 +359,157 @@ return {
                 label = 'Sofa bed 2',
                 model = 'prop_t_sofa_02',
                 price = 1000
-            },
+            }
         }
     },
-
     {
         id = 'chairs',
-        label = 'Chairs & Seating',
+        label = 'Chairs',
         icon = 'Sofa',
         items = {
             {
-                id = 'chair_dining_modern',
-                label = 'Modern Dining Chair',
-                model = 'prop_chair_01a',
-                price = 120
-            },
-            {
-                id = 'chair_dining_wood',
-                label = 'Wooden Dining Chair',
-                model = 'prop_chair_02',
-                price = 100
-            },
-            {
-                id = 'chair_retro_wood',
-                label = 'Retro Wooden Chair',
-                model = 'prop_chair_03',
-                price = 110
-            },
-            {
-                id = 'chair_office_basic',
-                label = 'Office Chair',
-                model = 'prop_off_chair_01',
-                price = 250
-            },
-            {
-                id = 'chair_office_modern',
-                label = 'Modern Office Chair',
-                model = 'prop_off_chair_04',
-                price = 280,
-                colors = {
-                    { label = 'Classic Black', index = 0, hex = '#151515' },
-                    { label = 'Space Gray', index = 1, hex = '#4e5154' },
-                    { label = 'Crimson Mesh', index = 2, hex = '#9e2a2b' },
-                }
-            },
-            {
-                id = 'chair_patio_plastic',
-                label = 'Plastic Patio Chair',
-                model = 'prop_chair_04a',
-                price = 60
-            },
-            {
-                id = 'lounger_sun',
-                label = 'Sun Lounger',
-                model = 'prop_chair_05',
-                price = 180
+                id = 'v_res_d_highchair',
+                label = 'High chair',
+                model = 'v_res_d_highchair',
+                price = 700
             },
             {
                 id = 'apa_mp_h_stn_chairstrip_03',
                 label = 'Sitchair 4',
                 model = 'apa_mp_h_stn_chairstrip_03',
                 price = 500
+            },
+            {
+                id = 'v_res_fa_chair01',
+                label = 'Chairl',
+                model = 'v_res_fa_chair01',
+                price = 700
+            },
+            {
+                id = 'v_res_fa_chair02',
+                label = 'Chair 2',
+                model = 'v_res_fa_chair02',
+                price = 700
+            },
+            {
+                id = 'v_res_fh_barcchair',
+                label = 'High chair 2',
+                model = 'v_res_fh_barcchair',
+                price = 700
+            },
+            {
+                id = 'v_res_fh_dineeamesa',
+                label = 'Kitchen chair 1',
+                model = 'v_res_fh_dineeamesa',
+                price = 700
+            },
+            {
+                id = 'v_res_fh_dineeamesb',
+                label = 'Kitchen chair 2',
+                model = 'v_res_fh_dineeamesb',
+                price = 700
+            },
+            {
+                id = 'v_res_fh_dineeamesc',
+                label = 'Kitchen chair 3',
+                model = 'v_res_fh_dineeamesc',
+                price = 700
+            },
+            {
+                id = 'v_res_fh_easychair',
+                label = 'Chair 3',
+                model = 'v_res_fh_easychair',
+                price = 700
+            },
+            {
+                id = 'v_res_fh_kitnstool',
+                label = 'Chair 4',
+                model = 'v_res_fh_kitnstool',
+                price = 700
+            },
+            {
+                id = 'v_res_fh_singleseat',
+                label = 'High chair 3',
+                model = 'v_res_fh_singleseat',
+                price = 700
+            },
+            {
+                id = 'v_res_jarmchair',
+                label = 'Arm Chair',
+                model = 'v_res_jarmchair',
+                price = 700
+            },
+            {
+                id = 'v_res_j_dinechair',
+                label = 'Kitchen chair 4',
+                model = 'v_res_j_dinechair',
+                price = 700
+            },
+            {
+                id = 'v_res_j_stool',
+                label = 'Chair 5',
+                model = 'v_res_j_stool',
+                price = 700
+            },
+            {
+                id = 'v_res_mbchair',
+                label = 'MB Chair',
+                model = 'v_res_mbchair',
+                price = 700
+            },
+            {
+                id = 'v_res_m_armchair',
+                label = 'Arm Chair 2',
+                model = 'v_res_m_armchair',
+                price = 700
+            },
+            {
+                id = 'v_res_m_dinechair',
+                label = 'Kitchen chair 5',
+                model = 'v_res_m_dinechair',
+                price = 700
+            },
+            {
+                id = 'v_res_study_chair',
+                label = 'Study Chair',
+                model = 'v_res_study_chair',
+                price = 700
+            },
+            {
+                id = 'v_res_trev_framechair',
+                label = 'Chair frame',
+                model = 'v_res_trev_framechair',
+                price = 700
+            },
+            {
+                id = 'v_res_tre_chair',
+                label = 'Chair 5',
+                model = 'v_res_tre_chair',
+                price = 700
+            },
+            {
+                id = 'v_res_tre_officechair',
+                label = 'officeChair',
+                model = 'v_res_tre_officechair',
+                price = 700
+            },
+            {
+                id = 'v_res_tre_stool',
+                label = 'Chair 6',
+                model = 'v_res_tre_stool',
+                price = 700
+            },
+            {
+                id = 'v_res_tre_stool_leather',
+                label = 'Lether Chair',
+                model = 'v_res_tre_stool_leather',
+                price = 700
+            },
+            {
+                id = 'v_res_tre_stool_scuz',
+                label = 'Chair Scuz',
+                model = 'v_res_tre_stool_scuz',
+                price = 700
             },
             {
                 id = 'v_med_p_deskchair',
@@ -416,9 +596,33 @@ return {
                 price = 1000
             },
             {
+                id = 'v_club_barchair',
+                label = 'Chair 8',
+                model = 'v_club_barchair',
+                price = 300
+            },
+            {
+                id = 'prop_off_chair_04',
+                label = 'Desk Chair 2',
+                model = 'prop_off_chair_04',
+                price = 300
+            },
+            {
+                id = 'v_club_stagechair',
+                label = 'Fauteuil roze',
+                model = 'v_club_stagechair',
+                price = 500
+            },
+            {
                 id = 'v_club_officechair',
                 label = 'Desk Chair 3',
                 model = 'v_club_officechair',
+                price = 500
+            },
+            {
+                id = 'prop_armchair_01',
+                label = 'Sit chair',
+                model = 'prop_armchair_01',
                 price = 500
             },
             {
@@ -444,6 +648,12 @@ return {
                 label = 'Feet support',
                 model = 'apa_mp_h_stn_chairstool_12',
                 price = 300
+            },
+            {
+                id = 'prop_chair_03',
+                label = 'Wooden Chair',
+                model = 'prop_chair_03',
+                price = 100
             },
             {
                 id = 'prop_couch_sm_05',
@@ -624,110 +834,1540 @@ return {
                 label = 'Gaming chair',
                 model = 'ba_prop_battle_control_seat',
                 price = 500
-            },
+            }
         }
     },
-
+    {
+        id = 'storage',
+        label = 'Storage',
+        icon = 'Package',
+        items = {
+            {
+                id = 'v_res_cabinet',
+                label = 'Cabinet Large',
+                model = 'v_res_cabinet',
+                price = 2500
+            },
+            {
+                id = 'v_res_d_dressingtable',
+                label = 'Dressing Table',
+                model = 'v_res_d_dressingtable',
+                price = 2500
+            },
+            {
+                id = 'v_res_d_sideunit',
+                label = 'Side Unit',
+                model = 'v_res_d_sideunit',
+                price = 2500
+            },
+            {
+                id = 'v_res_fh_sidebrddine',
+                label = 'Side Unit',
+                model = 'v_res_fh_sidebrddine',
+                price = 2500
+            },
+            {
+                id = 'v_res_fh_sidebrdlngb',
+                label = 'Side Unit',
+                model = 'v_res_fh_sidebrdlngb',
+                price = 2500
+            },
+            {
+                id = 'v_res_mbbedtable',
+                label = 'Bed Unit',
+                model = 'v_res_mbbedtable',
+                price = 2500
+            },
+            {
+                id = 'v_res_j_tvstand',
+                label = 'Tv Unit',
+                model = 'v_res_j_tvstand',
+                price = 2500,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'v_res_mbdresser',
+                label = 'Dresser Unit',
+                model = 'v_res_mbdresser',
+                price = 2500
+            },
+            {
+                id = 'v_res_mbottoman',
+                label = 'Bottoman Unit',
+                model = 'v_res_mbottoman',
+                price = 2500
+            },
+            {
+                id = 'v_res_mconsolemod',
+                label = 'Console Unit',
+                model = 'v_res_mconsolemod',
+                price = 2500
+            },
+            {
+                id = 'v_res_mcupboard',
+                label = 'Cupboard Unit',
+                model = 'v_res_mcupboard',
+                price = 2500
+            },
+            {
+                id = 'v_res_mdchest',
+                label = 'Chest Unit',
+                model = 'v_res_mdchest',
+                price = 2500
+            },
+            {
+                id = 'v_res_msoncabinet',
+                label = 'Mason Unit',
+                model = 'v_res_msoncabinet',
+                price = 2500
+            },
+            {
+                id = 'v_res_m_armoire',
+                label = 'Armoire Unit',
+                model = 'v_res_m_armoire',
+                price = 2500
+            },
+            {
+                id = 'v_res_m_sidetable',
+                label = 'Side Unit',
+                model = 'v_res_m_sidetable',
+                price = 2500
+            },
+            {
+                id = 'v_res_son_desk',
+                label = 'Desk Unit',
+                model = 'v_res_son_desk',
+                price = 2500
+            },
+            {
+                id = 'v_res_tre_bedsidetable',
+                label = 'Side Unit',
+                model = 'v_res_tre_bedsidetable',
+                price = 2500
+            },
+            {
+                id = 'v_res_tre_bedsidetableb',
+                label = 'Side Unit 2',
+                model = 'v_res_tre_bedsidetableb',
+                price = 2500
+            },
+            {
+                id = 'v_res_tre_smallbookshelf',
+                label = 'Book Unit',
+                model = 'v_res_tre_smallbookshelf',
+                price = 2500
+            },
+            {
+                id = 'v_res_tre_storageunit',
+                label = 'Storage Unit',
+                model = 'v_res_tre_storageunit',
+                price = 2500
+            },
+            {
+                id = 'v_res_tre_wardrobe_storage',
+                label = 'Wardrobe Unit',
+                model = 'v_res_tre_wardrobe',
+                price = 2500
+            },
+            {
+                id = 'v_res_tre_wdunitscuz',
+                label = 'Wood Unit',
+                model = 'v_res_tre_wdunitscuz',
+                price = 2500
+            },
+            {
+                id = 'prop_devin_box_closed',
+                label = 'Bean Bag 1',
+                model = 'prop_devin_box_closed',
+                price = 100
+            },
+            {
+                id = 'prop_mil_crate_01',
+                label = 'Mil Crate 1',
+                model = 'prop_mil_crate_01',
+                price = 100
+            },
+            {
+                id = 'prop_mil_crate_02',
+                label = 'Mil Crate 2',
+                model = 'prop_mil_crate_02',
+                price = 100
+            },
+            {
+                id = 'prop_ld_int_safe_01',
+                label = 'Safe',
+                model = 'prop_ld_int_safe_01',
+                price = 1100
+            },
+            {
+                id = 'prop_toolchest_05',
+                label = 'Crafting Bench',
+                model = 'prop_toolchest_05',
+                price = 5000
+            },
+            {
+                id = 'v_corp_filecablow',
+                label = 'Filing cabinet Low',
+                model = 'v_corp_filecablow',
+                price = 500
+            },
+            {
+                id = 'v_corp_filecabtall',
+                label = 'Filing cabinet High',
+                model = 'v_corp_filecabtall',
+                price = 500
+            },
+            {
+                id = 'apa_mp_h_str_shelffloorm_02',
+                label = 'Large modern cupboard',
+                model = 'apa_mp_h_str_shelffloorm_02',
+                price = 500
+            },
+            {
+                id = 'v_ilev_frnkwarddr1',
+                label = 'Cupboard franklin',
+                model = 'v_ilev_frnkwarddr1',
+                price = 500
+            },
+            {
+                id = 'prop_coathook_01',
+                label = 'Coat rack',
+                model = 'prop_coathook_01',
+                price = 100
+            },
+            {
+                id = 'v_corp_lowcabdark01',
+                label = 'Filing cabinetLow black',
+                model = 'v_corp_lowcabdark01',
+                price = 500
+            },
+            {
+                id = 'v_corp_tallcabdark01',
+                label = 'Filing cabinet High black',
+                model = 'v_corp_tallcabdark01',
+                price = 500
+            },
+            {
+                id = 'v_corp_cabshelves01',
+                label = 'Filing cabinet black',
+                model = 'v_corp_cabshelves01',
+                price = 1000
+            },
+            {
+                id = 'v_corp_offshelf',
+                label = 'Filing cabinet groot',
+                model = 'v_corp_offshelf',
+                price = 1000
+            },
+            {
+                id = 'v_61_lng_mesh_unitc',
+                label = 'Bookcase white',
+                model = 'v_61_lng_mesh_unitc',
+                price = 500
+            },
+            {
+                id = 'ba_wardrobe',
+                label = 'kledingkast',
+                model = 'ba_wardrobe',
+                price = 500
+            },
+            {
+                id = 'apa_mp_h_str_sideboardl_06',
+                label = 'Cupboard  modern',
+                model = 'apa_mp_h_str_sideboardl_06',
+                price = 750
+            },
+            {
+                id = 'apa_mp_h_str_sideboardl_09',
+                label = 'Cupboard  modern 2',
+                model = 'apa_mp_h_str_sideboardl_09',
+                price = 750
+            },
+            {
+                id = 'apa_mp_h_str_shelfwallm_01',
+                label = 'Bookcase 2',
+                model = 'apa_mp_h_str_shelfwallm_01',
+                price = 750
+            },
+            {
+                id = 'apa_mp_h_str_sideboardl_11',
+                label = 'Cupboard  modern 3',
+                model = 'apa_mp_h_str_sideboardl_11',
+                price = 750
+            },
+            {
+                id = 'imp_prop_impexp_parts_rack_03a',
+                label = 'car parts',
+                model = 'imp_prop_impexp_parts_rack_03a',
+                price = 750
+            },
+            {
+                id = 'imp_prop_impexp_parts_rack_04a',
+                label = 'car parts 2',
+                model = 'imp_prop_impexp_parts_rack_04a',
+                price = 750
+            },
+            {
+                id = 'imp_prop_impexp_parts_rack_05a',
+                label = 'car parts 3',
+                model = 'imp_prop_impexp_parts_rack_05a',
+                price = 750
+            },
+            {
+                id = 'apa_mp_h_bed_chestdrawer_02',
+                label = 'chest of drawers',
+                model = 'apa_mp_h_bed_chestdrawer_02',
+                price = 750
+            },
+            {
+                id = 'hei_heist_bed_chestdrawer_04',
+                label = 'chest of drawers 2',
+                model = 'hei_heist_bed_chestdrawer_04',
+                price = 750
+            },
+            {
+                id = 'prop_rub_cabinet',
+                label = 'rusted filing cabinet',
+                model = 'prop_rub_cabinet',
+                price = 50
+            },
+            {
+                id = 'prop_tv_cabinet_03',
+                label = 'tv little cupboard',
+                model = 'prop_tv_cabinet_03',
+                price = 750,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'prop_tv_cabinet_04',
+                label = 'tv little cupboard 2',
+                model = 'prop_tv_cabinet_04',
+                price = 750,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'prop_tv_cabinet_05',
+                label = 'tv little cupboard 3',
+                model = 'prop_tv_cabinet_05',
+                price = 750,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'apa_mp_h_str_shelffreel_01',
+                label = 'ikea closet',
+                model = 'apa_mp_h_str_shelffreel_01',
+                price = 750
+            },
+            {
+                id = 'apa_mp_h_str_sideboardl_13',
+                label = 'cabinet modern 4',
+                model = 'apa_mp_h_str_sideboardl_13',
+                price = 750
+            },
+            {
+                id = 'apa_mp_h_str_sideboardl_14',
+                label = 'cabinet modern 5',
+                model = 'apa_mp_h_str_sideboardl_14',
+                price = 750
+            },
+            {
+                id = 'apa_mp_h_str_sideboardm_02',
+                label = 'cabinet modern 6',
+                model = 'apa_mp_h_str_sideboardm_02',
+                price = 750
+            },
+            {
+                id = 'bkr_prop_biker_garage_locker_01',
+                label = 'Biker Locker',
+                model = 'bkr_prop_biker_garage_locker_01',
+                price = 750
+            },
+            {
+                id = 'gr_prop_gr_bench_04b',
+                label = 'Biker Bench',
+                model = 'gr_prop_gr_bench_04b',
+                price = 750
+            }
+        }
+    },
+    {
+        id = 'electronics',
+        label = 'Electronics',
+        icon = 'Tv',
+        items = {
+            {
+                id = 'prop_trailr_fridge',
+                label = 'Old Fridge',
+                model = 'prop_trailr_fridge',
+                price = 300,
+                powerConsumption = 2.5,
+                tempEffect = -2.0
+            },
+            {
+                id = 'v_res_fh_speaker',
+                label = 'Speaker',
+                model = 'v_res_fh_speaker',
+                price = 300,
+                powerConsumption = 0.3,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_res_fh_speakerdock',
+                label = 'Speaker Dock',
+                model = 'v_res_fh_speakerdock',
+                price = 300,
+                powerConsumption = 0.3,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_res_fh_bedsideclock',
+                label = 'Bedside Clock',
+                model = 'v_res_fh_bedsideclock',
+                price = 300
+            },
+            {
+                id = 'v_res_fa_phone',
+                label = 'Phone',
+                model = 'v_res_fa_phone',
+                price = 300
+            },
+            {
+                id = 'v_res_fh_towerfan',
+                label = 'Tower Fan',
+                model = 'v_res_fh_towerfan',
+                price = 300,
+                powerConsumption = 0.4,
+                tempEffect = -1.5
+            },
+            {
+                id = 'v_res_fa_fan',
+                label = 'Fan',
+                model = 'v_res_fa_fan',
+                price = 300,
+                powerConsumption = 0.4,
+                tempEffect = -1.5
+            },
+            {
+                id = 'v_res_lest_bigscreen',
+                label = 'Bigscreen',
+                model = 'v_res_lest_bigscreen',
+                price = 300,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'v_res_lest_monitor',
+                label = 'Monitor',
+                model = 'v_res_lest_monitor',
+                price = 300,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'v_res_tre_mixer',
+                label = 'Mixer',
+                model = 'v_res_tre_mixer',
+                price = 300
+            },
+            {
+                id = 'prop_cs_cctv',
+                label = 'CCTV',
+                model = 'prop_cs_cctv',
+                price = 100,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'prop_ld_lap_top',
+                label = 'Laptop',
+                model = 'prop_ld_lap_top',
+                price = 100,
+                powerConsumption = 0.6,
+                tempEffect = 0.4
+            },
+            {
+                id = 'prop_ld_monitor_01',
+                label = 'Monitor',
+                model = 'prop_ld_monitor_01',
+                price = 100,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'prop_speaker_05',
+                label = 'mounted speaker',
+                model = 'prop_speaker_05',
+                price = 500,
+                powerConsumption = 0.3,
+                tempEffect = 0.1
+            },
+            {
+                id = 'prop_tv_flat_03b',
+                label = 'kleine flatscreen',
+                model = 'prop_tv_flat_03b',
+                price = 1000,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'prop_laptop_01a',
+                label = 'Open laptop',
+                model = 'prop_laptop_01a',
+                price = 750,
+                powerConsumption = 0.6,
+                tempEffect = 0.4
+            },
+            {
+                id = 'prop_tv_flat_michael',
+                label = 'flatscreen hanging ing',
+                model = 'prop_tv_flat_michael',
+                price = 3000,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'prop_dyn_pc',
+                label = 'pc',
+                model = 'prop_dyn_pc',
+                price = 1000,
+                powerConsumption = 0.6,
+                tempEffect = 0.4
+            },
+            {
+                id = 'prop_keyboard_01b',
+                label = 'Keybord',
+                model = 'prop_keyboard_01b',
+                price = 100
+            },
+            {
+                id = 'prop_mouse_01b',
+                label = 'Computer mouse',
+                model = 'prop_mouse_01b',
+                price = 100
+            },
+            {
+                id = 'v_ret_gc_phone',
+                label = 'office phone',
+                model = 'v_ret_gc_phone',
+                price = 100
+            },
+            {
+                id = 'prop_tv_flat_01',
+                label = 'Big flatscreen',
+                model = 'prop_tv_flat_01',
+                price = 5000,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'prop_arcade_01',
+                label = 'arcade',
+                model = 'prop_arcade_01',
+                price = 5000,
+                powerConsumption = 1.2,
+                tempEffect = 0.8
+            },
+            {
+                id = 'prop_console_01',
+                label = 'gameconsole',
+                model = 'prop_console_01',
+                price = 250,
+                powerConsumption = 0.6,
+                tempEffect = 0.4
+            },
+            {
+                id = 'v_res_tre_dvdplayer',
+                label = 'dvd Player',
+                model = 'v_res_tre_dvdplayer',
+                price = 250
+            },
+            {
+                id = 'prop_speaker_08',
+                label = 'wooden speaker',
+                model = 'prop_speaker_08',
+                price = 500,
+                powerConsumption = 0.3,
+                tempEffect = 0.1
+            },
+            {
+                id = 'prop_cctv_mon_02',
+                label = 'cctv monitor',
+                model = 'prop_cctv_mon_02',
+                price = 300,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'prop_tv_flat_02',
+                label = 'flatscreen Standing',
+                model = 'prop_tv_flat_02',
+                price = 2500,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'prop_cctv_cam_01a',
+                label = 'cctv 2',
+                model = 'prop_cctv_cam_01a',
+                price = 300,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'prop_dest_cctv_02',
+                label = 'cctv monitor 2',
+                model = 'prop_dest_cctv_02',
+                price = 300,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'prop_cctv_cam_07a',
+                label = 'cctv 3',
+                model = 'prop_cctv_cam_07a',
+                price = 300,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'apa_mp_h_str_avunits_04',
+                label = 'flatscreen meubel',
+                model = 'apa_mp_h_str_avunits_04',
+                price = 5500,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'apa_mp_h_str_avunits_01',
+                label = 'flatscreen meubel 2',
+                model = 'apa_mp_h_str_avunits_01',
+                price = 5500,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'v_club_vu_deckcase',
+                label = 'dj set',
+                model = 'v_club_vu_deckcase',
+                price = 1000,
+                powerConsumption = 0.3,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_corp_servercln',
+                label = 'serverrack',
+                model = 'v_corp_servercln',
+                price = 1000,
+                powerConsumption = 3.5,
+                tempEffect = 6.0
+            },
+            {
+                id = 'apa_mp_h_str_avunitl_01_b',
+                label = 'flat screen furniture 3',
+                model = 'apa_mp_h_str_avunitl_01_b',
+                price = 5500,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'apa_mp_h_str_avunitl_04',
+                label = 'flat screen furniture 4',
+                model = 'apa_mp_h_str_avunitl_04',
+                price = 5500,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'apa_mp_h_str_avunitm_01',
+                label = 'flat screen furniture 5',
+                model = 'apa_mp_h_str_avunitm_01',
+                price = 5500,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'apa_mp_h_str_avunitm_03',
+                label = 'flat screen furniture 6',
+                model = 'apa_mp_h_str_avunitm_03',
+                price = 5500,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'apa_mp_h_str_avunits_04_electronics',
+                label = 'flat screen furniture 7',
+                model = 'apa_mp_h_str_avunits_04',
+                price = 5500,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'v_res_printer',
+                label = 'printer',
+                model = 'v_res_printer',
+                price = 300,
+                powerConsumption = 0.1,
+                tempEffect = 0.0
+            },
+            {
+                id = 'apa_mp_h_acc_phone_01',
+                label = 'old fashioned telephone',
+                model = 'apa_mp_h_acc_phone_01',
+                price = 100
+            },
+            {
+                id = 'v_res_mousemat',
+                label = 'mouse pad',
+                model = 'v_res_mousemat'
+            },
+            {
+                id = 'v_res_pcheadset',
+                label = 'headset',
+                model = 'v_res_pcheadset',
+                price = 300
+            },
+            {
+                id = 'v_res_pcspeaker',
+                label = 'PC speaker',
+                model = 'v_res_pcspeaker',
+                price = 300,
+                powerConsumption = 0.6,
+                tempEffect = 0.4
+            },
+            {
+                id = 'ba_prop_battle_club_speaker_small',
+                label = 'small box',
+                model = 'ba_prop_battle_club_speaker_small',
+                price = 500,
+                powerConsumption = 0.3,
+                tempEffect = 0.1
+            },
+            {
+                id = 'ba_prop_battle_club_speaker_med',
+                label = 'box',
+                model = 'ba_prop_battle_club_speaker_med',
+                price = 750,
+                powerConsumption = 0.3,
+                tempEffect = 0.1
+            },
+            {
+                id = 'ba_prop_battle_club_speaker_large',
+                label = 'big box',
+                model = 'ba_prop_battle_club_speaker_large',
+                price = 1000,
+                powerConsumption = 0.3,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_res_pcspeaker_electronics',
+                label = 'PC speaker',
+                model = 'v_res_pcspeaker',
+                price = 300,
+                powerConsumption = 0.6,
+                tempEffect = 0.4
+            },
+            {
+                id = 'v_res_pcwoofer',
+                label = 'PC subwoofer',
+                model = 'v_res_pcwoofer',
+                price = 300,
+                powerConsumption = 0.6,
+                tempEffect = 0.4
+            },
+            {
+                id = 'prop_controller_01',
+                label = 'Controller',
+                model = 'prop_controller_01',
+                price = 300
+            },
+            {
+                id = 'prop_cs_remote_01',
+                label = 'Remote control',
+                model = 'prop_cs_remote_01',
+                price = 300
+            },
+            {
+                id = 'prop_portable_hifi_01',
+                label = 'Radio',
+                model = 'prop_portable_hifi_01',
+                price = 300,
+                powerConsumption = 0.3,
+                tempEffect = 0.1
+            },
+            {
+                id = 'prop_dj_deck_02',
+                label = 'DJ table',
+                model = 'prop_dj_deck_02',
+                price = 300
+            },
+            {
+                id = 'prop_speaker_01',
+                label = 'Speaker',
+                model = 'prop_speaker_01',
+                price = 300,
+                powerConsumption = 0.3,
+                tempEffect = 0.1
+            }
+        }
+    },
     {
         id = 'beds',
         label = 'Beds',
         icon = 'Bed',
         items = {
             {
+                id = 'v_res_d_bed',
+                label = 'Bed 1',
+                model = 'v_res_d_bed',
+                price = 700
+            },
+            {
+                id = 'v_res_lestersbed',
+                label = 'Bed 2',
+                model = 'v_res_lestersbed',
+                price = 700
+            },
+            {
+                id = 'v_res_mbbed',
+                label = 'MB Bed',
+                model = 'v_res_mbbed',
+                price = 700
+            },
+            {
+                id = 'v_res_mdbed',
+                label = 'MD Bed',
+                model = 'v_res_mdbed',
+                price = 700
+            },
+            {
+                id = 'v_res_msonbed',
+                label = 'Bed 3',
+                model = 'v_res_msonbed',
+                price = 700
+            },
+            {
+                id = 'v_res_tre_bed1',
+                label = 'Bed 4',
+                model = 'v_res_tre_bed1',
+                price = 700
+            },
+            {
+                id = 'v_res_tre_bed2',
+                label = 'T Bed',
+                model = 'v_res_tre_bed2',
+                price = 700
+            },
+            {
+                id = 'v_res_tt_bed',
+                label = 'TT Bed',
+                model = 'v_res_tt_bed',
+                price = 700
+            },
+            {
                 id = 'apa_mp_h_bed_with_table_02',
                 label = 'fancy bed',
                 model = 'apa_mp_h_bed_with_table_02',
-                price = 5000,
-                isLogout = true
+                price = 5000
             },
             {
                 id = 'apa_mp_h_bed_wide_05',
                 label = 'red bed',
                 model = 'apa_mp_h_bed_wide_05',
-                price = 5000,
-                isLogout = true
+                price = 5000
             },
             {
                 id = 'apa_mp_h_bed_double_08',
                 label = 'square bed',
                 model = 'apa_mp_h_bed_double_08',
-                price = 3000,
-                isLogout = true
+                price = 3000
             },
             {
                 id = 'apa_mp_h_bed_double_09',
                 label = 'modern bed',
                 model = 'apa_mp_h_bed_double_09',
-                price = 3000,
-                isLogout = true
+                price = 3000
             },
             {
                 id = 'apa_mp_h_yacht_bed_01',
                 label = 'california king',
                 model = 'apa_mp_h_yacht_bed_01',
-                price = 5000,
-                isLogout = true
+                price = 5000
             },
             {
                 id = 'apa_mp_h_yacht_bed_02',
                 label = 'california king 2',
                 model = 'apa_mp_h_yacht_bed_02',
-                price = 5000,
-                isLogout = true
+                price = 5000
             },
             {
                 id = 'bkr_prop_biker_campbed_01',
                 label = 'camp bed',
                 model = 'bkr_prop_biker_campbed_01',
-                price = 100,
-                isLogout = true
+                price = 100
             },
             {
                 id = 'ex_prop_exec_bed_01',
                 label = 'small bed',
                 model = 'ex_prop_exec_bed_01',
-                price = 700,
-                isLogout = true
+                price = 700
             },
             {
                 id = 'gr_prop_bunker_bed_01',
                 label = 'klein bed 2',
                 model = 'gr_prop_bunker_bed_01',
-                price = 700,
-                isLogout = true
+                price = 700
             },
             {
                 id = 'p_mbbed_s',
                 label = 'Bed 5',
                 model = 'p_mbbed_s',
-                price = 700,
-                isLogout = true
-            },
+                price = 700
+            }
         }
     },
-
+    {
+        id = 'lighting',
+        label = 'Lighting',
+        icon = 'Lamp',
+        items = {
+            {
+                id = 'v_corp_cd_desklamp',
+                label = 'Desk Corp Lamp',
+                model = 'v_corp_cd_desklamp',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_res_desklamp',
+                label = 'Desk Lamp',
+                model = 'v_res_desklamp',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_res_d_lampa',
+                label = 'Lamp AA',
+                model = 'v_res_d_lampa',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_res_fa_lamp1on',
+                label = 'Lamp 1',
+                model = 'v_res_fa_lamp1on',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_res_fh_floorlamp',
+                label = 'Floor Lamp',
+                model = 'v_res_fh_floorlamp',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_res_fh_lampa_on',
+                label = 'Lamp 2',
+                model = 'v_res_fh_lampa_on',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_res_j_tablelamp1',
+                label = 'Table Lamp',
+                model = 'v_res_j_tablelamp1',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_res_j_tablelamp2',
+                label = 'Table Lamp 2',
+                model = 'v_res_j_tablelamp2',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_res_mdbedlamp',
+                label = 'Bed Lamp',
+                model = 'v_res_mdbedlamp',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_res_mplanttongue',
+                label = 'Plant Tongue Lamp',
+                model = 'v_res_mplanttongue',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_res_mtblelampmod',
+                label = 'Table Lamp 3',
+                model = 'v_res_mtblelampmod',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_res_m_lampstand',
+                label = 'Lamp Stand',
+                model = 'v_res_m_lampstand',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_res_m_lampstand2',
+                label = 'Lamp Stand 2',
+                model = 'v_res_m_lampstand2',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_res_m_lamptbl',
+                label = 'Table Lamp 4',
+                model = 'v_res_m_lamptbl',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_res_tre_lightfan',
+                label = 'Light Fan',
+                model = 'v_res_tre_lightfan',
+                price = 100,
+                powerConsumption = 0.5,
+                tempEffect = -1.5
+            },
+            {
+                id = 'v_res_tre_talllamp',
+                label = 'Tall Lamp',
+                model = 'v_res_tre_talllamp',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_ret_fh_walllighton',
+                label = 'Wall Light',
+                model = 'v_ret_fh_walllighton',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_ret_gc_lamp',
+                label = 'GC Lamp',
+                model = 'v_ret_gc_lamp',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'prop_dummy_light',
+                label = 'Flickering Light',
+                model = 'prop_dummy_light',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'prop_ld_cont_light_01',
+                label = 'Side Wall Light',
+                model = 'prop_ld_cont_light_01',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'V_44_D_emis',
+                label = 'Test Light',
+                model = 'V_44_D_emis',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'prop_wall_light_07a',
+                label = 'lantaarn',
+                model = 'prop_wall_light_07a',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'prop_wall_light_01a',
+                label = 'Cheap lamp',
+                model = 'prop_wall_light_01a',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_serv_tu_light2_',
+                label = 'industrieel licht',
+                model = 'v_serv_tu_light2_',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_serv_tu_light3_',
+                label = 'industrieel licht2',
+                model = 'v_serv_tu_light3_',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'ba_prop_battle_lights_ceiling_l_a',
+                label = 'hanging lamp',
+                model = 'ba_prop_battle_lights_ceiling_l_a',
+                price = 300,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_med_p_floorlamp',
+                label = 'Big lamp',
+                model = 'v_med_p_floorlamp',
+                price = 300,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_club_vu_lamp',
+                label = 'Smal lamp',
+                model = 'v_club_vu_lamp',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'ba_prop_battle_lights_wall_l_a',
+                label = 'Wall lamp',
+                model = 'ba_prop_battle_lights_wall_l_a',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'ba_prop_battle_lights_ceiling_l_c',
+                label = 'hanging lamp 2',
+                model = 'ba_prop_battle_lights_ceiling_l_c',
+                price = 300,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'ba_prop_battle_lights_ceiling_l_b',
+                label = 'kroonluchter 2',
+                model = 'ba_prop_battle_lights_ceiling_l_b',
+                price = 300,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'ba_prop_battle_lights_wall_l_c',
+                label = 'Wall lamp 2',
+                model = 'ba_prop_battle_lights_wall_l_c',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'ba_prop_battle_lights_wall_l_b',
+                label = 'Wall lamp 3',
+                model = 'ba_prop_battle_lights_wall_l_b',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'hei_heist_lit_lightpendant_02',
+                label = 'hanging lamp 3',
+                model = 'hei_heist_lit_lightpendant_02',
+                price = 300,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'prop_oldlight_01b',
+                label = 'wall lamp 4',
+                model = 'prop_oldlight_01b',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_lit_floorlampnight_07',
+                label = 'blue lamp',
+                model = 'apa_mp_h_lit_floorlampnight_07',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_ceiling_light_01',
+                label = 'commercial',
+                model = 'apa_mp_h_ceiling_light_01',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_ceiling_light_01_day',
+                label = 'commercial 2',
+                model = 'apa_mp_h_ceiling_light_01_day',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_ceiling_light_02',
+                label = 'ceiling light',
+                model = 'apa_mp_h_ceiling_light_02',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_ceiling_light_02_day',
+                label = 'ceiling light 2',
+                model = 'apa_mp_h_ceiling_light_02_day',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'ba_prop_battle_lights_ceiling_l_d',
+                label = 'commercial 3',
+                model = 'ba_prop_battle_lights_ceiling_l_d',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'ba_prop_battle_lights_ceiling_l_f',
+                label = 'ceiling light 3',
+                model = 'ba_prop_battle_lights_ceiling_l_f',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'ba_prop_battle_lights_ceiling_l_e',
+                label = 'ceiling light 4',
+                model = 'ba_prop_battle_lights_ceiling_l_e',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_floorlamp_a',
+                label = 'floor lamp',
+                model = 'apa_mp_h_floorlamp_a',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_floorlamp_b',
+                label = 'floor lamp 2',
+                model = 'apa_mp_h_floorlamp_b',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_floorlamp_c',
+                label = 'floor lamp 3',
+                model = 'apa_mp_h_floorlamp_c',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_floor_lamp_int_08',
+                label = 'floor lamp 4',
+                model = 'apa_mp_h_floor_lamp_int_08',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_lampbulb_multiple_a',
+                label = 'ceiling light 5',
+                model = 'apa_mp_h_lampbulb_multiple_a',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_lit_floorlamp_02',
+                label = 'floor lamp 5',
+                model = 'apa_mp_h_lit_floorlamp_02',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_lit_floorlampnight_14',
+                label = 'floor lamp 6',
+                model = 'apa_mp_h_lit_floorlampnight_14',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_lit_floorlamp_03',
+                label = 'floor lamp 7',
+                model = 'apa_mp_h_lit_floorlamp_03',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_lit_floorlamp_06',
+                label = 'floor lamp 8',
+                model = 'apa_mp_h_lit_floorlamp_06',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_lit_floorlamp_10',
+                label = 'floor lamp 9',
+                model = 'apa_mp_h_lit_floorlamp_10',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_lit_floorlamp_13',
+                label = 'floor lamp 10',
+                model = 'apa_mp_h_lit_floorlamp_13',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_lit_floorlamp_17',
+                label = 'floor lamp 11',
+                model = 'apa_mp_h_lit_floorlamp_17',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_lit_lamptablenight_16',
+                label = 'night light',
+                model = 'apa_mp_h_lit_lamptablenight_16',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_lit_lamptablenight_24',
+                label = 'night light 2',
+                model = 'apa_mp_h_lit_lamptablenight_24',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_lit_lamptable_005',
+                label = 'night light 3',
+                model = 'apa_mp_h_lit_lamptable_005',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_lit_lamptable_04',
+                label = 'night light 4',
+                model = 'apa_mp_h_lit_lamptable_04',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_lit_lamptable_09',
+                label = 'night light 5',
+                model = 'apa_mp_h_lit_lamptable_09',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_lit_lamptable_14',
+                label = 'night light 6',
+                model = 'apa_mp_h_lit_lamptable_14',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_lit_lamptable_17',
+                label = 'night light 7',
+                model = 'apa_mp_h_lit_lamptable_17',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            },
+            {
+                id = 'apa_mp_h_yacht_table_lamp_01',
+                label = 'night light 8',
+                model = 'apa_mp_h_yacht_table_lamp_01',
+                price = 100,
+                powerConsumption = 0.2,
+                tempEffect = 0.1
+            }
+        }
+    },
     {
         id = 'tables',
-        label = 'Tables & Desks',
+        label = 'Tables',
         icon = 'Package',
         items = {
             {
-                id = 'desk_office',
-                label = 'Office Desk',
-                model = 'prop_office_desk_01',
-                price = 600
-            },
-            {
-                id = 'table_dining_oak',
-                label = 'Oak Dining Table',
-                model = 'prop_table_04',
+                id = 'v_res_d_coffeetable',
+                label = 'Coffee Table 1',
+                model = 'v_res_d_coffeetable',
                 price = 500
             },
             {
-                id = 'table_patio_plastic',
-                label = 'Plastic Patio Table',
-                model = 'prop_table_03b',
-                price = 150
+                id = 'v_res_d_roundtable',
+                label = 'Round Table',
+                model = 'v_res_d_roundtable',
+                price = 500
+            },
+            {
+                id = 'v_res_d_smallsidetable',
+                label = 'Small Side Table',
+                model = 'v_res_d_smallsidetable',
+                price = 500
+            },
+            {
+                id = 'v_res_fh_coftablea',
+                label = 'Table A',
+                model = 'v_res_fh_coftablea',
+                price = 500
+            },
+            {
+                id = 'v_res_fh_coftableb',
+                label = 'Table B',
+                model = 'v_res_fh_coftableb',
+                price = 500
+            },
+            {
+                id = 'v_res_fh_coftbldisp',
+                label = 'Table C',
+                model = 'v_res_fh_coftbldisp',
+                price = 500
+            },
+            {
+                id = 'v_res_fh_diningtable',
+                label = 'Dining Table',
+                model = 'v_res_fh_diningtable',
+                price = 500
+            },
+            {
+                id = 'v_res_j_coffeetable',
+                label = 'Coffee Table 2',
+                model = 'v_res_j_coffeetable',
+                price = 500
+            },
+            {
+                id = 'v_res_j_lowtable',
+                label = 'Low Table',
+                model = 'v_res_j_lowtable',
+                price = 500
+            },
+            {
+                id = 'v_res_mdbedtable',
+                label = 'Bed Table',
+                model = 'v_res_mdbedtable',
+                price = 500
+            },
+            {
+                id = 'v_res_mddesk',
+                label = 'Desk',
+                model = 'v_res_mddesk',
+                price = 500
+            },
+            {
+                id = 'v_res_msidetblemod',
+                label = 'Side Table',
+                model = 'v_res_msidetblemod',
+                price = 500
+            },
+            {
+                id = 'v_res_m_console',
+                label = 'Console Table',
+                model = 'v_res_m_console',
+                price = 500
+            },
+            {
+                id = 'v_res_m_dinetble_replace',
+                label = 'Dining Table 2',
+                model = 'v_res_m_dinetble_replace',
+                price = 500
+            },
+            {
+                id = 'v_res_m_h_console',
+                label = 'Console H Table',
+                model = 'v_res_m_h_console',
+                price = 500
+            },
+            {
+                id = 'v_res_m_stool',
+                label = 'Stool?',
+                model = 'v_res_m_stool',
+                price = 500
+            },
+            {
+                id = 'v_res_tre_sideboard',
+                label = 'Sideboard Table',
+                model = 'v_res_tre_sideboard',
+                price = 500
+            },
+            {
+                id = 'v_res_tre_table2',
+                label = 'Table 2',
+                model = 'v_res_tre_table2',
+                price = 500
+            },
+            {
+                id = 'v_res_tre_tvstand',
+                label = 'Tv Table',
+                model = 'v_res_tre_tvstand',
+                price = 500,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
+            },
+            {
+                id = 'v_res_tre_tvstand_tall',
+                label = 'Tv Table Tall',
+                model = 'v_res_tre_tvstand_tall',
+                price = 500,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
             },
             {
                 id = 'v_med_p_coffeetable',
@@ -766,6 +2406,12 @@ return {
                 price = 100
             },
             {
+                id = 'v_res_mconsoletrad',
+                label = 'high side table',
+                model = 'v_res_mconsoletrad',
+                price = 250
+            },
+            {
                 id = 'v_ilev_liconftable_sml',
                 label = 'Office tabel',
                 model = 'v_ilev_liconftable_sml',
@@ -799,6 +2445,12 @@ return {
                 id = 'apa_mp_h_tab_sidelrg_04',
                 label = 'ronde Side table 2',
                 model = 'apa_mp_h_tab_sidelrg_04',
+                price = 300
+            },
+            {
+                id = 'v_club_vu_table',
+                label = 'Coverd Table',
+                model = 'v_club_vu_table',
                 price = 300
             },
             {
@@ -886,583 +2538,365 @@ return {
                 price = 500
             },
             {
+                id = 'apa_mp_h_tab_sidelrg_01_tables',
+                label = 'glass side table',
+                model = 'apa_mp_h_tab_sidelrg_01',
+                price = 1000
+            },
+            {
                 id = 'xm_prop_lab_desk_01',
                 label = 'lab table',
                 model = 'xm_prop_lab_desk_01',
                 price = 1000
-            },
+            }
         }
     },
-
     {
-        id = 'storage',
-        label = 'Storage & Wardrobes',
+        id = 'bathroom',
+        label = 'Bathroom',
+        icon = 'Bath',
+        items = {
+            {
+                id = 'prop_ld_toilet_01',
+                label = 'Toilet 1',
+                model = 'prop_ld_toilet_01',
+                price = 100
+            },
+            {
+                id = 'prop_toilet_01',
+                label = 'Toilet 2',
+                model = 'prop_toilet_01',
+                price = 100
+            },
+            {
+                id = 'prop_toilet_02',
+                label = 'Toilet 3',
+                model = 'prop_toilet_02',
+                price = 100
+            },
+            {
+                id = 'prop_sink_02',
+                label = 'Sink 1',
+                model = 'prop_sink_02',
+                price = 100
+            },
+            {
+                id = 'prop_sink_04',
+                label = 'Sink 2',
+                model = 'prop_sink_04',
+                price = 100
+            },
+            {
+                id = 'prop_sink_05',
+                label = 'Sink 3',
+                model = 'prop_sink_05',
+                price = 100
+            },
+            {
+                id = 'prop_sink_06',
+                label = 'Sink 4',
+                model = 'prop_sink_06',
+                price = 100
+            },
+            {
+                id = 'prop_soap_disp_01',
+                label = 'Soap Dispenser',
+                model = 'prop_soap_disp_01',
+                price = 100
+            },
+            {
+                id = 'prop_shower_rack_01',
+                label = 'Shower Rack',
+                model = 'prop_shower_rack_01',
+                price = 100
+            },
+            {
+                id = 'prop_handdry_01',
+                label = 'Hand Dryer 1',
+                model = 'prop_handdry_01',
+                price = 100,
+                powerConsumption = 2.0,
+                tempEffect = 1.5
+            },
+            {
+                id = 'prop_handdry_02',
+                label = 'Hand Dryer 2',
+                model = 'prop_handdry_02',
+                price = 100,
+                powerConsumption = 2.0,
+                tempEffect = 1.5
+            },
+            {
+                id = 'prop_towel_rail_01',
+                label = 'Towel Rail 1',
+                model = 'prop_towel_rail_01',
+                price = 100
+            },
+            {
+                id = 'prop_towel_rail_02',
+                label = 'Towel Rail 2',
+                model = 'prop_towel_rail_02',
+                price = 100
+            },
+            {
+                id = 'prop_towel_01',
+                label = 'Towel 1',
+                model = 'prop_towel_01',
+                price = 100
+            },
+            {
+                id = 'v_res_mbtowel',
+                label = 'Towel 2',
+                model = 'v_res_mbtowel',
+                price = 100
+            },
+            {
+                id = 'v_res_mbtowelfld',
+                label = 'Towel 3',
+                model = 'v_res_mbtowelfld',
+                price = 100
+            },
+            {
+                id = 'v_res_mbath',
+                label = 'Bath',
+                model = 'v_res_mbath',
+                price = 100
+            },
+            {
+                id = 'v_res_mbsink',
+                label = 'Sink',
+                model = 'v_res_mbsink',
+                price = 100
+            },
+            {
+                id = 'v_ilev_mm_faucet',
+                label = 'tap',
+                model = 'v_ilev_mm_faucet',
+                price = 100
+            },
+            {
+                id = 'v_res_tre_washbasket',
+                label = 'Washing mand',
+                model = 'v_res_tre_washbasket',
+                price = 250
+            },
+            {
+                id = 'prop_toilet_soap_02',
+                label = 'Tray Soap',
+                model = 'prop_toilet_soap_02',
+                price = 100
+            },
+            {
+                id = 'prop_bar_sink_01',
+                label = 'Sink',
+                model = 'prop_bar_sink_01',
+                price = 100
+            },
+            {
+                id = 'apa_mp_h_bathtub_01',
+                label = 'Bath',
+                model = 'apa_mp_h_bathtub_01',
+                price = 1000
+            },
+            {
+                id = 'prop_toilet_brush_01',
+                label = 'Brush',
+                model = 'prop_toilet_brush_01',
+                price = 1000
+            },
+            {
+                id = 'prop_toilet_roll_01',
+                label = 'Toilet rol',
+                model = 'prop_toilet_roll_01',
+                price = 1000
+            },
+            {
+                id = 'prop_toilet_roll_02',
+                label = 'Toilet rol 2',
+                model = 'prop_toilet_roll_02',
+                price = 1000
+            },
+            {
+                id = 'prop_toilet_shamp_01',
+                label = 'Shampoo',
+                model = 'prop_toilet_shamp_01',
+                price = 1000
+            },
+            {
+                id = 'prop_toilet_shamp_02',
+                label = 'Shampoo 2',
+                model = 'prop_toilet_shamp_02',
+                price = 1000
+            }
+        }
+    },
+    {
+        id = 'wall_decorations',
+        label = 'Wall Decorations',
         icon = 'Package',
         items = {
             {
-                id = 'chest_storage_wood',
-                label = 'Storage Chest',
-                model = 'prop_crate_02a',
-                price = 300,
-                isWardrobe = false,
-                isStorage = true,
-                storage = { slots = 50, weight = 100000 },
-                canLockpick = true
-            },
-            {
-                id = 'crate_wooden',
-                label = 'Wooden Crate',
-                model = 'prop_crate_01a',
-                price = 150,
-                isWardrobe = false,
-                isStorage = true,
-                storage = { slots = 25, weight = 50000 },
-                canLockpick = false
-            },
-            {
-                id = 'shelf_wooden',
-                label = 'Wooden Shelf',
-                model = 'prop_shelves_01',
-                price = 150
-            },
-            {
-                id = 'prop_devin_box_closed',
-                label = 'Bean Bag 1',
-                model = 'prop_devin_box_closed',
-                price = 100
-            },
-            {
-                id = 'prop_mil_crate_01',
-                label = 'Mil Crate 1',
-                model = 'prop_mil_crate_01',
-                price = 100
-            },
-            {
-                id = 'prop_mil_crate_02',
-                label = 'Mil Crate 2',
-                model = 'prop_mil_crate_02',
-                price = 100
-            },
-            {
-                id = 'prop_ld_int_safe_01',
-                label = 'Safe',
-                model = 'prop_ld_int_safe_01',
-                price = 1100
-            },
-            {
-                id = 'prop_toolchest_05',
-                label = 'Crafting Bench',
-                model = 'prop_toolchest_05',
-                price = 5000
-            },
-            {
-                id = 'v_corp_filecablow',
-                label = 'Filing cabinet Low',
-                model = 'v_corp_filecablow',
-                price = 500
-            },
-            {
-                id = 'v_corp_filecabtall',
-                label = 'Filing cabinet High',
-                model = 'v_corp_filecabtall',
-                price = 500
-            },
-            {
-                id = 'apa_mp_h_str_shelffloorm_02',
-                label = 'Large modern cupboard',
-                model = 'apa_mp_h_str_shelffloorm_02',
-                price = 500,
-                isWardrobe = true
-            },
-            {
-                id = 'v_ilev_frnkwarddr1',
-                label = 'Cupboard franklin',
-                model = 'v_ilev_frnkwarddr1',
-                price = 500
-            },
-            {
-                id = 'prop_coathook_01',
-                label = 'Coat rack',
-                model = 'prop_coathook_01',
-                price = 100
-            },
-            {
-                id = 'v_corp_lowcabdark01',
-                label = 'Filing cabinetLow black',
-                model = 'v_corp_lowcabdark01',
-                price = 500
-            },
-            {
-                id = 'v_corp_tallcabdark01',
-                label = 'Filing cabinet High black',
-                model = 'v_corp_tallcabdark01',
-                price = 500
-            },
-            {
-                id = 'v_corp_cabshelves01',
-                label = 'Filing cabinet black',
-                model = 'v_corp_cabshelves01',
+                id = 'apa_p_h_acc_artwalll_02',
+                label = 'Painting whit marks',
+                model = 'apa_p_h_acc_artwalll_02',
                 price = 1000
             },
             {
-                id = 'v_corp_offshelf',
-                label = 'Filing cabinet groot',
-                model = 'v_corp_offshelf',
+                id = 'v_ind_cs_toolboard',
+                label = 'Tools',
+                model = 'v_ind_cs_toolboard',
+                price = 500
+            },
+            {
+                id = 'apa_mp_stilts_bed_art',
+                label = '3d art',
+                model = 'apa_mp_stilts_bed_art',
+                price = 300
+            },
+            {
+                id = 'ex_office_swag_paintings03',
+                label = 'Paintingen Ground',
+                model = 'ex_office_swag_paintings03',
                 price = 1000
             },
             {
-                id = 'apa_mp_h_str_sideboardl_06',
-                label = 'Cupboard  modern',
-                model = 'apa_mp_h_str_sideboardl_06',
+                id = 'ex_mp_h_acc_artwallm_03',
+                label = 'abstract Painting',
+                model = 'ex_mp_h_acc_artwallm_03',
                 price = 750
             },
             {
-                id = 'apa_mp_h_str_sideboardl_09',
-                label = 'Cupboard  modern 2',
-                model = 'apa_mp_h_str_sideboardl_09',
+                id = 'ex_p_h_acc_artwallm_04',
+                label = 'abstract Painting 2',
+                model = 'ex_p_h_acc_artwallm_04',
                 price = 750
             },
             {
-                id = 'apa_mp_h_str_shelfwallm_01',
-                label = 'Bookcase 2',
-                model = 'apa_mp_h_str_shelfwallm_01',
+                id = 'ex_p_h_acc_artwalll_01',
+                label = 'abstract Painting Big',
+                model = 'ex_p_h_acc_artwalll_01',
+                price = 1250
+            },
+            {
+                id = 'apa_p_h_acc_artwalll_03',
+                label = 'abstract Painting 3',
+                model = 'apa_p_h_acc_artwalll_03',
                 price = 750
             },
             {
-                id = 'apa_mp_h_str_sideboardl_11',
-                label = 'Cupboard  modern 3',
-                model = 'apa_mp_h_str_sideboardl_11',
+                id = 'ex_mp_h_acc_artwallm_02',
+                label = 'abstract Painting 4',
+                model = 'ex_mp_h_acc_artwallm_02',
                 price = 750
             },
             {
-                id = 'imp_prop_impexp_parts_rack_03a',
-                label = 'car parts',
-                model = 'imp_prop_impexp_parts_rack_03a',
+                id = 'ex_p_h_acc_artwallm_03',
+                label = 'abstract Painting 5',
+                model = 'ex_p_h_acc_artwallm_03',
                 price = 750
             },
             {
-                id = 'imp_prop_impexp_parts_rack_04a',
-                label = 'car parts 2',
-                model = 'imp_prop_impexp_parts_rack_04a',
+                id = 'apa_mp_stilts_a_study_pics',
+                label = 'Paintingen',
+                model = 'apa_mp_stilts_a_study_pics',
+                price = 500
+            },
+            {
+                id = 'apa_mp_h_acc_artwallm_02',
+                label = 'abstract Painting 6',
+                model = 'apa_mp_h_acc_artwallm_02',
                 price = 750
             },
             {
-                id = 'imp_prop_impexp_parts_rack_05a',
-                label = 'car parts 3',
-                model = 'imp_prop_impexp_parts_rack_05a',
+                id = 'apa_mp_h_acc_artwalll_02',
+                label = 'abstract Painting 7',
+                model = 'apa_mp_h_acc_artwalll_02',
                 price = 750
             },
             {
-                id = 'apa_mp_h_bed_chestdrawer_02',
-                label = 'chest of drawers',
-                model = 'apa_mp_h_bed_chestdrawer_02',
+                id = 'apa_mp_h_acc_artwallm_04',
+                label = 'abstract Painting 8',
+                model = 'apa_mp_h_acc_artwallm_04',
                 price = 750
             },
             {
-                id = 'hei_heist_bed_chestdrawer_04',
-                label = 'chest of drawers 2',
-                model = 'hei_heist_bed_chestdrawer_04',
-                price = 750
+                id = 'prop_dart_bd_cab_01',
+                label = 'Dartboard',
+                model = 'prop_dart_bd_cab_01',
+                price = 250
             },
             {
-                id = 'prop_rub_cabinet',
-                label = 'rusted filing cabinet',
-                model = 'prop_rub_cabinet',
-                price = 50
+                id = 'prop_dart_bd_01',
+                label = 'Dartboard 2',
+                model = 'prop_dart_bd_01',
+                price = 250
             },
             {
-                id = 'prop_tv_cabinet_04',
-                label = 'tv little cupboard 2',
-                model = 'prop_tv_cabinet_04',
-                price = 750
+                id = 'hei_heist_acc_artwalll_01',
+                label = 'wall deco 1',
+                model = 'hei_heist_acc_artwalll_01',
+                price = 250
             },
             {
-                id = 'prop_tv_cabinet_05',
-                label = 'tv little cupboard 3',
-                model = 'prop_tv_cabinet_05',
-                price = 750
+                id = 'hei_heist_acc_artgolddisc_01',
+                label = 'wall deco 2',
+                model = 'hei_heist_acc_artgolddisc_01',
+                price = 250
             },
             {
-                id = 'apa_mp_h_str_shelffreel_01',
-                label = 'ikea closet',
-                model = 'apa_mp_h_str_shelffreel_01',
-                price = 750
+                id = 'hei_heist_acc_artgolddisc_02',
+                label = 'wall deco 3',
+                model = 'hei_heist_acc_artgolddisc_02',
+                price = 250
             },
             {
-                id = 'apa_mp_h_str_sideboardl_13',
-                label = 'cabinet modern 4',
-                model = 'apa_mp_h_str_sideboardl_13',
-                price = 750
+                id = 'hei_heist_acc_artgolddisc_03',
+                label = 'wall deco 4',
+                model = 'hei_heist_acc_artgolddisc_03',
+                price = 250
             },
             {
-                id = 'apa_mp_h_str_sideboardl_14',
-                label = 'cabinet modern 5',
-                model = 'apa_mp_h_str_sideboardl_14',
-                price = 750
+                id = 'hei_heist_acc_artgolddisc_04',
+                label = 'wall deco 5',
+                model = 'hei_heist_acc_artgolddisc_04',
+                price = 250
             },
             {
-                id = 'apa_mp_h_str_sideboardm_02',
-                label = 'cabinet modern 6',
-                model = 'apa_mp_h_str_sideboardm_02',
-                price = 750
-            },
-            {
-                id = 'bkr_prop_biker_garage_locker_01',
-                label = 'Biker Locker',
-                model = 'bkr_prop_biker_garage_locker_01',
-                price = 750
-            },
-            {
-                id = 'gr_prop_gr_bench_04b',
-                label = 'Biker Bench',
-                model = 'gr_prop_gr_bench_04b',
-                price = 750
-            },
+                id = 'v_ilev_ra_doorsafe',
+                label = 'Luxury deco',
+                model = 'v_ilev_ra_doorsafe',
+                price = 250
+            }
         }
     },
-
-    {
-        id = 'lights',
-        label = 'Lighting & Lamps',
-        icon = 'Lamp',
-        items = {
-            {
-                id = 'light_work',
-                label = 'Work Light',
-                model = 'prop_worklight_02a',
-                price = 100
-            },
-            {
-                id = 'light_wall',
-                label = 'Wall Light',
-                model = 'prop_wall_light_01a',
-                price = 90
-            },
-            {
-                id = 'v_corp_cd_desklamp',
-                label = 'Desk Corp Lamp',
-                model = 'v_corp_cd_desklamp',
-                price = 100
-            },
-            {
-                id = 'v_ret_fh_walllighton',
-                label = 'Wall Light',
-                model = 'v_ret_fh_walllighton',
-                price = 100
-            },
-            {
-                id = 'v_ret_gc_lamp',
-                label = 'GC Lamp',
-                model = 'v_ret_gc_lamp',
-                price = 100
-            },
-            {
-                id = 'prop_dummy_light',
-                label = 'Flickering Light',
-                model = 'prop_dummy_light',
-                price = 100
-            },
-            {
-                id = 'prop_ld_cont_light_01',
-                label = 'Side Wall Light',
-                model = 'prop_ld_cont_light_01',
-                price = 100
-            },
-            {
-                id = 'prop_wall_light_07a',
-                label = 'lantaarn',
-                model = 'prop_wall_light_07a',
-                price = 100
-            },
-            {
-                id = 'v_serv_tu_light2_',
-                label = 'industrieel licht',
-                model = 'v_serv_tu_light2_',
-                price = 100
-            },
-            {
-                id = 'v_serv_tu_light3_',
-                label = 'industrieel licht2',
-                model = 'v_serv_tu_light3_',
-                price = 100
-            },
-            {
-                id = 'ba_prop_battle_lights_ceiling_l_a',
-                label = 'hanging lamp',
-                model = 'ba_prop_battle_lights_ceiling_l_a',
-                price = 300
-            },
-            {
-                id = 'v_med_p_floorlamp',
-                label = 'Big lamp',
-                model = 'v_med_p_floorlamp',
-                price = 300
-            },
-            {
-                id = 'ba_prop_battle_lights_wall_l_a',
-                label = 'Wall lamp',
-                model = 'ba_prop_battle_lights_wall_l_a',
-                price = 100
-            },
-            {
-                id = 'ba_prop_battle_lights_ceiling_l_c',
-                label = 'hanging lamp 2',
-                model = 'ba_prop_battle_lights_ceiling_l_c',
-                price = 300
-            },
-            {
-                id = 'ba_prop_battle_lights_ceiling_l_b',
-                label = 'kroonluchter 2',
-                model = 'ba_prop_battle_lights_ceiling_l_b',
-                price = 300
-            },
-            {
-                id = 'ba_prop_battle_lights_wall_l_c',
-                label = 'Wall lamp 2',
-                model = 'ba_prop_battle_lights_wall_l_c',
-                price = 100
-            },
-            {
-                id = 'ba_prop_battle_lights_wall_l_b',
-                label = 'Wall lamp 3',
-                model = 'ba_prop_battle_lights_wall_l_b',
-                price = 100
-            },
-            {
-                id = 'hei_heist_lit_lightpendant_02',
-                label = 'hanging lamp 3',
-                model = 'hei_heist_lit_lightpendant_02',
-                price = 300
-            },
-            {
-                id = 'prop_oldlight_01b',
-                label = 'wall lamp 4',
-                model = 'prop_oldlight_01b',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_lit_floorlampnight_07',
-                label = 'blue lamp',
-                model = 'apa_mp_h_lit_floorlampnight_07',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_ceiling_light_01',
-                label = 'commercial',
-                model = 'apa_mp_h_ceiling_light_01',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_ceiling_light_01_day',
-                label = 'commercial 2',
-                model = 'apa_mp_h_ceiling_light_01_day',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_ceiling_light_02',
-                label = 'ceiling light',
-                model = 'apa_mp_h_ceiling_light_02',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_ceiling_light_02_day',
-                label = 'ceiling light 2',
-                model = 'apa_mp_h_ceiling_light_02_day',
-                price = 100
-            },
-            {
-                id = 'ba_prop_battle_lights_ceiling_l_d',
-                label = 'commercial 3',
-                model = 'ba_prop_battle_lights_ceiling_l_d',
-                price = 100
-            },
-            {
-                id = 'ba_prop_battle_lights_ceiling_l_f',
-                label = 'ceiling light 3',
-                model = 'ba_prop_battle_lights_ceiling_l_f',
-                price = 100
-            },
-            {
-                id = 'ba_prop_battle_lights_ceiling_l_e',
-                label = 'ceiling light 4',
-                model = 'ba_prop_battle_lights_ceiling_l_e',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_floorlamp_a',
-                label = 'floor lamp',
-                model = 'apa_mp_h_floorlamp_a',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_floorlamp_b',
-                label = 'floor lamp 2',
-                model = 'apa_mp_h_floorlamp_b',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_floorlamp_c',
-                label = 'floor lamp 3',
-                model = 'apa_mp_h_floorlamp_c',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_floor_lamp_int_08',
-                label = 'floor lamp 4',
-                model = 'apa_mp_h_floor_lamp_int_08',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_lampbulb_multiple_a',
-                label = 'ceiling light 5',
-                model = 'apa_mp_h_lampbulb_multiple_a',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_lit_floorlamp_02',
-                label = 'floor lamp 5',
-                model = 'apa_mp_h_lit_floorlamp_02',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_lit_floorlampnight_14',
-                label = 'floor lamp 6',
-                model = 'apa_mp_h_lit_floorlampnight_14',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_lit_floorlamp_03',
-                label = 'floor lamp 7',
-                model = 'apa_mp_h_lit_floorlamp_03',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_lit_floorlamp_06',
-                label = 'floor lamp 8',
-                model = 'apa_mp_h_lit_floorlamp_06',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_lit_floorlamp_10',
-                label = 'floor lamp 9',
-                model = 'apa_mp_h_lit_floorlamp_10',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_lit_floorlamp_13',
-                label = 'floor lamp 10',
-                model = 'apa_mp_h_lit_floorlamp_13',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_lit_floorlamp_17',
-                label = 'floor lamp 11',
-                model = 'apa_mp_h_lit_floorlamp_17',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_lit_lamptablenight_16',
-                label = 'night light',
-                model = 'apa_mp_h_lit_lamptablenight_16',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_lit_lamptablenight_24',
-                label = 'night light 2',
-                model = 'apa_mp_h_lit_lamptablenight_24',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_lit_lamptable_005',
-                label = 'night light 3',
-                model = 'apa_mp_h_lit_lamptable_005',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_lit_lamptable_04',
-                label = 'night light 4',
-                model = 'apa_mp_h_lit_lamptable_04',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_lit_lamptable_09',
-                label = 'night light 5',
-                model = 'apa_mp_h_lit_lamptable_09',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_lit_lamptable_14',
-                label = 'night light 6',
-                model = 'apa_mp_h_lit_lamptable_14',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_lit_lamptable_17',
-                label = 'night light 7',
-                model = 'apa_mp_h_lit_lamptable_17',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_yacht_table_lamp_01',
-                label = 'night light 8',
-                model = 'apa_mp_h_yacht_table_lamp_01',
-                price = 100
-            },
-        }
-    },
-
     {
         id = 'kitchen',
-        label = 'Kitchen & Appliances',
+        label = 'Kitchen',
         icon = 'Utensils',
         items = {
-            {
-                id = 'fridge_silver',
-                label = 'Silver Fridge',
-                model = 'prop_fridge_01',
-                price = 900
-            },
-            {
-                id = 'fridge_retro',
-                label = 'Retro Fridge',
-                model = 'v_res_tre_fridge',
-                price = 750
-            },
-            {
-                id = 'stove_gas',
-                label = 'Gas Stove',
-                model = 'prop_cooker_03',
-                price = 700
-            },
-            {
-                id = 'oven_microwave',
-                label = 'Microwave Oven',
-                model = 'prop_micro_01',
-                price = 200
-            },
-            {
-                id = 'bin_trash_kitchen',
-                label = 'Kitchen Trash Bin',
-                model = 'prop_bin_01a',
-                price = 50
-            },
             {
                 id = 'prop_washer_01',
                 label = 'Washer 1',
                 model = 'prop_washer_01',
-                price = 150
+                price = 150,
+                powerConsumption = 2.0,
+                tempEffect = 1.5
             },
             {
                 id = 'prop_washer_02',
                 label = 'Washer 2',
                 model = 'prop_washer_02',
-                price = 150
+                price = 150,
+                powerConsumption = 2.0,
+                tempEffect = 1.5
             },
             {
                 id = 'prop_washer_03',
                 label = 'Washer 3',
                 model = 'prop_washer_03',
-                price = 150
+                price = 150,
+                powerConsumption = 2.0,
+                tempEffect = 1.5
             },
             {
                 id = 'prop_washing_basket_01',
@@ -1474,25 +2908,57 @@ return {
                 id = 'v_res_fridgemoda',
                 label = 'Fridge 1',
                 model = 'v_res_fridgemoda',
-                price = 150
+                price = 150,
+                powerConsumption = 2.5,
+                tempEffect = -2.0
             },
             {
                 id = 'v_res_fridgemodsml',
                 label = 'Fridge 2',
                 model = 'v_res_fridgemodsml',
-                price = 150
+                price = 150,
+                powerConsumption = 2.5,
+                tempEffect = -2.0
+            },
+            {
+                id = 'prop_fridge_01',
+                label = 'Fridge 3',
+                model = 'prop_fridge_01',
+                price = 150,
+                powerConsumption = 2.5,
+                tempEffect = -2.0
             },
             {
                 id = 'prop_fridge_03',
                 label = 'Fridge 4',
                 model = 'prop_fridge_03',
-                price = 150
+                price = 150,
+                powerConsumption = 2.5,
+                tempEffect = -2.0
+            },
+            {
+                id = 'prop_cooker_03',
+                label = 'Cooker',
+                model = 'prop_cooker_03',
+                price = 150,
+                powerConsumption = 3.0,
+                tempEffect = 8.0
+            },
+            {
+                id = 'prop_micro_01',
+                label = 'Microwave 1',
+                model = 'prop_micro_01',
+                price = 150,
+                powerConsumption = 1.2,
+                tempEffect = 1.0
             },
             {
                 id = 'prop_micro_02',
                 label = 'Microwave 2',
                 model = 'prop_micro_02',
-                price = 150
+                price = 150,
+                powerConsumption = 1.2,
+                tempEffect = 1.0
             },
             {
                 id = 'prop_wok',
@@ -1591,6 +3057,14 @@ return {
                 price = 150
             },
             {
+                id = 'v_res_ovenhobmod',
+                label = 'Stove',
+                model = 'v_res_ovenhobmod',
+                price = 1000,
+                powerConsumption = 3.0,
+                tempEffect = 8.0
+            },
+            {
                 id = 'v_res_mkniferack',
                 label = 'Knive',
                 model = 'v_res_mkniferack',
@@ -1615,10 +3089,26 @@ return {
                 price = 500
             },
             {
+                id = 'prop_cs_kitchen_cab_r_kitchen',
+                label = 'Kitchen cupboard smal',
+                model = 'prop_cs_kitchen_cab_r',
+                price = 500
+            },
+            {
+                id = 'v_res_tre_fridge',
+                label = 'refrigerator',
+                model = 'v_res_tre_fridge',
+                price = 500,
+                powerConsumption = 2.5,
+                tempEffect = -2.0
+            },
+            {
                 id = 'apa_mp_h_acc_coffeemachine_01',
                 label = 'coffee machine',
                 model = 'apa_mp_h_acc_coffeemachine_01',
-                price = 500
+                price = 500,
+                powerConsumption = 1.2,
+                tempEffect = 1.0
             },
             {
                 id = 'p_new_j_counter_02',
@@ -1654,13 +3144,17 @@ return {
                 id = 'prop_coffee_mac_02',
                 label = 'coffee machine',
                 model = 'prop_coffee_mac_02',
-                price = 500
+                price = 500,
+                powerConsumption = 1.2,
+                tempEffect = 1.0
             },
             {
                 id = 'prop_coffee_mac_01',
                 label = 'coffee machine 2',
                 model = 'prop_coffee_mac_01',
-                price = 500
+                price = 500,
+                powerConsumption = 1.2,
+                tempEffect = 1.0
             },
             {
                 id = 'prop_cs_fork',
@@ -1678,7 +3172,9 @@ return {
                 id = 'prop_toaster_01',
                 label = 'Toaster',
                 model = 'prop_toaster_01',
-                price = 500
+                price = 500,
+                powerConsumption = 1.2,
+                tempEffect = 1.0
             },
             {
                 id = 'prop_cs_plate_01',
@@ -1720,7 +3216,9 @@ return {
                 id = 'prop_micro_04',
                 label = 'Microwave 4',
                 model = 'prop_micro_04',
-                price = 500
+                price = 500,
+                powerConsumption = 1.2,
+                tempEffect = 1.0
             },
             {
                 id = 'v_ret_fh_plate3',
@@ -1751,215 +3249,14 @@ return {
                 label = 'Ketchup',
                 model = 'v_ret_247_ketchup2',
                 price = 500
-            },
+            }
         }
     },
-
-    {
-        id = 'bathroom',
-        label = 'Bathroom & Plumbing',
-        icon = 'Bath',
-        items = {
-            {
-                id = 'toilet_modern',
-                label = 'Modern Toilet',
-                model = 'prop_toilet_01',
-                price = 300
-            },
-            {
-                id = 'toilet_standard',
-                label = 'Standard Toilet',
-                model = 'prop_ld_toilet_01',
-                price = 250
-            },
-            {
-                id = 'sink_vanity',
-                label = 'Vanity Sink',
-                model = 'prop_sink_02',
-                price = 400
-            },
-            {
-                id = 'sink_bathroom',
-                label = 'Bathroom Sink',
-                model = 'prop_sink_05',
-                price = 350
-            },
-            {
-                id = 'rail_towel',
-                label = 'Towel Rail',
-                model = 'prop_towel_rail_01',
-                price = 80
-            },
-            {
-                id = 'prop_toilet_02',
-                label = 'Toilet 3',
-                model = 'prop_toilet_02',
-                price = 100
-            },
-            {
-                id = 'prop_sink_04',
-                label = 'Sink 2',
-                model = 'prop_sink_04',
-                price = 100
-            },
-            {
-                id = 'prop_sink_06',
-                label = 'Sink 4',
-                model = 'prop_sink_06',
-                price = 100
-            },
-            {
-                id = 'prop_soap_disp_01',
-                label = 'Soap Dispenser',
-                model = 'prop_soap_disp_01',
-                price = 100
-            },
-            {
-                id = 'prop_shower_rack_01',
-                label = 'Shower Rack',
-                model = 'prop_shower_rack_01',
-                price = 100
-            },
-            {
-                id = 'prop_handdry_01',
-                label = 'Hand Dryer 1',
-                model = 'prop_handdry_01',
-                price = 100
-            },
-            {
-                id = 'prop_handdry_02',
-                label = 'Hand Dryer 2',
-                model = 'prop_handdry_02',
-                price = 100
-            },
-            {
-                id = 'prop_towel_rail_02',
-                label = 'Towel Rail 2',
-                model = 'prop_towel_rail_02',
-                price = 100
-            },
-            {
-                id = 'prop_towel_01',
-                label = 'Towel 1',
-                model = 'prop_towel_01',
-                price = 100
-            },
-            {
-                id = 'v_res_mbtowel',
-                label = 'Towel 2',
-                model = 'v_res_mbtowel',
-                price = 100
-            },
-            {
-                id = 'v_res_mbtowelfld',
-                label = 'Towel 3',
-                model = 'v_res_mbtowelfld',
-                price = 100
-            },
-            {
-                id = 'v_res_mbath',
-                label = 'Bath',
-                model = 'v_res_mbath',
-                price = 100
-            },
-            {
-                id = 'v_res_mbsink',
-                label = 'Sink',
-                model = 'v_res_mbsink',
-                price = 100
-            },
-            {
-                id = 'v_ilev_mm_faucet',
-                label = 'tap',
-                model = 'v_ilev_mm_faucet',
-                price = 100
-            },
-            {
-                id = 'prop_toilet_soap_02',
-                label = 'Tray Soap',
-                model = 'prop_toilet_soap_02',
-                price = 100
-            },
-            {
-                id = 'prop_bar_sink_01',
-                label = 'Sink',
-                model = 'prop_bar_sink_01',
-                price = 100
-            },
-            {
-                id = 'apa_mp_h_bathtub_01',
-                label = 'Bath',
-                model = 'apa_mp_h_bathtub_01',
-                price = 1000
-            },
-            {
-                id = 'prop_toilet_brush_01',
-                label = 'Brush',
-                model = 'prop_toilet_brush_01',
-                price = 1000
-            },
-            {
-                id = 'prop_toilet_roll_01',
-                label = 'Toilet rol',
-                model = 'prop_toilet_roll_01',
-                price = 1000
-            },
-            {
-                id = 'prop_toilet_roll_02',
-                label = 'Toilet rol 2',
-                model = 'prop_toilet_roll_02',
-                price = 1000
-            },
-            {
-                id = 'prop_toilet_shamp_01',
-                label = 'Shampoo',
-                model = 'prop_toilet_shamp_01',
-                price = 1000
-            },
-            {
-                id = 'prop_toilet_shamp_02',
-                label = 'Shampoo 2',
-                model = 'prop_toilet_shamp_02',
-                price = 1000
-            },
-        }
-    },
-
     {
         id = 'plants',
-        label = 'Plants & Greenery',
+        label = 'Plants',
         icon = 'Package',
         items = {
-            {
-                id = 'plant_tall',
-                label = 'Tall Plant',
-                model = 'prop_plant_int_01a',
-                price = 120
-            },
-            {
-                id = 'plant_bushy',
-                label = 'Bushy Plant',
-                model = 'prop_plant_int_02a',
-                price = 100
-            },
-            {
-                id = 'plant_desk',
-                label = 'Desk Plant',
-                model = 'prop_plant_int_03a',
-                price = 90
-            },
-            {
-                id = 'plant_hanging',
-                label = 'Hanging Plant',
-                model = 'prop_plant_int_04a',
-                price = 120
-            },
-            {
-                id = 'plant_potted_simple',
-                label = 'Potted Plant',
-                model = 'prop_pot_plant_01a',
-                price = 70
-            },
             {
                 id = 'prop_fib_plant_01',
                 label = 'Plant Fib',
@@ -1970,6 +3267,60 @@ return {
                 id = 'v_corp_bombplant',
                 label = 'Plant Bomb',
                 model = 'v_corp_bombplant',
+                price = 170
+            },
+            {
+                id = 'v_res_mflowers',
+                label = 'Plant Flowers',
+                model = 'v_res_mflowers',
+                price = 170
+            },
+            {
+                id = 'v_res_mvasechinese',
+                label = 'Plant Chinese',
+                model = 'v_res_mvasechinese',
+                price = 170
+            },
+            {
+                id = 'v_res_m_bananaplant',
+                label = 'Plant Banana',
+                model = 'v_res_m_bananaplant',
+                price = 170
+            },
+            {
+                id = 'v_res_m_palmplant1',
+                label = 'Plant Palm',
+                model = 'v_res_m_palmplant1',
+                price = 170
+            },
+            {
+                id = 'v_res_m_palmstairs',
+                label = 'Plant Palm 2',
+                model = 'v_res_m_palmstairs',
+                price = 170
+            },
+            {
+                id = 'v_res_m_urn',
+                label = 'Plant Urn',
+                model = 'v_res_m_urn',
+                price = 170
+            },
+            {
+                id = 'v_res_rubberplant',
+                label = 'Plant Rubber',
+                model = 'v_res_rubberplant',
+                price = 170
+            },
+            {
+                id = 'v_res_tre_plant',
+                label = 'Plant',
+                model = 'v_res_tre_plant',
+                price = 170
+            },
+            {
+                id = 'v_res_tre_tree',
+                label = 'Plant Tree',
+                model = 'v_res_tre_tree',
                 price = 170
             },
             {
@@ -1997,6 +3348,30 @@ return {
                 price = 100
             },
             {
+                id = 'v_res_m_vasefresh',
+                label = 'FlowerFase',
+                model = 'v_res_m_vasefresh',
+                price = 300
+            },
+            {
+                id = 'v_res_rosevasedead',
+                label = 'Pink Fase 2',
+                model = 'v_res_rosevasedead',
+                price = 300
+            },
+            {
+                id = 'v_res_exoticvase',
+                label = 'FlowerFase 2',
+                model = 'v_res_exoticvase',
+                price = 300
+            },
+            {
+                id = 'v_res_rosevase',
+                label = 'Pink Fase',
+                model = 'v_res_rosevase',
+                price = 300
+            },
+            {
                 id = 'prop_pot_plant_6a',
                 label = 'Hanging ende plant',
                 model = 'prop_pot_plant_6a',
@@ -2021,15 +3396,33 @@ return {
                 price = 300
             },
             {
+                id = 'prop_plant_int_01a',
+                label = 'plant',
+                model = 'prop_plant_int_01a',
+                price = 300
+            },
+            {
                 id = 'prop_plant_int_01b',
                 label = 'plant 2',
                 model = 'prop_plant_int_01b',
                 price = 300
             },
             {
+                id = 'prop_plant_int_02a',
+                label = 'plant 3',
+                model = 'prop_plant_int_02a',
+                price = 300
+            },
+            {
                 id = 'prop_plant_int_02b',
                 label = 'plant 4',
                 model = 'prop_plant_int_02b',
+                price = 300
+            },
+            {
+                id = 'prop_plant_int_03a',
+                label = 'plant 5',
+                model = 'prop_plant_int_03a',
                 price = 300
             },
             {
@@ -2045,6 +3438,12 @@ return {
                 price = 300
             },
             {
+                id = 'prop_plant_int_04a',
+                label = 'plant 8',
+                model = 'prop_plant_int_04a',
+                price = 300
+            },
+            {
                 id = 'prop_plant_int_04c',
                 label = 'plant 9',
                 model = 'prop_plant_int_04c',
@@ -2054,6 +3453,12 @@ return {
                 id = 'prop_plant_int_05b',
                 label = 'flower box 2',
                 model = 'prop_plant_int_05b',
+                price = 300
+            },
+            {
+                id = 'prop_pot_plant_01a',
+                label = 'plant pot 2',
+                model = 'prop_pot_plant_01a',
                 price = 300
             },
             {
@@ -2133,412 +3538,169 @@ return {
                 label = 'plant pot 15',
                 model = 'apa_mp_h_acc_vase_flowers_04',
                 price = 300
-            },
+            }
         }
     },
-
     {
-        id = 'electronics',
-        label = 'Electronics & TV',
-        icon = 'Tv',
-        items = {
-            {
-                id = 'tv_flat_screen',
-                label = 'Flat Screen TV',
-                model = 'prop_tv_flat_01',
-                price = 600
-            },
-            {
-                id = 'tv_flat_large',
-                label = 'Large Flat Screen',
-                model = 'prop_tv_flat_02',
-                price = 850
-            },
-            {
-                id = 'cabinet_tv',
-                label = 'TV Cabinet',
-                model = 'prop_tv_cabinet_03',
-                price = 350
-            },
-            {
-                id = 'laptop_modern',
-                label = 'Modern Laptop',
-                model = 'prop_laptop_01a',
-                price = 800
-            },
-            {
-                id = 'prop_trailr_fridge',
-                label = 'Old Fridge',
-                model = 'prop_trailr_fridge',
-                price = 300
-            },
-            {
-                id = 'prop_cs_cctv',
-                label = 'CCTV',
-                model = 'prop_cs_cctv',
-                price = 100
-            },
-            {
-                id = 'prop_ld_lap_top',
-                label = 'Laptop',
-                model = 'prop_ld_lap_top',
-                price = 100
-            },
-            {
-                id = 'prop_ld_monitor_01',
-                label = 'Monitor',
-                model = 'prop_ld_monitor_01',
-                price = 100
-            },
-            {
-                id = 'prop_speaker_05',
-                label = 'mounted speaker',
-                model = 'prop_speaker_05',
-                price = 500
-            },
-            {
-                id = 'prop_tv_flat_03b',
-                label = 'kleine flatscreen',
-                model = 'prop_tv_flat_03b',
-                price = 1000
-            },
-            {
-                id = 'prop_tv_flat_michael',
-                label = 'flatscreen hanging ing',
-                model = 'prop_tv_flat_michael',
-                price = 3000
-            },
-            {
-                id = 'prop_dyn_pc',
-                label = 'pc',
-                model = 'prop_dyn_pc',
-                price = 1000
-            },
-            {
-                id = 'prop_keyboard_01b',
-                label = 'Keybord',
-                model = 'prop_keyboard_01b',
-                price = 100
-            },
-            {
-                id = 'prop_mouse_01b',
-                label = 'Computer mouse',
-                model = 'prop_mouse_01b',
-                price = 100
-            },
-            {
-                id = 'v_ret_gc_phone',
-                label = 'office phone',
-                model = 'v_ret_gc_phone',
-                price = 100
-            },
-            {
-                id = 'prop_arcade_01',
-                label = 'arcade',
-                model = 'prop_arcade_01',
-                price = 5000
-            },
-            {
-                id = 'prop_console_01',
-                label = 'gameconsole',
-                model = 'prop_console_01',
-                price = 250
-            },
-            {
-                id = 'v_res_tre_dvdplayer',
-                label = 'dvd Player',
-                model = 'v_res_tre_dvdplayer',
-                price = 250
-            },
-            {
-                id = 'prop_speaker_08',
-                label = 'wooden speaker',
-                model = 'prop_speaker_08',
-                price = 500
-            },
-            {
-                id = 'prop_cctv_mon_02',
-                label = 'cctv monitor',
-                model = 'prop_cctv_mon_02',
-                price = 300
-            },
-            {
-                id = 'prop_cctv_cam_01a',
-                label = 'cctv 2',
-                model = 'prop_cctv_cam_01a',
-                price = 300
-            },
-            {
-                id = 'prop_dest_cctv_02',
-                label = 'cctv monitor 2',
-                model = 'prop_dest_cctv_02',
-                price = 300
-            },
-            {
-                id = 'prop_cctv_cam_07a',
-                label = 'cctv 3',
-                model = 'prop_cctv_cam_07a',
-                price = 300
-            },
-            {
-                id = 'apa_mp_h_str_avunits_04',
-                label = 'flatscreen meubel',
-                model = 'apa_mp_h_str_avunits_04',
-                price = 5500
-            },
-            {
-                id = 'apa_mp_h_str_avunits_01',
-                label = 'flatscreen meubel 2',
-                model = 'apa_mp_h_str_avunits_01',
-                price = 5500
-            },
-            {
-                id = 'v_club_vu_deckcase',
-                label = 'dj set',
-                model = 'v_club_vu_deckcase',
-                price = 1000
-            },
-            {
-                id = 'v_corp_servercln',
-                label = 'serverrack',
-                model = 'v_corp_servercln',
-                price = 1000
-            },
-            {
-                id = 'apa_mp_h_str_avunitl_01_b',
-                label = 'flat screen furniture 3',
-                model = 'apa_mp_h_str_avunitl_01_b',
-                price = 5500
-            },
-            {
-                id = 'apa_mp_h_str_avunitl_04',
-                label = 'flat screen furniture 4',
-                model = 'apa_mp_h_str_avunitl_04',
-                price = 5500
-            },
-            {
-                id = 'apa_mp_h_str_avunitm_01',
-                label = 'flat screen furniture 5',
-                model = 'apa_mp_h_str_avunitm_01',
-                price = 5500
-            },
-            {
-                id = 'apa_mp_h_str_avunitm_03',
-                label = 'flat screen furniture 6',
-                model = 'apa_mp_h_str_avunitm_03',
-                price = 5500
-            },
-            {
-                id = 'v_res_printer',
-                label = 'printer',
-                model = 'v_res_printer',
-                price = 300
-            },
-            {
-                id = 'apa_mp_h_acc_phone_01',
-                label = 'old fashioned telephone',
-                model = 'apa_mp_h_acc_phone_01',
-                price = 100
-            },
-            {
-                id = 'v_res_mousemat',
-                label = 'mouse pad',
-                model = 'v_res_mousemat',
-                price = 300
-            },
-            {
-                id = 'v_res_pcheadset',
-                label = 'headset',
-                model = 'v_res_pcheadset',
-                price = 300
-            },
-            {
-                id = 'v_res_pcspeaker',
-                label = 'PC speaker',
-                model = 'v_res_pcspeaker',
-                price = 300
-            },
-            {
-                id = 'ba_prop_battle_club_speaker_small',
-                label = 'small box',
-                model = 'ba_prop_battle_club_speaker_small',
-                price = 500
-            },
-            {
-                id = 'ba_prop_battle_club_speaker_med',
-                label = 'box',
-                model = 'ba_prop_battle_club_speaker_med',
-                price = 750
-            },
-            {
-                id = 'ba_prop_battle_club_speaker_large',
-                label = 'big box',
-                model = 'ba_prop_battle_club_speaker_large',
-                price = 1000
-            },
-            {
-                id = 'v_res_pcwoofer',
-                label = 'PC subwoofer',
-                model = 'v_res_pcwoofer',
-                price = 300
-            },
-            {
-                id = 'prop_controller_01',
-                label = 'Controller',
-                model = 'prop_controller_01',
-                price = 300
-            },
-            {
-                id = 'prop_cs_remote_01',
-                label = 'Remote control',
-                model = 'prop_cs_remote_01',
-                price = 300
-            },
-            {
-                id = 'prop_portable_hifi_01',
-                label = 'Radio',
-                model = 'prop_portable_hifi_01',
-                price = 300
-            },
-            {
-                id = 'prop_dj_deck_02',
-                label = 'DJ table',
-                model = 'prop_dj_deck_02',
-                price = 300
-            },
-            {
-                id = 'prop_speaker_01',
-                label = 'Speaker',
-                model = 'prop_speaker_01',
-                price = 300
-            },
-        }
-    },
-
-    {
-        id = 'decor',
-        label = 'Decorations & Art',
+        id = 'detailing',
+        label = 'Detailing',
         icon = 'Package',
         items = {
             {
-                id = 'table_pool',
-                label = 'Pool Table',
-                model = 'prop_pooltable_02',
-                price = 2500
+                id = 'v_res_r_figcat',
+                label = 'Fig Cat',
+                model = 'v_res_r_figcat',
+                price = 300
             },
             {
-                id = 'apa_p_h_acc_artwalll_02',
-                label = 'Painting whit marks',
-                model = 'apa_p_h_acc_artwalll_02',
-                price = 1000
+                id = 'v_res_r_figclown',
+                label = 'Fig Clown',
+                model = 'v_res_r_figclown',
+                price = 300
             },
             {
-                id = 'ex_office_swag_paintings03',
-                label = 'Paintingen Ground',
-                model = 'ex_office_swag_paintings03',
-                price = 1000
+                id = 'v_res_r_figauth2',
+                label = 'Fig Auth',
+                model = 'v_res_r_figauth2',
+                price = 300
             },
             {
-                id = 'ex_mp_h_acc_artwallm_03',
-                label = 'abstract Painting',
-                model = 'ex_mp_h_acc_artwallm_03',
-                price = 750
+                id = 'v_res_r_figfemale',
+                label = 'Fig Female',
+                model = 'v_res_r_figfemale',
+                price = 300
             },
             {
-                id = 'ex_p_h_acc_artwallm_04',
-                label = 'abstract Painting 2',
-                model = 'ex_p_h_acc_artwallm_04',
-                price = 750
+                id = 'v_res_r_figflamenco',
+                label = 'Fig Flamenco',
+                model = 'v_res_r_figflamenco',
+                price = 300
             },
             {
-                id = 'ex_p_h_acc_artwalll_01',
-                label = 'abstract Painting Big',
-                model = 'ex_p_h_acc_artwalll_01',
-                price = 1250
+                id = 'v_res_r_figgirl',
+                label = 'Fig Girl',
+                model = 'v_res_r_figgirl',
+                price = 300
             },
             {
-                id = 'apa_p_h_acc_artwalll_03',
-                label = 'abstract Painting 3',
-                model = 'apa_p_h_acc_artwalll_03',
-                price = 750
+                id = 'v_res_r_figgirlclown',
+                label = 'Fig Girl Clown',
+                model = 'v_res_r_figgirlclown',
+                price = 300
             },
             {
-                id = 'ex_mp_h_acc_artwallm_02',
-                label = 'abstract Painting 4',
-                model = 'ex_mp_h_acc_artwallm_02',
-                price = 750
+                id = 'v_res_r_figoblisk',
+                label = 'Fig Oblisk',
+                model = 'v_res_r_figoblisk',
+                price = 300
             },
             {
-                id = 'ex_p_h_acc_artwallm_03',
-                label = 'abstract Painting 5',
-                model = 'ex_p_h_acc_artwallm_03',
-                price = 750
+                id = 'v_res_r_figpillar',
+                label = 'Fig Pillar',
+                model = 'v_res_r_figpillar',
+                price = 300
             },
             {
-                id = 'apa_mp_h_acc_artwallm_02',
-                label = 'abstract Painting 6',
-                model = 'apa_mp_h_acc_artwallm_02',
-                price = 750
+                id = 'v_res_r_teapot',
+                label = 'Teapot',
+                model = 'v_res_r_teapot',
+                price = 300
             },
             {
-                id = 'apa_mp_h_acc_artwalll_02',
-                label = 'abstract Painting 7',
-                model = 'apa_mp_h_acc_artwalll_02',
-                price = 750
+                id = 'v_res_sculpt_dec',
+                label = 'Sculpture 1',
+                model = 'v_res_sculpt_dec',
+                price = 300
             },
             {
-                id = 'apa_mp_h_acc_artwallm_04',
-                label = 'abstract Painting 8',
-                model = 'apa_mp_h_acc_artwallm_04',
-                price = 750
+                id = 'v_res_sculpt_decd',
+                label = 'Sculpture 2',
+                model = 'v_res_sculpt_decd',
+                price = 300
             },
             {
-                id = 'prop_dart_bd_cab_01',
-                label = 'Dartboard',
-                model = 'prop_dart_bd_cab_01',
-                price = 250
+                id = 'v_res_sculpt_dece',
+                label = 'Sculpture 3',
+                model = 'v_res_sculpt_dece',
+                price = 300
             },
             {
-                id = 'prop_dart_bd_01',
-                label = 'Dartboard 2',
-                model = 'prop_dart_bd_01',
-                price = 250
+                id = 'v_res_sculpt_decf',
+                label = 'Sculpture 4',
+                model = 'v_res_sculpt_decf',
+                price = 300
             },
             {
-                id = 'hei_heist_acc_artwalll_01',
-                label = 'wall deco 1',
-                model = 'hei_heist_acc_artwalll_01',
-                price = 250
+                id = 'v_res_skateboard',
+                label = 'Skateboard',
+                model = 'v_res_skateboard',
+                price = 300
             },
             {
-                id = 'hei_heist_acc_artgolddisc_01',
-                label = 'wall deco 2',
-                model = 'hei_heist_acc_artgolddisc_01',
-                price = 250
+                id = 'v_res_sketchpad',
+                label = 'Sketchpad',
+                model = 'v_res_sketchpad',
+                price = 300
             },
             {
-                id = 'hei_heist_acc_artgolddisc_02',
-                label = 'wall deco 3',
-                model = 'hei_heist_acc_artgolddisc_02',
-                price = 250
+                id = 'v_res_tissues',
+                label = 'Tissues',
+                model = 'v_res_tissues',
+                price = 300
             },
             {
-                id = 'hei_heist_acc_artgolddisc_03',
-                label = 'wall deco 4',
-                model = 'hei_heist_acc_artgolddisc_03',
-                price = 250
+                id = 'v_res_tre_basketmess',
+                label = 'Basket',
+                model = 'v_res_tre_basketmess',
+                price = 300
             },
             {
-                id = 'hei_heist_acc_artgolddisc_04',
-                label = 'wall deco 5',
-                model = 'hei_heist_acc_artgolddisc_04',
-                price = 250
+                id = 'v_res_tre_bin',
+                label = 'Bin',
+                model = 'v_res_tre_bin',
+                price = 300
             },
             {
-                id = 'v_ilev_ra_doorsafe',
-                label = 'Luxury deco',
-                model = 'v_ilev_ra_doorsafe',
-                price = 250
+                id = 'v_res_tre_cushiona',
+                label = 'Cushion 1',
+                model = 'v_res_tre_cushiona',
+                price = 300
+            },
+            {
+                id = 'v_res_tre_cushionb',
+                label = 'Cushion 2',
+                model = 'v_res_tre_cushionb',
+                price = 300
+            },
+            {
+                id = 'v_res_tre_cushionc',
+                label = 'Cushion 3',
+                model = 'v_res_tre_cushionc',
+                price = 300
+            },
+            {
+                id = 'v_res_tre_cushiond',
+                label = 'Cushion 4',
+                model = 'v_res_tre_cushiond',
+                price = 300
+            },
+            {
+                id = 'v_res_tre_cushnscuzb',
+                label = 'Cushion 5',
+                model = 'v_res_tre_cushnscuzb',
+                price = 300
+            },
+            {
+                id = 'v_res_tre_cushnscuzd',
+                label = 'Cushion 6',
+                model = 'v_res_tre_cushnscuzd',
+                price = 300
+            },
+            {
+                id = 'v_res_tre_fruitbowl',
+                label = 'Fruitbowl',
+                model = 'v_res_tre_fruitbowl',
+                price = 300
             },
             {
                 id = 'v_med_p_sideboard',
@@ -2551,6 +3713,42 @@ return {
                 label = 'Idol 1',
                 model = 'prop_idol_01',
                 price = 100
+            },
+            {
+                id = 'v_res_r_fighorsestnd',
+                label = 'Figurine black horse',
+                model = 'v_res_r_fighorsestnd',
+                price = 300
+            },
+            {
+                id = 'v_res_r_fighorse',
+                label = 'Figurine big horse',
+                model = 'v_res_r_fighorse',
+                price = 300
+            },
+            {
+                id = 'v_res_r_figdancer',
+                label = 'Figurine dancer',
+                model = 'v_res_r_figdancer',
+                price = 300
+            },
+            {
+                id = 'v_res_fa_idol02',
+                label = 'olifanten Figurine',
+                model = 'v_res_fa_idol02',
+                price = 300
+            },
+            {
+                id = 'v_res_m_statue',
+                label = 'Sculpture',
+                model = 'v_res_m_statue',
+                price = 300
+            },
+            {
+                id = 'v_20_ornaeagle',
+                label = 'Figurine adelaar',
+                model = 'v_20_ornaeagle',
+                price = 300
             },
             {
                 id = 'v_med_p_vaseround',
@@ -2617,24 +3815,9 @@ return {
                 label = 'vase black and white 2',
                 model = 'apa_mp_h_acc_vase_06',
                 price = 300
-            },
+            }
         }
     },
-
-    {
-        id = 'outdoor',
-        label = 'Outdoor & Patio',
-        icon = 'Package',
-        items = {
-            {
-                id = 'parasol_beach',
-                label = 'Beach Parasol',
-                model = 'prop_beach_parasol_01',
-                price = 120
-            },
-        }
-    },
-
     {
         id = 'doors',
         label = 'Doors',
@@ -2644,188 +3827,278 @@ return {
                 id = 'v_ilev_fa_frontdoor',
                 label = 'White Door',
                 model = 'v_ilev_fa_frontdoor',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'v_ilev_247_offdorr',
                 label = '24/7 Wooden Door',
                 model = 'v_ilev_247_offdorr',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'v_ilev_arm_secdoor',
                 label = 'Security Door',
                 model = 'v_ilev_arm_secdoor',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'v_ilev_bank4door01',
                 label = 'Bank Glass Door',
                 model = 'v_ilev_bank4door01',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'v_ilev_bk_gate',
                 label = 'Fancy Metal Gate',
                 model = 'v_ilev_bk_gate',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'v_ilev_cbankcountdoor01',
                 label = 'Bank Office Door',
                 model = 'v_ilev_cbankcountdoor01',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'v_ilev_cd_door',
                 label = 'Wooden Door with Glass',
                 model = 'v_ilev_cd_door',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'v_ilev_cm_door1',
                 label = 'Light Blue Door',
                 model = 'v_ilev_cm_door1',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'v_ilev_dev_door',
                 label = 'Black House Door',
                 model = 'v_ilev_dev_door',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'v_ilev_door_orangesolid',
                 label = 'Orange Solid Door',
                 model = 'v_ilev_door_orangesolid',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'v_ilev_fa_backdoor',
                 label = 'Dirty Glass Door',
                 model = 'v_ilev_fa_backdoor',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'v_ilev_gangsafedoor',
                 label = 'Gang Safe Door',
                 model = 'v_ilev_gangsafedoor',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'v_ilev_gc_door02',
                 label = 'Office Door',
                 model = 'v_ilev_gc_door02',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'v_ilev_janitor_frontdoor',
                 label = 'White Mesh Door',
                 model = 'v_ilev_janitor_frontdoor',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'v_ilev_rc_door1',
                 label = 'Yellow Fire Door',
                 model = 'v_ilev_rc_door1',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'v_ilev_roc_door2',
                 label = 'Solid Red Door',
                 model = 'v_ilev_roc_door2',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'v_ilev_sol_off_door01',
                 label = 'Solid Wooden Door',
                 model = 'v_ilev_sol_off_door01',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'v_ilev_stad_fdoor',
                 label = 'Glass Door with Rails',
                 model = 'v_ilev_stad_fdoor',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'v_ilev_tort_door',
                 label = 'Door with Danger Sign',
                 model = 'v_ilev_tort_door',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'v_ilev_trevtraildr',
                 label = 'Trailer Door',
                 model = 'v_ilev_trevtraildr',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'prop_cs_fridge_door',
                 label = 'Fridge Door',
                 model = 'prop_cs_fridge_door',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'prop_artgallery_dl',
                 label = 'White Art Gallery Door',
                 model = 'prop_artgallery_dl',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'prop_bh1_09_mp_l',
                 label = 'Weazel Plaza Door',
                 model = 'prop_bh1_09_mp_l',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'prop_bh1_48_backdoor_l',
                 label = 'Black Glass Door',
                 model = 'prop_bh1_48_backdoor_l',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'prop_casino_door_01r',
                 label = 'Casino Glass Door',
                 model = 'prop_casino_door_01r',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'prop_cs4_11_door',
                 label = 'White Door with Small Window',
                 model = 'prop_cs4_11_door',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'prop_cs6_03_door_r',
                 label = 'Antique Wooden Door',
                 model = 'prop_cs6_03_door_r',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'prop_grumandoor_r',
                 label = 'Golden Snake Door',
                 model = 'prop_grumandoor_r',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'prop_motel_door_09',
                 label = 'Motel Door',
                 model = 'prop_motel_door_09',
-                price = 300
+                price = 300,
+                type = 'door'
             },
             {
                 id = 'prop_fnclink_03gate5',
                 label = 'Chainlink Fence',
                 model = 'prop_fnclink_03gate5',
-                price = 300
-            },
+                price = 300,
+                type = 'door'
+            }
         }
     },
-
+    {
+        id = 'walls',
+        label = 'Walls',
+        icon = 'Package',
+        items = {
+            {
+                id = 'ps_wall_aqua',
+                label = 'Aqua Wall',
+                model = 'ps_wall_aqua',
+                price = 1000
+            },
+            {
+                id = 'ps_wall_black',
+                label = 'Black Wall',
+                model = 'ps_wall_black',
+                price = 1000
+            },
+            {
+                id = 'ps_wall_green',
+                label = 'Green Wall',
+                model = 'ps_wall_green',
+                price = 1000
+            },
+            {
+                id = 'ps_wall_grey',
+                label = 'Grey Wall',
+                model = 'ps_wall_grey',
+                price = 1000
+            },
+            {
+                id = 'ps_wall_purple',
+                label = 'Purple Wall',
+                model = 'ps_wall_purple',
+                price = 1000
+            },
+            {
+                id = 'ps_wall_red',
+                label = 'Red Wall',
+                model = 'ps_wall_red',
+                price = 1000
+            },
+            {
+                id = 'ps_wall_white',
+                label = 'White Wall',
+                model = 'ps_wall_white',
+                price = 1000
+            },
+            {
+                id = 'ps_wall_yellow',
+                label = 'Yellow Wall',
+                model = 'ps_wall_yellow',
+                price = 1000
+            },
+            {
+                id = 'ps_wall_wall',
+                label = 'Brick Wall',
+                model = 'ps_wall_wall',
+                price = 1000
+            }
+        }
+    },
     {
         id = 'misc',
-        label = 'Miscellaneous',
+        label = 'Misc',
         icon = 'Package',
         items = {
             {
@@ -2833,6 +4106,174 @@ return {
                 label = 'Bean Bag 1',
                 model = 'v_corp_facebeanbag',
                 price = 100
+            },
+            {
+                id = 'v_res_cherubvase',
+                label = 'White Vase',
+                model = 'v_res_cherubvase',
+                price = 2500
+            },
+            {
+                id = 'v_res_d_paddedwall',
+                label = 'Padded Wall',
+                model = 'v_res_d_paddedwall',
+                price = 300
+            },
+            {
+                id = 'v_res_d_ramskull',
+                label = 'Item',
+                model = 'v_res_d_ramskull',
+                price = 300
+            },
+            {
+                id = 'v_res_d_whips',
+                label = 'Whips',
+                model = 'v_res_d_whips',
+                price = 300
+            },
+            {
+                id = 'v_res_fashmag1',
+                label = 'Mags',
+                model = 'v_res_fashmag1',
+                price = 300
+            },
+            {
+                id = 'v_res_fashmagopen',
+                label = 'Mags Open',
+                model = 'v_res_fashmagopen',
+                price = 300
+            },
+            {
+                id = 'v_res_fa_magtidy',
+                label = 'Mag Tidy',
+                model = 'v_res_fa_magtidy',
+                price = 300
+            },
+            {
+                id = 'v_res_fa_yogamat002',
+                label = 'Yoga Mat 1',
+                model = 'v_res_fa_yogamat002',
+                price = 300
+            },
+            {
+                id = 'v_res_fa_yogamat1',
+                label = 'Yoga Mat 2',
+                model = 'v_res_fa_yogamat1',
+                price = 300
+            },
+            {
+                id = 'v_res_fh_aftershavebox',
+                label = 'Aftershave',
+                model = 'v_res_fh_aftershavebox',
+                price = 300
+            },
+            {
+                id = 'v_res_fh_flowersa',
+                label = 'Flowers',
+                model = 'v_res_fh_flowersa',
+                price = 300
+            },
+            {
+                id = 'v_res_fh_fruitbowl',
+                label = 'Fruitbowl',
+                model = 'v_res_fh_fruitbowl',
+                price = 300
+            },
+            {
+                id = 'v_res_fh_laundrybasket',
+                label = 'Laundry Basket',
+                model = 'v_res_fh_laundrybasket',
+                price = 300
+            },
+            {
+                id = 'v_res_fh_pouf',
+                label = 'Pouf',
+                model = 'v_res_fh_pouf',
+                price = 300
+            },
+            {
+                id = 'v_res_fh_sculptmod',
+                label = 'Sculpture',
+                model = 'v_res_fh_sculptmod',
+                price = 300
+            },
+            {
+                id = 'v_res_j_magrack',
+                label = 'Mag Rack',
+                model = 'v_res_j_magrack',
+                price = 300
+            },
+            {
+                id = 'v_res_jewelbox',
+                label = 'Jewel Box',
+                model = 'v_res_jewelbox',
+                price = 300
+            },
+            {
+                id = 'v_res_mbbin',
+                label = 'Bin',
+                model = 'v_res_mbbin',
+                price = 300
+            },
+            {
+                id = 'v_res_mbowlornate',
+                label = 'Ornate Bowl',
+                model = 'v_res_mbowlornate',
+                price = 300
+            },
+            {
+                id = 'v_res_mbronzvase',
+                label = 'Bronze Vase',
+                model = 'v_res_mbronzvase',
+                price = 300
+            },
+            {
+                id = 'v_res_mchalkbrd',
+                label = 'Chalk Board',
+                model = 'v_res_mchalkbrd',
+                price = 300
+            },
+            {
+                id = 'v_res_mddresser',
+                label = 'Dresser',
+                model = 'v_res_mddresser',
+                price = 300
+            },
+            {
+                id = 'v_res_mplinth',
+                label = 'Linth',
+                model = 'v_res_mplinth',
+                price = 300
+            },
+            {
+                id = 'v_res_mp_ashtrayb',
+                label = 'Ashtray',
+                model = 'v_res_mp_ashtrayb',
+                price = 300
+            },
+            {
+                id = 'v_res_m_candle',
+                label = 'Candle',
+                model = 'v_res_m_candle',
+                price = 300
+            },
+            {
+                id = 'v_res_m_candlelrg',
+                label = 'Candle Large',
+                model = 'v_res_m_candlelrg',
+                price = 300
+            },
+            {
+                id = 'v_res_m_kscales',
+                label = 'Scales',
+                model = 'v_res_m_kscales',
+                price = 300
+            },
+            {
+                id = 'v_res_tt_bedpillow',
+                label = 'Bed Pillow',
+                model = 'v_res_tt_bedpillow',
+                price = 300
             },
             {
                 id = 'v_med_cor_whiteboard',
@@ -2851,6 +4292,12 @@ return {
                 label = 'asbak stone',
                 model = 'v_ret_fh_ashtray',
                 price = 100
+            },
+            {
+                id = 'v_24_wdr_mesh_rugs',
+                label = 'Rag',
+                model = 'v_24_wdr_mesh_rugs',
+                price = 500
             },
             {
                 id = 'apa_mp_h_acc_rugwooll_04',
@@ -2880,6 +4327,12 @@ return {
                 id = 'apa_mp_h_acc_rugwoolm_04',
                 label = 'Rug 6',
                 model = 'apa_mp_h_acc_rugwoolm_04',
+                price = 500
+            },
+            {
+                id = 'v_club_rack',
+                label = 'kledingrek',
+                model = 'v_club_rack',
                 price = 500
             },
             {
@@ -3147,6 +4600,24 @@ return {
                 price = 100
             },
             {
+                id = 'v_res_d_dildo_f',
+                label = 'dildo Black',
+                model = 'v_res_d_dildo_f',
+                price = 100
+            },
+            {
+                id = 'v_res_d_dildo_c',
+                label = 'dildo white',
+                model = 'v_res_d_dildo_c',
+                price = 100
+            },
+            {
+                id = 'v_res_d_dildo_a',
+                label = 'Mommy\'s toy',
+                model = 'v_res_d_dildo_a',
+                price = 100
+            },
+            {
                 id = 'prop_champ_cool',
                 label = 'Champagne cooler',
                 model = 'prop_champ_cool',
@@ -3169,6 +4640,30 @@ return {
                 label = 'champagneset',
                 model = 'ba_prop_club_champset',
                 price = 300
+            },
+            {
+                id = 'v_res_fa_candle01',
+                label = 'candle blue',
+                model = 'v_res_fa_candle01',
+                price = 100
+            },
+            {
+                id = 'v_res_fa_candle02',
+                label = 'candle red',
+                model = 'v_res_fa_candle02',
+                price = 100
+            },
+            {
+                id = 'v_res_fa_candle03',
+                label = 'candle black',
+                model = 'v_res_fa_candle03',
+                price = 100
+            },
+            {
+                id = 'v_res_fa_candle04',
+                label = 'candle small',
+                model = 'v_res_fa_candle04',
+                price = 100
             },
             {
                 id = 'v_med_bottles2',
@@ -3357,7 +4852,7 @@ return {
                 price = 100
             },
             {
-                id = 'prop_beer_open',
+                id = 'prop_beer_amopen',
                 label = 'Beer open',
                 model = 'prop_beer_amopen',
                 price = 100
@@ -3528,7 +5023,9 @@ return {
                 id = 'prop_cs_hand_radio',
                 label = 'Hand radio',
                 model = 'prop_cs_hand_radio',
-                price = 100
+                price = 100,
+                powerConsumption = 0.1,
+                tempEffect = 0.0
             },
             {
                 id = 'prop_cs_hotdog_01',
@@ -3660,7 +5157,9 @@ return {
                 id = 'v_ret_ml_fridge02',
                 label = 'Fridge',
                 model = 'v_ret_ml_fridge02',
-                price = 100
+                price = 100,
+                powerConsumption = 2.5,
+                tempEffect = -2.0
             },
             {
                 id = 'v_ret_ps_bag_01',
@@ -3789,6 +5288,12 @@ return {
                 price = 100
             },
             {
+                id = 'v_res_fa_book03',
+                label = 'boek kamasutra',
+                model = 'v_res_fa_book03',
+                price = 100
+            },
+            {
                 id = 'prop_weight_rack_02',
                 label = 'dumbbellrek',
                 model = 'prop_weight_rack_02',
@@ -3822,7 +5327,9 @@ return {
                 id = 'v_ret_gc_fan',
                 label = 'Fan',
                 model = 'v_ret_gc_fan',
-                price = 100
+                price = 100,
+                powerConsumption = 0.4,
+                tempEffect = -1.5
             },
             {
                 id = 'prop_paint_stepl01b',
@@ -3837,10 +5344,38 @@ return {
                 price = 100
             },
             {
+                id = 'v_club_vusnaketank',
+                label = 'terrarium',
+                model = 'v_club_vusnaketank',
+                price = 500
+            },
+            {
+                id = 'prop_pooltable_02',
+                label = 'poolTable',
+                model = 'prop_pooltable_02',
+                price = 1500
+            },
+            {
                 id = 'prop_pool_rack_02',
                 label = 'poolcues',
                 model = 'prop_pool_rack_02',
                 price = 100
+            },
+            {
+                id = 'v_club_vu_deckcase_misc',
+                label = 'dj set',
+                model = 'v_club_vu_deckcase',
+                price = 1000,
+                powerConsumption = 0.3,
+                tempEffect = 0.1
+            },
+            {
+                id = 'v_corp_servercln_misc',
+                label = 'serverrack',
+                model = 'v_corp_servercln',
+                price = 1000,
+                powerConsumption = 3.5,
+                tempEffect = 6.0
             },
             {
                 id = 'prop_dummy_01',
@@ -4008,7 +5543,9 @@ return {
                 id = 'prop_ld_greenscreen_01',
                 label = 'Green Screen',
                 model = 'prop_ld_greenscreen_01',
-                price = 100
+                price = 100,
+                powerConsumption = 0.8,
+                tempEffect = 0.0
             },
             {
                 id = 'prop_ld_handbag',
@@ -4201,7 +5738,7 @@ return {
                 label = 'Hatchet',
                 model = 'prop_w_me_hatchet',
                 price = 100
-            },
+            }
         }
     }
 }
