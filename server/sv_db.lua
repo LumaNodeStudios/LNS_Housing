@@ -372,6 +372,45 @@ MySQL.ready(function()
             MySQL.query.await("ALTER TABLE `apartment_rooms` ADD COLUMN `tablet_coords` LONGTEXT DEFAULT NULL")
         end
     end)
+    pcall(function()
+        local cols = MySQL.query.await("SHOW COLUMNS FROM `apartment_rooms` LIKE 'interior_id'")
+        if not cols or #cols == 0 then
+            MySQL.query.await("ALTER TABLE `apartment_rooms` ADD COLUMN `interior_id` INT DEFAULT NULL")
+        end
+    end)
+    pcall(function()
+        local cols = MySQL.query.await("SHOW COLUMNS FROM `apartment_rooms` LIKE 'interior_coords'")
+        if not cols or #cols == 0 then
+            MySQL.query.await("ALTER TABLE `apartment_rooms` ADD COLUMN `interior_coords` LONGTEXT DEFAULT NULL")
+        end
+    end)
+    pcall(function()
+        local cols = MySQL.query.await("SHOW COLUMNS FROM `apartment_rooms` LIKE 'interior_center'")
+        if not cols or #cols == 0 then
+            MySQL.query.await("ALTER TABLE `apartment_rooms` ADD COLUMN `interior_center` LONGTEXT DEFAULT NULL")
+        end
+    end)
+    pcall(function()
+        local cols = MySQL.query.await("SHOW COLUMNS FROM `apartment_rooms` LIKE 'room_count'")
+        if not cols or #cols == 0 then
+            MySQL.query.await("ALTER TABLE `apartment_rooms` ADD COLUMN `room_count` INT DEFAULT NULL")
+        end
+    end)
+    pcall(function()
+        local cols = MySQL.query.await("SHOW COLUMNS FROM `apartment_rooms` LIKE 'room_name'")
+        if not cols or #cols == 0 then
+            MySQL.query.await("ALTER TABLE `apartment_rooms` ADD COLUMN `room_name` VARCHAR(100) DEFAULT NULL")
+        end
+    end)
+    pcall(function()
+        local cols = MySQL.query.await("SHOW COLUMNS FROM `apartment_rooms` LIKE 'room_key'")
+        if not cols or #cols == 0 then
+            MySQL.query.await("ALTER TABLE `apartment_rooms` ADD COLUMN `room_key` INT DEFAULT NULL")
+        end
+    end)
+    pcall(function()
+        MySQL.query.await("ALTER TABLE `apartment_rooms` MODIFY COLUMN `corners` LONGTEXT DEFAULT NULL")
+    end)
 
     pcall(function()
         local cols = MySQL.query.await("SHOW COLUMNS FROM `housing_properties` LIKE 'yard_zone_data'")

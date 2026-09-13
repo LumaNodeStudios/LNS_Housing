@@ -60,11 +60,15 @@ const ContractPaper = ({ contract, onClose, onRespond }) => {
         setTimeout(() => {
             setIsSigning(false);
             setIsSigned(true);
-            if (onRespond && contract.id && contract.id !== 'draft_preview') {
-                onRespond(contract.id, 'accept');
-            }
-            handleCloseNui();
-        }, 900);
+        }, 500);
+    };
+
+    const handleAcceptContract = () => {
+        if (!isSigned) return;
+        if (onRespond && contract.id && contract.id !== 'draft_preview') {
+            onRespond(contract.id, 'accept');
+        }
+        handleCloseNui();
     };
 
     const handleDeclineContract = () => {
@@ -143,7 +147,7 @@ const ContractPaper = ({ contract, onClose, onRespond }) => {
                     </h1>
                     <div className={`doc-status-pill ${isSigned ? 'signed' : 'pending'}`}>
                         {isSigned ? <CheckCircle2 size={14} /> : <ShieldCheck size={14} />}
-                        <span>{isSigned ? 'EXECUTED & VALIDATED' : 'AWAITING SIGNATURE'}</span>
+                        <span>{isSigned ? 'SIGNED — READY TO ACCEPT' : 'AWAITING SIGNATURE'}</span>
                     </div>
                 </div>
 
@@ -213,8 +217,10 @@ const ContractPaper = ({ contract, onClose, onRespond }) => {
                                     type="button"
                                     className={`sig-action-btn ${isSigning ? 'signing' : ''}`}
                                     onClick={handleSignContract}
+                                    disabled={isSigning}
                                 >
-                                    <span>{isSigning ? 'Signing...' : 'Click Here to Sign Document'}</span>
+                                    <PenTool size={13} />
+                                    <span>{isSigning ? 'Signing...' : 'Click to Sign'}</span>
                                 </button>
                             )}
                         </div>
@@ -233,18 +239,15 @@ const ContractPaper = ({ contract, onClose, onRespond }) => {
                             <button type="button" className="doc-btn close" onClick={handleCloseNui}>
                                 <span>Close Preview</span>
                             </button>
-                        ) : isSigned ? (
-                            <button type="button" className="doc-btn close" onClick={handleCloseNui}>
-                                <span>Close Document</span>
-                            </button>
                         ) : (
                             <button
                                 type="button"
-                                className="doc-btn sign"
-                                onClick={handleSignContract}
-                                disabled={isSigning}
+                                className={`doc-btn sign ${!isSigned ? 'disabled' : ''}`}
+                                onClick={handleAcceptContract}
+                                disabled={!isSigned}
+                                title={!isSigned ? 'Sign the document above first' : 'Accept and finalize contract'}
                             >
-                                <span>{isSigning ? 'Signing...' : 'Sign & Accept Contract'}</span>
+                                <span>Accept</span>
                             </button>
                         )}
                     </div>

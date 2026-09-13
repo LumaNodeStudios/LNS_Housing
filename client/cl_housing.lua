@@ -26,6 +26,7 @@ LoadedFurniture = {}
 
 RegisterNUICallback('closeUI', function(_, cb)
     debugPrint('info', 'NUI callback: closeUI')
+    if lib and lib.hideTextUI then pcall(lib.hideTextUI) end
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'closeUI' })
     cb('ok')
@@ -498,7 +499,6 @@ function IsCoordsInsidePropertyZone(propertyId, coords)
     local p = Properties[propertyId]
     if not p then return true end
 
-    -- 1. MLO / Native Interior Check
     local isMlo = not p.metadata or not p.metadata.shell or p.metadata.shell == 'mlo' or p.metadata.mlo == true or p.metadata.interior_id ~= nil
     if isMlo then
         local targetInterior = GetInteriorAtCoords(coords.x, coords.y, coords.z)
@@ -519,7 +519,6 @@ function IsCoordsInsidePropertyZone(propertyId, coords)
         end
     end
 
-    -- 2. Shell / IPL Check
     if p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
         local shellName = p.metadata.shell
         local shellData = (Settings.IPLs and Settings.IPLs[shellName]) or (Settings.Shells and Settings.Shells[shellName])
@@ -532,7 +531,6 @@ function IsCoordsInsidePropertyZone(propertyId, coords)
         end
     end
 
-    -- 3. Legacy PolyZone check fallback
     local zone = PropertyZones[propertyId]
     if zone and zone.contains then
         return zone:contains(coords)
@@ -817,8 +815,6 @@ end
 
 local currentWalkInProperty = nil
 
----@param interiorId integer
----@return integer? propertyId
 local function ResolveWalkInProperty(interiorId)
     if not interiorId or interiorId == 0 or not Properties then return nil end
     local ped = cache.ped or PlayerPedId()
@@ -906,82 +902,11 @@ function RegisterPropertyZones(p, forceShell)
         RegisterYardZone(p)
     end
     if PropertyZones[p.id] then return end
-    
-    if p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
-        local shellName = p.metadata.shell or 'Standard Motel'
-        local shellData = (Settings.IPLs and Settings.IPLs[shellName]) or Settings.Shells[shellName]
-        local isIpl = shellData and shellData.ipls ~= nil
 
-        local doorCoords = GetEntranceCoords(p)
-        if doorCoords or isIpl then
-            local shellCoords
-            if isIpl then
-                shellCoords = vec3(shellData.coords.x, shellData.coords.y, shellData.coords.z)
-            else
-                shellCoords = vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0)
-            end
+    if p.zone_data and p.zone_data.points and #p.zone_data.points >= 3 then
+        local isMlo = not p.metadata or not p.metadata.shell or p.metadata.shell == 'mlo'
+        if not isMlo then return end
 
-            local shouldRegister = forceShell
-            if not shouldRegister then
-                local playerCoords = GetEntityCoords(cache.ped)
-                if #(playerCoords - shellCoords) < (isIpl and 100.0 or 35.0) then
-                    shouldRegister = true
-                end
-            end
-
-            if shouldRegister then
-                local zoneSize = isIpl and (shellData.zoneSize or vec3(150.0, 150.0, 80.0)) or vec3(25.0, 25.0, 10.0)
-                PropertyZones[p.id] = lib.zones.box({
-                    coords = shellCoords,
-                    size = zoneSize,
-                    debug = Settings.Debug.Zones,
-                    onEnter = function()
-                        local shellName = p.metadata.shell or 'Standard Motel'
-                        SpawnShellForProperty(p.id, shellName, shellCoords)
-
-                        LoadFurnitures(p.id)
-                        TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', p.id)
-                        if CheckPropertyTemperatureNotify then CheckPropertyTemperatureNotify(p.id) end
-
-                        if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'furniture') then
-                            InsidePropertyId = p.id
-                            HasFurnitureManagePermission = true
-                            if not Settings.FurnitureMenu or not Settings.FurnitureMenu.Radial or Settings.FurnitureMenu.Radial.Enabled then
-                                lib.addRadialItem({
-                                    id = 'housing_furniture',
-                                    icon = 'couch',
-                                    label = 'Furniture Menu',
-                                    onSelect = function()
-                                        TriggerEvent('LNS_Housing:client:openFurnitureMenu', p.id)
-                                    end
-                                })
-                            end
-                        end
-                    end,
-                    onExit = function()
-                        UnloadFurnitures(p.id)
-                        lib.removeRadialItem('housing_furniture')
-                        if InsidePropertyId == p.id then
-                            InsidePropertyId = nil
-                            HasFurnitureManagePermission = false
-                        end
-                        TriggerServerEvent('LNS_Housing:server:leavePropertyBucket')
-                        
-                        SetTimeout(0, function()
-                            if PropertyZones[p.id] then
-                                local zone = PropertyZones[p.id]
-                                PropertyZones[p.id] = nil
-                                pcall(function()
-                                    zone:remove()
-                                end)
-                            end
-                        end)
-                    end
-                })
-            end
-        end
-    
-    elseif p.zone_data and p.zone_data.points and #p.zone_data.points >= 3 then
         local thickness = p.zone_data.thickness or 10.0
         local points = {}
         for i = 1, #p.zone_data.points do
@@ -1907,18 +1832,24 @@ function EnterShellProperty(propertyId)
     if not p then return end
 
     local shellName = p.metadata.shell or 'Standard Motel'
+    local shellData = (Settings.IPLs and Settings.IPLs[shellName]) or Settings.Shells[shellName]
+    local isIpl = shellData and shellData.ipls ~= nil
+
     local doorCoords = GetEntranceCoords(p)
-    if not doorCoords then
+    if not doorCoords and not isIpl then
         Bridge.Client.Notify('Entrance coordinates not found!', 'error')
         return
     end
 
-    local shellCoords = vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0)
+    local shellCoords
+    if isIpl and shellData then
+        shellCoords = vec3(shellData.coords.x, shellData.coords.y, shellData.coords.z)
+    else
+        shellCoords = vec3(doorCoords.x, doorCoords.y, Settings.ShellSpawningZ or -100.0)
+    end
 
     DoScreenFadeOut(500)
     while not IsScreenFadedOut() do Wait(0) end
-
-    RegisterPropertyZones(p, true)
 
     local shellEntity, spawnCoords, heading = SpawnShellForProperty(propertyId, shellName, shellCoords)
 
@@ -1940,6 +1871,24 @@ function EnterShellProperty(propertyId)
         FreezeEntityPosition(PlayerPedId(), false)
     end
 
+    InsidePropertyId = propertyId
+    TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', propertyId)
+    LoadFurnitures(propertyId)
+
+    if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'furniture') then
+        HasFurnitureManagePermission = true
+        if not Settings.FurnitureMenu or not Settings.FurnitureMenu.Radial or Settings.FurnitureMenu.Radial.Enabled then
+            lib.addRadialItem({
+                id = 'housing_furniture',
+                icon = 'couch',
+                label = 'Furniture Menu',
+                onSelect = function()
+                    TriggerEvent('LNS_Housing:client:openFurnitureMenu', propertyId)
+                end
+            })
+        end
+    end
+
     DoScreenFadeIn(1000)
     if CheckPropertyTemperatureNotify then CheckPropertyTemperatureNotify(propertyId) end
 end
@@ -1953,6 +1902,14 @@ function LeaveShellProperty(propertyId)
 
     DoScreenFadeOut(500)
     while not IsScreenFadedOut() do Wait(0) end
+
+    UnloadFurnitures(propertyId)
+    lib.removeRadialItem('housing_furniture')
+    if InsidePropertyId == propertyId then
+        InsidePropertyId = nil
+        HasFurnitureManagePermission = false
+    end
+    TriggerServerEvent('LNS_Housing:server:leavePropertyBucket')
 
     if ExitTargets[propertyId] then
         exports.ox_target:removeZone(ExitTargets[propertyId])
@@ -2259,10 +2216,24 @@ function SpawnInHouse(id)
             SetEntityCoords(PlayerPedId(), coords.x, coords.y, coords.z, false, false, false, false)
             SetEntityHeading(PlayerPedId(), coords.w)
             
+            InsidePropertyId = id
             TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', id)
             LoadFurnitures(id)
+
+            if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'furniture') then
+                HasFurnitureManagePermission = true
+                if not Settings.FurnitureMenu or not Settings.FurnitureMenu.Radial or Settings.FurnitureMenu.Radial.Enabled then
+                    lib.addRadialItem({
+                        id = 'housing_furniture',
+                        icon = 'couch',
+                        label = 'Furniture Menu',
+                        onSelect = function()
+                            TriggerEvent('LNS_Housing:client:openFurnitureMenu', id)
+                        end
+                    })
+                end
+            end
             
-            -- Temp fix for 50/50 chance to fall thru
             RequestCollisionAtCoord(coords.x, coords.y, coords.z)
             local start = GetGameTimer()
             while not HasCollisionLoadedAroundEntity(PlayerPedId()) and (GetGameTimer() - start) < 2000 do

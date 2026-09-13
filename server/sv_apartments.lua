@@ -3,6 +3,7 @@ local activeRooms = {}
 local playerRooms = {}
 local roomDoors = {}
 local assignedRoomIds = {}
+local lastNoRoomNotify = {}
 
 if not Settings.Apartments or not Settings.Apartments.Enabled then
     lib.callback.register('LNS_Housing:server:getMyApartment', function(source)
@@ -107,10 +108,12 @@ CreateThread(function()
     local Rooms = MySQL.query.await('SELECT * FROM apartment_rooms')
     if Rooms then
         for _, r in ipairs(Rooms) do
-            local corners = json.decode(r.corners)
+            local corners = r.corners and json.decode(r.corners) or nil
             local cornersVec = {}
-            for i, c in ipairs(corners) do
-                cornersVec[i] = vec3(c.x, c.y, c.z)
+            if corners and type(corners) == 'table' then
+                for i, c in ipairs(corners) do
+                    cornersVec[i] = vec3(c.x, c.y, c.z)
+                end
             end
             
             local doorCoords = nil
@@ -119,13 +122,16 @@ CreateThread(function()
                 doorCoords = vec3(dc.x, dc.y, dc.z)
             end
             
-            local sc = json.decode(r.spawn_coords)
-            local spawnVec = vec4(sc.x, sc.y, sc.z, sc.w or sc.h or 0.0)
+            local sc = r.spawn_coords and json.decode(r.spawn_coords)
+            local spawnVec = sc and vec4(sc.x, sc.y, sc.z, sc.w or sc.h or 0.0) or (doorCoords and vec4(doorCoords.x, doorCoords.y, doorCoords.z, r.door_heading or 0.0))
             
             local tabletCoords = nil
             if r.tablet_coords then
                 tabletCoords = json.decode(r.tablet_coords)
             end
+
+            local interiorCoords = r.interior_coords and json.decode(r.interior_coords) or nil
+            local interiorCenter = r.interior_center and json.decode(r.interior_center) or nil
 
             table.insert(Settings.Rooms, {
                 id = r.id,
@@ -138,7 +144,13 @@ CreateThread(function()
                 spawn = spawnVec,
                 price = r.price,
                 isStarter = (r.is_starter == 1 or r.is_starter == true),
-                tabletCoords = tabletCoords
+                tabletCoords = tabletCoords,
+                interior_id = tonumber(r.interior_id) or nil,
+                interior_coords = interiorCoords,
+                interior_center = interiorCenter,
+                room_count = tonumber(r.room_count) or nil,
+                room_name = r.room_name,
+                room_key = tonumber(r.room_key) or nil
             })
         end
     end
@@ -172,10 +184,12 @@ local function getAvailableRoom()
         local Rooms = MySQL.query.await('SELECT * FROM apartment_rooms')
         if Rooms and #Rooms > 0 then
             for _, r in ipairs(Rooms) do
-                local corners = json.decode(r.corners)
+                local corners = r.corners and json.decode(r.corners) or nil
                 local cornersVec = {}
-                for i, c in ipairs(corners) do
-                    cornersVec[i] = vec3(c.x, c.y, c.z)
+                if corners and type(corners) == 'table' then
+                    for i, c in ipairs(corners) do
+                        cornersVec[i] = vec3(c.x, c.y, c.z)
+                    end
                 end
                 
                 local doorCoords = nil
@@ -184,13 +198,16 @@ local function getAvailableRoom()
                     doorCoords = vec3(dc.x, dc.y, dc.z)
                 end
                 
-                local sc = json.decode(r.spawn_coords)
-                local spawnVec = vec4(sc.x, sc.y, sc.z, sc.w or sc.h or 0.0)
+                local sc = r.spawn_coords and json.decode(r.spawn_coords)
+                local spawnVec = sc and vec4(sc.x, sc.y, sc.z, sc.w or sc.h or 0.0) or (doorCoords and vec4(doorCoords.x, doorCoords.y, doorCoords.z, r.door_heading or 0.0))
                 
                 local tabletCoords = nil
                 if r.tablet_coords then
                     tabletCoords = json.decode(r.tablet_coords)
                 end
+
+                local interiorCoords = r.interior_coords and json.decode(r.interior_coords) or nil
+                local interiorCenter = r.interior_center and json.decode(r.interior_center) or nil
 
                 table.insert(Settings.Rooms, {
                     id = r.id,
@@ -203,7 +220,13 @@ local function getAvailableRoom()
                     spawn = spawnVec,
                     price = r.price,
                     isStarter = (r.is_starter == 1 or r.is_starter == true),
-                    tabletCoords = tabletCoords
+                    tabletCoords = tabletCoords,
+                    interior_id = tonumber(r.interior_id) or nil,
+                    interior_coords = interiorCoords,
+                    interior_center = interiorCenter,
+                    room_count = tonumber(r.room_count) or nil,
+                    room_name = r.room_name,
+                    room_key = tonumber(r.room_key) or nil
                 })
             end
 
@@ -266,8 +289,6 @@ local function getPlayerRoom(src, citizenid, isNew)
                 return r.room_id
             end
         end
-    else
-        Bridge.Server.Notify(src, 'No apartment rooms are currently available right now.', 'error')
     end
     return nil
 end
@@ -280,42 +301,50 @@ local function OnPlayerLoaded(src)
     end
 
     local roomId = getPlayerRoom(src, citizenid, false)
-    if roomId then
-        local roomData = getRoomDataById(roomId)
-        if roomData then
-            local result = MySQL.single.await('SELECT id FROM apartments WHERE citizenid = ? AND room_id = ?', {citizenid, roomId})
-            if not result then
-                local initialFurniture = {}
-                if roomData.tabletCoords then
-                    table.insert(initialFurniture, {
-                        id = math.random(100000, 999999),
-                        model = 'reh_prop_reh_tablet_01a',
-                        label = 'Property Panel',
-                        position = vec3(roomData.tabletCoords.position.x, roomData.tabletCoords.position.y, roomData.tabletCoords.position.z),
-                        rotation = vec3(roomData.tabletCoords.rotation.x, roomData.tabletCoords.rotation.y, roomData.tabletCoords.rotation.z),
-                        category = 'prerequisites'
-                    })
-                end
-
-                MySQL.insert.await('INSERT INTO apartments (citizenid, room_id, permissions, furniture, wall_color) VALUES (?, ?, ?, ?, ?)', {
-                    citizenid,
-                    roomId,
-                    json.encode({entry = {}, storage = {}, wardrobe = {}, manage = {}}),
-                    json.encode(initialFurniture),
-                    0
-                })
-                exports.LNS_Housing:GiveApartmentPhysicalKey(roomId, src)
-            end
-            
-            SyncApartmentDoor(roomId)
-            
-            TriggerClientEvent('LNS_Housing:client:setApartmentData', src, roomId, roomData)
+    if not roomId then
+        local currentTime = GetGameTimer()
+        if not lastNoRoomNotify[src] or (currentTime - lastNoRoomNotify[src]) > 5000 then
+            lastNoRoomNotify[src] = currentTime
+            Bridge.Server.Notify(src, 'No apartment rooms are currently available right now.', 'error')
         end
+        return
+    end
+
+    local roomData = getRoomDataById(roomId)
+    if roomData then
+        local result = MySQL.single.await('SELECT id FROM apartments WHERE citizenid = ? AND room_id = ?', {citizenid, roomId})
+        if not result then
+            local initialFurniture = {}
+            if roomData.tabletCoords then
+                table.insert(initialFurniture, {
+                    id = math.random(100000, 999999),
+                    model = 'reh_prop_reh_tablet_01a',
+                    label = 'Property Panel',
+                    position = vec3(roomData.tabletCoords.position.x, roomData.tabletCoords.position.y, roomData.tabletCoords.position.z),
+                    rotation = vec3(roomData.tabletCoords.rotation.x, roomData.tabletCoords.rotation.y, roomData.tabletCoords.rotation.z),
+                    category = 'prerequisites'
+                })
+            end
+
+            MySQL.insert.await('INSERT INTO apartments (citizenid, room_id, permissions, furniture, wall_color) VALUES (?, ?, ?, ?, ?)', {
+                citizenid,
+                roomId,
+                json.encode({entry = {}, storage = {}, wardrobe = {}, manage = {}}),
+                json.encode(initialFurniture),
+                0
+            })
+            exports.LNS_Housing:GiveApartmentPhysicalKey(roomId, src)
+        end
+        
+        SyncApartmentDoor(roomId)
+        
+        TriggerClientEvent('LNS_Housing:client:setApartmentData', src, roomId, roomData)
     end
 end
 
 local function OnPlayerUnloaded(src)
     if not src then return end
+    lastNoRoomNotify[src] = nil
     SetPlayerRoutingBucket(src, 0)
     TriggerClientEvent('LNS_Housing:client:cleanUpApartmentSession', src)
 end
@@ -365,7 +394,7 @@ lib.callback.register('LNS_Housing:server:getMyApartment', function(source)
     local roomId = getPlayerRoom(source, citizenid, true)
     if roomId then
         local roomData = getRoomDataById(roomId)
-        return { roomId = roomId, roomData = roomData }
+        return { roomId = roomId, room_id = roomId, roomData = roomData }
     end
     return nil
 end)
@@ -869,16 +898,19 @@ lib.callback.register('LNS_Housing:server:getApartmentRooms', function(source)
     local formatted = {}
     if Rooms then
         for _, r in ipairs(Rooms) do
-            local corners = json.decode(r.corners)
+            local corners = r.corners and json.decode(r.corners) or nil
             local doorCoords = nil
             if r.door_coords then
                 doorCoords = json.decode(r.door_coords)
             end
-            local sc = json.decode(r.spawn_coords)
+            local sc = r.spawn_coords and json.decode(r.spawn_coords)
             local tabletCoords = nil
             if r.tablet_coords then
                 tabletCoords = json.decode(r.tablet_coords)
             end
+            local interiorCoords = r.interior_coords and json.decode(r.interior_coords) or nil
+            local interiorCenter = r.interior_center and json.decode(r.interior_center) or nil
+
             table.insert(formatted, {
                 id = r.id,
                 corners = corners,
@@ -887,10 +919,16 @@ lib.callback.register('LNS_Housing:server:getApartmentRooms', function(source)
                 doorModel = r.door_model,
                 doorCoords = doorCoords,
                 doorHeading = r.door_heading,
-                spawn = {x = sc.x, y = sc.y, z = sc.z, w = sc.w or sc.h or 0.0},
+                spawn = sc and {x = sc.x, y = sc.y, z = sc.z, w = sc.w or sc.h or 0.0} or nil,
                 price = r.price,
                 isStarter = (r.is_starter == 1 or r.is_starter == true),
-                tabletCoords = tabletCoords
+                tabletCoords = tabletCoords,
+                interiorId = tonumber(r.interior_id) or nil,
+                interiorCoords = interiorCoords,
+                interiorCenter = interiorCenter,
+                roomCount = tonumber(r.room_count) or nil,
+                roomName = r.room_name,
+                roomKey = tonumber(r.room_key) or nil
             })
         end
     end
@@ -913,6 +951,13 @@ lib.callback.register('LNS_Housing:server:createApartment', function(source, dat
     local doorModel = nil
     local doorCoords = nil
     local doorHeading = nil
+
+    local interiorId = tonumber(data.interiorId or data.interior_id) or nil
+    local interiorCoords = data.interiorCoords or data.interior_coords or nil
+    local interiorCenter = data.interiorCenter or data.interior_center or nil
+    local roomCount = tonumber(data.roomCount or data.room_count) or nil
+    local roomName = data.roomName or data.room_name or nil
+    local roomKey = tonumber(data.roomKey or data.room_key) or nil
 
     if door then
         if type(door) == 'table' then
@@ -942,11 +987,11 @@ lib.callback.register('LNS_Housing:server:createApartment', function(source, dat
     local tabletCoords = data.tabletCoords
 
     local success = MySQL.insert.await([[
-        INSERT INTO apartment_rooms (id, corners, thickness, zOffset, door_model, door_coords, door_heading, spawn_coords, price, is_starter, tablet_coords)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO apartment_rooms (id, corners, thickness, zOffset, door_model, door_coords, door_heading, spawn_coords, price, is_starter, tablet_coords, interior_id, interior_coords, interior_center, room_count, room_name, room_key)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ]], {
         roomId,
-        json.encode(corners),
+        corners and json.encode(corners) or nil,
         thickness,
         zOffset,
         doorModel,
@@ -955,13 +1000,21 @@ lib.callback.register('LNS_Housing:server:createApartment', function(source, dat
         json.encode(spawn),
         price,
         isStarter and 1 or 0,
-        tabletCoords and json.encode(tabletCoords) or nil
+        tabletCoords and json.encode(tabletCoords) or nil,
+        interiorId,
+        interiorCoords and json.encode(interiorCoords) or nil,
+        interiorCenter and json.encode(interiorCenter) or nil,
+        roomCount,
+        roomName,
+        roomKey
     })
 
     if success then
         local cornersVec = {}
-        for i, c in ipairs(corners) do
-            cornersVec[i] = vec3(c.x, c.y, c.z)
+        if corners and type(corners) == 'table' then
+            for i, c in ipairs(corners) do
+                cornersVec[i] = vec3(c.x, c.y, c.z)
+            end
         end
 
         local doorCoordsVec = nil
@@ -982,7 +1035,13 @@ lib.callback.register('LNS_Housing:server:createApartment', function(source, dat
             spawn = spawnVec,
             price = price,
             isStarter = isStarter,
-            tabletCoords = tabletCoords
+            tabletCoords = tabletCoords,
+            interior_id = interiorId,
+            interior_coords = interiorCoords,
+            interior_center = interiorCenter,
+            room_count = roomCount,
+            room_name = roomName,
+            room_key = roomKey
         }
 
         table.insert(Settings.Rooms, newRoom)
@@ -1024,7 +1083,13 @@ lib.callback.register('LNS_Housing:server:createApartment', function(source, dat
             spawn = spawn,
             price = price,
             isStarter = isStarter,
-            tabletCoords = tabletCoords
+            tabletCoords = tabletCoords,
+            interiorId = interiorId,
+            interiorCoords = interiorCoords,
+            interiorCenter = interiorCenter,
+            roomCount = roomCount,
+            roomName = roomName,
+            roomKey = roomKey
         })
 
         return true
@@ -1051,6 +1116,13 @@ lib.callback.register('LNS_Housing:server:updateApartment', function(source, dat
     local doorModel = nil
     local doorCoords = nil
     local doorHeading = nil
+
+    local interiorId = tonumber(data.interiorId or data.interior_id) or nil
+    local interiorCoords = data.interiorCoords or data.interior_coords or nil
+    local interiorCenter = data.interiorCenter or data.interior_center or nil
+    local roomCount = tonumber(data.roomCount or data.room_count) or nil
+    local roomName = data.roomName or data.room_name or nil
+    local roomKey = tonumber(data.roomKey or data.room_key) or nil
 
     if door then
         if type(door) == 'table' then
@@ -1081,10 +1153,10 @@ lib.callback.register('LNS_Housing:server:updateApartment', function(source, dat
 
     local success = MySQL.update.await([[
         UPDATE apartment_rooms 
-        SET corners = ?, thickness = ?, zOffset = ?, door_model = ?, door_coords = ?, door_heading = ?, spawn_coords = ?, price = ?, is_starter = ?, tablet_coords = ?
+        SET corners = ?, thickness = ?, zOffset = ?, door_model = ?, door_coords = ?, door_heading = ?, spawn_coords = ?, price = ?, is_starter = ?, tablet_coords = ?, interior_id = ?, interior_coords = ?, interior_center = ?, room_count = ?, room_name = ?, room_key = ?
         WHERE id = ?
     ]], {
-        json.encode(corners),
+        corners and json.encode(corners) or nil,
         thickness,
         zOffset,
         doorModel,
@@ -1094,6 +1166,12 @@ lib.callback.register('LNS_Housing:server:updateApartment', function(source, dat
         price,
         isStarter and 1 or 0,
         tabletCoords and json.encode(tabletCoords) or nil,
+        interiorId,
+        interiorCoords and json.encode(interiorCoords) or nil,
+        interiorCenter and json.encode(interiorCenter) or nil,
+        roomCount,
+        roomName,
+        roomKey,
         roomId
     })
 
@@ -1107,8 +1185,10 @@ lib.callback.register('LNS_Housing:server:updateApartment', function(source, dat
         end
 
         local cornersVec = {}
-        for i, c in ipairs(corners) do
-            cornersVec[i] = vec3(c.x, c.y, c.z)
+        if corners and type(corners) == 'table' then
+            for i, c in ipairs(corners) do
+                cornersVec[i] = vec3(c.x, c.y, c.z)
+            end
         end
 
         local doorCoordsVec = nil
@@ -1129,7 +1209,13 @@ lib.callback.register('LNS_Housing:server:updateApartment', function(source, dat
             spawn = spawnVec,
             price = price,
             isStarter = isStarter,
-            tabletCoords = tabletCoords
+            tabletCoords = tabletCoords,
+            interior_id = interiorId,
+            interior_coords = interiorCoords,
+            interior_center = interiorCenter,
+            room_count = roomCount,
+            room_name = roomName,
+            room_key = roomKey
         }
 
         if foundIndex then
@@ -1180,7 +1266,13 @@ lib.callback.register('LNS_Housing:server:updateApartment', function(source, dat
             spawn = spawn,
             price = price,
             isStarter = isStarter,
-            tabletCoords = tabletCoords
+            tabletCoords = tabletCoords,
+            interiorId = interiorId,
+            interiorCoords = interiorCoords,
+            interiorCenter = interiorCenter,
+            roomCount = roomCount,
+            roomName = roomName,
+            roomKey = roomKey
         })
 
         return true

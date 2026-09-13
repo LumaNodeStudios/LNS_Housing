@@ -1,8 +1,12 @@
 local Settings = lib.load('shared.settings')
 local CAMERA_PROPS = Settings.Security.CameraProps or { `prop_cctv_cam_07a` }
 
+local isWalkModeActive = false
+
 RegisterNUICallback('createHouse', function(data, cb)
     debugPrint('info', 'NUI callback: createHouse', data)
+    isWalkModeActive = false
+    lib.hideTextUI()
     SetNuiFocus(false, false)
 
     local zoneCoords = nil
@@ -33,6 +37,38 @@ RegisterNUICallback('createHouse', function(data, cb)
         Bridge.Client.Notify('Failed to create house.', 'error')
     end
     SendNUIMessage({ action = 'closeUI' })
+    cb('ok')
+end)
+
+RegisterNUICallback('setWalkMode', function(data, cb)
+    debugPrint('info', 'NUI callback: setWalkMode', data)
+    isWalkModeActive = data and data.enabled == true
+
+    if isWalkModeActive then
+        SetNuiFocus(false, false)
+        lib.showTextUI('[G] - Resume Setup UI', { position = 'right-center' })
+        
+        CreateThread(function()
+            while isWalkModeActive do
+                Wait(0)
+                DisableControlAction(0, 47, true) -- G (INPUT_DETONATE)
+                
+                if IsDisabledControlJustPressed(0, 47) or IsControlJustPressed(0, 47) then
+                    isWalkModeActive = false
+                    lib.hideTextUI()
+                    SetNuiFocus(true, true)
+                    SendNUIMessage({ action = 'restoreWalkMode' })
+                    break
+                end
+            end
+            lib.hideTextUI()
+        end)
+    else
+        isWalkModeActive = false
+        lib.hideTextUI()
+        SetNuiFocus(true, true)
+        SendNUIMessage({ action = 'restoreWalkMode' })
+    end
     cb('ok')
 end)
 

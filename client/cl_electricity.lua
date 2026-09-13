@@ -84,12 +84,13 @@ function CreateApartmentBreakerTarget()
                 icon = 'fas fa-bolt',
                 onSelect = function()
                     local myApt = lib.callback.await('LNS_Housing:server:getMyApartment', false)
-                    if not myApt or not myApt.room_id then
+                    local roomId = myApt and (myApt.roomId or myApt.room_id)
+                    if not myApt or not roomId then
                         Bridge.Client.Notify('You do not own or rent an apartment room in this building.', 'error')
                         return
                     end
 
-                    local stats = lib.callback.await('LNS_Housing:server:getPropertyUsageStats', false, myApt.room_id)
+                    local stats = lib.callback.await('LNS_Housing:server:getPropertyUsageStats', false, roomId)
                     if stats and not stats.breakerTripped then
                         Bridge.Client.Notify('Your apartment room breaker is operating normally (Power Online).', 'inform')
                         return
@@ -98,7 +99,7 @@ function CreateApartmentBreakerTarget()
                     local difficulty = (Settings.Electricity and Settings.Electricity.BreakerSkillCheck) or { 'easy', 'medium' }
                     local success = Bridge.Client.SkillCheck(difficulty, { 'w', 'a', 's', 'd' })
                     if success then
-                        local res = lib.callback.await('LNS_Housing:server:resetBreaker', false, myApt.room_id)
+                        local res = lib.callback.await('LNS_Housing:server:resetBreaker', false, roomId)
                         if res and res.success then
                             Bridge.Client.Notify(res.message, 'success')
                         else

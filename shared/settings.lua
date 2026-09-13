@@ -5,7 +5,7 @@ return {
     Debug = {
         Prints = false,
         LawnGrowth = false, 
-        Zones = false 
+        Zones = true 
     },
 
     -- Spawn elevation (Z coordinate) for shell-based interior templates
@@ -225,7 +225,7 @@ return {
     -- NPC Locksmith Settings
     ----------------------------------------------------------------------------
     Locksmith = {
-        Enabled = false,
+        Enabled = false, -- Keep false if PhysicalKeys is disabled, set to true if PhysicalKeys is enabled
         BlankKeyItem = 'blank_house_key',   -- Item required and consumed to cut a new key
         Distance = 2.0,                     -- Interaction distance for the target option
         Ped = {

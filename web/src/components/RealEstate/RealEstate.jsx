@@ -7,7 +7,8 @@ import {
     Home, CheckCircle2, FileCheck, Tag, Warehouse,
     Clock, Maximize, Filter, Settings, Gavel, Play, Pause, Square,
     Plus, Database, Save, Trash2, Camera, FileText, Percent,
-    Briefcase, UserCheck, History, UserPlus, UserX, ChevronLeft, ChevronRight, Check, ChevronDown, ChevronUp
+    Briefcase, UserCheck, History, UserPlus, UserX, ChevronLeft, ChevronRight, Check, ChevronDown, ChevronUp,
+    EyeOff
 } from 'lucide-react';
 
 const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts, shells, onOpenPaperContract }) => {
@@ -185,6 +186,19 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         commissionRate: 10
     });
 
+    const [walkMode, setWalkMode] = useState(false);
+
+    const toggleWalkMode = (force) => {
+        const next = force !== undefined ? force : !walkMode;
+        setWalkMode(next);
+        if (window.GetParentResourceName) {
+            fetch(`https://${window.GetParentResourceName()}/setWalkMode`, {
+                method: 'POST',
+                body: JSON.stringify({ enabled: next })
+            });
+        }
+    };
+
     useEffect(() => {
         if (initialTab) {
             setActiveTab(initialTab);
@@ -215,10 +229,24 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                     return { ...prev, doors: [...prev.doors, data] };
                 });
             }
+            if (action === 'restoreWalkMode') {
+                setWalkMode(false);
+            }
         };
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
     }, []);
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Tab' && activeTab === 'creator') {
+                e.preventDefault();
+                toggleWalkMode();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [walkMode, activeTab]);
 
     useEffect(() => {
         if (activeTab === 'contracts') {
@@ -1737,9 +1765,10 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
 
     return (
         <motion.div
-            className="re-container"
+            className={`re-container ${walkMode ? 're-walk-mode-active' : ''}`}
+            style={walkMode ? { opacity: 0.15, pointerEvents: 'none', filter: 'blur(0.5px)' } : {}}
             initial={{ opacity: 0, scale: 0.97, y: 15 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
+            animate={{ opacity: walkMode ? 0.15 : 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 15 }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
         >
@@ -1750,6 +1779,33 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 </div>
 
                 <div className="re-header-actions">
+                    {activeTab === 'creator' && (
+                        <button
+                            className="re-walk-btn"
+                            onClick={() => toggleWalkMode()}
+                            title="Toggle Walk Mode - Lowers UI opacity so you can walk into properties. Press G to resume UI"
+                            type="button"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                background: walkMode ? 'rgba(56, 189, 248, 0.3)' : 'rgba(56, 189, 248, 0.12)',
+                                border: '1px solid rgba(56, 189, 248, 0.35)',
+                                color: '#38bdf8',
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                marginRight: '6px'
+                            }}
+                        >
+                            <EyeOff size={13} />
+                            <span>Walk Mode</span>
+                        </button>
+                    )}
+
                     {isAgent && hasPermission.societyBalance > 0 && (
                         <div className="society-balance">
                             <Database size={12} className="price-green" />

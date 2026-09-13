@@ -535,3 +535,49 @@
     color: var(--primary);
     border: 1px solid rgba(var(--primary-rgb), 0.25);
 }
+
+.room-badge.interior-badge {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.25);
+}
+
+.apt-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.apt-walk-mode-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.apt-walk-mode-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.apt-walk-mode-btn.active {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.4);
+    color: #93c5fd;
+}
+
+.apt-creator-modal.walk-mode-active {
+    opacity: 0.15 !important;
+    pointer-events: none !important;
+    transform: scale(0.98);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
