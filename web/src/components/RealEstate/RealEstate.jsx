@@ -11,7 +11,7 @@ import {
     EyeOff
 } from 'lucide-react';
 
-const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts, shells, onOpenPaperContract }) => {
+const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts, shells, onOpenPaperContract, electricityEnabled = true }) => {
     const handleOpenPaperContract = (contract) => {
         if (onOpenPaperContract) {
             onOpenPaperContract(contract);
@@ -417,8 +417,8 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 image: formData.image,
                 entranceType: formData.entranceType,
                 entranceCoords: formData.entranceCoords,
-                garageCoords: formData.garageCoords,
-                garageSpawnCoords: formData.garageSpawnCoords,
+                garageCoords: parseInt(formData.slots, 10) > 0 ? formData.garageCoords : null,
+                garageSpawnCoords: parseInt(formData.slots, 10) > 0 ? formData.garageSpawnCoords : null,
                 breakerCoords: formData.breakerCoords,
                 cameraPosition: formData.cameraPosition,
                 cameraAim: formData.cameraAim,
@@ -776,9 +776,14 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     };
 
     const handleCreateProperty = () => {
+        const payload = {
+            ...formData,
+            garageCoords: parseInt(formData.slots, 10) > 0 ? formData.garageCoords : null,
+            garageSpawnCoords: parseInt(formData.slots, 10) > 0 ? formData.garageSpawnCoords : null,
+        };
         fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/createHouse`, {
             method: 'POST',
-            body: JSON.stringify(formData)
+            body: JSON.stringify(payload)
         });
     };
 
@@ -1612,41 +1617,47 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                             </>
                                         )}
 
-                                        <div className="re-interactive-row" style={{ marginTop: '10px', borderTop: '1px solid var(--border-dim)', paddingTop: '10px' }}>
-                                            <div className="re-interactive-info">
-                                                <span className="re-interactive-label">Garage Menu Location</span>
-                                                <span className={`re-interactive-status ${formData.garageCoords ? 'active' : ''}`}>
-                                                    {formData.garageCoords ? 'Coordinates Configured' : 'Not Configured (Optional)'}
-                                                </span>
-                                            </div>
-                                            <button className="re-btn-action" type="button" onClick={handlePickGarageCoords}>
-                                                {formData.garageCoords ? 'Reselect' : 'Set Current Position'}
-                                            </button>
-                                        </div>
+                                        {parseInt(formData.slots, 10) > 0 && (
+                                            <>
+                                                <div className="re-interactive-row" style={{ marginTop: '10px', borderTop: '1px solid var(--border-dim)', paddingTop: '10px' }}>
+                                                    <div className="re-interactive-info">
+                                                        <span className="re-interactive-label">Garage Menu Location</span>
+                                                        <span className={`re-interactive-status ${formData.garageCoords ? 'active' : ''}`}>
+                                                            {formData.garageCoords ? 'Coordinates Configured' : 'Not Configured (Optional)'}
+                                                        </span>
+                                                    </div>
+                                                    <button className="re-btn-action" type="button" onClick={handlePickGarageCoords}>
+                                                        {formData.garageCoords ? 'Reselect' : 'Set Current Position'}
+                                                    </button>
+                                                </div>
 
-                                        <div className="re-interactive-row">
-                                            <div className="re-interactive-info">
-                                                <span className="re-interactive-label">Vehicle Spawn Location</span>
-                                                <span className={`re-interactive-status ${formData.garageSpawnCoords ? 'active' : ''}`}>
-                                                    {formData.garageSpawnCoords ? 'Coordinates Configured' : 'Not Configured (Optional)'}
-                                                </span>
-                                            </div>
-                                            <button className="re-btn-action" type="button" onClick={handlePickGarageSpawnCoords}>
-                                                {formData.garageSpawnCoords ? 'Reselect' : 'Set Current Position'}
-                                            </button>
-                                        </div>
+                                                <div className="re-interactive-row">
+                                                    <div className="re-interactive-info">
+                                                        <span className="re-interactive-label">Vehicle Spawn Location</span>
+                                                        <span className={`re-interactive-status ${formData.garageSpawnCoords ? 'active' : ''}`}>
+                                                            {formData.garageSpawnCoords ? 'Coordinates Configured' : 'Not Configured (Optional)'}
+                                                        </span>
+                                                    </div>
+                                                    <button className="re-btn-action" type="button" onClick={handlePickGarageSpawnCoords}>
+                                                        {formData.garageSpawnCoords ? 'Reselect' : 'Set Current Position'}
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
 
-                                        <div className="re-interactive-row">
-                                            <div className="re-interactive-info">
-                                                <span className="re-interactive-label">Circuit Breaker Box Location</span>
-                                                <span className={`re-interactive-status ${formData.breakerCoords ? 'active' : ''}`}>
-                                                    {formData.breakerCoords ? 'Coordinates Configured' : 'Default (Entrance / Shared)'}
-                                                </span>
+                                        {electricityEnabled !== false && (
+                                            <div className="re-interactive-row">
+                                                <div className="re-interactive-info">
+                                                    <span className="re-interactive-label">Circuit Breaker Box Location</span>
+                                                    <span className={`re-interactive-status ${formData.breakerCoords ? 'active' : ''}`}>
+                                                        {formData.breakerCoords ? 'Coordinates Configured' : 'Default (Entrance / Shared)'}
+                                                    </span>
+                                                </div>
+                                                <button className="re-btn-action" type="button" onClick={handlePickBreakerCoords}>
+                                                    {formData.breakerCoords ? 'Reselect Breaker' : 'Set Current Position'}
+                                                </button>
                                             </div>
-                                            <button className="re-btn-action" type="button" onClick={handlePickBreakerCoords}>
-                                                {formData.breakerCoords ? 'Reselect Breaker' : 'Set Current Position'}
-                                            </button>
-                                        </div>
+                                        )}
 
                                         <div className="re-interactive-row">
                                             <div className="re-interactive-info">

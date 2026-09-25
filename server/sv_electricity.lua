@@ -175,10 +175,21 @@ function CalculatePropertyPowerAndTemp(propertyId)
     print(string.format("^3[DEBUG Electricity Summary]^7 Property #%s | Matched %d/%d items | Total Power: %.2f kWh | Base Temp: %.1f°F | Temp Delta: %.1f°F | Net Temp: %.1f°F",
         strId, itemsMatchedCount, furnitureList and #furnitureList or 0, totalPower, baseTemp, tempDelta, baseTemp + tempDelta))
 
+    local isElectricityEnabled = Settings.Electricity == nil or Settings.Electricity.Enabled ~= false
+    local isTemperatureEnabled = Settings.Temperature == nil or Settings.Temperature.Enabled ~= false
+
+    if not isElectricityEnabled then
+        totalPower = 0.0
+    end
+
+    if not isTemperatureEnabled then
+        tempDelta = 0.0
+    end
+
     local maxPower = (p and p.metadata and tonumber(p.metadata.max_power)) or ((Settings.Electricity and Settings.Electricity.DefaultMaxPower) or 5.0)
     local tripped = p and p.metadata and p.metadata.breaker_tripped or false
 
-    if totalPower > maxPower and not tripped then
+    if isElectricityEnabled and totalPower > maxPower and not tripped then
         if p then
             if not p.metadata then p.metadata = {} end
             p.metadata.breaker_tripped = true
@@ -186,6 +197,8 @@ function CalculatePropertyPowerAndTemp(propertyId)
         end
         tripped = true
         TriggerClientEvent('LNS_Housing:client:breakerTrippedNotify', -1, propertyId, totalPower, maxPower)
+    elseif not isElectricityEnabled then
+        tripped = false
     end
 
     local netTemp = baseTemp + tempDelta
@@ -207,6 +220,8 @@ lib.callback.register('LNS_Housing:server:getPropertyUsageStats', function(sourc
     local maxTemp = isCelsius and 38.0 or 100.0
 
     return {
+        electricityEnabled = Settings.Electricity == nil or Settings.Electricity.Enabled ~= false,
+        temperatureEnabled = Settings.Temperature == nil or Settings.Temperature.Enabled ~= false,
         totalPower = totalPower,
         maxPower = maxPower,
         powerLevel = p and p.metadata and p.metadata.power_level or 1,
@@ -223,6 +238,9 @@ lib.callback.register('LNS_Housing:server:getPropertyUsageStats', function(sourc
 end)
 
 lib.callback.register('LNS_Housing:server:resetBreaker', function(source, propertyId)
+    if Settings.Electricity and Settings.Electricity.Enabled == false then
+        return { success = false, message = "Electricity system is currently disabled." }
+    end
     local src = source
     local p = Properties[propertyId]
     if not p then return { success = false, message = "Property not found." } end
@@ -246,6 +264,9 @@ lib.callback.register('LNS_Housing:server:resetBreaker', function(source, proper
 end)
 
 lib.callback.register('LNS_Housing:server:upgradePower', function(source, propertyId, targetLevel)
+    if Settings.Electricity and Settings.Electricity.Enabled == false then
+        return { success = false, message = "Electricity system is currently disabled." }
+    end
     local src = source
     local p = Properties[propertyId]
     if not p then return { success = false, message = "Property not found." } end

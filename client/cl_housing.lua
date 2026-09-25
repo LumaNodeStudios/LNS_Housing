@@ -1080,7 +1080,7 @@ function RegisterPropertyEntranceTargets(p)
 
     table.insert(options, {
         name = 'lns_house_enter_' .. id,
-        label = 'Enter ' .. p.label,
+        label = 'Enter Property',
         icon = 'fas fa-door-open',
         canInteract = function()
             if not isShell then return false end

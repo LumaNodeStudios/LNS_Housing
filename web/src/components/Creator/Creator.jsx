@@ -3,7 +3,7 @@ import { Plus, X, Home, MapPin, DollarSign, Database, Save, Trash2, Camera, Tag,
 import { motion } from 'framer-motion';
 import './Creator.css';
 
-const Creator = () => {
+const Creator = ({ electricityEnabled = true }) => {
   const [formData, setFormData] = useState({
     name: 'New Property',
     type: 'Residential',
@@ -430,17 +430,19 @@ const Creator = () => {
               </div>
             )}
 
-            <div className="input-field" style={{ marginTop: '15px' }}>
-              <label><Zap size={14} /> Breaker Box Location</label>
-              <div className="input-with-btn">
-                <div className={`zone-status ${formData.breakerCoords ? 'defined' : ''}`}>
-                  {formData.breakerCoords ? `Coords Defined (${Math.floor(formData.breakerCoords.x)}, ${Math.floor(formData.breakerCoords.y)}, ${Math.floor(formData.breakerCoords.z)})` : 'Default (Entrance)'}
+            {electricityEnabled !== false && (
+              <div className="input-field" style={{ marginTop: '15px' }}>
+                <label><Zap size={14} /> Breaker Box Location</label>
+                <div className="input-with-btn">
+                  <div className={`zone-status ${formData.breakerCoords ? 'defined' : ''}`}>
+                    {formData.breakerCoords ? `Coords Defined (${Math.floor(formData.breakerCoords.x)}, ${Math.floor(formData.breakerCoords.y)}, ${Math.floor(formData.breakerCoords.z)})` : 'Default (Entrance)'}
+                  </div>
+                  <button className="pick-btn" onClick={handlePickBreakerCoords}>
+                    {formData.breakerCoords ? 'Redefine Breaker' : 'Set Breaker Location'}
+                  </button>
                 </div>
-                <button className="pick-btn" onClick={handlePickBreakerCoords}>
-                  {formData.breakerCoords ? 'Redefine Breaker' : 'Set Breaker Location'}
-                </button>
               </div>
-            </div>
+            )}
 
             {formData.mlo && (
               <>

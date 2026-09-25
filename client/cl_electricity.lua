@@ -4,6 +4,7 @@ BreakerTargets = BreakerTargets or {}
 local apartmentBreakerTarget = nil
 
 function RegisterBreakerTarget(id)
+    if not Settings.Electricity or Settings.Electricity.Enabled == false then return end
     local p = Properties[id]
     if not p then return end
 
@@ -64,6 +65,7 @@ function RegisterBreakerTarget(id)
 end
 
 function CreateApartmentBreakerTarget()
+    if not Settings.Electricity or Settings.Electricity.Enabled == false then return end
     local bCoords = Settings.Apartments and Settings.Apartments.Building and Settings.Apartments.Building.breakerCoords
     if not bCoords then return end
 
@@ -118,7 +120,7 @@ function CreateApartmentBreakerTarget()
 end
 
 function CheckPropertyTemperatureNotify(propertyId)
-    if not Settings.Temperature or Settings.Temperature.NotifyOnEnter == false then return end
+    if not Settings.Temperature or Settings.Temperature.Enabled == false or Settings.Temperature.NotifyOnEnter == false then return end
 
     CreateThread(function()
         Wait(600)
@@ -147,6 +149,7 @@ function CheckPropertyTemperatureNotify(propertyId)
 end
 
 RegisterNetEvent('LNS_Housing:client:breakerTrippedNotify', function(propertyId, totalPower, maxPower)
+    if not Settings.Electricity or Settings.Electricity.Enabled == false then return end
     Bridge.Client.Notify(string.format("Breaker Tripped! Usage (%.1f kWh) exceeded max capacity (%.1f kWh). Reset breaker at Breaker Box.", totalPower, maxPower), 'error')
 end)
 

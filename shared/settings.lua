@@ -5,7 +5,7 @@ return {
     Debug = {
         Prints = false,
         LawnGrowth = false, 
-        Zones = true 
+        Zones = false 
     },
 
     -- Spawn elevation (Z coordinate) for shell-based interior templates
@@ -26,7 +26,7 @@ return {
         ContractDistance = 5.0,             -- Max distance to draft a contract (in meters)
         OnlyBuyViaContracts = false,        -- If true, players can only buy houses through a signed contract with an agent
         Jobs = { 'realestate', 'luxuryestate' }, -- Jobs allowed to access the real estate agent actions
-        Groups = {},                        -- Admin groups that have full agent permissions (e.g. {'admin', 'god', 'superadmin'})
+        Groups = { 'admin' },                        -- Admin groups that have full agent permissions (e.g. {'admin', 'god', 'superadmin'})
         Agencies = {
             ['realestate'] = {
                 label = 'Dynasty 8 Real Estate',
@@ -52,7 +52,7 @@ return {
     -- Housing System Settings
     ----------------------------------------------------------------------------
     Housing = {
-        CanBreakIn = true,                  -- If true, houses can be lockpicked/broken into
+        CanBreakIn = false,                  -- If true, houses can be lockpicked/broken into
 
         -- Access configurations for the house creator tool
         Creator = {
@@ -62,7 +62,7 @@ return {
 
         -- Lawn mowing and grass growth simulation settings
         Lawn = {
-            Enabled = true,
+            Enabled = false,
             GrowthTime = 120,               -- Time (in minutes) for grass to fully grow
             MaxSink = 0.25,                 -- Maximum distance grass models can sink into the ground
             Spacing = 1.5,                  -- Distance spacing between individual grass props
@@ -104,7 +104,7 @@ return {
     ----------------------------------------------------------------------------
     Apartments = {
         Enabled = true,                     -- Toggle for enabling or disabling apartment system
-        CanBreakIn = true,                  -- If true, apartments can be lockpicked/broken into
+        CanBreakIn = false,                  -- If true, apartments can be lockpicked/broken into
 
         Creator = {
             Command = 'createapartment',    -- Command to initiate apartment creation
@@ -141,13 +141,14 @@ return {
         RetrievalPeriod = 604800,           -- 7 days of temporary stash retrieval after lockout (in seconds)
         LateFee = 250,                      -- Flat late fee added to debt on missed payment
         MaxMissedPayments = 3,              -- Max missed payments threshold for eviction
-        AutoEvict = true,                   -- Auto evict player after retrieval period expires
+        AutoEvict = false,                  -- Auto evict player after retrieval period expires
     },
 
     ----------------------------------------------------------------------------
     -- Electricity & Power System Settings
     ----------------------------------------------------------------------------
     Electricity = {
+        Enabled = false,                    -- Enable or disable property electricity & breaker power grid
         DefaultMaxPower = 5.0,              -- Default max kWh power capacity
         BreakerSkillCheck = { 'easy', 'medium' }, -- Skill check difficulty for resetting tripped breaker box
         Upgrades = {                        -- Upgradable kWh capacity tiers
@@ -163,11 +164,12 @@ return {
     -- Temperature & Climate Settings
     ----------------------------------------------------------------------------
     Temperature = {
+        Enabled = false,                    -- Enable or disable property temperature & climate system
         Unit = 'Celsius',                -- Temperature scale unit: 'Celsius' or 'Fahrenheit'
         BaseTemperature = 70.0,             -- Base interior temperature in °C (21.1°C / 70.0°F)
         MinComfortableTemp = 62.0,          -- Temperature below which property is flagged as cold
         MaxComfortableTemp = 78.0,          -- Temperature above which property is flagged as hot
-        NotifyOnEnter = true,               -- Display climate notification toast on entering property/apartment
+        NotifyOnEnter = false,               -- Display climate notification toast on entering property/apartment
     },
 
     ----------------------------------------------------------------------------
@@ -197,21 +199,21 @@ return {
         },
         AlarmDuration = 30000,              -- Duration of burglar alarm in milliseconds (30 seconds)
         AlarmFailThreshold = {              -- Number of failed attempts allowed before alarm triggers
-            [0] = 999,                      -- Level 0: No alarm
-            [1] = 4,                        -- Level 1: alarm triggers on 4th fail
-            [2] = 3,                        -- Level 2: alarm triggers on 3rd fail
-            [3] = 2,                        -- Level 3: alarm triggers on 2nd fail
-            [4] = 2,                        -- Level 4: alarm triggers on 2nd fail
-            [5] = 1,                        -- Level 5 (max): alarm triggers on 1st fail
+            [0] = 999,
+            [1] = 4,
+            [2] = 3,
+            [3] = 2,
+            [4] = 2,
+            [5] = 1,
         },
         -- Lockpicking minigame difficulty settings based on security/lock levels
         Difficulty = {
-            [0] = { rounds = 1, speed = 1.0, area = 50 }, -- Level 0: 1 round, normal speed, very large target area
-            [1] = { rounds = 2, speed = 1.1, area = 40 }, -- Level 1: 2 rounds, slightly faster, large target area
-            [2] = { rounds = 3, speed = 1.2, area = 35 }, -- Level 2: 3 rounds, medium speed, medium-large area
-            [3] = { rounds = 3, speed = 1.3, area = 30 }, -- Level 3: 3 rounds, faster, medium area
-            [4] = { rounds = 4, speed = 1.4, area = 25 }, -- Level 4: 4 rounds, medium-fast speed, medium-small area
-            [5] = { rounds = 4, speed = 1.4, area = 25 }, -- Level 5: 4 rounds, fast speed, small area
+            [0] = { rounds = 1, speed = 1.0, area = 50 },
+            [1] = { rounds = 1, speed = 1.0, area = 50 },
+            [2] = { rounds = 1, speed = 1.0, area = 50 },
+            [3] = { rounds = 1, speed = 1.0, area = 50 },
+            [4] = { rounds = 1, speed = 1.0, area = 50 },
+            [5] = { rounds = 1, speed = 1.0, area = 50 },
         },
         -- Physical key item settings
         PhysicalKeys = {
@@ -354,21 +356,18 @@ return {
             ipls = { "apa_v_mp_h_01_a" },
             coords = vec4(-786.8663, 315.7642, 217.6385, 270.0),
             exitCoords = vec4(-786.8663, 315.7642, 217.6385, 270.0),
-            zoneSize = vec3(150.0, 150.0, 80.0)
         },
         ["Eclipse Penthouse 2"] = {
             label = "Eclipse Penthouse 2",
             ipls = { "apa_v_mp_h_02_a" },
             coords = vec4(-786.9563, 315.6229, 187.9136, 270.0),
             exitCoords = vec4(-786.9563, 315.6229, 187.9136, 270.0),
-            zoneSize = vec3(150.0, 150.0, 80.0)
         },
         ["Eclipse Penthouse 3"] = {
             label = "Eclipse Penthouse 3",
             ipls = { "apa_v_mp_h_03_a" },
             coords = vec4(-786.8741, 315.7975, 157.9137, 270.0),
             exitCoords = vec4(-786.8741, 315.7975, 157.9137, 270.0),
-            zoneSize = vec3(150.0, 150.0, 80.0)
         }
     },
 

@@ -30,6 +30,7 @@ function App() {
   const [onlyBuyViaContracts, setOnlyBuyViaContracts] = useState(false);
   const [apartmentCreatorData, setApartmentCreatorData] = useState({ isEdit: false, rooms: [] });
   const [shells, setShells] = useState([]);
+  const [electricityEnabled, setElectricityEnabled] = useState(true);
 
   const closeAll = () => {
     setShowPanel(false);
@@ -63,6 +64,7 @@ function App() {
           setInitialTab('creator');
           setOnlyBuyViaContracts(data?.onlyBuyViaContracts || false);
           setShells(data?.shells || []);
+          setElectricityEnabled(data?.electricityEnabled ?? true);
           setShowRealEstate(true);
           break;
         case 'openRealEstate':
@@ -76,6 +78,7 @@ function App() {
           setInitialTab(data.activeTab || 'browse');
           setOnlyBuyViaContracts(data.onlyBuyViaContracts || false);
           setShells(data.shells || []);
+          setElectricityEnabled(data.electricityEnabled ?? true);
           setShowRealEstate(true);
           break;
         case 'updateProperties':
@@ -490,6 +493,7 @@ function App() {
               initialTab={initialTab}
               onlyBuyViaContracts={onlyBuyViaContracts}
               shells={shells}
+              electricityEnabled={electricityEnabled}
               onOpenPaperContract={(contract) => {
                 closeAll();
                 setContractPaperData(contract);

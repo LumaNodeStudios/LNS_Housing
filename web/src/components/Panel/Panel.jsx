@@ -565,78 +565,88 @@ const Panel = ({ data: initialData }) => {
                   </h1>
                 </div>
 
-                <div className="house-usage-card">
-                  <h2 className="usage-main-title">House Usage</h2>
-                  <div className="usage-rows-wrapper">
-                    {/* 1. Electricity Level */}
-                    <div className="usage-stat-row">
-                      <div className="usage-stat-info">
-                        <div className="stat-label-wrap">
-                          <Zap size={14} className="icon-gold" />
-                          <span>Electricity Level</span>
+                {(usageStats.electricityEnabled !== false || usageStats.temperatureEnabled !== false) && (
+                  <div className="house-usage-card">
+                    <h2 className="usage-main-title">House Usage</h2>
+                    <div className="usage-rows-wrapper">
+                      {/* 1. Electricity Level */}
+                      {usageStats.electricityEnabled !== false && (
+                        <div className="usage-stat-row">
+                          <div className="usage-stat-info">
+                            <div className="stat-label-wrap">
+                              <Zap size={14} className="icon-gold" />
+                              <span>Electricity Level</span>
+                            </div>
+                            <span className="stat-value-text font-mono">
+                              {usageStats.totalPower.toFixed(1)} kWh / {usageStats.maxPower.toFixed(1)} kWh
+                            </span>
+                          </div>
+                          <div className="stat-progress-bg">
+                            <div
+                              className={`stat-progress-fill ${usageStats.totalPower > usageStats.maxPower ? 'overload' : ''}`}
+                              style={{ width: `${Math.min(100, (usageStats.totalPower / Math.max(0.1, usageStats.maxPower)) * 100)}%` }}
+                            />
+                          </div>
                         </div>
-                        <span className="stat-value-text font-mono">
-                          {usageStats.totalPower.toFixed(1)} kWh / {usageStats.maxPower.toFixed(1)} kWh
-                        </span>
-                      </div>
-                      <div className="stat-progress-bg">
-                        <div
-                          className={`stat-progress-fill ${usageStats.totalPower > usageStats.maxPower ? 'overload' : ''}`}
-                          style={{ width: `${Math.min(100, (usageStats.totalPower / Math.max(0.1, usageStats.maxPower)) * 100)}%` }}
-                        />
-                      </div>
-                    </div>
+                      )}
 
-                    {/* 2. Power Grid Status */}
-                    <div className="usage-stat-row">
-                      <div className="usage-stat-info">
-                        <div className="stat-label-wrap">
-                          <Activity size={14} className={usageStats.breakerTripped ? "icon-red" : "icon-green"} />
-                          <span>Power Grid Status</span>
+                      {/* 2. Power Grid Status */}
+                      {usageStats.electricityEnabled !== false && (
+                        <div className="usage-stat-row">
+                          <div className="usage-stat-info">
+                            <div className="stat-label-wrap">
+                              <Activity size={14} className={usageStats.breakerTripped ? "icon-red" : "icon-green"} />
+                              <span>Power Grid Status</span>
+                            </div>
+                            <span className={`status-badge-pill ${usageStats.breakerTripped ? 'tripped' : 'online'}`}>
+                              {usageStats.breakerTripped ? 'TRIPPED (OVERLOAD)' : 'ONLINE'}
+                            </span>
+                          </div>
                         </div>
-                        <span className={`status-badge-pill ${usageStats.breakerTripped ? 'tripped' : 'online'}`}>
-                          {usageStats.breakerTripped ? 'TRIPPED (OVERLOAD)' : 'ONLINE'}
-                        </span>
-                      </div>
-                    </div>
+                      )}
 
-                    {/* 3. Temperature */}
-                    <div className="usage-stat-row">
-                      <div className="usage-stat-info">
-                        <div className="stat-label-wrap">
-                          <Thermometer size={14} className="icon-orange" />
-                          <span>Temperature</span>
+                      {/* 3. Temperature */}
+                      {usageStats.temperatureEnabled !== false && (
+                        <div className="usage-stat-row">
+                          <div className="usage-stat-info">
+                            <div className="stat-label-wrap">
+                              <Thermometer size={14} className="icon-orange" />
+                              <span>Temperature</span>
+                            </div>
+                            <span className="stat-value-text font-mono">
+                              {Math.round(usageStats.displayTemp !== undefined ? usageStats.displayTemp : usageStats.netTemp)}{usageStats.unitSymbol || '°F'} / {usageStats.maxTemp ? `${usageStats.maxTemp}${usageStats.unitSymbol || '°F'}` : '100°F'}
+                            </span>
+                          </div>
+                          <div className="stat-progress-bg">
+                            <div
+                              className="stat-progress-fill temp-bar"
+                              style={{ width: `${Math.min(100, Math.max(0, ((usageStats.displayTemp !== undefined ? usageStats.displayTemp : usageStats.netTemp) / (usageStats.maxTemp || 100)) * 100))}%` }}
+                            />
+                          </div>
                         </div>
-                        <span className="stat-value-text font-mono">
-                          {Math.round(usageStats.displayTemp !== undefined ? usageStats.displayTemp : usageStats.netTemp)}{usageStats.unitSymbol || '°F'} / {usageStats.maxTemp ? `${usageStats.maxTemp}${usageStats.unitSymbol || '°F'}` : '100°F'}
-                        </span>
-                      </div>
-                      <div className="stat-progress-bg">
-                        <div
-                          className="stat-progress-fill temp-bar"
-                          style={{ width: `${Math.min(100, Math.max(0, ((usageStats.displayTemp !== undefined ? usageStats.displayTemp : usageStats.netTemp) / (usageStats.maxTemp || 100)) * 100))}%` }}
-                        />
-                      </div>
-                    </div>
+                      )}
 
-                    {/* 4. Heating / Cooling Level */}
-                    <div className="usage-stat-row">
-                      <div className="usage-stat-info">
-                        <div className="stat-label-wrap">
-                          <Flame size={14} className="icon-flame" />
-                          <span>Heating / Cooling Level</span>
+                      {/* 4. Heating / Cooling Level */}
+                      {usageStats.temperatureEnabled !== false && (
+                        <div className="usage-stat-row">
+                          <div className="usage-stat-info">
+                            <div className="stat-label-wrap">
+                              <Flame size={14} className="icon-flame" />
+                              <span>Heating / Cooling Level</span>
+                            </div>
+                            <span className="usage-value-text font-mono">
+                              {(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta) > 0
+                                ? `Heating (+${(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta).toFixed(1)}${usageStats.unitSymbol || '°F'})`
+                                : (usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta) < 0
+                                ? `Cooling (${(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta).toFixed(1)}${usageStats.unitSymbol || '°F'})`
+                                : 'Disabled'}
+                            </span>
+                          </div>
                         </div>
-                        <span className="usage-value-text font-mono">
-                          {(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta) > 0
-                            ? `Heating (+${(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta).toFixed(1)}${usageStats.unitSymbol || '°F'})`
-                            : (usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta) < 0
-                            ? `Cooling (${(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta).toFixed(1)}${usageStats.unitSymbol || '°F'})`
-                            : 'Disabled'}
-                        </span>
-                      </div>
+                      )}
                     </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Right Column: 2x2 Grid of Action Cards */}
@@ -685,41 +695,45 @@ const Panel = ({ data: initialData }) => {
 
               <div className="security-main-grid">
                 <div className="security-upgrades-col">
-                  <h3 className="sub-section-title">Electrical Grid Upgrades</h3>
-                  <div className="upgrade-card-new power-upgrade-card">
-                    <div className="upgrade-icon-box">
-                      <Zap size={20} />
-                    </div>
-                    <div className="upgrade-content">
-                      <div className="upgrade-top-row">
-                        <h3>Electricity Max Capacity</h3>
-                        <span className="lvl-badge">LVL {usageStats.powerLevel}/5</span>
-                      </div>
-                      <p>Upgrade your property's electrical grid to power heavy appliances and avoid tripping breakers.</p>
-                      <div className="power-bar-preview">
-                        <span className="usage-val">{usageStats.totalPower.toFixed(1)} kWh / {usageStats.maxPower.toFixed(1)} kWh Max</span>
-                        <div className="usage-bar-track" style={{ height: '6px', marginTop: '4px' }}>
-                          <div
-                            className={`usage-bar-fill ${usageStats.totalPower > usageStats.maxPower ? 'overload' : ''}`}
-                            style={{ width: `${Math.min(100, (usageStats.totalPower / Math.max(0.1, usageStats.maxPower)) * 100)}%` }}
-                          />
+                  {usageStats.electricityEnabled !== false && (
+                    <>
+                      <h3 className="sub-section-title">Electrical Grid Upgrades</h3>
+                      <div className="upgrade-card-new power-upgrade-card">
+                        <div className="upgrade-icon-box">
+                          <Zap size={20} />
+                        </div>
+                        <div className="upgrade-content">
+                          <div className="upgrade-top-row">
+                            <h3>Electricity Max Capacity</h3>
+                            <span className="lvl-badge">LVL {usageStats.powerLevel}/5</span>
+                          </div>
+                          <p>Upgrade your property's electrical grid to power heavy appliances and avoid tripping breakers.</p>
+                          <div className="power-bar-preview">
+                            <span className="usage-val">{usageStats.totalPower.toFixed(1)} kWh / {usageStats.maxPower.toFixed(1)} kWh Max</span>
+                            <div className="usage-bar-track" style={{ height: '6px', marginTop: '4px' }}>
+                              <div
+                                className={`usage-bar-fill ${usageStats.totalPower > usageStats.maxPower ? 'overload' : ''}`}
+                                style={{ width: `${Math.min(100, (usageStats.totalPower / Math.max(0.1, usageStats.maxPower)) * 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                          <div className="tier-select-grid">
+                            {powerTiers.map((tier) => (
+                              <button
+                                key={tier.level}
+                                className={`tier-btn ${usageStats.powerLevel === tier.level ? 'active' : ''}`}
+                                disabled={usageStats.powerLevel >= tier.level}
+                                onClick={() => handleUpgradePower(tier.level)}
+                              >
+                                <span className="tier-lbl">{tier.label}</span>
+                                <span className="tier-price">{tier.price === 0 ? 'DEFAULT' : `$${tier.price.toLocaleString()}`}</span>
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                      <div className="tier-select-grid">
-                        {powerTiers.map((tier) => (
-                          <button
-                            key={tier.level}
-                            className={`tier-btn ${usageStats.powerLevel === tier.level ? 'active' : ''}`}
-                            disabled={usageStats.powerLevel >= tier.level}
-                            onClick={() => handleUpgradePower(tier.level)}
-                          >
-                            <span className="tier-lbl">{tier.label}</span>
-                            <span className="tier-price">{tier.price === 0 ? 'DEFAULT' : `$${tier.price.toLocaleString()}`}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                    </>
+                  )}
 
                   <h3 className="sub-section-title" style={{ marginTop: '20px' }}>Security Systems</h3>
                   <div className="upgrades-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

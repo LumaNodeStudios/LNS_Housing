@@ -757,7 +757,8 @@ if Settings.Housing and Settings.Housing.Creator and Settings.Housing.Creator.Co
                 properties = properties,
                 hasPermission = true,
                 activeTab = 'creator',
-                onlyBuyViaContracts = Settings.RealEstate.OnlyBuyViaContracts
+                onlyBuyViaContracts = Settings.RealEstate.OnlyBuyViaContracts,
+                electricityEnabled = (Settings.Electricity == nil or Settings.Electricity.Enabled ~= false)
             }
         })
         SetNuiFocus(true, true)
