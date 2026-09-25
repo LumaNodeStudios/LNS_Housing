@@ -330,10 +330,18 @@ end
 
 local function leaveIfNoZone()
     if not insideApartment or not CurrentApartmentId then return end
+    local ped = cache.ped or PlayerPedId()
+    local coords = GetEntityCoords(ped)
     for _, r in ipairs(Settings.Rooms or {}) do
         if r.id == CurrentApartmentId then
             if not r.corners or #r.corners < 3 then
-                LeaveApartmentRoom(CurrentApartmentId)
+                local refCoords = (r.spawn and vec3(r.spawn.x, r.spawn.y, r.spawn.z))
+                    or (r.interior_coords and vec3(r.interior_coords.x, r.interior_coords.y, r.interior_coords.z))
+                    or (r.doorCoords and vec3(r.doorCoords.x, r.doorCoords.y, r.doorCoords.z))
+                    or (r.interior_center and vec3(r.interior_center.x, r.interior_center.y, r.interior_center.z))
+                if refCoords and #(coords - refCoords) > 35.0 then
+                    LeaveApartmentRoom(CurrentApartmentId)
+                end
             end
             return
         end

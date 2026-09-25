@@ -336,7 +336,7 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
 
         local isOwner = false
         if citizenid then
-            local checkOwner = MySQL.single.await('SELECT id FROM apartments WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
+            local checkOwner = MySQL.single.await('SELECT id FROM apartments WHERE (room_id = ? OR room_id = ?) AND citizenid = ?', {roomId, tostring(roomId), citizenid})
             if checkOwner then
                 isOwner = true
             end
@@ -345,12 +345,14 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
         if accessType == 'lockpick' then
             if Settings.Apartments and not Settings.Apartments.CanBreakIn then return false end
             if isOwner then return false end
-            local result = MySQL.single.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ?', {roomId})
-            if not result then return false end
-            local permissions = json.decode(result.permissions or '{"entry":[], "storage":[], "wardrobe":[], "furniture":[], "manage":[]}')
-            if permissions['entry'] then
-                for _, cid in ipairs(permissions['entry']) do
-                    if cid == citizenid then return false end
+            local results = MySQL.query.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ? OR room_id = ?', {roomId, tostring(roomId)})
+            if not results or #results == 0 then return false end
+            for _, result in ipairs(results) do
+                local permissions = json.decode(result.permissions or '{"entry":[], "storage":[], "wardrobe":[], "furniture":[], "manage":[]}')
+                if permissions and permissions['entry'] then
+                    for _, cid in ipairs(permissions['entry']) do
+                        if cid == citizenid then return false end
+                    end
                 end
             end
             return true
@@ -359,14 +361,20 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
         if accessType == 'lockpickStash' then
             if Settings.Apartments and not Settings.Apartments.CanBreakIn then return false end
             if isOwner then return false end
-            local result = MySQL.single.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ?', {roomId})
-            if not result then return false end
-            local permissions = json.decode(result.permissions or '{"entry":[], "storage":[], "wardrobe":[], "furniture":[], "manage":[]}')
-            if permissions['storage'] then
-                for _, cid in ipairs(permissions['storage']) do
-                    if cid == citizenid then return false end
+            local results = MySQL.query.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ? OR room_id = ?', {roomId, tostring(roomId)})
+            if not results or #results == 0 then return false end
+            for _, result in ipairs(results) do
+                local permissions = json.decode(result.permissions or '{"entry":[], "storage":[], "wardrobe":[], "furniture":[], "manage":[]}')
+                if permissions and permissions['storage'] then
+                    for _, cid in ipairs(permissions['storage']) do
+                        if cid == citizenid then return false end
+                    end
                 end
             end
+            return true
+        end
+
+        if isOwner then
             return true
         end
 
@@ -382,19 +390,21 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
             end
         end
 
-        local result = MySQL.single.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ? ORDER BY id ASC LIMIT 1', {roomId})
-        if result then
-            if result.citizenid == citizenid then return true end
-            
-            local permissions = json.decode(result.permissions or '{"entry":[], "storage":[], "wardrobe":[], "furniture":[], "manage":[]}')
-            if type(permissions) == 'table' then
-                if permissions[accessType] and type(permissions[accessType]) == 'table' then
-                    for _, cid in ipairs(permissions[accessType]) do
-                        if cid == citizenid then return true end
-                    end
-                elseif (accessType == 'entry' or accessType == 'doors') and #permissions > 0 then
-                    for _, cid in ipairs(permissions) do
-                        if cid == citizenid then return true end
+        local results = MySQL.query.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ? OR room_id = ?', {roomId, tostring(roomId)})
+        if results and #results > 0 then
+            for _, result in ipairs(results) do
+                if result.citizenid == citizenid then return true end
+                
+                local permissions = json.decode(result.permissions or '{"entry":[], "storage":[], "wardrobe":[], "furniture":[], "manage":[]}')
+                if type(permissions) == 'table' then
+                    if permissions[accessType] and type(permissions[accessType]) == 'table' then
+                        for _, cid in ipairs(permissions[accessType]) do
+                            if cid == citizenid then return true end
+                        end
+                    elseif (accessType == 'entry' or accessType == 'doors') and #permissions > 0 then
+                        for _, cid in ipairs(permissions) do
+                            if cid == citizenid then return true end
+                        end
                     end
                 end
             end
