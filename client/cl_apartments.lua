@@ -198,7 +198,7 @@ local function getInteriorRooms(interiorId)
         if name then
             local signedHash = GetHashKey(name)
             local unsignedHash = signedHash < 0 and (signedHash + 4294967296) or signedHash
-            local entry = { index = index, name = name, signedHash = signedHash, unsignedHash = unsignedHash }
+            local entry = { index = index, name = name }
             rooms[signedHash] = entry
             rooms[unsignedHash] = entry
             rooms[name] = entry
@@ -209,123 +209,101 @@ local function getInteriorRooms(interiorId)
     return rooms
 end
 
-local function ResolveApartmentRoom(interiorId)
+local function scanInterior()
+    local ped = cache.ped or PlayerPedId()
+    local interiorId = GetInteriorFromEntity(ped)
+    if interiorId == 0 then
+        interiorId = GetInteriorAtCoords(GetEntityCoords(ped))
+    end
+    if interiorId == 0 then return nil, nil, {} end
+
+    local names = {}
+    local numbered = {}
+
+    for index = 0, GetInteriorRoomCount(interiorId) - 1 do
+        local name = GetInteriorRoomName(interiorId, index)
+        if name then
+            names[#names + 1] = name
+            local prefix, number = name:match('^(.-)(%d+)$')
+            if prefix and number then
+                numbered[prefix] = numbered[prefix] or {}
+                numbered[prefix][#numbered[prefix] + 1] = tonumber(number)
+            end
+        end
+    end
+
+    local bestPrefix, bestCount
+    for prefix, numbers in pairs(numbered) do
+        if not bestCount or #numbers > bestCount then
+            bestPrefix, bestCount = prefix, #numbers
+        end
+    end
+
+    if not bestPrefix then return nil, nil, names end
+    return bestPrefix .. '%d', bestCount, names
+end
+
+function ResolveCurrentUnit()
+    local ped = cache.ped or PlayerPedId()
+    local interiorId = GetInteriorFromEntity(ped)
+    if interiorId == 0 then
+        local coords = GetEntityCoords(ped)
+        interiorId = GetInteriorAtCoords(coords.x, coords.y, coords.z)
+    end
+    if interiorId == 0 then return end
+
+    local ix, iy, iz = GetInteriorPosition(interiorId)
+    for key, building in pairs(Buildings or {}) do
+        if building.perRoomInterior and building.rooms then
+            for roomNumber = 1, #building.rooms do
+                local anchor = building.rooms[roomNumber]
+                if math.abs(anchor.x - ix) < 2.0 and math.abs(anchor.y - iy) < 2.0 then
+                    local floor = math.floor((iz - building.floors.baseZ) / building.floors.step + 0.5) + 1
+                    if floor >= 1 and floor <= building.floors.count then
+                        return key, floor, roomNumber
+                    end
+                end
+            end
+        end
+    end
+
+    local rooms = getInteriorRooms(interiorId)
+    local current = rooms[GetRoomKeyFromEntity(ped)]
+    if not current then return end
+
+    local coords = GetEntityCoords(ped)
+
+    for key, building in pairs(Buildings or {}) do
+        local roomNumber = building.roomName and building.rooms
+            and current.name:match('^' .. building.roomName:gsub('%%d', '(%%d+)') .. '$')
+        roomNumber = roomNumber and tonumber(roomNumber)
+
+        if roomNumber and building.rooms[roomNumber] then
+            for floor = 1, building.floors.count do
+                local anchor = GetRoomCoords(key, floor, roomNumber)
+                if anchor and math.abs(coords.z - anchor.z) < building.floors.step * 0.5 then
+                    return key, floor, roomNumber
+                end
+            end
+        end
+    end
+end
+
+local function ResolveCustomApartmentRoom(interiorId)
     if not Settings.Rooms or not interiorId or interiorId == 0 then return nil end
     local ped = cache.ped or PlayerPedId()
     local coords = GetEntityCoords(ped)
-    local targetInterior = tonumber(interiorId)
-
-    local rooms = getInteriorRooms(interiorId)
-    local currentRoomKey = GetRoomKeyFromEntity(ped)
-    local currentRoom = rooms[currentRoomKey]
-    local currentRoomName = currentRoom and currentRoom.name or nil
-
-    if currentRoomName then
-        local lowerName = currentRoomName:lower()
-        if lowerName:find('corridor') or lowerName:find('hallway') or lowerName:find('lobby') or lowerName:find('stairs') or lowerName:find('passage') or lowerName:find('elevator') then
-            return nil
-        end
-    end
-
-    local thisInteriorHasPortalRooms = false
+    
     for _, room in ipairs(Settings.Rooms) do
-        if room.room_name and room.room_name ~= '' and room.room_name ~= 'limbo' then
-            local roomInterior = tonumber(room.interior_id or room.interiorId) or (room.spawn and GetInteriorAtCoords(room.spawn.x, room.spawn.y, room.spawn.z)) or (room.doorCoords and GetInteriorAtCoords(room.doorCoords.x, room.doorCoords.y, room.doorCoords.z))
-            if roomInterior and roomInterior == targetInterior then
-                thisInteriorHasPortalRooms = true
-                break
+        local rInt = tonumber(room.interior_id or room.interiorId)
+        if rInt and rInt == interiorId then
+            local roomZ = (room.spawn and room.spawn.z) or (room.doorCoords and room.doorCoords.z)
+            if not roomZ or math.abs(coords.z - roomZ) < 3.5 then
+                return room
             end
         end
     end
-
-    if thisInteriorHasPortalRooms then
-        if not currentRoomName or currentRoomName == '' or currentRoomName == 'limbo' then
-            return nil
-        end
-
-        for _, room in ipairs(Settings.Rooms) do
-            local roomInterior = tonumber(room.interior_id or room.interiorId) or (room.spawn and GetInteriorAtCoords(room.spawn.x, room.spawn.y, room.spawn.z)) or (room.doorCoords and GetInteriorAtCoords(room.doorCoords.x, room.doorCoords.y, room.doorCoords.z))
-            if roomInterior and roomInterior == targetInterior then
-                local rSigned = room.room_key and tonumber(room.room_key)
-                local rUnsigned = rSigned and (rSigned < 0 and (rSigned + 4294967296) or rSigned)
-                if (rSigned and (currentRoomKey == rSigned or currentRoomKey == rUnsigned)) or (room.room_name and room.room_name ~= '' and (room.room_name == currentRoomName or currentRoomName:lower() == room.room_name:lower())) then
-                    local roomZ = (room.spawn and room.spawn.z) or (room.doorCoords and room.doorCoords.z)
-                    if not roomZ or math.abs(coords.z - roomZ) < 3.5 then
-                        return room
-                    end
-                end
-            end
-        end
-
-        return nil
-    end
-
-    local ix, iy, iz = GetInteriorPosition(interiorId)
-    if ix and ix ~= 0.0 then
-        local matchingRooms = {}
-        for _, room in ipairs(Settings.Rooms) do
-            local center = room.interior_center or room.interiorCenter
-            if center and center.x then
-                if math.abs(center.x - ix) < 2.0 and math.abs(center.y - iy) < 2.0 then
-                    local roomZ = (room.spawn and room.spawn.z) or (room.doorCoords and room.doorCoords.z) or center.z
-                    if not roomZ or math.abs(coords.z - roomZ) < 3.5 then
-                        table.insert(matchingRooms, room)
-                    end
-                end
-            end
-        end
-
-        if #matchingRooms == 1 then
-            return matchingRooms[1]
-        end
-    end
-
-    local bestRoom = nil
-    local bestDist = nil
-
-    for _, room in ipairs(Settings.Rooms) do
-        local roomInterior = tonumber(room.interior_id or room.interiorId) or (room.spawn and GetInteriorAtCoords(room.spawn.x, room.spawn.y, room.spawn.z)) or (room.doorCoords and GetInteriorAtCoords(room.doorCoords.x, room.doorCoords.y, room.doorCoords.z))
-        if roomInterior and roomInterior == targetInterior then
-            local insideVec = nil
-            if room.spawn then
-                insideVec = vec3(room.spawn.x, room.spawn.y, room.spawn.z)
-            elseif room.interior_coords then
-                insideVec = vec3(room.interior_coords.x, room.interior_coords.y, room.interior_coords.z)
-            elseif room.tabletCoords and room.tabletCoords.position then
-                insideVec = vec3(room.tabletCoords.position.x, room.tabletCoords.position.y, room.tabletCoords.position.z)
-            end
-
-            if insideVec then
-                local dist = #(coords - insideVec)
-                local zDiff = math.abs(coords.z - insideVec.z)
-
-                if zDiff < 3.2 and dist < 8.0 then
-                    local isInside = true
-                    if room.doorCoords then
-                        local doorVec = vec3(room.doorCoords.x, room.doorCoords.y, room.doorCoords.z)
-                        local distToDoor = #(coords - doorVec)
-                        local distToInside = #(coords - insideVec)
-                        local doorToInside = insideVec - doorVec
-                        local doorToPlayer = coords - doorVec
-                        local dot = (doorToPlayer.x * doorToInside.x + doorToPlayer.y * doorToInside.y)
-
-                        if dot < -0.1 and distToDoor < distToInside then
-                            isInside = false
-                        end
-                    end
-
-                    if isInside then
-                        if not bestDist or dist < bestDist then
-                            bestDist = dist
-                            bestRoom = room
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    return bestRoom
+    return nil
 end
 
 local function leaveIfNoZone()
@@ -348,30 +326,75 @@ local function leaveIfNoZone()
     end
 end
 
+local currentUnitKey = nil
+
 CreateThread(function()
     while true do
-        Wait(400)
+        Wait(750)
         local ped = cache.ped or PlayerPedId()
-        local interiorId = GetInteriorFromEntity(ped)
-        if interiorId == 0 then
-            local coords = GetEntityCoords(ped)
-            interiorId = GetInteriorAtCoords(coords.x, coords.y, coords.z)
-        end
+        local buildingKey, floor, room = ResolveCurrentUnit()
+        local unitKey = buildingKey and floor and room and string.format('%s:%d:%d', buildingKey, floor, room) or nil
 
-        if interiorId ~= 0 then
-            local matchedRoom = ResolveApartmentRoom(interiorId)
-            if matchedRoom then
+        if unitKey then
+            if unitKey ~= currentUnitKey then
+                currentUnitKey = unitKey
+                local targetRoomId = (floor * 100) + room
+                local matchedRoom = nil
+                for _, r in ipairs(Settings.Rooms or {}) do
+                    if r.id == targetRoomId or r.id == tostring(targetRoomId) then
+                        matchedRoom = r
+                        break
+                    end
+                end
+                
+                if not matchedRoom then
+                    local anchor = GetRoomCoords(buildingKey, floor, room)
+                    matchedRoom = {
+                        id = targetRoomId,
+                        buildingKey = buildingKey,
+                        floor = floor,
+                        room = room,
+                        spawn = anchor or vec4(GetEntityCoords(ped).x, GetEntityCoords(ped).y, GetEntityCoords(ped).z, 0.0),
+                        interior_id = GetInteriorFromEntity(ped)
+                    }
+                end
+
                 if CurrentApartmentId ~= matchedRoom.id then
                     if CurrentApartmentId then
                         LeaveApartmentRoom(CurrentApartmentId)
                     end
                     EnterApartmentRoom(matchedRoom)
                 end
-            else
-                leaveIfNoZone()
             end
         else
-            leaveIfNoZone()
+            if currentUnitKey then
+                currentUnitKey = nil
+                if CurrentApartmentId then
+                    LeaveApartmentRoom(CurrentApartmentId)
+                end
+            else
+                local interiorId = GetInteriorFromEntity(ped)
+                if interiorId == 0 then
+                    local coords = GetEntityCoords(ped)
+                    interiorId = GetInteriorAtCoords(coords.x, coords.y, coords.z)
+                end
+
+                if interiorId ~= 0 then
+                    local customRoom = ResolveCustomApartmentRoom(interiorId)
+                    if customRoom then
+                        if CurrentApartmentId ~= customRoom.id then
+                            if CurrentApartmentId then
+                                LeaveApartmentRoom(CurrentApartmentId)
+                            end
+                            EnterApartmentRoom(customRoom)
+                        end
+                    else
+                        leaveIfNoZone()
+                    end
+                else
+                    leaveIfNoZone()
+                end
+            end
         end
     end
 end)
@@ -1141,6 +1164,7 @@ RegisterNUICallback('captureApartmentInterior', function(_, cb)
     local heading = GetEntityHeading(ped)
     local roomCount = GetInteriorRoomCount(interiorId)
     local ix, iy, iz = GetInteriorPosition(interiorId)
+    local pattern, count, names = scanInterior()
     local currentRoom = nil
 
     local key = GetRoomKeyFromEntity(ped)
@@ -1156,11 +1180,13 @@ RegisterNUICallback('captureApartmentInterior', function(_, cb)
         interiorId = interiorId,
         coords = { x = coords.x, y = coords.y, z = coords.z, h = heading },
         center = { x = ix, y = iy, z = iz },
-        roomCount = roomCount,
+        roomCount = count or roomCount,
         roomName = currentRoom,
+        pattern = pattern,
+        names = names,
         roomKey = key
     })
-    Bridge.Client.Notify('Apartment native interior captured! (Room: ' .. (currentRoom or 'ID #' .. interiorId) .. ')', 'success')
+    Bridge.Client.Notify(string.format('Apartment native interior captured! (Room: %s, ID: #%d)', currentRoom or 'Main', interiorId), 'success')
 end)
 
 RegisterNUICallback('pickApartmentSpawn', function(_, cb)
@@ -1188,6 +1214,7 @@ RegisterNUICallback('pickApartmentSpawn', function(_, cb)
             if interiorId ~= 0 then
                 local ix, iy, iz = GetInteriorPosition(interiorId)
                 local roomCount = GetInteriorRoomCount(interiorId)
+                local pattern, count, names = scanInterior()
                 local key = GetRoomKeyFromEntity(ped)
                 local currentRoom = nil
                 for index = 0, roomCount - 1 do
@@ -1201,8 +1228,10 @@ RegisterNUICallback('pickApartmentSpawn', function(_, cb)
                 interiorData = {
                     interiorId = interiorId,
                     center = { x = ix, y = iy, z = iz },
-                    roomCount = roomCount,
+                    roomCount = count or roomCount,
                     roomName = currentRoom,
+                    pattern = pattern,
+                    names = names,
                     roomKey = key
                 }
             end

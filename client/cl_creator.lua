@@ -72,10 +72,47 @@ RegisterNUICallback('setWalkMode', function(data, cb)
     cb('ok')
 end)
 
+local function scanInterior()
+    local ped = cache.ped or PlayerPedId()
+    local interiorId = GetInteriorFromEntity(ped)
+    if interiorId == 0 then
+        interiorId = GetInteriorAtCoords(GetEntityCoords(ped))
+    end
+    if interiorId == 0 then return nil, nil, {} end
+
+    local names = {}
+    local numbered = {}
+
+    for index = 0, GetInteriorRoomCount(interiorId) - 1 do
+        local name = GetInteriorRoomName(interiorId, index)
+        if name then
+            names[#names + 1] = name
+            local prefix, number = name:match('^(.-)(%d+)$')
+            if prefix and number then
+                numbered[prefix] = numbered[prefix] or {}
+                numbered[prefix][#numbered[prefix] + 1] = tonumber(number)
+            end
+        end
+    end
+
+    local bestPrefix, bestCount
+    for prefix, numbers in pairs(numbered) do
+        if not bestCount or #numbers > bestCount then
+            bestPrefix, bestCount = prefix, #numbers
+        end
+    end
+
+    if not bestPrefix then return nil, nil, names end
+    return bestPrefix .. '%d', bestCount, names
+end
+
 RegisterNUICallback('captureInterior', function(_, cb)
     debugPrint('info', 'NUI callback: captureInterior')
-    local ped = cache.ped
+    local ped = cache.ped or PlayerPedId()
     local interiorId = GetInteriorFromEntity(ped)
+    if interiorId == 0 then
+        interiorId = GetInteriorAtCoords(GetEntityCoords(ped))
+    end
 
     if interiorId == 0 then
         Bridge.Client.Notify('Stand inside the MLO interior first.', 'error')
@@ -87,6 +124,7 @@ RegisterNUICallback('captureInterior', function(_, cb)
     local heading = GetEntityHeading(ped)
     local roomCount = GetInteriorRoomCount(interiorId)
     local ix, iy, iz = GetInteriorPosition(interiorId)
+    local pattern, count, names = scanInterior()
     local currentRoom = nil
 
     local key = GetRoomKeyFromEntity(ped)
@@ -102,11 +140,13 @@ RegisterNUICallback('captureInterior', function(_, cb)
         interiorId = interiorId,
         coords = { x = coords.x, y = coords.y, z = coords.z, h = heading },
         center = { x = ix, y = iy, z = iz },
-        roomCount = roomCount,
+        roomCount = count or roomCount,
+        pattern = pattern,
+        names = names,
         currentRoom = currentRoom or 'Main Room'
     }
 
-    Bridge.Client.Notify(string.format('MLO interior captured (ID: %d, %d rooms)', interiorId, roomCount), 'success')
+    Bridge.Client.Notify(string.format('MLO interior captured (ID: %d, %d rooms%s)', interiorId, count or roomCount, pattern and (', ' .. pattern) or ''), 'success')
     cb(data)
 end)
 
@@ -226,7 +266,6 @@ RegisterNUICallback('pickBreakerCoords', function(_, cb)
         
         local targetCoords = (hit == 1 or hit == true) and hitCoords or dest
         
-        -- Draw bright 3D sphere marker directly on targeted wall spot
         DrawMarker(28, targetCoords.x, targetCoords.y, targetCoords.z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.25, 0.25, 255, 200, 0, 200, false, false, 2, true, nil, nil, false)
         
         if IsDisabledControlJustPressed(0, 38) then 
