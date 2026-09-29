@@ -102,66 +102,69 @@ function openKeyManagementUI()
 end
 
 function EnterApartmentRoom(roomData)
+    if not roomData or not roomData.id then return end
     if CurrentApartmentId == roomData.id and insideApartment then return end
     CurrentApartmentId = roomData.id
     InsidePropertyId = roomData.id
     insideApartment = true
 
     local roomInfo = lib.callback.await('LNS_Housing:server:getApartmentInfo', false, roomData.id)
-    if roomInfo then
-        local doorId = nil
-        if GetResourceState('ox_doorlock') == 'started' then
-            local ok, result = pcall(function()
-                return exports.ox_doorlock:getDoorFromName("Apartment Room #" .. roomData.id)
-            end)
-            if ok and result then
-                doorId = result.id
-            end
-        end
+    roomInfo = roomInfo or {}
 
-        Properties[roomData.id] = {
-            id = roomData.id,
-            label = "Apartment Room #" .. roomData.id,
-            owner = roomInfo.owner,
-            ownerName = roomInfo.ownerName,
-            permissions = roomInfo.permissions,
-            door_id = doorId,
-            metadata = {
-                wall_color = roomInfo.wallColor or 0,
-                allow_wall_colors = true,
-                security_level = 0,
-                shell = roomData and roomData.shell or 'Apartment Furnished',
-                interior_id = roomData and (roomData.interior_id or roomData.interiorId) or nil,
-                entrance = roomData and roomData.doorCoords and { x = roomData.doorCoords.x, y = roomData.doorCoords.y, z = roomData.doorCoords.z, h = roomData.doorHeading or 0.0 } or nil,
-                spawn = roomData and roomData.spawn and { x = roomData.spawn.x, y = roomData.spawn.y, z = roomData.spawn.z, w = roomData.spawn.w or 0.0 } or nil
-            },
-            furniture = roomInfo.furniture or {},
-            isApartment = true
-        }
-
-        LoadFurnitures(roomData.id)
-
-        CreateThread(function()
-            local attempts = 0
-            while insideApartment and (CurrentApartmentId == roomData.id or tostring(CurrentApartmentId) == tostring(roomData.id)) and attempts < 10 do
-                local interiorId = GetInteriorFromEntity(cache.ped)
-                if interiorId == 0 then
-                    interiorId = GetInteriorAtCoords(GetEntityCoords(cache.ped))
-                end
-                if interiorId ~= 0 then
-                    ApplyWallColor(interiorId, roomInfo.wallColor or 0)
-                    break
-                end
-                attempts = attempts + 1
-                Wait(200)
-            end
+    local doorId = nil
+    if GetResourceState('ox_doorlock') == 'started' then
+        local ok, result = pcall(function()
+            return exports.ox_doorlock:getDoorFromName("Apartment Room #" .. roomData.id)
         end)
+        if ok and result then
+            doorId = result.id
+        end
     end
 
-    local hasManageAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', roomData.id, 'furniture')
+    Properties[roomData.id] = {
+        id = roomData.id,
+        label = "Apartment Room #" .. roomData.id,
+        owner = roomInfo.owner,
+        ownerName = roomInfo.ownerName,
+        permissions = roomInfo.permissions or { entry = {}, storage = {}, wardrobe = {}, furniture = {}, manage = {} },
+        door_id = doorId,
+        metadata = {
+            wall_color = roomInfo.wallColor or 0,
+            allow_wall_colors = true,
+            security_level = 0,
+            shell = roomData.shell or 'Apartment Furnished',
+            interior_id = roomData.interior_id or roomData.interiorId,
+            entrance = roomData.doorCoords and { x = roomData.doorCoords.x, y = roomData.doorCoords.y, z = roomData.doorCoords.z, h = roomData.doorHeading or 0.0 } or (roomData.spawn and { x = roomData.spawn.x, y = roomData.spawn.y, z = roomData.spawn.z, h = roomData.spawn.w or 0.0 }) or nil,
+            spawn = roomData.spawn and { x = roomData.spawn.x, y = roomData.spawn.y, z = roomData.spawn.z, w = roomData.spawn.w or 0.0 } or nil
+        },
+        furniture = roomInfo.furniture or {},
+        isApartment = true
+    }
+
+    LoadFurnitures(roomData.id)
+
+    CreateThread(function()
+        local attempts = 0
+        while insideApartment and (CurrentApartmentId == roomData.id or tostring(CurrentApartmentId) == tostring(roomData.id)) and attempts < 10 do
+            local interiorId = GetInteriorFromEntity(cache.ped)
+            if interiorId == 0 then
+                interiorId = GetInteriorAtCoords(GetEntityCoords(cache.ped))
+            end
+            if interiorId ~= 0 then
+                ApplyWallColor(interiorId, roomInfo.wallColor or 0)
+                break
+            end
+            attempts = attempts + 1
+            Wait(200)
+        end
+    end)
+
+    local isMyRoom = (MyApartmentId and (MyApartmentId == roomData.id or tostring(MyApartmentId) == tostring(roomData.id) or tonumber(MyApartmentId) == tonumber(roomData.id)))
+    local hasManageAccess = isMyRoom or lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', roomData.id, 'furniture')
     if hasManageAccess then
         HasFurnitureManagePermission = true
         if not Settings.FurnitureMenu or not Settings.FurnitureMenu.Radial or Settings.FurnitureMenu.Radial.Enabled then
+            lib.removeRadialItem('housing_furniture')
             lib.addRadialItem({
                 id = 'housing_furniture',
                 icon = 'couch',
@@ -179,7 +182,9 @@ function LeaveApartmentRoom(roomId)
     if targetId and (CurrentApartmentId == targetId or not roomId) then
         UnloadFurnitures(targetId)
         CurrentApartmentId = nil
-        InsidePropertyId = nil
+        if InsidePropertyId == targetId then
+            InsidePropertyId = nil
+        end
         insideApartment = false
         HasFurnitureManagePermission = false
         lib.removeRadialItem('housing_furniture')
@@ -289,20 +294,126 @@ function ResolveCurrentUnit()
     end
 end
 
+local function isPointInPolygon(coords, corners, zOffset, thickness)
+    if not corners or #corners < 3 then return false end
+    zOffset = zOffset or 0.0
+    thickness = thickness or 4.0
+    local minZ = corners[1].z + zOffset - (thickness / 2)
+    local maxZ = corners[1].z + zOffset + (thickness / 2)
+    for i = 2, #corners do
+        local z1 = corners[i].z + zOffset - (thickness / 2)
+        local z2 = corners[i].z + zOffset + (thickness / 2)
+        if z1 < minZ then minZ = z1 end
+        if z2 > maxZ then maxZ = z2 end
+    end
+    if coords.z < minZ or coords.z > maxZ then
+        return false
+    end
+
+    local inside = false
+    local j = #corners
+    for i = 1, #corners do
+        local pi = corners[i]
+        local pj = corners[j]
+        if ((pi.y > coords.y) ~= (pj.y > coords.y)) and
+            (coords.x < (pj.x - pi.x) * (coords.y - pi.y) / (pj.y - pi.y) + pi.x) then
+            inside = not inside
+        end
+        j = i
+    end
+    return inside
+end
+
+local function isBuildingInterior(interiorId)
+    if not interiorId or interiorId == 0 then return false end
+    if not Buildings then return false end
+    local ix, iy, iz = GetInteriorPosition(interiorId)
+    for key, building in pairs(Buildings) do
+        if building.perRoomInterior and building.rooms then
+            for roomNumber = 1, #building.rooms do
+                local anchor = building.rooms[roomNumber]
+                if math.abs(anchor.x - ix) < 2.0 and math.abs(anchor.y - iy) < 2.0 then
+                    return true
+                end
+            end
+        elseif building.floors and building.floors.baseZ and building.rooms then
+            for roomNumber = 1, #building.rooms do
+                local anchor = building.rooms[roomNumber]
+                if anchor and math.abs(anchor.x - ix) < 60.0 and math.abs(anchor.y - iy) < 60.0 then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
 local function ResolveCustomApartmentRoom(interiorId)
-    if not Settings.Rooms or not interiorId or interiorId == 0 then return nil end
+    if not Settings.Rooms or #Settings.Rooms == 0 then return nil end
     local ped = cache.ped or PlayerPedId()
     local coords = GetEntityCoords(ped)
-    
+
+    if isBuildingInterior(interiorId) then
+        return nil
+    end
+
+    local roomsInInterior = (interiorId and interiorId ~= 0) and getInteriorRooms(interiorId) or {}
+    local currentRoomKey = (interiorId and interiorId ~= 0) and GetRoomKeyFromEntity(ped) or 0
+    local currentSubRoom = roomsInInterior[currentRoomKey]
+
+    -- 1. Check custom rooms with explicit polygon zones (corners)
     for _, room in ipairs(Settings.Rooms) do
-        local rInt = tonumber(room.interior_id or room.interiorId)
-        if rInt and rInt == interiorId then
-            local roomZ = (room.spawn and room.spawn.z) or (room.doorCoords and room.doorCoords.z)
-            if not roomZ or math.abs(coords.z - roomZ) < 3.5 then
+        if room.corners and type(room.corners) == 'table' and #room.corners >= 3 then
+            local inPoly = isPointInPolygon(coords, room.corners, room.zOffset, room.thickness)
+            if inPoly then
                 return room
             end
         end
     end
+
+    -- 2. Check custom rooms mapped to a specific interior sub-room name or room key
+    if (currentSubRoom and currentSubRoom.name) or currentRoomKey ~= 0 then
+        for _, room in ipairs(Settings.Rooms) do
+            local rName = room.room_name or room.roomName
+            local rKey = tonumber(room.room_key or room.roomKey)
+            local isMatch = false
+
+            if rName and currentSubRoom and currentSubRoom.name and currentSubRoom.name == rName then
+                isMatch = true
+            elseif rKey and (currentRoomKey == rKey or (currentSubRoom and currentSubRoom.index == rKey)) then
+                isMatch = true
+            end
+
+            if isMatch then
+                local roomZ = (room.spawn and room.spawn.z) or (room.doorCoords and room.doorCoords.z) or (room.interior_center and room.interior_center.z) or (room.interiorCenter and room.interiorCenter.z)
+                if not roomZ or math.abs(coords.z - roomZ) < 3.5 then
+                    return room
+                end
+            end
+        end
+    end
+
+    -- 3. Standalone point-based custom rooms (ONLY for non-MLO / non-subroom templates without polygons)
+    for _, room in ipairs(Settings.Rooms) do
+        local hasPoly = room.corners and type(room.corners) == 'table' and #room.corners >= 3
+        local hasSubRoom = (room.room_name and room.room_name ~= '') or (room.roomName and room.roomName ~= '') or room.room_key or room.roomKey
+        if not hasPoly and not hasSubRoom and not room.buildingKey then
+            local refCoords = (room.interior_center and vec3(room.interior_center.x, room.interior_center.y, room.interior_center.z))
+                or (room.interiorCenter and vec3(room.interiorCenter.x, room.interiorCenter.y, room.interiorCenter.z))
+                or (room.interior_coords and vec3(room.interior_coords.x, room.interior_coords.y, room.interior_coords.z))
+                or (room.interiorCoords and vec3(room.interiorCoords.x, room.interiorCoords.y, room.interiorCoords.z))
+                or (room.spawn and vec3(room.spawn.x, room.spawn.y, room.spawn.z))
+            if refCoords then
+                local dist = #(coords - refCoords)
+                local radius = room.radius or 6.0
+                local zDiff = math.abs(coords.z - refCoords.z)
+                if dist <= radius and zDiff <= 3.5 then
+                    return room
+                end
+            end
+        end
+    end
+
     return nil
 end
 
@@ -310,20 +421,62 @@ local function leaveIfNoZone()
     if not insideApartment or not CurrentApartmentId then return end
     local ped = cache.ped or PlayerPedId()
     local coords = GetEntityCoords(ped)
+
     for _, r in ipairs(Settings.Rooms or {}) do
-        if r.id == CurrentApartmentId then
-            if not r.corners or #r.corners < 3 then
-                local refCoords = (r.spawn and vec3(r.spawn.x, r.spawn.y, r.spawn.z))
-                    or (r.interior_coords and vec3(r.interior_coords.x, r.interior_coords.y, r.interior_coords.z))
-                    or (r.doorCoords and vec3(r.doorCoords.x, r.doorCoords.y, r.doorCoords.z))
-                    or (r.interior_center and vec3(r.interior_center.x, r.interior_center.y, r.interior_center.z))
-                if refCoords and #(coords - refCoords) > 35.0 then
+        if r.id == CurrentApartmentId or tostring(r.id) == tostring(CurrentApartmentId) or tonumber(r.id) == tonumber(CurrentApartmentId) then
+            -- If room has corners, verify player is still inside the polygon
+            if r.corners and type(r.corners) == 'table' and #r.corners >= 3 then
+                if not isPointInPolygon(coords, r.corners, r.zOffset, r.thickness) then
                     LeaveApartmentRoom(CurrentApartmentId)
                 end
+                return
+            end
+
+            -- If room has room_name or room_key and ped is in an interior, verify sub-room
+            local rName = r.room_name or r.roomName
+            local rKey = tonumber(r.room_key or r.roomKey)
+            local interiorId = GetInteriorFromEntity(ped)
+            if (rName or rKey) and interiorId ~= 0 then
+                local rooms = getInteriorRooms(interiorId)
+                local currentKey = GetRoomKeyFromEntity(ped)
+                local currentRoom = rooms[currentKey]
+                local isMatch = false
+
+                if rName and currentRoom and currentRoom.name == rName then
+                    isMatch = true
+                elseif rKey and (currentKey == rKey or (currentRoom and currentRoom.index == rKey)) then
+                    isMatch = true
+                end
+
+                if not isMatch then
+                    LeaveApartmentRoom(CurrentApartmentId)
+                    return
+                end
+                return
+            end
+
+            -- Point radius check
+            local refCoords = (r.interior_center and vec3(r.interior_center.x, r.interior_center.y, r.interior_center.z))
+                or (r.interiorCenter and vec3(r.interiorCenter.x, r.interiorCenter.y, r.interiorCenter.z))
+                or (r.interior_coords and vec3(r.interior_coords.x, r.interior_coords.y, r.interior_coords.z))
+                or (r.interiorCoords and vec3(r.interiorCoords.x, r.interiorCoords.y, r.interiorCoords.z))
+                or (r.spawn and vec3(r.spawn.x, r.spawn.y, r.spawn.z))
+            if refCoords then
+                local dist = #(coords - refCoords)
+                local radius = (r.radius or 6.0) + 1.0
+                local zDiff = math.abs(coords.z - refCoords.z)
+                if dist > radius or zDiff > 3.5 then
+                    LeaveApartmentRoom(CurrentApartmentId)
+                end
+            else
+                LeaveApartmentRoom(CurrentApartmentId)
             end
             return
         end
     end
+
+    -- If current apartment is an MLO building unit, ResolveCurrentUnit returning nil means we left
+    LeaveApartmentRoom(CurrentApartmentId)
 end
 
 local currentUnitKey = nil
@@ -372,28 +525,24 @@ CreateThread(function()
                 if CurrentApartmentId then
                     LeaveApartmentRoom(CurrentApartmentId)
                 end
-            else
-                local interiorId = GetInteriorFromEntity(ped)
-                if interiorId == 0 then
-                    local coords = GetEntityCoords(ped)
-                    interiorId = GetInteriorAtCoords(coords.x, coords.y, coords.z)
-                end
+            end
 
-                if interiorId ~= 0 then
-                    local customRoom = ResolveCustomApartmentRoom(interiorId)
-                    if customRoom then
-                        if CurrentApartmentId ~= customRoom.id then
-                            if CurrentApartmentId then
-                                LeaveApartmentRoom(CurrentApartmentId)
-                            end
-                            EnterApartmentRoom(customRoom)
-                        end
-                    else
-                        leaveIfNoZone()
+            local interiorId = GetInteriorFromEntity(ped)
+            if interiorId == 0 then
+                local coords = GetEntityCoords(ped)
+                interiorId = GetInteriorAtCoords(coords.x, coords.y, coords.z)
+            end
+
+            local customRoom = ResolveCustomApartmentRoom(interiorId)
+            if customRoom then
+                if CurrentApartmentId ~= customRoom.id then
+                    if CurrentApartmentId then
+                        LeaveApartmentRoom(CurrentApartmentId)
                     end
-                else
-                    leaveIfNoZone()
+                    EnterApartmentRoom(customRoom)
                 end
+            else
+                leaveIfNoZone()
             end
         end
     end
@@ -535,39 +684,57 @@ RegisterNetEvent('LNS_Housing:client:updateApartmentWallColor', function(roomId,
     end
 end)
 
+local function normalizeRoomData(roomData)
+    if not roomData then return nil end
+    local cornersVec = {}
+    if roomData.corners and type(roomData.corners) == 'table' then
+        for i, c in ipairs(roomData.corners) do
+            cornersVec[i] = vec3(c.x, c.y, c.z)
+        end
+    end
+    roomData.corners = cornersVec
+
+    if roomData.doorCoords then
+        roomData.doorCoords = vec3(roomData.doorCoords.x, roomData.doorCoords.y, roomData.doorCoords.z)
+    end
+
+    if roomData.spawn then
+        roomData.spawn = vec4(roomData.spawn.x, roomData.spawn.y, roomData.spawn.z, roomData.spawn.w or 0.0)
+    end
+
+    local ic = roomData.interiorCenter or roomData.interior_center
+    if ic then
+        roomData.interior_center = vec3(ic.x, ic.y, ic.z)
+    end
+
+    local ico = roomData.interiorCoords or roomData.interior_coords
+    if ico then
+        roomData.interior_coords = vec3(ico.x, ico.y, ico.z)
+    end
+
+    roomData.interior_id = tonumber(roomData.interiorId or roomData.interior_id) or nil
+    roomData.room_name = roomData.roomName or roomData.room_name
+    roomData.room_key = tonumber(roomData.roomKey or roomData.room_key) or nil
+    return roomData
+end
+
 local function LoadCustomApartments()
     local customRooms = lib.callback.await('LNS_Housing:server:getApartmentRooms', false)
     if customRooms then
+        Settings.Rooms = Settings.Rooms or {}
         for _, roomData in ipairs(customRooms) do
-            local exists = false
-            for _, r in ipairs(Settings.Rooms) do
-                if r.id == roomData.id then
-                    exists = true
+            normalizeRoomData(roomData)
+            local foundIndex = nil
+            for idx, r in ipairs(Settings.Rooms) do
+                if r.id == roomData.id or tostring(r.id) == tostring(roomData.id) or tonumber(r.id) == tonumber(roomData.id) then
+                    foundIndex = idx
                     break
                 end
             end
             
-            if not exists then
-                local cornersVec = {}
-                if roomData.corners and type(roomData.corners) == 'table' then
-                    for i, c in ipairs(roomData.corners) do
-                        cornersVec[i] = vec3(c.x, c.y, c.z)
-                    end
-                end
-                roomData.corners = cornersVec
-                
-                if roomData.doorCoords then
-                    roomData.doorCoords = vec3(roomData.doorCoords.x, roomData.doorCoords.y, roomData.doorCoords.z)
-                end
-                
-                if roomData.spawn then
-                    roomData.spawn = vec4(roomData.spawn.x, roomData.spawn.y, roomData.spawn.z, roomData.spawn.w or 0.0)
-                end
-
-                roomData.interior_id = tonumber(roomData.interiorId or roomData.interior_id) or nil
-                roomData.room_name = roomData.roomName or roomData.room_name
-                roomData.room_key = tonumber(roomData.roomKey or roomData.room_key) or nil
-                
+            if foundIndex then
+                Settings.Rooms[foundIndex] = roomData
+            else
                 table.insert(Settings.Rooms, roomData)
             end
         end
@@ -578,7 +745,34 @@ end
 local function initApartmentForPlayer()
     local assignedRoom = lib.callback.await('LNS_Housing:server:getMyApartment', false)
     if assignedRoom then
+        if assignedRoom.roomData then
+            normalizeRoomData(assignedRoom.roomData)
+            local exists = false
+            for idx, r in ipairs(Settings.Rooms or {}) do
+                if r.id == assignedRoom.roomData.id or tostring(r.id) == tostring(assignedRoom.roomData.id) then
+                    Settings.Rooms[idx] = assignedRoom.roomData
+                    exists = true
+                    break
+                end
+            end
+            if not exists then
+                Settings.Rooms = Settings.Rooms or {}
+                table.insert(Settings.Rooms, assignedRoom.roomData)
+            end
+        end
         TriggerEvent('LNS_Housing:client:setApartmentData', assignedRoom.roomId, assignedRoom.roomData)
+
+        -- Immediately evaluate if the player is currently inside a room
+        local ped = cache.ped or PlayerPedId()
+        local interiorId = GetInteriorFromEntity(ped)
+        if interiorId == 0 then
+            local coords = GetEntityCoords(ped)
+            interiorId = GetInteriorAtCoords(coords.x, coords.y, coords.z)
+        end
+        local matched = ResolveCustomApartmentRoom(interiorId)
+        if matched then
+            EnterApartmentRoom(matched)
+        end
     end
 end
 
@@ -696,18 +890,24 @@ local function RegisterApartmentDoors(delay)
     end)
 end
 
-RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
-    debugPrint('info', 'Apartments QBCore:Client:OnPlayerLoaded received')
+local function OnClientPlayerLoaded()
+    debugPrint('info', 'Apartments playerLoaded received')
     LoadCustomApartments()
     initApartmentForPlayer()
     RegisterApartmentDoors(true)
-end)
+end
 
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', OnClientPlayerLoaded)
+AddEventHandler('QBCore:Client:OnPlayerLoaded', OnClientPlayerLoaded)
 RegisterNetEvent('esx:playerLoaded', function(xPlayer)
     debugPrint('info', 'Apartments esx:playerLoaded received', {identifier = xPlayer and xPlayer.identifier})
-    LoadCustomApartments()
-    initApartmentForPlayer()
-    RegisterApartmentDoors(true)
+    OnClientPlayerLoaded()
+end)
+
+AddStateBagChangeHandler('isLoggedIn', nil, function(bagName, key, value)
+    if bagName == ('player:%s'):format(GetPlayerServerId(PlayerId())) and value then
+        OnClientPlayerLoaded()
+    end
 end)
 
 RegisterNetEvent('LNS_Housing:client:spawnInStarterApartment', function()

@@ -173,7 +173,7 @@ return {
     },
 
     ----------------------------------------------------------------------------
-    -- Security, Burglary & Key Settings
+    -- Security, Burglary & Key Settings (RAM IS EXPERIMENTAL!)
     ----------------------------------------------------------------------------
     Security = {
         LockpickItem = 'lockpick',          -- Item needed for ordinary house lockpicking

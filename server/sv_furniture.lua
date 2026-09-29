@@ -38,19 +38,38 @@ RegisterNetEvent('LNS_Housing:server:saveFurniture', function(propertyId, furnit
     local src = source
     debugPrint('info', 'LNS_Housing:server:saveFurniture received', {src = src, propertyId = propertyId, itemsCount = furnitureData and #furnitureData or 0})
     local p = Properties[propertyId]
-    if not p then return end
+    if p then
+        local identifier = Bridge.Server.GetIdentifier(src)
+        local hasAccess = CheckPermission(src, 'house', propertyId, 'furniture')
+        if not hasAccess then return end
 
-    local identifier = Bridge.Server.GetIdentifier(src)
-    local hasAccess = CheckPermission(src, 'house', propertyId, 'furniture')
-    if not hasAccess then return end
-
-    p.furniture = furnitureData
-    SaveProperty(propertyId)
-    if CalculatePropertyPowerAndTemp then CalculatePropertyPowerAndTemp(propertyId) end
-    if Bridge and Bridge.Server and Bridge.Server.RegisterPropertyStashes then
-        Bridge.Server.RegisterPropertyStashes(propertyId, p.furniture)
+        p.furniture = furnitureData
+        SaveProperty(propertyId)
+        if CalculatePropertyPowerAndTemp then CalculatePropertyPowerAndTemp(propertyId) end
+        if Bridge and Bridge.Server and Bridge.Server.RegisterPropertyStashes then
+            Bridge.Server.RegisterPropertyStashes(propertyId, p.furniture)
+        end
+        TriggerClientEvent('LNS_Housing:client:updateFurniture', -1, propertyId, p.furniture)
+        return
     end
-    TriggerClientEvent('LNS_Housing:client:updateFurniture', -1, propertyId, p.furniture)
+
+    local hasAptAccess = CheckPermission(src, 'apartment', propertyId, 'furniture')
+    if hasAptAccess then
+        local citizenid = Bridge.Server.GetIdentifier(src)
+        if citizenid then
+            MySQL.update.await('UPDATE apartments SET furniture = ? WHERE (room_id = ? OR room_id = ?)', {
+                json.encode(furnitureData or {}),
+                propertyId,
+                tostring(propertyId)
+            })
+
+            if Bridge and Bridge.Server and Bridge.Server.RegisterPropertyStashes then
+                Bridge.Server.RegisterPropertyStashes(propertyId, furnitureData)
+            end
+
+            TriggerClientEvent('LNS_Housing:client:updateApartmentFurniture', -1, propertyId, furnitureData)
+        end
+    end
 end)
 
 function RegisterStash(propertyId, furnitureId, config)

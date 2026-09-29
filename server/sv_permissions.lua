@@ -342,6 +342,13 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
             end
         end
 
+        if not isOwner and license then
+            local checkPlayerApt = MySQL.single.await('SELECT room_id FROM player_apartments WHERE license = ?', {license})
+            if checkPlayerApt and (checkPlayerApt.room_id == roomId or tostring(checkPlayerApt.room_id) == tostring(roomId) or tonumber(checkPlayerApt.room_id) == tonumber(roomId)) then
+                isOwner = true
+            end
+        end
+
         if accessType == 'lockpick' then
             if Settings.Apartments and not Settings.Apartments.CanBreakIn then return false end
             if isOwner then return false end

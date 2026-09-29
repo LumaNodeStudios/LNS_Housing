@@ -22,11 +22,9 @@ if not Settings.Apartments or not Settings.Apartments.Enabled then
 end
 
 local function GetPlayerLicense(src)
-    local license = GetPlayerIdentifierByType(src, 'license2')
-    if not license or license == '' then
-        license = GetPlayerIdentifierByType(src, 'license')
-    end
-    return license
+    local lic = GetPlayerIdentifierByType(src, 'license')
+    local lic2 = GetPlayerIdentifierByType(src, 'license2')
+    return lic or lic2, lic2 or lic
 end
 
 local function CreateApartmentDoorlocks()
@@ -172,7 +170,7 @@ end)
 
 local function getRoomDataById(roomId)
     for _, room in ipairs(Settings.Rooms) do
-        if room.id == roomId then
+        if room.id == roomId or tostring(room.id) == tostring(roomId) or (tonumber(room.id) and tonumber(roomId) and tonumber(room.id) == tonumber(roomId)) then
             return room
         end
     end
@@ -249,16 +247,16 @@ local function getAvailableRoom()
 end
 
 local function getPlayerRoom(src, citizenid, isNew)
-    local license = GetPlayerLicense(src)
-    if not license then return nil end
+    local lic1, lic2 = GetPlayerLicense(src)
+    if not lic1 and not lic2 then return nil end
 
-    if playerRooms[license] then
-        return playerRooms[license]
-    end
+    if playerRooms[lic1] then return playerRooms[lic1] end
+    if lic2 and playerRooms[lic2] then return playerRooms[lic2] end
 
-    local result = MySQL.single.await('SELECT room_id FROM player_apartments WHERE license = ?', {license})
+    local result = MySQL.single.await('SELECT room_id FROM player_apartments WHERE license = ? OR license = ?', {lic1, lic2})
     if result then
-        playerRooms[license] = result.room_id
+        playerRooms[lic1] = result.room_id
+        if lic2 then playerRooms[lic2] = result.room_id end
         assignedRoomIds[result.room_id] = true
         return result.room_id
     end
@@ -270,21 +268,23 @@ local function getPlayerRoom(src, citizenid, isNew)
 
         local insertSuccess = pcall(function()
             MySQL.insert.await('INSERT INTO player_apartments (license, room_id, is_new) VALUES (?, ?, ?)', {
-                license,
+                lic1,
                 room.id,
                 isNewChar and 1 or 0
             })
         end)
 
         if insertSuccess then
-            playerRooms[license] = room.id
+            playerRooms[lic1] = room.id
+            if lic2 then playerRooms[lic2] = room.id end
             SyncApartmentDoor(room.id)
             return room.id
         else
             assignedRoomIds[room.id] = nil
-            local r = MySQL.single.await('SELECT room_id FROM player_apartments WHERE license = ?', {license})
+            local r = MySQL.single.await('SELECT room_id FROM player_apartments WHERE license = ? OR license = ?', {lic1, lic2})
             if r then
-                playerRooms[license] = r.room_id
+                playerRooms[lic1] = r.room_id
+                if lic2 then playerRooms[lic2] = r.room_id end
                 assignedRoomIds[r.room_id] = true
                 return r.room_id
             end
@@ -347,22 +347,32 @@ local function OnPlayerUnloaded(src)
     lastNoRoomNotify[src] = nil
     SetPlayerRoutingBucket(src, 0)
     TriggerClientEvent('LNS_Housing:client:cleanUpApartmentSession', src)
+    TriggerClientEvent('LNS_Housing:client:cleanUpHousingSession', src)
 end
 
 if Bridge.Framework == 'qbx' then
+    AddEventHandler('QBCore:Server:PlayerLoaded', function(player)
+        local src = player and (player.PlayerData and player.PlayerData.source or player.source) or source
+        if src then OnPlayerLoaded(src) end
+    end)
     RegisterNetEvent('QBCore:Server:OnPlayerLoaded', function()
         local src = source
-        OnPlayerLoaded(src)
+        if src then OnPlayerLoaded(src) end
+    end)
+    AddEventHandler('qbx_core:server:playerLoaded', function(playerData)
+        local src = playerData and (playerData.PlayerData and playerData.PlayerData.source or playerData.source) or source
+        if src then OnPlayerLoaded(src) end
     end)
     AddEventHandler('QBCore:Server:OnPlayerUnload', function(src)
         src = src or source
-        OnPlayerUnloaded(src)
+        if src then OnPlayerUnloaded(src) end
+    end)
+    AddEventHandler('playerDropped', function()
+        local src = source
+        if src then OnPlayerUnloaded(src) end
     end)
 elseif Bridge.Framework == 'esx' then
     RegisterNetEvent('esx:playerLoaded', function(playerId, xPlayer)
-        OnPlayerLoaded(playerId)
-    end)
-    RegisterNetEvent('esx:onPlayerInitialised', function(playerId)
         OnPlayerLoaded(playerId)
     end)
     AddEventHandler('esx:playerLogout', function(playerId)
@@ -386,7 +396,6 @@ AddEventHandler('onResourceStart', function(resourceName)
 end)
 
 lib.callback.register('LNS_Housing:server:getMyApartment', function(source)
-    debugPrint('info', 'LNS_Housing:server:getMyApartment called', {source = source})
     WaitForDb()
     local citizenid = Bridge.Server.GetIdentifier(source)
     if not citizenid then return nil end
@@ -452,7 +461,7 @@ lib.callback.register('LNS_Housing:server:claimNewCharacterSpawn', function(sour
 end)
 
 local function FindManagedApartment(roomId, citizenid)
-    local results = MySQL.query.await('SELECT citizenid, permissions, furniture FROM apartments WHERE room_id = ?', {roomId})
+    local results = MySQL.query.await('SELECT citizenid, permissions, furniture FROM apartments WHERE room_id = ? OR room_id = ?', {roomId, tostring(roomId)})
     if not results then return nil end
 
     for _, row in ipairs(results) do
@@ -479,11 +488,39 @@ lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, ro
     local citizenid = Bridge.Server.GetIdentifier(source)
     if not citizenid then return nil end
 
-    local result = MySQL.single.await('SELECT * FROM apartments WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
+    local license = GetPlayerLicense(source)
+
+    local result = MySQL.single.await('SELECT * FROM apartments WHERE (room_id = ? OR room_id = ?) AND citizenid = ?', {roomId, tostring(roomId), citizenid})
     if not result then
         result = FindManagedApartment(roomId, citizenid)
         if not result then
-            result = MySQL.single.await('SELECT * FROM apartments WHERE room_id = ? ORDER BY id ASC LIMIT 1', {roomId})
+            result = MySQL.single.await('SELECT * FROM apartments WHERE (room_id = ? OR room_id = ?) ORDER BY id ASC LIMIT 1', {roomId, tostring(roomId)})
+        end
+    end
+
+    if not result and license then
+        local checkApt = MySQL.single.await('SELECT room_id FROM player_apartments WHERE license = ?', {license})
+        if checkApt and (checkApt.room_id == roomId or tostring(checkApt.room_id) == tostring(roomId) or tonumber(checkApt.room_id) == tonumber(roomId)) then
+            local roomData = getRoomDataById(roomId)
+            local initialFurniture = {}
+            if roomData and roomData.tabletCoords then
+                table.insert(initialFurniture, {
+                    id = math.random(100000, 999999),
+                    model = 'reh_prop_reh_tablet_01a',
+                    label = 'Property Panel',
+                    position = vec3(roomData.tabletCoords.position.x, roomData.tabletCoords.position.y, roomData.tabletCoords.position.z),
+                    rotation = vec3(roomData.tabletCoords.rotation.x, roomData.tabletCoords.rotation.y, roomData.tabletCoords.rotation.z),
+                    category = 'prerequisites'
+                })
+            end
+            MySQL.insert.await('INSERT INTO apartments (citizenid, room_id, permissions, furniture, wall_color) VALUES (?, ?, ?, ?, ?)', {
+                citizenid,
+                roomId,
+                json.encode({entry = {}, storage = {}, wardrobe = {}, furniture = {}, manage = {}}),
+                json.encode(initialFurniture),
+                0
+            })
+            result = MySQL.single.await('SELECT * FROM apartments WHERE (room_id = ? OR room_id = ?) AND citizenid = ?', {roomId, tostring(roomId), citizenid})
         end
     end
     if result then
@@ -884,7 +921,7 @@ end
 lib.callback.register('LNS_Housing:server:doesApartmentExist', function(source, roomId)
     debugPrint('info', 'LNS_Housing:server:doesApartmentExist called', {source = source, roomId = roomId})
     for _, room in ipairs(Settings.Rooms) do
-        if room.id == roomId then
+        if room.id == roomId or tostring(room.id) == tostring(roomId) or (tonumber(room.id) and tonumber(roomId) and tonumber(room.id) == tonumber(roomId)) then
             return true
         end
     end
@@ -952,12 +989,12 @@ lib.callback.register('LNS_Housing:server:createApartment', function(source, dat
     local doorCoords = nil
     local doorHeading = nil
 
-    local interiorId = tonumber(data.interiorId or data.interior_id) or nil
+    local interiorId = tonumber(data.interiorId or data.interior_id or (data.spawn and data.spawn.interior and data.spawn.interior.interiorId)) or nil
     local interiorCoords = data.interiorCoords or data.interior_coords or nil
-    local interiorCenter = data.interiorCenter or data.interior_center or nil
-    local roomCount = tonumber(data.roomCount or data.room_count) or nil
-    local roomName = data.roomName or data.room_name or nil
-    local roomKey = tonumber(data.roomKey or data.room_key) or nil
+    local interiorCenter = data.interiorCenter or data.interior_center or (data.spawn and data.spawn.interior and data.spawn.interior.center) or nil
+    local roomCount = tonumber(data.roomCount or data.room_count or (data.spawn and data.spawn.interior and data.spawn.interior.roomCount)) or nil
+    local roomName = data.roomName or data.room_name or (data.spawn and data.spawn.interior and data.spawn.interior.roomName) or nil
+    local roomKey = tonumber(data.roomKey or data.room_key or (data.spawn and data.spawn.interior and data.spawn.interior.roomKey)) or nil
 
     if door then
         if type(door) == 'table' then
@@ -1117,12 +1154,12 @@ lib.callback.register('LNS_Housing:server:updateApartment', function(source, dat
     local doorCoords = nil
     local doorHeading = nil
 
-    local interiorId = tonumber(data.interiorId or data.interior_id) or nil
+    local interiorId = tonumber(data.interiorId or data.interior_id or (data.spawn and data.spawn.interior and data.spawn.interior.interiorId)) or nil
     local interiorCoords = data.interiorCoords or data.interior_coords or nil
-    local interiorCenter = data.interiorCenter or data.interior_center or nil
-    local roomCount = tonumber(data.roomCount or data.room_count) or nil
-    local roomName = data.roomName or data.room_name or nil
-    local roomKey = tonumber(data.roomKey or data.room_key) or nil
+    local interiorCenter = data.interiorCenter or data.interior_center or (data.spawn and data.spawn.interior and data.spawn.interior.center) or nil
+    local roomCount = tonumber(data.roomCount or data.room_count or (data.spawn and data.spawn.interior and data.spawn.interior.roomCount)) or nil
+    local roomName = data.roomName or data.room_name or (data.spawn and data.spawn.interior and data.spawn.interior.roomName) or nil
+    local roomKey = tonumber(data.roomKey or data.room_key or (data.spawn and data.spawn.interior and data.spawn.interior.roomKey)) or nil
 
     if door then
         if type(door) == 'table' then

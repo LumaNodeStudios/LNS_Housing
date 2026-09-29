@@ -905,7 +905,7 @@ end, false)
 local function TryOpenFurnitureMenu()
     if not HasFurnitureManagePermission then return end
 
-    local propertyId = InsidePropertyId or CurrentApartmentId or (insideApartment and MyApartmentId)
+    local propertyId = InsidePropertyId or CurrentApartmentId
     if propertyId then
         TriggerEvent('LNS_Housing:client:openFurnitureMenu', propertyId)
     end

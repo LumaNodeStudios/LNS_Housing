@@ -1448,26 +1448,31 @@ CreateThread(function()
 end)
 
 
-RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
-    debugPrint('info', 'QBCore:Client:OnPlayerLoaded received')
+local function OnClientHousingPlayerLoaded()
+    debugPrint('info', 'Housing playerLoaded received')
     InitializeHousing()
-end)
+end
 
+local function OnClientHousingPlayerUnloaded()
+    debugPrint('info', 'Housing playerLoggedOut received')
+    CleanUpHousingSession()
+end
+
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', OnClientHousingPlayerLoaded)
+AddEventHandler('QBCore:Client:OnPlayerLoaded', OnClientHousingPlayerLoaded)
 RegisterNetEvent('esx:playerLoaded', function(xPlayer)
     debugPrint('info', 'esx:playerLoaded received', {identifier = xPlayer and xPlayer.identifier})
-    InitializeHousing()
+    OnClientHousingPlayerLoaded()
 end)
 
-RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
-    debugPrint('info', 'QBCore:Client:OnPlayerUnload received')
-    CleanUpHousingSession()
+AddStateBagChangeHandler('isLoggedIn', nil, function(bagName, key, value)
+    if bagName == ('player:%s'):format(GetPlayerServerId(PlayerId())) and value then
+        OnClientHousingPlayerLoaded()
+    end
 end)
 
-RegisterNetEvent('esx:onPlayerLogout', function()
-    debugPrint('info', 'esx:onPlayerLogout received')
-    CleanUpHousingSession()
-end)
-
+RegisterNetEvent('LNS_Housing:client:cleanUpHousingSession', CleanUpHousingSession)
+RegisterNetEvent('qbx_core:client:playerLoggedOut', OnClientHousingPlayerUnloaded)
 
 CreateThread(function()
     while true do
