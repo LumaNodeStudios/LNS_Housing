@@ -1,10 +1,9 @@
 local Settings = lib.load('shared.settings')
 
-RegisterNetEvent('LNS_Housing:server:buyFurniture', function(propertyId, items, totalPrice, paymentMethod)
-    local src = source
+local function ProcessBuyFurniture(src, propertyId, items, totalPrice, paymentMethod)
     debugPrint('info', 'LNS_Housing:server:buyFurniture received', {src = src, propertyId = propertyId, totalPrice = totalPrice, paymentMethod = paymentMethod})
     local p = Properties[propertyId]
-    if not p then return end
+    if not p then return false, 'Property not found' end
 
     local identifier = Bridge.Server.GetIdentifier(src)
     local payType = paymentMethod == 'cash' and 'cash' or 'bank'
@@ -13,13 +12,20 @@ RegisterNetEvent('LNS_Housing:server:buyFurniture', function(propertyId, items, 
     if money < totalPrice then
         local targetAccountName = payType == 'cash' and 'cash' or 'bank account'
         Bridge.Server.Notify(src, 'Not enough money in your ' .. targetAccountName .. '!', 'error')
-        return
+        return false, 'Not enough money'
     end
 
     local hasAccess = CheckPermission(src, 'house', propertyId, 'furniture')
-    if not hasAccess then return end
+    if not hasAccess then
+        Bridge.Server.Notify(src, 'You do not have permission to buy furniture here.', 'error')
+        return false, 'No permission'
+    end
 
-    Bridge.Server.RemoveMoney(src, payType, totalPrice, "Bought furniture for house #" .. propertyId)
+    local removed = Bridge.Server.RemoveMoney(src, payType, totalPrice, "Bought furniture for house #" .. propertyId)
+    if not removed and totalPrice > 0 then
+        Bridge.Server.Notify(src, 'Could not process payment.', 'error')
+        return false, 'Payment failed'
+    end
 
     if not p.furniture then p.furniture = {} end
     for _, item in ipairs(items) do
@@ -32,6 +38,16 @@ RegisterNetEvent('LNS_Housing:server:buyFurniture', function(propertyId, items, 
         Bridge.Server.RegisterPropertyStashes(propertyId, p.furniture)
     end
     TriggerClientEvent('LNS_Housing:client:updateFurniture', -1, propertyId, p.furniture)
+    Bridge.Server.Notify(src, 'Furniture purchased successfully!', 'success')
+    return true
+end
+
+lib.callback.register('LNS_Housing:server:buyFurniture', function(source, propertyId, items, totalPrice, paymentMethod)
+    return ProcessBuyFurniture(source, propertyId, items, totalPrice, paymentMethod)
+end)
+
+RegisterNetEvent('LNS_Housing:server:buyFurniture', function(propertyId, items, totalPrice, paymentMethod)
+    ProcessBuyFurniture(source, propertyId, items, totalPrice, paymentMethod)
 end)
 
 RegisterNetEvent('LNS_Housing:server:saveFurniture', function(propertyId, furnitureData)

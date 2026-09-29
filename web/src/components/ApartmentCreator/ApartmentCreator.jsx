@@ -450,7 +450,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                                     <Layers size={18} />
                                                 </div>
                                                 <div className="setup-card-text">
-                                                    <span className="setup-title">Native Interior Detection</span>
+                                                    <span className="setup-title">Interior Detection</span>
                                                     <span className={`setup-status ${interiorData ? 'defined' : ''}`}>
                                                         {interiorData ? `Captured (${interiorData.roomName ? `Room: ${interiorData.roomName} | ` : ''}ID: #${interiorData.interiorId})` : 'Stand inside & capture'}
                                                     </span>
@@ -637,7 +637,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                             <Layers size={18} />
                                         </div>
                                         <div className="setup-card-text">
-                                            <span className="setup-title">Native Interior Detection</span>
+                                            <span className="setup-title">Interior Detection</span>
                                             <span className={`setup-status ${interiorData ? 'defined' : ''}`}>
                                                 {interiorData ? `Captured (${interiorData.roomName ? `Room: ${interiorData.roomName} | ` : ''}ID: #${interiorData.interiorId})` : 'Stand inside & capture'}
                                             </span>
@@ -697,7 +697,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                     </button>
                                 </div>
 
-                                {/* Custom Poly Zone */}
+                                {/* Custom Poly Zone
                                 <div className={`apt-setup-card ${zoneData ? 'defined' : ''}`}>
                                     <div className="setup-card-info">
                                         <div className="setup-card-icon-wrapper">
@@ -718,6 +718,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                         {zoneData ? <Check size={16} /> : 'Define'}
                                     </button>
                                 </div>
+                                */}
 
                                 {/* Tablet */}
                                 <div className={`apt-setup-card ${tabletData ? 'defined' : ''}`}>

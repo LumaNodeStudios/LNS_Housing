@@ -681,32 +681,31 @@ RegisterNetEvent('LNS_Housing:server:saveApartmentFurniture', function(roomId, f
     end
 end)
 
-RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, items, totalPrice, paymentMethod)
-    local src = source
+local function ProcessBuyApartmentFurniture(src, roomId, items, totalPrice, paymentMethod)
     local citizenid = Bridge.Server.GetIdentifier(src)
-    if not citizenid then return end
+    if not citizenid then return false, 'No identifier' end
 
     if type(items) ~= 'table' then
         Bridge.Server.Notify(src, 'Invalid furniture payload.', 'error')
-        return
+        return false, 'Invalid payload'
     end
 
     local price = tonumber(totalPrice)
     if not price or price ~= price then
         Bridge.Server.Notify(src, 'Invalid purchase amount.', 'error')
-        return
+        return false, 'Invalid amount'
     end
 
     price = math.floor(price + 0.0)
     if price < 0 then
         Bridge.Server.Notify(src, 'Invalid purchase amount.', 'error')
-        return
+        return false, 'Invalid amount'
     end
 
     local result = FindManagedApartment(roomId, citizenid)
     if not result then
         Bridge.Server.Notify(src, 'You do not have management access to this apartment.', 'error')
-        return
+        return false, 'No access'
     end
 
     local payType = paymentMethod == 'cash' and 'cash' or 'bank'
@@ -715,14 +714,14 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
         if money < price then
             local targetAccountName = payType == 'cash' and 'cash' or 'bank account'
             Bridge.Server.Notify(src, 'Not enough money in your ' .. targetAccountName .. '!', 'error')
-            return
+            return false, 'Not enough money'
         end
 
         local removed = Bridge.Server.RemoveMoney(src, payType, price, "Bought furniture for apartment #" .. roomId)
         if not removed then
             local targetAccountName = payType == 'cash' and 'cash' or 'bank'
             Bridge.Server.Notify(src, 'Could not process ' .. targetAccountName .. ' payment.', 'error')
-            return
+            return false, 'Payment failed'
         end
     end
 
@@ -746,7 +745,7 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
     end)
     if not okEncode then
         Bridge.Server.Notify(src, 'Could not process furniture data.', 'error')
-        return
+        return false, 'Encode failed'
     end
 
     local okUpdate, updateResult = pcall(function()
@@ -758,7 +757,7 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
     end)
     if not okUpdate then
         Bridge.Server.Notify(src, 'Database error while saving furniture.', 'error')
-        return
+        return false, 'Database error'
     end
 
     if Bridge.Server.RegisterPropertyStashes then
@@ -768,6 +767,15 @@ RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, it
 
     TriggerClientEvent('LNS_Housing:client:updateApartmentFurniture', -1, roomId, currentFurniture)
     Bridge.Server.Notify(src, 'Furniture bought successfully!', 'success')
+    return true
+end
+
+lib.callback.register('LNS_Housing:server:buyApartmentFurniture', function(source, roomId, items, totalPrice, paymentMethod)
+    return ProcessBuyApartmentFurniture(source, roomId, items, totalPrice, paymentMethod)
+end)
+
+RegisterNetEvent('LNS_Housing:server:buyApartmentFurniture', function(roomId, items, totalPrice, paymentMethod)
+    ProcessBuyApartmentFurniture(source, roomId, items, totalPrice, paymentMethod)
 end)
 
 local function GetEntranceCoordsServer(p)

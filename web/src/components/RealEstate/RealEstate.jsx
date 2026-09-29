@@ -1504,7 +1504,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                                     <div className="re-interactive-row">
                                                         <div className="re-interactive-info">
-                                                            <span className="re-interactive-label">MLO Interior (Native ID & Point)</span>
+                                                            <span className="re-interactive-label">Interior Detection</span>
                                                             <span className={`re-interactive-status ${formData.interiorId ? 'active' : ''}`}>
                                                                 {formData.interiorId ? `Interior ID: #${formData.interiorId} (${formData.roomCount || 1} Rooms)` : 'Stand inside MLO & Capture'}
                                                             </span>

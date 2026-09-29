@@ -76,6 +76,21 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
   }, [items, activeCategory]);
 
   useEffect(() => {
+    // Fetch active cart on mount if any
+    if (window.GetParentResourceName) {
+      fetch(`https://${window.GetParentResourceName()}/getCart`, {
+        method: 'POST',
+        body: JSON.stringify({})
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) {
+            setCart(data);
+          }
+        })
+        .catch(() => {});
+    }
+
     const handleMessage = (event) => {
       if (event.data.action === 'freecamMode') {
         setFreecamMode(event.data.data);
@@ -84,6 +99,8 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
         setPlacingItem(event.data.data);
       } else if (event.data.action === 'addToCart') {
         setCart(prevCart => [...prevCart, event.data.data]);
+      } else if (event.data.action === 'setCart') {
+        setCart(event.data.data || []);
       } else if (event.data.action === 'clearCart') {
         setCart([]);
       }
@@ -244,11 +261,24 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
     setPlacingItem(null);
   };
 
-  const handleBuy = (paymentMethod) => {
-    post('buyCartItems', { items: cart, paymentMethod });
-    setCart([]);
-    setActiveTab('shopping');
+  const handleBuy = async (paymentMethod) => {
     setShowPaymentModal(false);
+    if (window.GetParentResourceName) {
+      try {
+        const response = await fetch(`https://${window.GetParentResourceName()}/buyCartItems`, {
+          method: 'POST',
+          body: JSON.stringify({ items: cart, paymentMethod })
+        });
+        const result = await response.json();
+        if (result && result.success) {
+          setCart([]);
+          setActiveTab('shopping');
+        }
+        // If not successful (e.g. no money), the basket is not cleared and remains fully intact!
+      } catch (err) {
+        console.error('Error buying cart items:', err);
+      }
+    }
   };
 
   const handleClose = () => {
@@ -385,6 +415,19 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                           {cart.length} {cart.length === 1 ? 'item' : 'items'}
                         </span>
                       </div>
+                      {cart.length > 0 && (
+                        <button
+                          className="cart-clear-btn"
+                          onClick={() => {
+                            setCart([]);
+                            post('clearCart');
+                          }}
+                          title="Clear all items in basket"
+                        >
+                          <Trash2 size={13} />
+                          <span>Clear Basket</span>
+                        </button>
+                      )}
                     </div>
 
                     {cart.length === 0 ? (
@@ -411,7 +454,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                               const ItemIcon = getItemIcon(item);
                               return (
                                 <motion.div
-                                  key={item.entity || idx}
+                                  key={item.cartId || item.entity || idx}
                                   className="cart-list-item"
                                   initial={{ opacity: 0, y: 10, scale: 0.98 }}
                                   animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -433,7 +476,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                                         const newCart = [...cart];
                                         newCart.splice(idx, 1);
                                         setCart(newCart);
-                                        post('removeCartItem', { entity: item.entity });
+                                        post('removeCartItem', { cartId: item.cartId, entity: item.entity, model: item.model, position: item.position });
                                       }}
                                       title="Remove item"
                                     >

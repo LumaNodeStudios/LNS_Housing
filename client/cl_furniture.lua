@@ -13,6 +13,7 @@ Modeler = {
     CurrentCameraLookAt = nil,
     CurrentObjectAlpha = 200,
     Cart = {},
+    last_property_id = nil,
     IsHovering = false,
     HoverObject = nil,
     HoverDistance = 5.0,
@@ -22,15 +23,30 @@ Modeler = {
         local property = Properties[propertyId]
         if not property then return end
 
+        if self.last_property_id and self.last_property_id ~= propertyId then
+            self:ClearCart()
+        end
+        self.last_property_id = propertyId
+
         local entranceCoords = GetEntranceCoords(property)
         self.shellPos = entranceCoords or GetEntityCoords(cache.ped)
         self.property_id = propertyId
         self.IsMenuActive = true
         self.MenuOpen = true
+        self:SpawnCartProps()
         self:UpdateOwnedItems()
         self:StartSelectionThread()
 
         SendNUIMessage({ action = "setVisible", data = true })
+
+        local cartList = {}
+        for _, item in pairs(self.Cart) do
+            table.insert(cartList, item)
+        end
+        SendNUIMessage({
+            action = "setCart",
+            data = cartList
+        })
 
         if self.FurnitureDataReady then
             SendNUIMessage({ action = "setFurnituresData", data = Furniture })
@@ -71,7 +87,7 @@ Modeler = {
         self.MenuOpen = false
         SetNuiFocus(false, false)
         self:StopPlacement()
-        self:ClearCart()
+        self:DespawnCartProps()
 
         SendNUIMessage({
 			action = "setOwnedItems",
@@ -495,8 +511,35 @@ Modeler = {
 		})
     end,
 
+    SpawnCartProps = function(self)
+        for cartId, item in pairs(self.Cart) do
+            if not item.entity or not DoesEntityExist(item.entity) then
+                local hash = tonumber(item.model) or GetHashKey(item.model)
+                lib.requestModel(hash)
+                local obj = CreateObjectNoOffset(hash, item.position.x, item.position.y, item.position.z, false, false, false)
+                SetEntityRotation(obj, item.rotation.x, item.rotation.y, item.rotation.z, 2, true)
+                FreezeEntityPosition(obj, true)
+                SetEntityCollision(obj, true, true)
+                SetEntityAlpha(obj, 255, false)
+                SetEntityDrawOutline(obj, false)
+                item.entity = obj
+            end
+        end
+    end,
+
+    DespawnCartProps = function(self)
+        for cartId, item in pairs(self.Cart) do
+            if item.entity and DoesEntityExist(item.entity) then
+                DeleteEntity(item.entity)
+                item.entity = nil
+            end
+        end
+    end,
+
     AddToCart = function(self, data)
+        local cartId = tostring(math.random(100000, 999999)) .. '_' .. tostring(GetGameTimer())
         local item = {
+            cartId = cartId,
             label = data.label,
             model = data.model,
             price = data.price,
@@ -513,7 +556,7 @@ Modeler = {
             SetEntityDrawOutline(self.CurrentObject, false)
         end
 
-        self.Cart[self.CurrentObject] = item
+        self.Cart[cartId] = item
 
         SendNUIMessage({
             action = "addToCart",
@@ -524,17 +567,27 @@ Modeler = {
     end,
 
     RemoveCartItem = function(self, data)
+        local targetCartId = data.cartId
         local entity = tonumber(data.entity)
-        if entity and DoesEntityExist(entity) then
-            DeleteEntity(entity)
-            self.Cart[entity] = nil
+
+        local foundKey = nil
+        for k, v in pairs(self.Cart) do
+            if (targetCartId and v.cartId == targetCartId) or (entity and v.entity == entity) or (data.model and v.model == data.model and v.position and data.position and #(vector3(v.position.x, v.position.y, v.position.z) - vector3(data.position.x, data.position.y, data.position.z)) < 0.05) then
+                foundKey = k
+                if v.entity and DoesEntityExist(v.entity) then
+                    DeleteEntity(v.entity)
+                end
+                break
+            end
+        end
+
+        if foundKey then
+            self.Cart[foundKey] = nil
         end
     end,
 
     ClearCart = function(self)
-        for _, v in pairs(self.Cart) do
-            DeleteEntity(v.entity)
-        end
+        self:DespawnCartProps()
         self.Cart = {}
         SendNUIMessage({ action = "clearCart" })
     end,
@@ -544,7 +597,7 @@ Modeler = {
         local totalPrice = 0
 
         for _, v in pairs(self.Cart) do
-            totalPrice = totalPrice + v.price
+            totalPrice = totalPrice + (v.price or 0)
             items[#items + 1] = {
                 id = math.random(100000, 999999),
                 model = v.model,
@@ -555,13 +608,27 @@ Modeler = {
             }
         end
 
-        local property = Properties[self.property_id]
-        if property and property.isApartment then
-            TriggerServerEvent("LNS_Housing:server:buyApartmentFurniture", self.property_id, items, totalPrice, paymentMethod)
-        else
-            TriggerServerEvent("LNS_Housing:server:buyFurniture", self.property_id, items, totalPrice, paymentMethod)
+        if #items == 0 then
+            return false, "Basket is empty"
         end
-        self:ClearCart()
+
+        local property = Properties[self.property_id]
+        local success = false
+        local reason = nil
+
+        if property and property.isApartment then
+            success, reason = lib.callback.await("LNS_Housing:server:buyApartmentFurniture", false, self.property_id, items, totalPrice, paymentMethod)
+        else
+            success, reason = lib.callback.await("LNS_Housing:server:buyFurniture", false, self.property_id, items, totalPrice, paymentMethod)
+        end
+
+        if success then
+            self:ClearCart()
+            return true
+        else
+            -- If purchase failed (e.g. not enough money), DO NOT reset/clear the basket!
+            return false, reason or "Payment failed"
+        end
     end,
 
     HoverIn = function(self, data)
@@ -797,11 +864,27 @@ RegisterNUICallback("removeCartItem", function(data, cb)
     cb("ok")
 end)
 
+RegisterNUICallback("getCart", function(data, cb)
+    local cartList = {}
+    for _, item in pairs(Modeler.Cart) do
+        if item and item.entity and DoesEntityExist(item.entity) then
+            table.insert(cartList, item)
+        end
+    end
+    cb(cartList)
+end)
+
+RegisterNUICallback("clearCart", function(data, cb)
+    debugPrint('info', 'Furniture NUI: clearCart')
+    Modeler:ClearCart()
+    cb("ok")
+end)
+
 RegisterNUICallback("buyCartItems", function(data, cb)
     debugPrint('info', 'Furniture NUI: buyCartItems', data)
     local paymentMethod = data and data.paymentMethod or "bank"
-    Modeler:BuyCart(paymentMethod)
-    cb("ok")
+    local success, reason = Modeler:BuyCart(paymentMethod)
+    cb({ success = success, reason = reason })
 end)
 
 RegisterNUICallback("hoverIn", function(data, cb)
@@ -929,5 +1012,12 @@ CreateThread(function()
                 end
             })
         end
+    end
+end)
+
+AddEventHandler('onResourceStop', function(resourceName)
+    if GetCurrentResourceName() ~= resourceName then return end
+    if Modeler then
+        Modeler:ClearCart()
     end
 end)
