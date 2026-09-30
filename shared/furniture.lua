@@ -1623,109 +1623,127 @@ return {
                 id = 'v_res_d_bed',
                 label = 'Bed 1',
                 model = 'v_res_d_bed',
-                price = 700
+                price = 700,
+                isLogout = true
             },
             {
                 id = 'v_res_lestersbed',
                 label = 'Bed 2',
                 model = 'v_res_lestersbed',
-                price = 700
+                price = 700,
+                isLogout = true
             },
             {
                 id = 'v_res_mbbed',
                 label = 'MB Bed',
                 model = 'v_res_mbbed',
-                price = 700
+                price = 700,
+                isLogout = true
             },
             {
                 id = 'v_res_mdbed',
                 label = 'MD Bed',
                 model = 'v_res_mdbed',
-                price = 700
+                price = 700,
+                isLogout = true
             },
             {
                 id = 'v_res_msonbed',
                 label = 'Bed 3',
                 model = 'v_res_msonbed',
-                price = 700
+                price = 700,
+                isLogout = true
             },
             {
                 id = 'v_res_tre_bed1',
                 label = 'Bed 4',
                 model = 'v_res_tre_bed1',
-                price = 700
+                price = 700,
+                isLogout = true
             },
             {
                 id = 'v_res_tre_bed2',
                 label = 'T Bed',
                 model = 'v_res_tre_bed2',
-                price = 700
+                price = 700,
+                isLogout = true
             },
             {
                 id = 'v_res_tt_bed',
                 label = 'TT Bed',
                 model = 'v_res_tt_bed',
-                price = 700
+                price = 700,
+                isLogout = true
             },
             {
                 id = 'apa_mp_h_bed_with_table_02',
                 label = 'fancy bed',
                 model = 'apa_mp_h_bed_with_table_02',
-                price = 5000
+                price = 5000,
+                isLogout = true
             },
             {
                 id = 'apa_mp_h_bed_wide_05',
                 label = 'red bed',
                 model = 'apa_mp_h_bed_wide_05',
-                price = 5000
+                price = 5000,
+                isLogout = true
             },
             {
                 id = 'apa_mp_h_bed_double_08',
                 label = 'square bed',
                 model = 'apa_mp_h_bed_double_08',
-                price = 3000
+                price = 3000,
+                isLogout = true
             },
             {
                 id = 'apa_mp_h_bed_double_09',
                 label = 'modern bed',
                 model = 'apa_mp_h_bed_double_09',
-                price = 3000
+                price = 3000,
+                isLogout = true
             },
             {
                 id = 'apa_mp_h_yacht_bed_01',
                 label = 'california king',
                 model = 'apa_mp_h_yacht_bed_01',
-                price = 5000
+                price = 5000,
+                isLogout = true
             },
             {
                 id = 'apa_mp_h_yacht_bed_02',
                 label = 'california king 2',
                 model = 'apa_mp_h_yacht_bed_02',
-                price = 5000
+                price = 5000,
+                isLogout = true
             },
             {
                 id = 'bkr_prop_biker_campbed_01',
                 label = 'camp bed',
                 model = 'bkr_prop_biker_campbed_01',
-                price = 100
+                price = 100,
+                isLogout = true
             },
             {
                 id = 'ex_prop_exec_bed_01',
                 label = 'small bed',
                 model = 'ex_prop_exec_bed_01',
-                price = 700
+                price = 700,
+                isLogout = true
             },
             {
                 id = 'gr_prop_bunker_bed_01',
                 label = 'klein bed 2',
                 model = 'gr_prop_bunker_bed_01',
-                price = 700
+                price = 700,
+                isLogout = true
             },
             {
                 id = 'p_mbbed_s',
                 label = 'Bed 5',
                 model = 'p_mbbed_s',
-                price = 700
+                price = 700,
+                isLogout = true
             }
         }
     },
