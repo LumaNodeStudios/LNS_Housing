@@ -777,21 +777,45 @@ local function initApartmentForPlayer()
 end
 
 local apartmentPoints = {}
+local registeringDoorsToken = 0
+
+local function ClearApartmentDoors()
+    if apartmentPoints then
+        for _, p in ipairs(apartmentPoints) do
+            if p.targetId then
+                exports.ox_target:removeZone(p.targetId)
+                p.targetId = nil
+            end
+            p:remove()
+        end
+        apartmentPoints = {}
+    end
+end
+
 local function RegisterApartmentDoors(delay)
-    if #apartmentPoints > 0 then return end
     if not Settings.Rooms then return end
+    registeringDoorsToken = registeringDoorsToken + 1
+    local currentToken = registeringDoorsToken
 
     CreateThread(function()
         if delay then
             Wait(1000)
         end
+        if currentToken ~= registeringDoorsToken then return end
+
+        ClearApartmentDoors()
 
         for _, room in ipairs(Settings.Rooms) do
             if room.doorCoords then
                 local roomPoint = lib.points.new({
                     coords = room.doorCoords,
-                    distance = 30.0,
+                    distance = 5.0,
                     onEnter = function(self)
+                        if self.targetId then
+                            exports.ox_target:removeZone(self.targetId)
+                            self.targetId = nil
+                        end
+
                         local door = nil
                         if GetResourceState('ox_doorlock') == 'started' then
                             local ok, result = pcall(function()
@@ -890,25 +914,40 @@ local function RegisterApartmentDoors(delay)
     end)
 end
 
+local isApartmentLoaded = false
 local function OnClientPlayerLoaded()
+    if isApartmentLoaded then return end
+    isApartmentLoaded = true
     debugPrint('info', 'Apartments playerLoaded received')
     LoadCustomApartments()
     initApartmentForPlayer()
     RegisterApartmentDoors(true)
 end
 
+local function OnClientPlayerUnloaded()
+    isApartmentLoaded = false
+    ClearApartmentDoors()
+    CleanUpApartmentSession()
+end
+
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', OnClientPlayerLoaded)
-AddEventHandler('QBCore:Client:OnPlayerLoaded', OnClientPlayerLoaded)
 RegisterNetEvent('esx:playerLoaded', function(xPlayer)
     debugPrint('info', 'Apartments esx:playerLoaded received', {identifier = xPlayer and xPlayer.identifier})
     OnClientPlayerLoaded()
 end)
 
 AddStateBagChangeHandler('isLoggedIn', nil, function(bagName, key, value)
-    if bagName == ('player:%s'):format(GetPlayerServerId(PlayerId())) and value then
-        OnClientPlayerLoaded()
+    if bagName == ('player:%s'):format(GetPlayerServerId(PlayerId())) then
+        if value then
+            OnClientPlayerLoaded()
+        else
+            OnClientPlayerUnloaded()
+        end
     end
 end)
+
+RegisterNetEvent('qbx_core:client:playerLoggedOut', OnClientPlayerUnloaded)
+RegisterNetEvent('QBCore:Client:OnPlayerUnload', OnClientPlayerUnloaded)
 
 RegisterNetEvent('LNS_Housing:client:spawnInStarterApartment', function()
     debugPrint('info', 'LNS_Housing:client:spawnInStarterApartment received')
@@ -989,11 +1028,7 @@ AddEventHandler('onResourceStop', function(resourceName)
         RemoveBlip(apartmentBlip)
     end
 
-    if apartmentPoints then
-        for _, p in ipairs(apartmentPoints) do
-            p:remove()
-        end
-    end
+    ClearApartmentDoors()
 end)
 
 local function CleanUpApartmentSession()

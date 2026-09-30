@@ -48,7 +48,7 @@ function GetDoorInteractionPoint(model, coords, heading)
         min, max = GetModelDimensions(hash)
     end
 
-    local centerX = min and (min.x + max.x) * 0.5 or 0.45
+    local centerX = min and (min.x + max.x) * 0.5 or 0.0
     local centerY = min and (min.y + max.y) * 0.5 or 0.0
     local centerZ = min and (min.z + max.z) * 0.5 or 1.1
 
@@ -82,7 +82,8 @@ function ResolveDoorTargetPlacement(model, coords, heading, door)
         local c1 = ToVec3(door.doors[1].coords)
         local c2 = ToVec3(door.doors[2].coords)
         if c1 and c2 then
-            return (c1 + c2) / 2, door.heading or heading or 0.0
+            local mid = (c1 + c2) / 2
+            return vec3(mid.x, mid.y, mid.z + 1.1), door.heading or heading or 0.0
         end
     end
 
