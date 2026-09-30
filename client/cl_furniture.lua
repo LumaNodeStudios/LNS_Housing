@@ -80,6 +80,8 @@ Modeler = {
 
         self:FreecamActive(true)
         self:FreecamMode(false)
+
+        TriggerServerEvent('LNS_Housing:server:enterFurnitureBucket', propertyId)
     end,
 
     CloseMenu = function(self)
@@ -105,6 +107,9 @@ Modeler = {
         self:UnhoverOwnedItem()
         self:StopPlacement()
         self:FreecamActive(false)
+
+        -- Restore the player's previous routing bucket (server uses its snapshot)
+        TriggerServerEvent('LNS_Housing:server:leaveFurnitureBucket')
 
         Wait(500)
 
@@ -334,10 +339,10 @@ Modeler = {
             while self.CurrentObject do
                 local camPos = Freecam:GetPosition()
                 local camTarget = Freecam:GetTarget(5.0)
-                
-                camPos = self:ConstrainCamera(camPos, lastCamPos)
 
-                
+                -- NOTE: Camera is no longer constrained to the property zone.
+                -- Isolation is handled via routing bucket instead (see OpenMenu/CloseMenu).
+
                 if not lastCamPos or #(lastCamPos - camPos) > 0.001 or #(lastCamTarget - camTarget) > 0.001 then
                     lastCamPos = camPos
                     lastCamTarget = camTarget
@@ -352,7 +357,7 @@ Modeler = {
                     })
                 end
                 local sleep = self.IsFreecamMode and 150 or 60
-                Wait(sleep) 
+                Wait(sleep)
             end
             self.PlacementThreadActive = false
         end)

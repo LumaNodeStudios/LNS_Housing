@@ -1,4 +1,5 @@
 local Settings = lib.load('shared.settings')
+local _furniturePrevBucket = {}
 
 local function ProcessBuyFurniture(src, propertyId, items, totalPrice, paymentMethod)
     debugPrint('info', 'LNS_Housing:server:buyFurniture received', {src = src, propertyId = propertyId, totalPrice = totalPrice, paymentMethod = paymentMethod})
@@ -98,6 +99,26 @@ RegisterNetEvent('LNS_Housing:server:logoutPlayer', function()
     debugPrint('info', 'LNS_Housing:server:logoutPlayer received', {src = src})
     SetPlayerRoutingBucket(src, 0)
     Bridge.Server.Logout(src)
+end)
+
+RegisterNetEvent('LNS_Housing:server:enterFurnitureBucket', function(propertyId)
+    local src = source
+    debugPrint('info', 'LNS_Housing:server:enterFurnitureBucket received', {src = src, propertyId = propertyId})
+    _furniturePrevBucket[src] = GetPlayerRoutingBucket(src)
+    local furnitureBucket = 50000 + tonumber(propertyId)
+    SetPlayerRoutingBucket(src, furnitureBucket)
+end)
+
+RegisterNetEvent('LNS_Housing:server:leaveFurnitureBucket', function()
+    local src = source
+    debugPrint('info', 'LNS_Housing:server:leaveFurnitureBucket received', {src = src})
+    local prevBucket = _furniturePrevBucket[src] or 0
+    _furniturePrevBucket[src] = nil
+    SetPlayerRoutingBucket(src, prevBucket)
+end)
+
+AddEventHandler('playerDropped', function()
+    _furniturePrevBucket[source] = nil
 end)
 
 lib.callback.register('LNS_Housing:server:getFurnitureImages', function(source)
