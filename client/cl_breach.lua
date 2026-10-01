@@ -609,7 +609,7 @@ RegisterNUICallback('breachHit', function(data, cb)
         CreateThread(function()
             local soundIds = {}
 
-            qbx.playAudio({
+            Bridge.Client.PlayAudio({
                 audioName = "breaching",
                 audioRef = AUDIO_REF,
                 audioSource = doorCoords,
@@ -670,7 +670,7 @@ function StartPoliceRaid(propertyId, propertyType, doorId)
     currentHitsCount = 0
 
     activeBreachesCount = activeBreachesCount + 1
-    qbx.loadAudioBank(AUDIO_BANK, AUDIO_TIMEOUT)
+    Bridge.Client.LoadAudioBank(AUDIO_BANK, AUDIO_TIMEOUT)
 
     DisplayRadar(false)
 

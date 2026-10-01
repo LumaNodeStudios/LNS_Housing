@@ -326,3 +326,40 @@ function Bridge.Client.PhoneNotification(data)
 
     return false
 end
+
+function Bridge.Client.LoadAudioBank(bankName, timeoutMs)
+    debugPrint('info', 'Bridge.Client.LoadAudioBank', {bankName = bankName, framework = Bridge.Framework})
+    if Bridge.Framework == 'qbx' then
+        return qbx.loadAudioBank(bankName, timeoutMs)
+    else
+        local loaded = RequestScriptAudioBank(bankName, false, -1)
+        if loaded then return true end
+        local deadline = GetGameTimer() + (timeoutMs or 5000)
+        while not loaded and GetGameTimer() < deadline do
+            Wait(100)
+            loaded = RequestScriptAudioBank(bankName, false, -1)
+        end
+        return loaded
+    end
+end
+
+function Bridge.Client.PlayAudio(opts)
+    debugPrint('info', 'Bridge.Client.PlayAudio', {audioName = opts.audioName, framework = Bridge.Framework})
+    if Bridge.Framework == 'qbx' then
+        return qbx.playAudio(opts)
+    else
+        local src = opts.audioSource
+        local soundId = GetSoundId()
+        PlaySoundFromCoord(soundId, opts.audioName, src.x, src.y, src.z, opts.audioRef, false, opts.range or 10.0, false)
+        if opts.returnSoundId then
+            return soundId
+        else
+            CreateThread(function()
+                Wait(10000)
+                StopSound(soundId)
+                ReleaseSoundId(soundId)
+            end)
+            return nil
+        end
+    end
+end

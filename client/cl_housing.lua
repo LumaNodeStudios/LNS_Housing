@@ -2004,13 +2004,13 @@ RegisterNetEvent('LNS_Housing:client:triggerHouseAlarm', function(coords, durati
     if isNearEntrance or isNearShell then
         activeAlarmsCount = activeAlarmsCount + 1
  
-        local bankLoaded = qbx.loadAudioBank(AUDIO_BANK, AUDIO_TIMEOUT)
+        local bankLoaded = Bridge.Client.LoadAudioBank(AUDIO_BANK, AUDIO_TIMEOUT)
         if not bankLoaded then
             activeAlarmsCount = activeAlarmsCount - 1
             return
         end
  
-        local outsideSoundId = qbx.playAudio({
+        local outsideSoundId = Bridge.Client.PlayAudio({
             audioName = "house_alarm",
             audioRef = AUDIO_REF,
             audioSource = alarmCoords,
@@ -2018,7 +2018,7 @@ RegisterNetEvent('LNS_Housing:client:triggerHouseAlarm', function(coords, durati
             returnSoundId = true,
         })
  
-        local insideSoundId = qbx.playAudio({
+        local insideSoundId = Bridge.Client.PlayAudio({
             audioName = "house_alarm",
             audioRef = AUDIO_REF,
             audioSource = shellCoords,
@@ -2065,7 +2065,7 @@ RegisterNetEvent('LNS_Housing:client:triggerHouseDoorbell', function(entranceCoo
  
     activeDoorbellsCount = activeDoorbellsCount + 1
  
-    local bankLoaded = qbx.loadAudioBank(AUDIO_BANK, AUDIO_TIMEOUT)
+    local bankLoaded = Bridge.Client.LoadAudioBank(AUDIO_BANK, AUDIO_TIMEOUT)
  
     if not bankLoaded then
         activeDoorbellsCount = activeDoorbellsCount - 1
@@ -2075,7 +2075,7 @@ RegisterNetEvent('LNS_Housing:client:triggerHouseDoorbell', function(entranceCoo
     local soundIds = {}
  
     if isNearEntrance then
-        qbx.playAudio({
+        Bridge.Client.PlayAudio({
             audioName = "house_doorbell",
             audioRef = AUDIO_REF,
             audioSource = doorCoords,
@@ -2085,7 +2085,7 @@ RegisterNetEvent('LNS_Housing:client:triggerHouseDoorbell', function(entranceCoo
     end
  
     if insideVec and isNearInside then
-        qbx.playAudio({
+        Bridge.Client.PlayAudio({
             audioName = "house_doorbell",
             audioRef = AUDIO_REF,
             audioSource = insideVec,
