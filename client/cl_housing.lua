@@ -841,6 +841,7 @@ local function EnterWalkInProperty(propertyId)
     if currentWalkInProperty == propertyId then return end
     currentWalkInProperty = propertyId
     InsidePropertyId = propertyId
+    TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', propertyId)
     LoadFurnitures(propertyId)
     if CheckPropertyTemperatureNotify then CheckPropertyTemperatureNotify(propertyId) end
 
@@ -869,6 +870,7 @@ local function LeaveWalkInProperty()
     end
     lib.removeRadialItem('housing_furniture')
     UnloadFurnitures(oldPropId)
+    TriggerServerEvent('LNS_Housing:server:leavePropertyBucket')
 end
 
 CreateThread(function()
@@ -1333,6 +1335,7 @@ function InitializeHousing()
     local ped = PlayerPedId()
     local playerCoords = GetEntityCoords(ped)
     local isSpawningInShell = playerCoords.z < -70.0
+
     if not isSpawningInShell then
         for _, shellData in pairs(Settings.Shells) do
             if shellData.ipls and shellData.coords then
@@ -1360,7 +1363,7 @@ function InitializeHousing()
     end
 
     Properties = lib.callback.await('LNS_Housing:server:getProperties', false)
-    
+
     if Properties then
         UpdatePropertyBlips()
 
@@ -1415,13 +1418,14 @@ function InitializeHousing()
             local shellName = p.metadata.shell or 'Standard Motel'
             local shellEntity, spawnCoords, heading = SpawnShellForProperty(currentPropId, shellName, foundShellCoords)
             
+            InsidePropertyId = currentPropId
             TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', currentPropId)
             LoadFurnitures(currentPropId)
 
             local currentPed = PlayerPedId()
             RequestCollisionAtCoord(playerCoords.x, playerCoords.y, playerCoords.z)
             local startColl = GetGameTimer()
-            while not HasCollisionLoadedAroundEntity(currentPed) and (GetGameTimer() - startColl) < 2000 do
+            while not HasCollisionLoadedAroundEntity(currentPed) and (GetGameTimer() - startColl) < 3000 do
                 Wait(50)
                 currentPed = PlayerPedId()
                 RequestCollisionAtCoord(playerCoords.x, playerCoords.y, playerCoords.z)
@@ -1431,9 +1435,19 @@ function InitializeHousing()
         end
         FreezeEntityPosition(PlayerPedId(), false)
         DoScreenFadeIn(1000)
+    else
+        local playerData = Bridge.Framework == 'qbx' and exports.qbx_core:GetPlayerData() or nil
+        local lnsProperty = playerData and playerData.metadata and playerData.metadata.lnsProperty
+        if lnsProperty and lnsProperty.id and Properties then
+            local propId = tonumber(lnsProperty.id)
+            local p = propId and Properties[propId]
+            if p and p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
+                Wait(500)
+                SpawnInHouse(propId)
+            end
+        end
     end
 end
-
 
 CreateThread(function()
     while not NetworkIsPlayerActive(PlayerId()) do
@@ -2197,6 +2211,9 @@ function GetPropertyInsideCoords(p)
 end
 
 function SpawnInHouse(id)
+    id = tonumber(id)
+    if not id then return false end
+
     if not Properties or not Properties[id] then
         Properties = lib.callback.await('LNS_Housing:server:getProperties', false) or {}
     end
@@ -2221,13 +2238,13 @@ function SpawnInHouse(id)
         end
         local coords = GetPropertyInsideCoords(p)
         if coords then
-            local ped = cache.ped
             DoScreenFadeOut(500)
             while not IsScreenFadedOut() do Wait(0) end
             
-            FreezeEntityPosition(PlayerPedId(), true)
-            SetEntityCoords(PlayerPedId(), coords.x, coords.y, coords.z, false, false, false, false)
-            SetEntityHeading(PlayerPedId(), coords.w)
+            local ped = PlayerPedId()
+            FreezeEntityPosition(ped, true)
+            SetEntityCoords(ped, coords.x, coords.y, coords.z, false, false, false, false)
+            SetEntityHeading(ped, coords.w or 0.0)
             
             InsidePropertyId = id
             TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', id)
@@ -2236,6 +2253,7 @@ function SpawnInHouse(id)
             if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'furniture') then
                 HasFurnitureManagePermission = true
                 if not Settings.FurnitureMenu or not Settings.FurnitureMenu.Radial or Settings.FurnitureMenu.Radial.Enabled then
+                    lib.removeRadialItem('housing_furniture')
                     lib.addRadialItem({
                         id = 'housing_furniture',
                         icon = 'couch',
@@ -2249,7 +2267,7 @@ function SpawnInHouse(id)
             
             RequestCollisionAtCoord(coords.x, coords.y, coords.z)
             local start = GetGameTimer()
-            while not HasCollisionLoadedAroundEntity(PlayerPedId()) and (GetGameTimer() - start) < 2000 do
+            while not HasCollisionLoadedAroundEntity(PlayerPedId()) and (GetGameTimer() - start) < 3000 do
                 Wait(50)
                 RequestCollisionAtCoord(coords.x, coords.y, coords.z)
             end
@@ -2259,6 +2277,7 @@ function SpawnInHouse(id)
             FreezeEntityPosition(PlayerPedId(), false)
             
             DoScreenFadeIn(1000)
+            if CheckPropertyTemperatureNotify then CheckPropertyTemperatureNotify(id) end
             return true
         end
     end

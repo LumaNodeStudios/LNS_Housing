@@ -361,7 +361,6 @@ local function ResolveCustomApartmentRoom(interiorId)
     local currentRoomKey = (interiorId and interiorId ~= 0) and GetRoomKeyFromEntity(ped) or 0
     local currentSubRoom = roomsInInterior[currentRoomKey]
 
-    -- 1. Check custom rooms with explicit polygon zones (corners)
     for _, room in ipairs(Settings.Rooms) do
         if room.corners and type(room.corners) == 'table' and #room.corners >= 3 then
             local inPoly = isPointInPolygon(coords, room.corners, room.zOffset, room.thickness)
@@ -371,7 +370,6 @@ local function ResolveCustomApartmentRoom(interiorId)
         end
     end
 
-    -- 2. Check custom rooms mapped to a specific interior sub-room name or room key
     if (currentSubRoom and currentSubRoom.name) or currentRoomKey ~= 0 then
         for _, room in ipairs(Settings.Rooms) do
             local rName = room.room_name or room.roomName
@@ -393,7 +391,6 @@ local function ResolveCustomApartmentRoom(interiorId)
         end
     end
 
-    -- 3. Standalone point-based custom rooms (ONLY for non-MLO / non-subroom templates without polygons)
     for _, room in ipairs(Settings.Rooms) do
         local hasPoly = room.corners and type(room.corners) == 'table' and #room.corners >= 3
         local hasSubRoom = (room.room_name and room.room_name ~= '') or (room.roomName and room.roomName ~= '') or room.room_key or room.roomKey
@@ -424,7 +421,6 @@ local function leaveIfNoZone()
 
     for _, r in ipairs(Settings.Rooms or {}) do
         if r.id == CurrentApartmentId or tostring(r.id) == tostring(CurrentApartmentId) or tonumber(r.id) == tonumber(CurrentApartmentId) then
-            -- If room has corners, verify player is still inside the polygon
             if r.corners and type(r.corners) == 'table' and #r.corners >= 3 then
                 if not isPointInPolygon(coords, r.corners, r.zOffset, r.thickness) then
                     LeaveApartmentRoom(CurrentApartmentId)
@@ -432,7 +428,6 @@ local function leaveIfNoZone()
                 return
             end
 
-            -- If room has room_name or room_key and ped is in an interior, verify sub-room
             local rName = r.room_name or r.roomName
             local rKey = tonumber(r.room_key or r.roomKey)
             local interiorId = GetInteriorFromEntity(ped)
@@ -455,7 +450,6 @@ local function leaveIfNoZone()
                 return
             end
 
-            -- Point radius check
             local refCoords = (r.interior_center and vec3(r.interior_center.x, r.interior_center.y, r.interior_center.z))
                 or (r.interiorCenter and vec3(r.interiorCenter.x, r.interiorCenter.y, r.interiorCenter.z))
                 or (r.interior_coords and vec3(r.interior_coords.x, r.interior_coords.y, r.interior_coords.z))
@@ -475,7 +469,6 @@ local function leaveIfNoZone()
         end
     end
 
-    -- If current apartment is an MLO building unit, ResolveCurrentUnit returning nil means we left
     LeaveApartmentRoom(CurrentApartmentId)
 end
 
@@ -762,7 +755,6 @@ local function initApartmentForPlayer()
         end
         TriggerEvent('LNS_Housing:client:setApartmentData', assignedRoom.roomId, assignedRoom.roomData)
 
-        -- Immediately evaluate if the player is currently inside a room
         local ped = cache.ped or PlayerPedId()
         local interiorId = GetInteriorFromEntity(ped)
         if interiorId == 0 then
@@ -1077,28 +1069,28 @@ end)
 exports('SpawnInProperty', function(type, id)
     if type == "apartment" then
         local roomData = nil
-        for _, room in ipairs(Settings.Rooms) do
-            if room.id == id then
+        for _, room in ipairs(Settings.Rooms or {}) do
+            if room.id == id or tostring(room.id) == tostring(id) or (tonumber(room.id) and tonumber(id) and tonumber(room.id) == tonumber(id)) then
                 roomData = room
                 break
             end
         end
         
         if roomData then
-            local ped = cache.ped
             DoScreenFadeOut(500)
             while not IsScreenFadedOut() do Wait(0) end
             
-            FreezeEntityPosition(PlayerPedId(), true)
-            SetEntityCoords(PlayerPedId(), roomData.spawn.x, roomData.spawn.y, roomData.spawn.z, false, false, false, false)
-            SetEntityHeading(PlayerPedId(), roomData.spawn.w)
+            local ped = PlayerPedId()
+            FreezeEntityPosition(ped, true)
+            SetEntityCoords(ped, roomData.spawn.x, roomData.spawn.y, roomData.spawn.z, false, false, false, false)
+            SetEntityHeading(ped, roomData.spawn.w or 0.0)
             
             TriggerEvent('LNS_Housing:client:setApartmentData', id, roomData)
+            EnterApartmentRoom(roomData)
             
-            -- Temp fix for 50/50 chance to fall thru
             RequestCollisionAtCoord(roomData.spawn.x, roomData.spawn.y, roomData.spawn.z)
             local start = GetGameTimer()
-            while not HasCollisionLoadedAroundEntity(PlayerPedId()) and (GetGameTimer() - start) < 2000 do
+            while not HasCollisionLoadedAroundEntity(PlayerPedId()) and (GetGameTimer() - start) < 3000 do
                 Wait(50)
                 RequestCollisionAtCoord(roomData.spawn.x, roomData.spawn.y, roomData.spawn.z)
             end

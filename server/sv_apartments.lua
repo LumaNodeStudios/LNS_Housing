@@ -168,7 +168,8 @@ CreateThread(function()
     end
 end)
 
-local function getRoomDataById(roomId)
+function GetRoomDataByIdServer(roomId)
+    if not Settings.Rooms then return nil end
     for _, room in ipairs(Settings.Rooms) do
         if room.id == roomId or tostring(room.id) == tostring(roomId) or (tonumber(room.id) and tonumber(roomId) and tonumber(room.id) == tonumber(roomId)) then
             return room
@@ -176,6 +177,7 @@ local function getRoomDataById(roomId)
     end
     return nil
 end
+local getRoomDataById = GetRoomDataByIdServer
 
 local function getAvailableRoom()
     if #Settings.Rooms == 0 then
@@ -346,6 +348,10 @@ local function OnPlayerUnloaded(src)
     if not src then return end
     lastNoRoomNotify[src] = nil
     SetPlayerRoutingBucket(src, 0)
+    pcall(function()
+        Player(src).state:set('inProperty', false, true)
+        Player(src).state:set('insidePropertyId', nil, true)
+    end)
     TriggerClientEvent('LNS_Housing:client:cleanUpApartmentSession', src)
     TriggerClientEvent('LNS_Housing:client:cleanUpHousingSession', src)
 end

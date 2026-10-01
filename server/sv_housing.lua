@@ -667,13 +667,28 @@ end)
 RegisterNetEvent('LNS_Housing:server:enterPropertyBucket', function(propertyId)
     local src = source
     debugPrint('info', 'LNS_Housing:server:enterPropertyBucket received', {src = src, propertyId = propertyId})
-    SetPlayerRoutingBucket(src, propertyId)
+    propertyId = tonumber(propertyId)
+    if not propertyId then return end
+
+    local p = Properties[propertyId]
+    local isMlo = p and p.metadata and p.metadata.shell == 'mlo'
+    
+    if not isMlo then
+        SetPlayerRoutingBucket(src, propertyId)
+    end
+
+    Player(src).state:set('inProperty', true, true)
+    Player(src).state:set('insidePropertyId', propertyId, true)
+    Bridge.Server.SetPlayerInside(src, propertyId)
 end)
 
 RegisterNetEvent('LNS_Housing:server:leavePropertyBucket', function()
     local src = source
     debugPrint('info', 'LNS_Housing:server:leavePropertyBucket received', {src = src})
     SetPlayerRoutingBucket(src, 0)
+    Player(src).state:set('inProperty', false, true)
+    Player(src).state:set('insidePropertyId', nil, true)
+    Bridge.Server.ClearPlayerInside(src)
 end)
 
 function GetEntranceCoordsServer(p)
@@ -982,3 +997,91 @@ RegisterNetEvent('LNS_Housing:server:saveDoorbellCamera', function(propertyId, d
     TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
     Bridge.Server.Notify(src, 'Doorbell camera position updated successfully!', 'success')
 end)
+
+local function ResolveLastLocationServer(source, position, metadata)
+    WaitForDb()
+
+    metadata = metadata or {}
+    
+    local lnsProperty = metadata.lnsProperty
+    if lnsProperty and lnsProperty.id then
+        local propId = tonumber(lnsProperty.id)
+        local p = Properties[propId]
+        if p and p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
+            local entCoords = GetEntranceCoordsServer(p) or GetPropertyCoords(p)
+            return {
+                coords = entCoords or position,
+                lnsProperty = { type = 'house', id = propId },
+                propertyId = propId
+            }
+        end
+    end
+
+    local propId = tonumber(metadata.currentPropertyId or (metadata.inside and metadata.inside.house))
+    if propId then
+        local p = Properties[propId]
+        if p and p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
+            local entCoords = GetEntranceCoordsServer(p) or GetPropertyCoords(p)
+            return {
+                coords = entCoords or position,
+                lnsProperty = { type = 'house', id = propId },
+                propertyId = propId
+            }
+        end
+    end
+
+    if position and position.x and position.y and position.z then
+        local posVec = vec3(position.x, position.y, position.z)
+
+        if position.z < -50.0 then
+            local closestProp = nil
+            local minDistance = 50.0
+
+            for id, p in pairs(Properties) do
+                if p.metadata and p.metadata.shell and p.metadata.shell ~= 'mlo' then
+                    local entCoords = GetEntranceCoordsServer(p) or GetPropertyCoords(p)
+                    if entCoords then
+                        local dist2D = #(vec2(posVec.x, posVec.y) - vec2(entCoords.x, entCoords.y))
+                        if dist2D < minDistance then
+                            minDistance = dist2D
+                            closestProp = p
+                        end
+                    end
+                end
+            end
+
+            if closestProp then
+                local entCoords = GetEntranceCoordsServer(closestProp) or GetPropertyCoords(closestProp)
+                return {
+                    coords = entCoords or position,
+                    lnsProperty = { type = 'house', id = closestProp.id },
+                    propertyId = closestProp.id
+                }
+            end
+        end
+
+        if Settings.IPLs then
+            for iplName, iplData in pairs(Settings.IPLs) do
+                if iplData.coords then
+                    local dist = #(posVec - vec3(iplData.coords.x, iplData.coords.y, iplData.coords.z))
+                    if dist < 85.0 then
+                        for id, p in pairs(Properties) do
+                            if p.metadata and p.metadata.shell == iplName then
+                                local entCoords = GetEntranceCoordsServer(p) or GetPropertyCoords(p)
+                                return {
+                                    coords = entCoords or position,
+                                    lnsProperty = { type = 'house', id = p.id },
+                                    propertyId = p.id
+                                }
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return nil
+end
+
+exports('ResolveLastLocation', ResolveLastLocationServer)

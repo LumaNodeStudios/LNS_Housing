@@ -108,7 +108,6 @@ Modeler = {
         self:StopPlacement()
         self:FreecamActive(false)
 
-        -- Restore the player's previous routing bucket (server uses its snapshot)
         TriggerServerEvent('LNS_Housing:server:leaveFurnitureBucket')
 
         Wait(500)
@@ -339,9 +338,6 @@ Modeler = {
             while self.CurrentObject do
                 local camPos = Freecam:GetPosition()
                 local camTarget = Freecam:GetTarget(5.0)
-
-                -- NOTE: Camera is no longer constrained to the property zone.
-                -- Isolation is handled via routing bucket instead (see OpenMenu/CloseMenu).
 
                 if not lastCamPos or #(lastCamPos - camPos) > 0.001 or #(lastCamTarget - camTarget) > 0.001 then
                     lastCamPos = camPos
@@ -631,7 +627,6 @@ Modeler = {
             self:ClearCart()
             return true
         else
-            -- If purchase failed (e.g. not enough money), DO NOT reset/clear the basket!
             return false, reason or "Payment failed"
         end
     end,

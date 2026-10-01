@@ -454,3 +454,66 @@ RegisterNetEvent('LNS_Housing:server:motionAlert', function(propertyLabel)
         body = ('Motion detected at the front door of %s!'):format(propertyLabel)
     })
 end)
+
+function Bridge.Server.SetPlayerInside(source, propertyId)
+    if not source or not propertyId then return end
+    propertyId = tonumber(propertyId)
+
+    if Bridge.Framework == 'qbx' then
+        local player = exports.qbx_core:GetPlayer(source)
+        if not player then return end
+
+        player.PlayerData.metadata = player.PlayerData.metadata or {}
+        player.PlayerData.metadata.lnsProperty = {
+            type = 'house',
+            id = propertyId
+        }
+        player.PlayerData.metadata.currentPropertyId = propertyId
+        player.PlayerData.metadata.inside = {
+            house = propertyId,
+            apartment = {
+                apartmentType = nil,
+                apartmentId = nil
+            }
+        }
+
+        if Properties and Properties[propertyId] and GetEntranceCoordsServer then
+            local entCoords = GetEntranceCoordsServer(Properties[propertyId])
+            if entCoords then
+                player.PlayerData.position = vec4(entCoords.x, entCoords.y, entCoords.z, 0.0)
+            end
+        end
+
+        if player.Functions and player.Functions.SetMetaData then
+            player.Functions.SetMetaData('lnsProperty', player.PlayerData.metadata.lnsProperty)
+            player.Functions.SetMetaData('currentPropertyId', player.PlayerData.metadata.currentPropertyId)
+            player.Functions.SetMetaData('inside', player.PlayerData.metadata.inside)
+        end
+    end
+end
+
+function Bridge.Server.ClearPlayerInside(source)
+    if not source then return end
+
+    if Bridge.Framework == 'qbx' then
+        local player = exports.qbx_core:GetPlayer(source)
+        if not player then return end
+
+        player.PlayerData.metadata = player.PlayerData.metadata or {}
+        player.PlayerData.metadata.lnsProperty = nil
+        player.PlayerData.metadata.currentPropertyId = nil
+        player.PlayerData.metadata.inside = {
+            house = nil,
+            apartment = {
+                apartmentType = nil,
+                apartmentId = nil
+            }
+        }
+
+        if player.Functions and player.Functions.SetMetaData then
+            player.Functions.SetMetaData('lnsProperty', nil)
+            player.Functions.SetMetaData('currentPropertyId', nil)
+            player.Functions.SetMetaData('inside', player.PlayerData.metadata.inside)
+        end
+    end
+end
