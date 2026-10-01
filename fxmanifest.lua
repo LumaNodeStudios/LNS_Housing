@@ -4,7 +4,7 @@ lua54 'yes'
 
 author 'LumaNode Studios'
 description 'LumaNode Studios - Advanced Housing System'
-version '0.1.4'
+version '0.1.5'
 
 ui_page 'web/dist/index.html'
 
@@ -52,6 +52,7 @@ client_scripts {
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
     'bridge/server.lua',
+    'server/sv_version.lua',
     'server/sv_db.lua',
     'server/sv_permissions.lua',
     'server/sv_breach.lua',
