@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './ApartmentCreator.css';
 import { motion } from 'framer-motion';
-import { Building, MapPin, Key, Compass, Save, X, Check, Search, Info, Tablet, Move, Layers, Footprints } from 'lucide-react';
+import { Building, MapPin, Key, Compass, Save, X, Check, Search, Info, Tablet, Move, Layers, Footprints, UserMinus, Trash2, AlertTriangle } from 'lucide-react';
 import Modeler3D from '../Furniture/Modeler3D';
 
 const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
@@ -20,6 +20,8 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
     const [isPlacingTablet, setIsPlacingTablet] = useState(false);
     const [freecamMode, setFreecamMode] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
+    const [confirmAction, setConfirmAction] = useState(null); // 'vacate' | 'delete' | null
+    const [isProcessing, setIsProcessing] = useState(false);
 
     useEffect(() => {
         if (!window.GetParentResourceName && isEdit && initialRooms.length === 0) {
@@ -146,6 +148,54 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                 method: 'POST',
                 body: JSON.stringify({ enabled: next })
             });
+        }
+    };
+
+    const handleVacate = async () => {
+        if (!selectedRoom) return;
+        setIsProcessing(true);
+        setConfirmAction(null);
+        try {
+            if (!window.GetParentResourceName) {
+                setRooms(prev => prev.map(r => r.id === selectedRoom.id ? { ...r, _vacated: true } : r));
+                setIsProcessing(false);
+                return;
+            }
+            const resp = await fetch(`https://${window.GetParentResourceName()}/vacateApartmentRoom`, {
+                method: 'POST',
+                body: JSON.stringify({ roomId: selectedRoom.id })
+            });
+            const result = await resp.json();
+            if (result?.success) {
+                setRooms(prev => prev.map(r => r.id === selectedRoom.id ? { ...r, _vacated: true } : r));
+            }
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!selectedRoom) return;
+        setIsProcessing(true);
+        setConfirmAction(null);
+        try {
+            if (!window.GetParentResourceName) {
+                setRooms(prev => prev.filter(r => r.id !== selectedRoom.id));
+                setSelectedRoom(null);
+                setIsProcessing(false);
+                return;
+            }
+            const resp = await fetch(`https://${window.GetParentResourceName()}/deleteApartmentRoom`, {
+                method: 'POST',
+                body: JSON.stringify({ roomId: selectedRoom.id })
+            });
+            const result = await resp.json();
+            if (result?.success) {
+                setRooms(prev => prev.filter(r => r.id !== selectedRoom.id));
+                setSelectedRoom(null);
+            }
+        } finally {
+            setIsProcessing(false);
         }
     };
 
@@ -425,6 +475,44 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                     <p className="subtitle">Configure native interior, doors, spawn, and tablet</p>
                                 </div>
                                 <div className="apt-header-actions">
+                                    {confirmAction === 'vacate' && (
+                                        <div className="apt-confirm-inline">
+                                            <AlertTriangle size={13} />
+                                            <span>Vacate room?</span>
+                                            <button className="apt-confirm-yes vacate" onClick={handleVacate} disabled={isProcessing}>Yes</button>
+                                            <button className="apt-confirm-no" onClick={() => setConfirmAction(null)}>No</button>
+                                        </div>
+                                    )}
+                                    {confirmAction === 'delete' && (
+                                        <div className="apt-confirm-inline danger">
+                                            <AlertTriangle size={13} />
+                                            <span>Delete forever?</span>
+                                            <button className="apt-confirm-yes delete" onClick={handleDelete} disabled={isProcessing}>Yes</button>
+                                            <button className="apt-confirm-no" onClick={() => setConfirmAction(null)}>No</button>
+                                        </div>
+                                    )}
+                                    {selectedRoom && confirmAction === null && (
+                                        <>
+                                            <button
+                                                type="button"
+                                                className="apt-danger-btn vacate"
+                                                onClick={() => setConfirmAction('vacate')}
+                                                title="Vacate — evict tenant & clear furniture"
+                                                disabled={isProcessing}
+                                            >
+                                                <UserMinus size={14} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="apt-danger-btn delete"
+                                                onClick={() => setConfirmAction('delete')}
+                                                title="Delete room permanently (removes doorlock)"
+                                                disabled={isProcessing}
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </>
+                                    )}
                                     <button
                                         type="button"
                                         className={`apt-walk-mode-btn ${walkMode ? 'active' : ''}`}

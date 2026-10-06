@@ -1332,6 +1332,90 @@ lib.callback.register('LNS_Housing:server:updateApartment', function(source, dat
     return false
 end)
 
+lib.callback.register('LNS_Housing:server:vacateApartmentRoom', function(source, roomId)
+    debugPrint('info', 'LNS_Housing:server:vacateApartmentRoom called', {source = source, roomId = roomId})
+    WaitForDb()
+    if not IsApartmentAdmin(source) then return false, 'No permission' end
+
+    roomId = tonumber(roomId)
+    if not roomId then return false, 'Invalid room ID' end
+
+    local tenantRow = MySQL.single.await('SELECT license FROM player_apartments WHERE room_id = ?', {roomId})
+    local tenantLic = tenantRow and tenantRow.license
+    local roomData = getRoomDataById(roomId)
+    local defaultFurniture = {}
+
+    if roomData and roomData.tabletCoords then
+        table.insert(defaultFurniture, {
+            id = math.random(100000, 999999),
+            model = 'reh_prop_reh_tablet_01a',
+            label = 'Property Panel',
+            position = vec3(roomData.tabletCoords.position.x, roomData.tabletCoords.position.y, roomData.tabletCoords.position.z),
+            rotation = vec3(roomData.tabletCoords.rotation.x, roomData.tabletCoords.rotation.y, roomData.tabletCoords.rotation.z),
+            category = 'prerequisites'
+        })
+    end
+
+    MySQL.query.await('DELETE FROM apartments WHERE room_id = ?', {roomId})
+
+    MySQL.query.await('DELETE FROM player_apartments WHERE room_id = ?', {roomId})
+
+    if tenantLic then
+        playerRooms[tenantLic] = nil
+    end
+    assignedRoomIds[roomId] = nil
+
+    local doorId = roomDoors[roomId]
+    if doorId and GetResourceState('ox_doorlock') == 'started' then
+        pcall(function()
+            exports.ox_doorlock:editDoor(doorId, { identifiers = {}, items = {} })
+        end)
+    end
+
+    debugPrint('info', 'Apartment room ' .. roomId .. ' vacated successfully')
+    return true
+end)
+
+lib.callback.register('LNS_Housing:server:deleteApartmentRoom', function(source, roomId)
+    debugPrint('info', 'LNS_Housing:server:deleteApartmentRoom called', {source = source, roomId = roomId})
+    WaitForDb()
+    if not IsApartmentAdmin(source) then return false, 'No permission' end
+
+    roomId = tonumber(roomId)
+    if not roomId then return false, 'Invalid room ID' end
+
+    local tenantRow = MySQL.single.await('SELECT license FROM player_apartments WHERE room_id = ?', {roomId})
+    local tenantLic = tenantRow and tenantRow.license
+
+    MySQL.query.await('DELETE FROM apartments WHERE room_id = ?', {roomId})
+    MySQL.query.await('DELETE FROM player_apartments WHERE room_id = ?', {roomId})
+    MySQL.query.await('DELETE FROM apartment_rooms WHERE id = ?', {roomId})
+
+    if tenantLic then
+        playerRooms[tenantLic] = nil
+    end
+    assignedRoomIds[roomId] = nil
+
+    for idx, room in ipairs(Settings.Rooms) do
+        if room.id == roomId then
+            table.remove(Settings.Rooms, idx)
+            break
+        end
+    end
+
+    if doorId and GetResourceState('ox_doorlock') == 'started' then
+        pcall(function()
+            exports.ox_doorlock:setDoorState(doorId, 0)
+        end)
+    end
+    roomDoors[roomId] = nil
+
+    TriggerClientEvent('LNS_Housing:client:removeApartmentRoom', -1, roomId)
+
+    debugPrint('info', 'Apartment room ' .. roomId .. ' deleted successfully')
+    return true
+end)
+
 RegisterNetEvent('LNS_Housing:server:ringApartmentDoorbell', function(roomId)
     local roomData = getRoomDataById(roomId)
     if not roomData or not roomData.doorCoords then return end

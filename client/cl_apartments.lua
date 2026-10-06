@@ -1518,3 +1518,56 @@ RegisterNUICallback('updateApartment', function(data, cb)
     SendNUIMessage({ action = 'closeUI' })
     cb('ok')
 end)
+
+RegisterNUICallback('vacateApartmentRoom', function(data, cb)
+    local roomId = tonumber(data.roomId)
+    local success = lib.callback.await('LNS_Housing:server:vacateApartmentRoom', false, roomId)
+    if success then
+        Bridge.Client.Notify('Room #' .. roomId .. ' has been vacated and cleared.', 'success')
+        cb({ success = true })
+    else
+        Bridge.Client.Notify('Failed to vacate apartment room.', 'error')
+        cb({ success = false })
+    end
+end)
+
+RegisterNUICallback('deleteApartmentRoom', function(data, cb)
+    local roomId = tonumber(data.roomId)
+    local success = lib.callback.await('LNS_Housing:server:deleteApartmentRoom', false, roomId)
+    if success then
+        Bridge.Client.Notify('Room #' .. roomId .. ' has been permanently deleted.', 'success')
+        cb({ success = true })
+    else
+        Bridge.Client.Notify('Failed to delete apartment room.', 'error')
+        cb({ success = false })
+    end
+end)
+
+RegisterNetEvent('LNS_Housing:client:removeApartmentRoom', function(roomId)
+    debugPrint('info', 'LNS_Housing:client:removeApartmentRoom received', {roomId = roomId})
+    roomId = tonumber(roomId)
+    if not roomId then return end
+
+    for idx, room in ipairs(Settings.Rooms or {}) do
+        if tonumber(room.id) == roomId then
+            table.remove(Settings.Rooms, idx)
+            break
+        end
+    end
+
+    for i = #apartmentPoints, 1, -1 do
+        local p = apartmentPoints[i]
+        if p and p.roomId == roomId then
+            if p.targetId then
+                exports.ox_target:removeZone(p.targetId)
+            end
+            pcall(function() p:remove() end)
+            table.remove(apartmentPoints, i)
+        end
+    end
+
+    if apartmentZones and apartmentZones[roomId] then
+        pcall(function() apartmentZones[roomId]:remove() end)
+        apartmentZones[roomId] = nil
+    end
+end)

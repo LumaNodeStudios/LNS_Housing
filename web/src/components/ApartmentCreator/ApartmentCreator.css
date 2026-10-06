@@ -586,3 +586,111 @@
     transform: scale(0.98);
     transition: opacity 0.25s ease, transform 0.25s ease;
 }
+
+.apt-danger-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    border: 1px solid transparent;
+}
+
+.apt-danger-btn.vacate {
+    background: rgba(251, 146, 60, 0.08);
+    border-color: rgba(251, 146, 60, 0.15);
+    color: rgba(251, 146, 60, 0.7);
+}
+
+.apt-danger-btn.vacate:hover {
+    background: rgba(251, 146, 60, 0.18);
+    border-color: rgba(251, 146, 60, 0.35);
+    color: #fb923c;
+}
+
+.apt-danger-btn.delete {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.15);
+    color: rgba(239, 68, 68, 0.7);
+}
+
+.apt-danger-btn.delete:hover {
+    background: rgba(239, 68, 68, 0.18);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #ef4444;
+}
+
+.apt-danger-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.apt-confirm-inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 8px;
+    background: rgba(251, 146, 60, 0.08);
+    border: 1px solid rgba(251, 146, 60, 0.2);
+    color: #fb923c;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.apt-confirm-inline.danger {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+
+.apt-confirm-yes {
+    padding: 3px 9px;
+    border-radius: 5px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    border: 1px solid transparent;
+}
+
+.apt-confirm-yes.vacate {
+    background: rgba(251, 146, 60, 0.2);
+    border-color: rgba(251, 146, 60, 0.4);
+    color: #fb923c;
+}
+
+.apt-confirm-yes.vacate:hover {
+    background: rgba(251, 146, 60, 0.35);
+}
+
+.apt-confirm-yes.delete {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #f87171;
+}
+
+.apt-confirm-yes.delete:hover {
+    background: rgba(239, 68, 68, 0.35);
+}
+
+.apt-confirm-no {
+    padding: 3px 9px;
+    border-radius: 5px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.apt-confirm-no:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+}
