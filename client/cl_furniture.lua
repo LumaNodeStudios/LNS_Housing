@@ -204,26 +204,58 @@ Modeler = {
             target.x, target.y, target.z,
             16, cache.ped, 0
         )
-        local _, hit, _, _, entityHit = GetShapeTestResult(ray)
+        local _, hit, hitCoords, _, entityHit = GetShapeTestResult(ray)
 
-        return hit == 1, entityHit
+        return hit == 1, entityHit, hitCoords
     end,
 
-    PickClosestOnScreen = function(self, nx, ny)
-        local sw, sh = GetActiveScreenResolution()
-        local aspect = sw / sh
-        local best, bestDist = nil, 0.035
+    RayHitsEntityBounds = function(self, entity, origin, dir)
+        local PAD = 0.05
+        local MIN_SIZE = 0.25
+        local mn, mx = GetModelDimensions(GetEntityModel(entity))
+        local lo = GetOffsetFromEntityGivenWorldCoords(entity, origin.x, origin.y, origin.z)
+        local far = origin + dir
+        local lf = GetOffsetFromEntityGivenWorldCoords(entity, far.x, far.y, far.z)
+        local ld = lf - lo
+        local o = { lo.x, lo.y, lo.z }
+        local d = { ld.x, ld.y, ld.z }
+        local lower = { mn.x, mn.y, mn.z }
+        local upper = { mx.x, mx.y, mx.z }
+
+        local tNear, tFar = -math.huge, math.huge
+        for i = 1, 3 do
+            local a, b = lower[i] - PAD, upper[i] + PAD
+            if b - a < MIN_SIZE then
+                local c = (a + b) / 2.0
+                a, b = c - MIN_SIZE / 2.0, c + MIN_SIZE / 2.0
+            end
+
+            if math.abs(d[i]) < 1e-6 then
+                if o[i] < a or o[i] > b then return nil end
+            else
+                local t1, t2 = (a - o[i]) / d[i], (b - o[i]) / d[i]
+                if t1 > t2 then t1, t2 = t2, t1 end
+                if t1 > tNear then tNear = t1 end
+                if t2 < tFar then tFar = t2 end
+                if tNear > tFar then return nil end
+            end
+        end
+
+        if tFar < 0.0 then return nil end
+        if tNear < 0.0 then tNear = tFar end
+        if tNear > 50.0 then return nil end
+
+        return tNear
+    end,
+
+    PickByBounds = function(self, origin, dir)
+        local bestEntity, bestT = nil, math.huge
 
         local function check(entity)
             if entity and DoesEntityExist(entity) then
-                local c = GetEntityCoords(entity)
-                local onScreen, sx, sy = World3dToScreen2d(c.x, c.y, c.z)
-                if onScreen then
-                    local dx, dy = (sx - nx) * aspect, sy - ny
-                    local d = math.sqrt(dx * dx + dy * dy)
-                    if d < bestDist then
-                        best, bestDist = entity, d
-                    end
+                local t = self:RayHitsEntityBounds(entity, origin, dir)
+                if t and t < bestT then
+                    bestEntity, bestT = entity, t
                 end
             end
         end
@@ -231,7 +263,7 @@ Modeler = {
         for _, item in pairs(self.Cart) do check(item.entity) end
         for _, entity in pairs(LoadedFurniture[self.property_id] or {}) do check(entity) end
 
-        return best
+        return bestEntity, bestT
     end,
 
     SelectAtCursor = function(self, nx, ny)
@@ -239,17 +271,30 @@ Modeler = {
         nx = nx or 0.5
         ny = ny or 0.5
 
+        local origin, dir = self:ScreenPointToRay(nx, ny)
+
         local item, kind, entity
-        local hit, hitEntity = self:RaycastFromScreen(nx, ny)
+        local bestDist = math.huge
+        local worldHitDist = math.huge
+        local hit, hitEntity, hitCoords = self:RaycastFromScreen(nx, ny)
+
         if hit and hitEntity ~= 0 then
-            entity = hitEntity
-            item, kind = self:ResolveEntity(hitEntity)
+            worldHitDist = #(hitCoords - origin)
+            local resolved, resolvedKind = self:ResolveEntity(hitEntity)
+            if resolved then
+                item, kind, entity = resolved, resolvedKind, hitEntity
+                bestDist = worldHitDist
+            end
         end
 
-        if not item then
-            entity = self:PickClosestOnScreen(nx, ny)
-            if entity then
-                item, kind = self:ResolveEntity(entity)
+        local boxEntity, boxDist = self:PickByBounds(origin, dir)
+        if boxEntity and boxDist < bestDist then
+            local blocked = (not item) and worldHitDist < boxDist - 0.1
+            if not blocked then
+                local resolved, resolvedKind = self:ResolveEntity(boxEntity)
+                if resolved then
+                    item, kind, entity = resolved, resolvedKind, boxEntity
+                end
             end
         end
 
