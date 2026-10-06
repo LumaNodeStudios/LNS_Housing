@@ -1,7 +1,7 @@
 <div align="center">
   <h1>LNS Housing</h1>
 
-  [![Version](https://img.shields.io/badge/Version-1.0.0-6fd2f3?style=for-the-badge)](https://github.com/LumaNodeStudios/LNS_Housing)
+  [![Version](https://img.shields.io/badge/Version-0.1.5-6fd2f3?style=for-the-badge)](https://github.com/LumaNodeStudios/LNS_Housing)
   [![Frameworks](https://img.shields.io/badge/Frameworks-ESX%20%7C%20Qbox-6fd2f3?style=for-the-badge)](#-framework-compatibility)
   [![Author](https://img.shields.io/badge/Author-LumaNode%20Studios-6fd2f3?style=for-the-badge)](https://github.com/LumaNodeStudios)
   [![License](https://img.shields.io/badge/License-GPL--3.0-6fd2f3?style=for-the-badge)](LICENSE)
