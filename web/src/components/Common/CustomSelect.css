@@ -1,4 +1,3 @@
-/* Custom Dropdown / Select Component Styles */
 .re-custom-select-container {
   display: flex;
   flex-direction: column;
@@ -82,7 +81,6 @@
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.8), 0 8px 10px -6px rgba(0, 0, 0, 0.7);
 }
 
-/* Custom Scrollbar for Options Panel */
 .re-custom-select-dropdown::-webkit-scrollbar {
   width: 5px;
 }

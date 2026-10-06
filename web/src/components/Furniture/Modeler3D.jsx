@@ -144,7 +144,13 @@ const Modeler3D = ({ active, onUpdate }) => {
   const isVisible = active && isInitialized;
 
   return (
-    <div className="modeler-3d-container" style={{ display: isVisible ? 'block' : 'none' }}>
+    <div
+      className="modeler-3d-container"
+      style={{
+        display: isVisible ? 'block' : 'none',
+        pointerEvents: isVisible ? 'auto' : 'none',
+      }}
+    >
       <Canvas
         camera={{ fov: 45.0, near: 0.1, far: 1000 }}
         style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', pointerEvents: isVisible ? 'auto' : 'none' }}

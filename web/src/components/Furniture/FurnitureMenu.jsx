@@ -1,8 +1,38 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sofa, Bed, Lamp, Tv, Utensils, Bath, Search, Package, Check, Trash2, Camera, Move, RotateCw, X, ShoppingCart, ShoppingBag, Hammer, ArrowLeft, Grid, ArrowDown, CreditCard, Banknote } from 'lucide-react';
+import { Sofa, Bed, Lamp, Tv, Utensils, Bath, Search, Package, Check, Trash2, Camera, Move, RotateCw, X, ShoppingCart, ShoppingBag, Hammer, ArrowLeft, Grid, ArrowDown, CreditCard, Banknote, Keyboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Modeler3D from './Modeler3D';
 import './FurnitureMenu.css';
+
+const CONTROLS = [
+  {
+    section: 'Selecting', rows: [
+      { keys: ['Left Click'], desc: 'Click any placed prop (bought or in basket) to move it' },
+    ]
+  },
+  {
+    section: 'Placement', rows: [
+      { keys: ['Drag'], desc: 'Drag the gizmo arrows or sphere' },
+      { keys: ['Right Click'], desc: 'Switch between move and rotate' },
+      { keys: ['E'], desc: 'Position mode' },
+      { keys: ['R'], desc: 'Rotate mode' },
+      { keys: ['G'], desc: 'Place on ground' },
+      { keys: ['Del'], desc: 'Delete the selected item (bought or in basket)' },
+    ]
+  },
+  {
+    section: 'Copy and Paste', rows: [
+      { keys: ['Ctrl', 'C'], desc: 'Copy the selected item' },
+      { keys: ['Ctrl', 'V'], desc: 'Paste a copy in that spot, then drag it away. Paste again to chain copies' },
+    ]
+  },
+  {
+    section: 'Camera', rows: [
+      { keys: ['Left Alt'], desc: 'Toggle free camera' },
+      { keys: ['Backspace'], desc: 'Toggle free camera' },
+    ]
+  },
+];
 
 const FurnitureImage = React.memo(function FurnitureImage({ item, ItemIcon }) {
   const [loaded, setLoaded] = useState(false);
@@ -63,6 +93,20 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
   const [isPlacing, setIsPlacing] = useState(false);
   const [placingItem, setPlacingItem] = useState(null);
   const [freecamMode, setFreecamMode] = useState(false);
+  const [placingKind, setPlacingKind] = useState(null); // 'new' | 'cart' | 'owned'
+  const [showControls, setShowControls] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 1200);
+  };
+
+  const clearPlacing = () => {
+    setIsPlacing(false);
+    setPlacingItem(null);
+    setPlacingKind(null);
+  };
 
   useEffect(() => {
     setSearchQuery('');
@@ -88,7 +132,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
             setCart(data);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
 
     const handleMessage = (event) => {
@@ -97,12 +141,22 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
       } else if (event.data.action === 'selectFurniture') {
         setIsPlacing(true);
         setPlacingItem(event.data.data);
+        setPlacingKind(event.data.data.kind || 'owned');
       } else if (event.data.action === 'addToCart') {
         setCart(prevCart => [...prevCart, event.data.data]);
       } else if (event.data.action === 'setCart') {
         setCart(event.data.data || []);
       } else if (event.data.action === 'clearCart') {
         setCart([]);
+      } else if (event.data.action === 'removeCartItem') {
+        const removedId = event.data.data && event.data.data.cartId;
+        setCart(prevCart => prevCart.filter(i => i.cartId !== removedId));
+      } else if (event.data.action === 'placementEnded') {
+        setIsPlacing(false);
+        setPlacingItem(null);
+        setPlacingKind(null);
+        setToast('Deleted');
+        setTimeout(() => setToast(null), 1200);
       }
     };
 
@@ -115,6 +169,24 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+        return;
+      }
+
+      if (e.ctrlKey || e.metaKey) {
+        const k = e.key.toLowerCase();
+        if (k === 'c' && isPlacing) {
+          e.preventDefault();
+          if (!e.repeat) { post('copyFurniture'); showToast('Copied'); }
+        } else if (k === 'v') {
+          e.preventDefault();
+          if (!e.repeat) post('pasteFurniture');
+        }
+        return;
+      }
+
+      if (e.key === 'Delete' && isPlacing) {
+        e.preventDefault();
+        if (!e.repeat) post('deleteFurniture');
         return;
       }
 
@@ -136,6 +208,24 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [freecamMode, isPlacing]);
+
+  useEffect(() => {
+    const handleWorldClick = (e) => {
+      if (e.button !== 0) return;
+      if (isPlacing || freecamMode || showPaymentModal) return;
+      if (e.target.closest && e.target.closest(
+        '.furniture-sidebar-container, .placement-controls, .placement-mode-controls, .controls-help-btn, .controls-popup, .payment-modal-overlay'
+      )) return;
+
+      post('clickWorld', {
+        x: e.clientX / window.innerWidth,
+        y: e.clientY / window.innerHeight,
+      });
+    };
+
+    window.addEventListener('mousedown', handleWorldClick);
+    return () => window.removeEventListener('mousedown', handleWorldClick);
+  }, [isPlacing, freecamMode, showPaymentModal]);
 
   const IconMap = {
     Sofa: Sofa,
@@ -205,7 +295,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
   const handleHoverIn = (item) => {
     if (isPlacing) return;
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    
+
     hoverTimeoutRef.current = setTimeout(() => {
       activeHoverItemRef.current = item;
       post('hoverIn', item);
@@ -250,15 +340,15 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
     if (isPlacing) return;
     setIsPlacing(true);
     setPlacingItem(item);
+    setPlacingKind(activeTab === 'editor' ? 'owned' : 'new');
     post('unhoverOwnedItem');
     post('previewFurniture', item);
   };
 
   const handleAddToCart = (item) => {
-    const catId = item.categoryId || activeCategory;
+    const catId = item.categoryId || item.category || activeCategory;
     post('addToCart', { ...item, category: catId });
-    setIsPlacing(false);
-    setPlacingItem(null);
+    clearPlacing();
   };
 
   const handleBuy = async (paymentMethod) => {
@@ -670,6 +760,50 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
         viewport (Modeler3D's gizmo). Rendering them as siblings fixes both.
       */}
 
+      <button
+        className={`controls-help-btn ${showControls ? 'active' : ''}`}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => setShowControls(v => !v)}
+        tabIndex={-1}
+        title="Controls"
+      >
+        <Keyboard size={18} />
+      </button>
+
+      <AnimatePresence>
+        {showControls && (
+          <motion.div
+            className="controls-popup"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}
+          >
+            <div className="controls-popup-header">
+              <span>CONTROLS</span>
+              <button className="payment-modal-close" onClick={() => setShowControls(false)}>
+                <X size={16} />
+              </button>
+            </div>
+            {CONTROLS.map((group) => (
+              <div key={group.section} className="controls-group">
+                <div className="controls-section-title">{group.section}</div>
+                {group.rows.map((row, i) => (
+                  <div key={i} className="controls-row">
+                    <div className="controls-keys">
+                      {row.keys.map((k) => <kbd key={k}>{k}</kbd>)}
+                    </div>
+                    <span className="controls-desc">{row.desc}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {toast && <div className="controls-toast">{toast}</div>}
+
       {freecamMode && (
         <div className={`freecam-hint ${isPlacing ? 'with-placement' : ''}`}>
           <span>[LEFT ALT] Exit Cam | [BACKSPACE] Exit Cam</span>
@@ -703,17 +837,15 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
 
           <div className="controls-footer" style={{ marginTop: '-5px' }}>
             <button className="confirm-btn" onClick={() => {
-              if (activeTab === 'shopping' && placingItem) {
+              if (placingKind === 'new' && placingItem) {
                 handleAddToCart(placingItem);
               } else {
-                setIsPlacing(false);
-                setPlacingItem(null);
+                clearPlacing();
                 post('stopPlacement', { save: true });
               }
             }}>Confirm</button>
             <button className="stop-btn" onClick={() => {
-              setIsPlacing(false);
-              setPlacingItem(null);
+              clearPlacing();
               post('stopPlacement');
             }}>Cancel</button>
           </div>

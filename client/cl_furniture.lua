@@ -2,6 +2,16 @@ local Settings = lib.load('shared.settings')
 local Furniture = lib.load('shared.furniture')
 local Freecam = Freecam
 
+local function FindCatalogItem(model)
+    for _, category in ipairs(Furniture) do
+        for _, item in ipairs(category.items) do
+            if item.model == model then
+                return item, category.id
+            end
+        end
+    end
+end
+
 Modeler = {
     IsMenuActive = false,
     IsFreecamMode = false,
@@ -18,6 +28,7 @@ Modeler = {
     HoverObject = nil,
     HoverDistance = 5.0,
     HoverSession = 0,
+    Clipboard = nil,
 
     OpenMenu = function(self, propertyId)
         local property = Properties[propertyId]
@@ -135,27 +146,220 @@ Modeler = {
         return nil
     end,
 
-    SelectAtCursor = function(self)
-        if self.CurrentObject then return end
-        
-        local hit, entity = self:RaycastFromCamera()
-        if hit and entity ~= 0 then
-            local item = self:GetFurnitureFromEntity(entity)
-            if item then
-                
-                local data = table.clone(item)
-                data.entity = entity
-                self:StartPlacement(data)
-                
-                
-                SendNUIMessage({
-                    action = "selectFurniture",
-                    data = item
-                })
-                return true
+        GetCartItemFromEntity = function(self, entity)
+        for _, item in pairs(self.Cart) do
+            if item.entity == entity then return item end
+        end
+        return nil
+    end,
+
+    ResolveEntity = function(self, entity)
+        local cartItem = self:GetCartItemFromEntity(entity)
+        if cartItem then return cartItem, 'cart' end
+
+        local owned = self:GetFurnitureFromEntity(entity)
+        if owned then return owned, 'owned' end
+
+        return nil
+    end,
+
+    ScreenPointToRay = function(self, nx, ny)
+        local camPos = GetFinalRenderedCamCoord()
+        local camRot = GetFinalRenderedCamRot(2)
+        local fov = GetFinalRenderedCamFov()
+        local sw, sh = GetActiveScreenResolution()
+        local aspect = sw / sh
+
+        local forward = self:RotationToDirection(camRot)
+        local right = vector3(forward.y, -forward.x, 0.0)
+        local rl = #right
+        if rl < 0.0001 then
+            right = vector3(1.0, 0.0, 0.0)
+        else
+            right = right / rl
+        end
+        local up = vector3(
+            right.y * forward.z,
+            -right.x * forward.z,
+            right.x * forward.y - right.y * forward.x
+        )
+
+        local tanY = math.tan(math.rad(fov) / 2.0)
+        local tanX = tanY * aspect
+        local ox = (nx * 2.0 - 1.0) * tanX
+        local oy = (1.0 - ny * 2.0) * tanY
+
+        local dir = forward + right * ox + up * oy
+        dir = dir / #dir
+
+        return camPos, dir
+    end,
+
+    RaycastFromScreen = function(self, nx, ny)
+        local origin, dir = self:ScreenPointToRay(nx, ny)
+        local target = origin + dir * 50.0
+
+        local ray = StartExpensiveSynchronousShapeTestLosProbe(
+            origin.x, origin.y, origin.z,
+            target.x, target.y, target.z,
+            16, cache.ped, 0
+        )
+        local _, hit, _, _, entityHit = GetShapeTestResult(ray)
+
+        return hit == 1, entityHit
+    end,
+
+    PickClosestOnScreen = function(self, nx, ny)
+        local sw, sh = GetActiveScreenResolution()
+        local aspect = sw / sh
+        local best, bestDist = nil, 0.035
+
+        local function check(entity)
+            if entity and DoesEntityExist(entity) then
+                local c = GetEntityCoords(entity)
+                local onScreen, sx, sy = World3dToScreen2d(c.x, c.y, c.z)
+                if onScreen then
+                    local dx, dy = (sx - nx) * aspect, sy - ny
+                    local d = math.sqrt(dx * dx + dy * dy)
+                    if d < bestDist then
+                        best, bestDist = entity, d
+                    end
+                end
             end
         end
-        return false
+
+        for _, item in pairs(self.Cart) do check(item.entity) end
+        for _, entity in pairs(LoadedFurniture[self.property_id] or {}) do check(entity) end
+
+        return best
+    end,
+
+    SelectAtCursor = function(self, nx, ny)
+        if not self.IsMenuActive or self.CurrentObject then return false end
+        nx = nx or 0.5
+        ny = ny or 0.5
+
+        local item, kind, entity
+        local hit, hitEntity = self:RaycastFromScreen(nx, ny)
+        if hit and hitEntity ~= 0 then
+            entity = hitEntity
+            item, kind = self:ResolveEntity(hitEntity)
+        end
+
+        if not item then
+            entity = self:PickClosestOnScreen(nx, ny)
+            if entity then
+                item, kind = self:ResolveEntity(entity)
+            end
+        end
+
+        if not item then return false end
+
+        self:UnhoverOwnedItem()
+
+        local data = table.clone(item)
+        data.entity = entity
+        data.kind = kind
+        self:StartPlacement(data)
+
+        local p = self.PlacingData
+        SendNUIMessage({
+            action = "selectFurniture",
+            data = {
+                kind = p.kind,
+                id = p.id,
+                cartId = p.cartId,
+                model = p.model,
+                label = p.label,
+                price = p.price,
+                category = p.category,
+            }
+        })
+        return true
+    end,
+
+    CopyCurrent = function(self)
+        if not self.IsMenuActive or not self.CurrentObject or not self.PlacingData then return false end
+        local d = self.PlacingData
+        self.Clipboard = {
+            model = d.model,
+            label = d.label,
+            price = d.price,
+            category = d.category,
+            position = GetEntityCoords(self.CurrentObject),
+            rotation = GetEntityRotation(self.CurrentObject, 2),
+        }
+        return true
+    end,
+
+    CommitPlacement = function(self)
+        if not self.CurrentObject then return end
+        if self.PlacingData and self.PlacingData.kind == 'new' then
+            self:AddToCart(self.PlacingData)
+        else
+            self:StopPlacement({ save = true })
+        end
+    end,
+
+    PasteClipboard = function(self)
+        local clip = self.Clipboard
+        if not self.IsMenuActive or not clip then return false end
+
+        if self.CurrentObject then
+            local wasPaste = self.PlacingData and self.PlacingData.fromPaste
+            local curPos = GetEntityCoords(self.CurrentObject)
+            local curRot = GetEntityRotation(self.CurrentObject, 2)
+            self:CommitPlacement()
+            if wasPaste then
+                clip.position = curPos
+                clip.rotation = curRot
+            end
+        end
+
+        self:StartPlacement({
+            model = clip.model,
+            label = clip.label,
+            price = clip.price,
+            category = clip.category,
+            position = clip.position,
+            rotation = clip.rotation,
+            fromPaste = true,
+        })
+
+        SendNUIMessage({
+            action = "selectFurniture",
+            data = {
+                kind = 'new',
+                model = clip.model,
+                label = clip.label,
+                price = clip.price,
+                category = clip.category,
+            }
+        })
+        return true
+    end,
+
+        DeleteCurrent = function(self)
+        if not self.IsMenuActive or not self.CurrentObject or not self.PlacingData then return false end
+
+        local d = self.PlacingData
+
+        if d.kind == 'new' then
+            self:StopPlacement()
+        elseif d.kind == 'cart' then
+            local cartId = d.cartId
+            self.CurrentObject = nil
+            self.PlacingData = nil
+            self:RemoveCartItem({ cartId = cartId })
+            SendNUIMessage({ action = "removeCartItem", data = { cartId = cartId } })
+        elseif d.kind == 'owned' then
+            local id = d.id
+            self:StopPlacement()
+            self:RemoveOwnedItem({ id = id })
+        end
+
+        SendNUIMessage({ action = "placementEnded" })
+        return true
     end,
 
     StartSelectionThread = function(self)
@@ -169,18 +373,6 @@ Modeler = {
                 Wait(0)
             end
         end)
-    end,
-
-    RaycastFromCamera = function(self)
-        local camRot = self.IsFreecamMode and Freecam:GetRotation() or GetGameplayCamRot(2)
-        local camPos = self.IsFreecamMode and Freecam:GetPosition() or GetGameplayCamCoord()
-        local forward = self:RotationToDirection(camRot)
-        local target = camPos + (forward * 50.0) 
-        
-        local ray = StartShapeTestRay(camPos.x, camPos.y, camPos.z, target.x, target.y, target.z, 16, cache.ped, 0)
-        local _, hit, endCoords, surfaceNormal, entityHit = GetShapeTestResult(ray)
-        
-        return hit, entityHit
     end,
 
     RotationToDirection = function(self, rotation)
@@ -263,9 +455,10 @@ Modeler = {
         return camPos
     end,
 
-    StartPlacement = function(self, data)
+        StartPlacement = function(self, data)
         self:HoverOut()
         local model = data.model or data.object
+        local catalog, catalogCategory = FindCatalogItem(model)
         local curObject
         local objectRot
         local objectPos
@@ -277,28 +470,37 @@ Modeler = {
             curObject = data.entity
             objectPos = GetEntityCoords(curObject)
             objectRot = GetEntityRotation(curObject, 2)
-            
-            
+
             self.PlacingData = {
+                kind = data.kind or 'owned',
                 id = data.id,
-                isOwned = true,
+                cartId = data.cartId,
+                model = model,
+                label = data.label or (catalog and catalog.label),
+                price = data.price or (catalog and catalog.price),
+                category = data.category or catalogCategory,
                 originalPos = objectPos,
-                originalRot = objectRot
+                originalRot = objectRot,
             }
         else
             local hash = GetHashKey(model)
             lib.requestModel(hash)
 
-            curObject = CreateObjectNoOffset(hash, self.CurrentCameraLookAt.x, self.CurrentCameraLookAt.y, self.CurrentCameraLookAt.z, false, false, false)
+            local spawn = data.position or self.CurrentCameraLookAt
+            curObject = CreateObjectNoOffset(hash, spawn.x, spawn.y, spawn.z, false, false, false)
+            if data.rotation then
+                SetEntityRotation(curObject, data.rotation.x, data.rotation.y, data.rotation.z, 2, true)
+            end
             objectRot = GetEntityRotation(curObject, 2)
-            objectPos = self.CurrentCameraLookAt
-            
+            objectPos = spawn
+
             self.PlacingData = {
+                kind = 'new',
                 model = model,
-                label = data.label,
-                price = data.price,
-                category = data.category,
-                isOwned = false
+                label = data.label or (catalog and catalog.label),
+                price = data.price or (catalog and catalog.price),
+                category = data.category or catalogCategory,
+                fromPaste = data.fromPaste,
             }
         end
 
@@ -309,9 +511,8 @@ Modeler = {
         SetEntityDrawOutlineColor(255, 255, 255, 255)
 
         self.CurrentObject = curObject
-        
-        
-        SendNUIMessage({ 
+
+        SendNUIMessage({
             action = "setupModel",
             data = {
                 objectPosition = objectPos,
@@ -323,7 +524,6 @@ Modeler = {
             }
         })
 
-        
         self:StartPlacementThread()
     end,
 
@@ -385,34 +585,38 @@ Modeler = {
         SetEntityRotation(self.CurrentObject, data.x + 0.0, data.y + 0.0, data.z + 0.0, 2, true)
     end,
 
-    StopPlacement = function(self, options)
+        StopPlacement = function(self, options)
         if self.CurrentObject == nil then return end
         options = options or {}
 
-        local data = self.PlacingData
-        
+        local data = self.PlacingData or {}
+        local ent = self.CurrentObject
+
         if options.save then
-            if data.isOwned then
-                
-                self:UpdateFurniture(data.id, GetEntityCoords(self.CurrentObject), GetEntityRotation(self.CurrentObject, 2))
-            else
-                
+            if data.kind == 'owned' then
+                self:UpdateFurniture(data.id, GetEntityCoords(ent), GetEntityRotation(ent, 2))
+            elseif data.kind == 'cart' then
+                local cartItem = self.Cart[data.cartId]
+                if cartItem then
+                    cartItem.position = GetEntityCoords(ent)
+                    cartItem.rotation = GetEntityRotation(ent, 2)
+                end
             end
         else
-            
-            if data.isOwned then
-                
-                SetEntityCoords(self.CurrentObject, data.originalPos.x, data.originalPos.y, data.originalPos.z)
-                SetEntityRotation(self.CurrentObject, data.originalRot.x, data.originalRot.y, data.originalRot.z, 2, true)
-            else
-                DeleteEntity(self.CurrentObject)
+            if data.kind == 'new' then
+                DeleteEntity(ent)
+            elseif data.originalPos then
+                SetEntityCoords(ent, data.originalPos.x, data.originalPos.y, data.originalPos.z)
+                SetEntityRotation(ent, data.originalRot.x, data.originalRot.y, data.originalRot.z, 2, true)
             end
         end
 
-        FreezeEntityPosition(self.CurrentObject, true)
-        SetEntityCollision(self.CurrentObject, true, true)
-        SetEntityAlpha(self.CurrentObject, 255, false)
-        SetEntityDrawOutline(self.CurrentObject, false)
+        if DoesEntityExist(ent) then
+            FreezeEntityPosition(ent, true)
+            SetEntityCollision(ent, true, true)
+            SetEntityAlpha(ent, 255, false)
+            SetEntityDrawOutline(ent, false)
+        end
 
         self.CurrentObject = nil
         self.PlacingData = nil
@@ -537,20 +741,22 @@ Modeler = {
         end
     end,
 
-    AddToCart = function(self, data)
+        AddToCart = function(self, data)
+        if not self.CurrentObject then return end
+
         local cartId = tostring(math.random(100000, 999999)) .. '_' .. tostring(GetGameTimer())
         local item = {
             cartId = cartId,
             label = data.label,
             model = data.model,
-            price = data.price,
+            price = data.price or 0,
             entity = self.CurrentObject,
             position = GetEntityCoords(self.CurrentObject),
             rotation = GetEntityRotation(self.CurrentObject, 2),
             category = data.category,
         }
 
-        if self.CurrentObject and DoesEntityExist(self.CurrentObject) then
+        if DoesEntityExist(self.CurrentObject) then
             FreezeEntityPosition(self.CurrentObject, true)
             SetEntityCollision(self.CurrentObject, true, true)
             SetEntityAlpha(self.CurrentObject, 255, false)
@@ -564,7 +770,8 @@ Modeler = {
             data = item
         })
 
-        self.CurrentObject = nil 
+        self.CurrentObject = nil
+        self.PlacingData = nil
     end,
 
     RemoveCartItem = function(self, data)
@@ -764,7 +971,22 @@ RegisterNUICallback("nudgeObject", function(data, cb)
 end)
 
 RegisterNUICallback("clickWorld", function(data, cb)
-    Modeler:SelectAtCursor()
+    Modeler:SelectAtCursor(data and data.x, data and data.y)
+    cb("ok")
+end)
+
+RegisterNUICallback("copyFurniture", function(data, cb)
+    Modeler:CopyCurrent()
+    cb("ok")
+end)
+
+RegisterNUICallback("pasteFurniture", function(data, cb)
+    Modeler:PasteClipboard()
+    cb("ok")
+end)
+
+RegisterNUICallback("deleteFurniture", function(data, cb)
+    Modeler:DeleteCurrent()
     cb("ok")
 end)
 
@@ -948,7 +1170,7 @@ CreateThread(function()
 
             if not IsNuiFocused() then
                 local isFreecam = Modeler.IsFreecamMode or (isTabletActive and TabletPlacement.IsFreecamMode)
-                
+
                 if IsDisabledControlJustReleased(0, 19) then
                     SetFreecamModeState(false)
                 end
@@ -957,6 +1179,13 @@ CreateThread(function()
                     DisableControlAction(0, 177, true)
                     if IsDisabledControlJustReleased(0, 177) then
                         SetFreecamModeState(false)
+                    end
+                end
+
+                if Modeler.IsMenuActive and Modeler.CurrentObject then
+                    DisableControlAction(0, 178, true)
+                    if IsDisabledControlJustPressed(0, 178) then
+                        Modeler:DeleteCurrent()
                     end
                 end
             end

@@ -13,7 +13,6 @@
     0 0 50px rgba(var(--primary-rgb), 0.03);
 }
 
-/* Header V3 Styles */
 .re-header-v3 {
   display: flex;
   justify-content: space-between;
@@ -112,7 +111,6 @@
   border-color: var(--danger);
 }
 
-/* Sub Header & Tabs */
 .re-sub-header {
   display: flex;
   justify-content: space-between;
@@ -202,7 +200,6 @@
   background: rgba(var(--primary-rgb), 0.08);
 }
 
-/* Listings Grid (Redesigned to spacious 3 columns) */
 .re-grid-v2 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -226,7 +223,6 @@
   background: var(--primary);
 }
 
-/* Card Styling */
 .re-card-v2 {
   display: flex;
   flex-direction: column;
@@ -416,7 +412,6 @@
   color: #fff;
 }
 
-/* Management & Blacklist Tables */
 .management-container {
   padding: 16px;
   border-radius: 14px;
@@ -537,7 +532,6 @@
   color: var(--success);
 }
 
-/* Modals & Backdrop */
 .re-modal-overlay {
   position: absolute;
   top: 0;
@@ -761,7 +755,6 @@
   background: var(--primary-dark);
 }
 
-/* Creator Layout */
 .re-creator-wrapper {
   display: flex;
   flex-direction: column;
@@ -809,7 +802,6 @@
   color: #fff;
 }
 
-/* Wizard Steps Progress */
 .re-wizard-steps {
   display: flex;
   align-items: center;
@@ -854,7 +846,6 @@
   white-space: nowrap;
 }
 
-/* Active Step */
 .re-wizard-step.active .step-circle {
   background: var(--primary);
   border-color: var(--primary);
@@ -866,7 +857,6 @@
   color: #fff;
 }
 
-/* Completed Step */
 .re-wizard-step.completed .step-circle {
   background: rgba(var(--primary-rgb), 0.1);
   border-color: var(--primary);
@@ -877,13 +867,11 @@
   color: var(--primary);
 }
 
-/* Step connector lines */
 .re-wizard-line {
   flex: 1;
   height: 2px;
   background: var(--border-dim);
   margin-bottom: 22px;
-  /* Offset the step label height */
   transition: var(--transition-smooth);
 }
 
@@ -892,7 +880,6 @@
   box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.2);
 }
 
-/* Creator Card Details */
 .re-creator-card {
   background: var(--bg-card);
   border: 1px solid var(--border-dim);
@@ -1070,7 +1057,6 @@
   font-weight: 950;
 }
 
-/* Creator Photo & Interactive lists */
 .re-photo-card {
   display: flex;
   flex-direction: column;
@@ -1244,7 +1230,6 @@
   background: var(--primary-dark);
 }
 
-/* Contracts Wrapper */
 .re-contracts-wrapper {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1458,7 +1443,6 @@
   background: var(--primary-dark);
 }
 
-/* delinquent rentals */
 .rental-lease-card.delinquent {
   border-color: rgba(var(--danger-rgb), 0.2) !important;
   background: rgba(var(--danger-rgb), 0.02) !important;
@@ -1487,7 +1471,6 @@
   }
 }
 
-/* Custom Dropdown / Select Component Styles */
 .re-custom-select-container {
   display: flex;
   flex-direction: column;
@@ -1569,7 +1552,6 @@
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7);
 }
 
-/* Custom Scrollbar for Options Panel */
 .re-custom-select-dropdown::-webkit-scrollbar {
   width: 5px;
 }
@@ -1623,7 +1605,6 @@
   flex-shrink: 0;
 }
 
-/* Custom Number Spinner Styles */
 .re-number-input-wrapper {
   position: relative;
   display: flex;
@@ -1636,7 +1617,6 @@
   width: 100%;
 }
 
-/* Hide default browser spinners */
 .re-number-input-spinless::-webkit-outer-spin-button,
 .re-number-input-spinless::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -1682,7 +1662,6 @@
   stroke-width: 3px;
 }
 
-/* Segmented Sub Tabs for Contracts view */
 .contracts-tab-container {
   display: flex;
   flex-direction: column;

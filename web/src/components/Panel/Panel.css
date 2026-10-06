@@ -13,7 +13,6 @@
     0 0 40px rgba(var(--primary-rgb), 0.03);
 }
 
-/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -32,7 +31,6 @@
   background: var(--primary);
 }
 
-/* Header Styles */
 .panel-header {
   display: flex;
   justify-content: space-between;
@@ -111,8 +109,6 @@
   position: relative;
 }
 
-/* Home Tab Styles */
-/* Home Tab Split Layout (Zero Dead Space) */
 .home-tab-split {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -439,7 +435,6 @@
   color: var(--primary);
 }
 
-/* Security Tab Styles */
 .security-tab-layout {
   display: flex;
   flex-direction: column;
@@ -699,7 +694,6 @@
   color: var(--primary);
 }
 
-/* Access Control Styles */
 .access-tab-layout-new {
   display: flex;
   flex-direction: column;
@@ -878,7 +872,6 @@
   cursor: default;
 }
 
-/* Modals */
 .modal-overlay {
   position: absolute;
   top: 0;
@@ -1041,7 +1034,6 @@
   background: var(--primary-dark);
 }
 
-/* Rent Styles */
 .rent-tab-layout-new {
   display: flex;
   flex-direction: column;
@@ -1154,7 +1146,6 @@
   color: var(--text-muted);
 }
 
-/* Modern Toggle Button */
 .modern-toggle {
   width: 42px;
   height: 22px;
@@ -1219,7 +1210,6 @@
   gap: 6px;
 }
 
-/* Rent History Table */
 .rent-history-side {
   background: var(--bg-card);
   border: 1px solid var(--border-dim);
@@ -1283,7 +1273,6 @@
   font-weight: 700;
 }
 
-/* Settings Tab Styles */
 .settings-tab-layout {
   display: flex;
   flex-direction: column;
@@ -1369,7 +1358,6 @@
   margin-top: 1px;
 }
 
-/* Toggle Switch */
 .toggle-switch {
   width: 42px;
   height: 22px;
@@ -1401,7 +1389,6 @@
   left: 22px;
 }
 
-/* Wall Tint Picker */
 .color-picker-container {
   display: flex;
   flex-direction: column;
@@ -1493,7 +1480,6 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* House Usage & Power Upgrades System */
 .home-grid-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1551,11 +1537,25 @@
   color: #fff;
 }
 
-.icon-gold { color: #f59e0b; }
-.icon-red { color: #ef4444; }
-.icon-green { color: #10b981; }
-.icon-orange { color: #f97316; }
-.icon-flame { color: #ec4899; }
+.icon-gold {
+  color: #f59e0b;
+}
+
+.icon-red {
+  color: #ef4444;
+}
+
+.icon-green {
+  color: #10b981;
+}
+
+.icon-orange {
+  color: #f97316;
+}
+
+.icon-flame {
+  color: #ec4899;
+}
 
 .usage-bar-track {
   width: 100%;
@@ -1604,8 +1604,13 @@
 }
 
 @keyframes pulse-tripped {
-  from { opacity: 0.7; }
-  to { opacity: 1; }
+  from {
+    opacity: 0.7;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .tier-select-grid {
