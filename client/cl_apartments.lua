@@ -953,7 +953,7 @@ end)
 local function RegisterApartmentCreatorCommands()
     local createCmd = Settings.Apartments.Creator and Settings.Apartments.Creator.Command or 'createapartment'
     local editCmd = Settings.Apartments.Creator and Settings.Apartments.Creator.EditCommand or 'editapartment'
-    
+
     RegisterCommand(createCmd, function()
         local isAdmin = lib.callback.await('LNS_Housing:server:checkPermission', false, 'admin')
         if not isAdmin then
@@ -975,6 +975,8 @@ local function RegisterApartmentCreatorCommands()
     end, false)
 end
 
+RegisterApartmentCreatorCommands()
+
 CreateThread(function()
     while not NetworkIsPlayerActive(PlayerId()) do
         Wait(100)
@@ -988,8 +990,6 @@ CreateThread(function()
     CreateApartmentBreakerTarget()
 
     initApartmentForPlayer()
-
-    RegisterApartmentCreatorCommands()
 
     if Bridge.Client.GetIdentifier() then
         RegisterApartmentDoors(false)
