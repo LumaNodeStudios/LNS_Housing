@@ -127,28 +127,16 @@ function CalculatePropertyPowerAndTemp(propertyId)
         end
     end
 
-    print(string.format("^3[DEBUG Electricity]^7 Starting Calculation for Property #%s (Source: %s)", strId, sourceName))
-
     local totalPower = 0.0
     local tempDelta = 0.0
     local baseTemp = (Settings.Temperature and Settings.Temperature.BaseTemperature) or 70.0
     local itemsMatchedCount = 0
 
     if furnitureList and type(furnitureList) == 'table' then
-        print(string.format("^3[DEBUG Electricity]^7 Found %d furniture items in payload.", #furnitureList))
         for i, f in ipairs(furnitureList) do
-            print(string.format("^2[DEBUG Item #%d Raw Payload]^7 %s", i, json.encode(f)))
-
             local itemData = GetFurnitureItemData(f)
             if itemData then
                 itemsMatchedCount = itemsMatchedCount + 1
-                print(string.format("^2[DEBUG Item #%d Matched Catalog]^7 ID: %s | Label: %s | Model: %s | Catalog Power: %s | Catalog Temp: %s",
-                    i, tostring(itemData.id), tostring(itemData.label), tostring(itemData.model),
-                    tostring(itemData.powerConsumption or itemData.power_consumption or itemData.power or "NONE"),
-                    tostring(itemData.tempEffect or itemData.temp_effect or itemData.temp or "NONE")))
-            else
-                print(string.format("^1[DEBUG Item #%d UNMATCHED CATALOG]^7 Model '%s' / Label '%s' could not be found in shared/furniture.lua",
-                    i, tostring(f.model or f.name or f.object), tostring(f.label or 'None')))
             end
 
             local itemRef = itemData or f
@@ -165,15 +153,8 @@ function CalculatePropertyPowerAndTemp(propertyId)
             totalPower = totalPower + pwr
             tempDelta = tempDelta + tmp
 
-            print(string.format("^5[DEBUG Item #%d Final Contribution]^7 Added Power: %.2f kWh | Added Temp: %.1f°F | Running Power: %.2f kWh",
-                i, pwr, tmp, totalPower))
         end
-    else
-        print(string.format("^1[DEBUG Electricity]^7 Furniture list is EMPTY or invalid for Property #%s", strId))
     end
-
-    print(string.format("^3[DEBUG Electricity Summary]^7 Property #%s | Matched %d/%d items | Total Power: %.2f kWh | Base Temp: %.1f°F | Temp Delta: %.1f°F | Net Temp: %.1f°F",
-        strId, itemsMatchedCount, furnitureList and #furnitureList or 0, totalPower, baseTemp, tempDelta, baseTemp + tempDelta))
 
     local isElectricityEnabled = Settings.Electricity == nil or Settings.Electricity.Enabled ~= false
     local isTemperatureEnabled = Settings.Temperature == nil or Settings.Temperature.Enabled ~= false
@@ -360,8 +341,6 @@ RegisterCommand('cutpower', function(source, args)
     if not propertyId or not Properties[propertyId] then
         if src > 0 then
             Bridge.Server.Notify(src, "Usage: /cutpower [propertyId] (or stand near your property)", "error")
-        else
-            print("Usage: /cutpower [propertyId]")
         end
         return
     end
@@ -380,8 +359,6 @@ RegisterCommand('cutpower', function(source, args)
     
     if src > 0 then
         Bridge.Server.Notify(src, string.format("Power manually cut to Property #%d! Circuit breaker tripped.", propertyId), "warning")
-    else
-        print(string.format("[LNS_Housing] Power cut to Property #%d", propertyId))
     end
 end, false)
 
@@ -413,8 +390,6 @@ RegisterCommand('restorepower', function(source, args)
     if not propertyId or not Properties[propertyId] then
         if src > 0 then
             Bridge.Server.Notify(src, "Usage: /restorepower [propertyId] (or stand near your property)", "error")
-        else
-            print("Usage: /restorepower [propertyId]")
         end
         return
     end
@@ -428,7 +403,5 @@ RegisterCommand('restorepower', function(source, args)
 
     if src > 0 then
         Bridge.Server.Notify(src, string.format("Power restored to Property #%d!", propertyId), "success")
-    else
-        print(string.format("[LNS_Housing] Power restored to Property #%d", propertyId))
     end
 end, false)
