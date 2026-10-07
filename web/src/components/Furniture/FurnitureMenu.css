@@ -1384,33 +1384,47 @@
   margin: 0 0 12px 0;
 }
 
+.editor-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+  height: 100%;
+}
+
 .editor-items-list-container {
   flex: 1;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .editor-items-list {
   flex: 1;
   overflow-y: auto;
-  padding: 10px 15px;
+  overflow-x: hidden;
+  padding: 10px 15px 25px 15px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-height: 0;
 }
 
 .editor-items-list::-webkit-scrollbar {
-  width: 4px;
+  width: 6px;
 }
 
 .editor-items-list::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
 }
 
 .editor-items-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .editor-items-list::-webkit-scrollbar-thumb:hover {
