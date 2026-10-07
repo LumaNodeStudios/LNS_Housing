@@ -208,12 +208,12 @@ return {
         },
         -- Lockpicking minigame difficulty settings based on security/lock levels
         Difficulty = {
-            [0] = { rounds = 1, speed = 1.0, area = 50 },
-            [1] = { rounds = 1, speed = 1.0, area = 50 },
-            [2] = { rounds = 1, speed = 1.0, area = 50 },
-            [3] = { rounds = 1, speed = 1.0, area = 50 },
-            [4] = { rounds = 1, speed = 1.0, area = 50 },
-            [5] = { rounds = 1, speed = 1.0, area = 50 },
+            [0] = { rounds = 2, speed = 1.0, area = 50 },
+            [1] = { rounds = 2, speed = 1.1, area = 40 },
+            [2] = { rounds = 3, speed = 1.2, area = 35 },
+            [3] = { rounds = 3, speed = 1.3, area = 28 },
+            [4] = { rounds = 4, speed = 1.4, area = 22 },
+            [5] = { rounds = 5, speed = 1.5, area = 18 },
         },
         -- Physical key item settings
         PhysicalKeys = {

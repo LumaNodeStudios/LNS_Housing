@@ -327,8 +327,10 @@ function LockpickDoor(propertyId)
     end
 
     local securityLevel = 0
-    if p and p.metadata then
+    if p and p.metadata and p.metadata.security_level then
         securityLevel = p.metadata.security_level or 0
+    elseif isApartment then
+        securityLevel = lib.callback.await('LNS_Housing:server:getApartmentSecurityLevel', false, propertyId) or 0
     end
     local config = Settings.Security.Difficulty[securityLevel] or Settings.Security.Difficulty[0]
 
@@ -440,8 +442,10 @@ function LockpickStash(propertyId, stashId)
     end
 
     local securityLevel = 0
-    if p and p.metadata then
+    if p and p.metadata and p.metadata.security_level then
         securityLevel = p.metadata.security_level or 0
+    elseif isApartment then
+        securityLevel = lib.callback.await('LNS_Housing:server:getApartmentSecurityLevel', false, propertyId) or 0
     end
     local config = Settings.Security.Difficulty[securityLevel] or Settings.Security.Difficulty[0]
 

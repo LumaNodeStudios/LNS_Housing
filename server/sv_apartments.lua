@@ -596,10 +596,19 @@ lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, ro
             ownerName = ownerName,
             permissions = permissions,
             furniture = furnitureList,
-            wallColor = result.wall_color
+            wallColor = result.wall_color,
+            security_level = tonumber(result.security_level) or 0
         }
     end
     return nil
+end)
+
+lib.callback.register('LNS_Housing:server:getApartmentSecurityLevel', function(source, roomId)
+    local result = MySQL.single.await('SELECT security_level FROM apartments WHERE room_id = ? OR room_id = ? ORDER BY security_level DESC LIMIT 1', {roomId, tostring(roomId)})
+    if result and result.security_level then
+        return tonumber(result.security_level) or 0
+    end
+    return 0
 end)
 
 RegisterNetEvent('LNS_Housing:server:updateApartmentPermissions', function(roomId, permissions)

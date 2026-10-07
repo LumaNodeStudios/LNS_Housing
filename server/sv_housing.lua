@@ -571,7 +571,66 @@ RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgr
     local src = source
     debugPrint('info', 'LNS_Housing:server:upgradeSecurity received', {src = src, propertyId = propertyId, upgradeId = upgradeId})
     local p = Properties[propertyId]
-    if not p or p.isApartment then return end
+    local isApartment = (p == nil or p.isApartment == true)
+
+    if isApartment then
+        local citizenid = Bridge.Server.GetIdentifier(src)
+        if not citizenid then return end
+
+        if not CheckPermission(src, 'apartment', propertyId, 'manage') then
+            Bridge.Server.Notify(src, 'You do not have permission to upgrade this apartment.', 'error')
+            return
+        end
+
+        if upgradeId == 'security' then
+            local row = MySQL.single.await('SELECT * FROM apartments WHERE (room_id = ? OR room_id = ?) AND citizenid = ?', {propertyId, tostring(propertyId), citizenid})
+            if not row then
+                row = MySQL.single.await('SELECT * FROM apartments WHERE room_id = ? OR room_id = ? ORDER BY id ASC LIMIT 1', {propertyId, tostring(propertyId)})
+            end
+            if not row then
+                Bridge.Server.Notify(src, 'Apartment data not found.', 'error')
+                return
+            end
+
+            local currentLevel = tonumber(row.security_level) or 0
+            local maxLevel = Settings.Security.MaxLevel or 5
+            if currentLevel >= maxLevel then
+                Bridge.Server.Notify(src, 'Security is already at maximum level!', 'error')
+                return
+            end
+
+            local nextLevel = currentLevel + 1
+            local price = 10000
+            if type(Settings.Security.UpgradePrice) == 'table' then
+                price = Settings.Security.UpgradePrice[nextLevel] or 10000
+            elseif type(Settings.Security.UpgradePrice) == 'number' then
+                price = Settings.Security.UpgradePrice * nextLevel
+            else
+                price = 10000 * nextLevel
+            end
+
+            local money = Bridge.Server.GetBankMoney(src)
+            if money < price then
+                Bridge.Server.Notify(src, 'Not enough money in bank!', 'error')
+                return
+            end
+
+            Bridge.Server.RemoveBankMoney(src, price, "Security Upgrade: Apartment Room #" .. propertyId)
+            MySQL.update.await('UPDATE apartments SET security_level = ? WHERE room_id = ? AND citizenid = ?', {
+                nextLevel,
+                propertyId,
+                row.citizenid
+            })
+
+            if p and p.metadata then
+                p.metadata.security_level = nextLevel
+            end
+
+            TriggerClientEvent('LNS_Housing:client:updateApartmentSecurityLevel', -1, propertyId, nextLevel)
+            Bridge.Server.Notify(src, 'Security upgraded to level ' .. nextLevel, 'success')
+        end
+        return
+    end
 
     if not HasPermissionAccess(src, propertyId, 'manage') then
         Bridge.Server.Notify(src, 'You do not have permission to upgrade this property.', 'error')

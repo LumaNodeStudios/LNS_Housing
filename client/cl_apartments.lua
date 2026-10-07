@@ -95,7 +95,7 @@ function openKeyManagementUI()
         metadata = {
             wall_color = roomInfo.wallColor or 0,
             allow_wall_colors = true,
-            security_level = 0
+            security_level = roomInfo.security_level or 0
         },
         isApartment = true
     })
@@ -131,7 +131,7 @@ function EnterApartmentRoom(roomData)
         metadata = {
             wall_color = roomInfo.wallColor or 0,
             allow_wall_colors = true,
-            security_level = 0,
+            security_level = roomInfo.security_level or 0,
             shell = roomData.shell or 'Apartment Furnished',
             interior_id = roomData.interior_id or roomData.interiorId,
             entrance = roomData.doorCoords and { x = roomData.doorCoords.x, y = roomData.doorCoords.y, z = roomData.doorCoords.z, h = roomData.doorHeading or 0.0 } or (roomData.spawn and { x = roomData.spawn.x, y = roomData.spawn.y, z = roomData.spawn.z, h = roomData.spawn.w or 0.0 }) or nil,
@@ -675,6 +675,25 @@ RegisterNetEvent('LNS_Housing:client:updateApartmentWallColor', function(roomId,
             ApplyWallColor(interiorId, color)
         end
     end
+end)
+
+RegisterNetEvent('LNS_Housing:client:updateApartmentSecurityLevel', function(roomId, securityLevel)
+    debugPrint('info', 'LNS_Housing:client:updateApartmentSecurityLevel received', {roomId = roomId, securityLevel = securityLevel})
+    if Properties[roomId] then
+        if not Properties[roomId].metadata then Properties[roomId].metadata = {} end
+        Properties[roomId].metadata.security_level = securityLevel
+    end
+    SendNUIMessage({
+        action = 'updateProperties',
+        data = {
+            {
+                id = roomId,
+                metadata = {
+                    security_level = securityLevel
+                }
+            }
+        }
+    })
 end)
 
 local function normalizeRoomData(roomData)

@@ -160,7 +160,14 @@ const Panel = ({ data: initialData }) => {
 
   const updateActivePropertyData = (data) => {
     if (!data) return;
-    setPropertyData(data);
+    setPropertyData(prev => ({
+      ...prev,
+      ...data,
+      metadata: {
+        ...(prev?.metadata || {}),
+        ...(data?.metadata || {})
+      }
+    }));
     if (data.wallColor !== undefined) {
       setSelectedWallColor(data.wallColor);
     }
@@ -326,36 +333,39 @@ const Panel = ({ data: initialData }) => {
     {
       id: 'protection',
       title: 'Protection',
-      desc: 'Easily monitor your house locks and get notified when someone tries to lockpick your lock.',
+      desc: propertyData.isApartment
+        ? 'Easily monitor your apartment locks and upgrade security to deter intruders.'
+        : 'Easily monitor your house locks and get notified when someone tries to lockpick your lock.',
       icon: Shield,
       actionLabel: 'Upgrade',
       targetTab: 'upgrades'
     },
-    {
+    ...(!propertyData.isApartment ? [{
       id: 'parking',
       title: 'Parking Spots',
       number: propertyData.garage ? propertyData.garage.toString() : '1',
       desc: 'This is how many parking spots you have outside of your house.',
       icon: Car
-    },
+    }] : []),
     {
       id: 'roommates',
       title: 'Manage Residents',
       number: roommates.filter(r => !r.isOwner).length.toString(),
-      desc: 'See who has access to your house and manage their permissions.',
+      desc: propertyData.isApartment
+        ? 'See who has access to your apartment and manage their permissions.'
+        : 'See who has access to your house and manage their permissions.',
       icon: Users,
       actionLabel: 'Manage',
       targetTab: 'access'
     },
-    {
+    ...(propertyData.sale_type === 'rent' ? [{
       id: 'rent',
-      title: propertyData.sale_type === 'rent' ? 'Rent Due' : 'Maintenance Fee',
-      desc: propertyData.sale_type === 'rent'
-        ? `Remember to pay your rent fee. Current rent is $${(propertyData.rent_price || 0).toLocaleString()}.`
-        : 'Property maintenance fee & tax payments are operating normally.',
+      title: 'Rent Due',
+      desc: `Remember to pay your rent fee. Current rent is $${(propertyData.rent_price || 0).toLocaleString()}.`,
       icon: CreditCard,
-      ...(propertyData.sale_type === 'rent' ? { actionLabel: 'Manage', targetTab: 'rent' } : {})
-    }
+      actionLabel: 'Manage',
+      targetTab: 'rent'
+    }] : [])
   ];
 
   const handleUpgradePower = (targetLevel) => {

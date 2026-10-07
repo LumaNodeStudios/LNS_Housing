@@ -335,6 +335,7 @@ MySQL.ready(function()
                 permissions LONGTEXT DEFAULT '{"entry":[], "storage":[], "wardrobe":[], "manage":[]}',
                 furniture LONGTEXT DEFAULT '[]',
                 wall_color INT DEFAULT 0,
+                security_level INT DEFAULT 0,
                 is_new TINYINT(1) DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE KEY unique_citizen_room (citizenid, room_id)
@@ -345,6 +346,13 @@ MySQL.ready(function()
             local cols = MySQL.query.await("SHOW COLUMNS FROM apartments LIKE 'is_new'")
             if not cols or #cols == 0 then
                 MySQL.query.await("ALTER TABLE apartments ADD COLUMN is_new TINYINT(1) DEFAULT 1")
+            end
+        end)
+
+        pcall(function()
+            local cols = MySQL.query.await("SHOW COLUMNS FROM apartments LIKE 'security_level'")
+            if not cols or #cols == 0 then
+                MySQL.query.await("ALTER TABLE apartments ADD COLUMN security_level INT DEFAULT 0")
             end
         end)
 
