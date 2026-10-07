@@ -53,7 +53,7 @@ const Panel = ({ data: initialData }) => {
             setUsageStats(data);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   };
 
@@ -553,140 +553,223 @@ const Panel = ({ data: initialData }) => {
       <div className="panel-content-area">
         <AnimatePresence mode="wait">
           {activeTab === 'home' && (
-            <motion.div
-              key="home"
-              className="home-tab-split"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.15 }}
-            >
-              {/* Left Column: Header Card + House Usage Card */}
-              <div className="home-split-left">
+            propertyData.isApartment ? (
+              /* Apartment Layout: Full-width header + balanced action cards + overview card */
+              <motion.div
+                key="home-apt"
+                className="home-tab-container apt-layout"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.15 }}
+              >
+                {/* Header Card */}
                 <div className="split-header-card">
                   <div className="header-meta-row">
                     <span className="meta-pill-item"><Clock size={12} /> {formatTime(currentTime)}</span>
                     <span className="meta-pill-item"><Calendar size={12} /> {formatDate(currentTime)}</span>
                     <span className="meta-pill-item"><MapPin size={12} /> {propertyData.streetName || propertyData.label || 'Unknown'}</span>
-                    <span className="meta-pill-item"><Building size={12} /> {propertyData.isApartment ? 'Apartment' : 'Residential'}</span>
+                    <span className="meta-pill-item"><Building size={12} /> Apartment</span>
                   </div>
-                  <h1 className="welcome-title-hero">
-                    Welcome, <span>{propertyData.playerName || 'Resident'}</span>
-                  </h1>
+                  <div className="header-title-row">
+                    <h1 className="welcome-title-hero">
+                      Welcome, <span>{propertyData.playerName || 'Resident'}</span>
+                    </h1>
+                  </div>
                 </div>
 
-                {(usageStats.electricityEnabled !== false || usageStats.temperatureEnabled !== false) && (
-                  <div className="house-usage-card">
-                    <h2 className="usage-main-title">House Usage</h2>
-                    <div className="usage-rows-wrapper">
-                      {/* 1. Electricity Level */}
-                      {usageStats.electricityEnabled !== false && (
-                        <div className="usage-stat-row">
-                          <div className="usage-stat-info">
-                            <div className="stat-label-wrap">
-                              <Zap size={14} className="icon-gold" />
-                              <span>Electricity Level</span>
-                            </div>
-                            <span className="stat-value-text font-mono">
-                              {usageStats.totalPower.toFixed(1)} kWh / {usageStats.maxPower.toFixed(1)} kWh
-                            </span>
+                {/* Main Content Area */}
+                <div className="home-main-content">
+                  <div className="action-cards-grid">
+                    {infoBoxes.map((box) => (
+                      <div key={box.id} className="grid-action-card">
+                        <div className="card-top-head">
+                          <div className="card-icon-box">
+                            <box.icon size={20} />
                           </div>
-                          <div className="stat-progress-bg">
-                            <div
-                              className={`stat-progress-fill ${usageStats.totalPower > usageStats.maxPower ? 'overload' : ''}`}
-                              style={{ width: `${Math.min(100, (usageStats.totalPower / Math.max(0.1, usageStats.maxPower)) * 100)}%` }}
-                            />
-                          </div>
+                          {box.number && <span className="card-big-number">{box.number}</span>}
                         </div>
-                      )}
+                        <div className="card-content-body">
+                          <h3 className="card-title-main">{box.title}</h3>
+                          <p className="card-desc-text">{box.desc}</p>
+                        </div>
+                        {box.actionLabel && (
+                          <button
+                            className="card-bottom-btn"
+                            onClick={() => box.targetTab && setActiveTab(box.targetTab)}
+                          >
+                            {box.actionLabel}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
 
-                      {/* 2. Power Grid Status */}
-                      {usageStats.electricityEnabled !== false && (
-                        <div className="usage-stat-row">
-                          <div className="usage-stat-info">
-                            <div className="stat-label-wrap">
-                              <Activity size={14} className={usageStats.breakerTripped ? "icon-red" : "icon-green"} />
-                              <span>Power Grid Status</span>
-                            </div>
-                            <span className={`status-badge-pill ${usageStats.breakerTripped ? 'tripped' : 'online'}`}>
-                              {usageStats.breakerTripped ? 'TRIPPED (OVERLOAD)' : 'ONLINE'}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 3. Temperature */}
-                      {usageStats.temperatureEnabled !== false && (
-                        <div className="usage-stat-row">
-                          <div className="usage-stat-info">
-                            <div className="stat-label-wrap">
-                              <Thermometer size={14} className="icon-orange" />
-                              <span>Temperature</span>
-                            </div>
-                            <span className="stat-value-text font-mono">
-                              {Math.round(usageStats.displayTemp !== undefined ? usageStats.displayTemp : usageStats.netTemp)}{usageStats.unitSymbol || '°F'} / {usageStats.maxTemp ? `${usageStats.maxTemp}${usageStats.unitSymbol || '°F'}` : '100°F'}
-                            </span>
-                          </div>
-                          <div className="stat-progress-bg">
-                            <div
-                              className="stat-progress-fill temp-bar"
-                              style={{ width: `${Math.min(100, Math.max(0, ((usageStats.displayTemp !== undefined ? usageStats.displayTemp : usageStats.netTemp) / (usageStats.maxTemp || 100)) * 100))}%` }}
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 4. Heating / Cooling Level */}
-                      {usageStats.temperatureEnabled !== false && (
-                        <div className="usage-stat-row">
-                          <div className="usage-stat-info">
-                            <div className="stat-label-wrap">
-                              <Flame size={14} className="icon-flame" />
-                              <span>Heating / Cooling Level</span>
-                            </div>
-                            <span className="usage-value-text font-mono">
-                              {(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta) > 0
-                                ? `Heating (+${(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta).toFixed(1)}${usageStats.unitSymbol || '°F'})`
-                                : (usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta) < 0
-                                ? `Cooling (${(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta).toFixed(1)}${usageStats.unitSymbol || '°F'})`
-                                : 'Disabled'}
-                            </span>
-                          </div>
-                        </div>
-                      )}
+                  <div className="property-overview-card">
+                    <div className="overview-card-header">
+                      <div className="overview-card-title">
+                        <Building size={16} className="icon-gold" />
+                        <span>Apartment Details</span>
+                      </div>
+                    </div>
+                    <div className="overview-stats-grid">
+                      <div className="overview-stat-tile">
+                        <span className="overview-stat-label">Security Tier</span>
+                        <span className="overview-stat-val">Level {propertyData.metadata?.security_level || 0} Lock</span>
+                      </div>
+                      <div className="overview-stat-tile">
+                        <span className="overview-stat-label">Authorized Residents</span>
+                        <span className="overview-stat-val">{roommates.length} {roommates.length === 1 ? 'Resident' : 'Residents'}</span>
+                      </div>
+                      <div className="overview-stat-tile">
+                        <span className="overview-stat-label">Unit Number</span>
+                        <span className="overview-stat-val">#{propertyData.id}</span>
+                      </div>
+                      <div className="overview-stat-tile">
+                        <span className="overview-stat-label">Wall Design</span>
+                        <span className="overview-stat-val">{propertyData.allowWallColors ? 'Customizable' : 'Standard'}</span>
+                      </div>
                     </div>
                   </div>
-                )}
-              </div>
-
-              {/* Right Column: 2x2 Grid of Action Cards */}
-              <div className="home-split-right">
-                <div className="action-cards-grid-2x2">
-                  {infoBoxes.map((box) => (
-                    <div key={box.id} className="grid-action-card">
-                      <div className="card-top-head">
-                        <div className="card-icon-box">
-                          <box.icon size={22} />
-                        </div>
-                        {box.number && <span className="card-big-number">{box.number}</span>}
-                      </div>
-                      <div className="card-content-body">
-                        <h3 className="card-title-main">{box.title}</h3>
-                        <p className="card-desc-text">{box.desc}</p>
-                      </div>
-                      {box.actionLabel && (
-                        <button
-                          className="card-bottom-btn"
-                          onClick={() => box.targetTab && setActiveTab(box.targetTab)}
-                        >
-                          {box.actionLabel}
-                        </button>
-                      )}
-                    </div>
-                  ))}
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            ) : (
+              /* Property Layout: Classic 50/50 Split Layout */
+              <motion.div
+                key="home-prop"
+                className="home-tab-split"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.15 }}
+              >
+                {/* Left Column: Header Card + House Usage Card */}
+                <div className="home-split-left">
+                  <div className="split-header-card">
+                    <div className="header-meta-row">
+                      <span className="meta-pill-item"><Clock size={12} /> {formatTime(currentTime)}</span>
+                      <span className="meta-pill-item"><Calendar size={12} /> {formatDate(currentTime)}</span>
+                      <span className="meta-pill-item"><MapPin size={12} /> {propertyData.streetName || propertyData.label || 'Unknown'}</span>
+                      <span className="meta-pill-item"><Building size={12} /> Residential</span>
+                    </div>
+                    <h1 className="welcome-title-hero">
+                      Welcome, <span>{propertyData.playerName || 'Resident'}</span>
+                    </h1>
+                  </div>
+
+                  {(usageStats.electricityEnabled !== false || usageStats.temperatureEnabled !== false) && (
+                    <div className="house-usage-card">
+                      <h2 className="usage-main-title">House Usage</h2>
+                      <div className="usage-rows-wrapper">
+                        {/* 1. Electricity Level */}
+                        {usageStats.electricityEnabled !== false && (
+                          <div className="usage-stat-row">
+                            <div className="usage-stat-info">
+                              <div className="stat-label-wrap">
+                                <Zap size={14} className="icon-gold" />
+                                <span>Electricity Level</span>
+                              </div>
+                              <span className="stat-value-text font-mono">
+                                {usageStats.totalPower.toFixed(1)} kWh / {usageStats.maxPower.toFixed(1)} kWh
+                              </span>
+                            </div>
+                            <div className="stat-progress-bg">
+                              <div
+                                className={`stat-progress-fill ${usageStats.totalPower > usageStats.maxPower ? 'overload' : ''}`}
+                                style={{ width: `${Math.min(100, (usageStats.totalPower / Math.max(0.1, usageStats.maxPower)) * 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 2. Power Grid Status */}
+                        {usageStats.electricityEnabled !== false && (
+                          <div className="usage-stat-row">
+                            <div className="usage-stat-info">
+                              <div className="stat-label-wrap">
+                                <Activity size={14} className={usageStats.breakerTripped ? "icon-red" : "icon-green"} />
+                                <span>Power Grid Status</span>
+                              </div>
+                              <span className={`status-badge-pill ${usageStats.breakerTripped ? 'tripped' : 'online'}`}>
+                                {usageStats.breakerTripped ? 'TRIPPED (OVERLOAD)' : 'ONLINE'}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 3. Temperature */}
+                        {usageStats.temperatureEnabled !== false && (
+                          <div className="usage-stat-row">
+                            <div className="usage-stat-info">
+                              <div className="stat-label-wrap">
+                                <Thermometer size={14} className="icon-orange" />
+                                <span>Temperature</span>
+                              </div>
+                              <span className="stat-value-text font-mono">
+                                {Math.round(usageStats.displayTemp !== undefined ? usageStats.displayTemp : usageStats.netTemp)}{usageStats.unitSymbol || '°F'} / {usageStats.maxTemp ? `${usageStats.maxTemp}${usageStats.unitSymbol || '°F'}` : '100°F'}
+                              </span>
+                            </div>
+                            <div className="stat-progress-bg">
+                              <div
+                                className="stat-progress-fill temp-bar"
+                                style={{ width: `${Math.min(100, Math.max(0, ((usageStats.displayTemp !== undefined ? usageStats.displayTemp : usageStats.netTemp) / (usageStats.maxTemp || 100)) * 100))}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 4. Heating / Cooling Level */}
+                        {usageStats.temperatureEnabled !== false && (
+                          <div className="usage-stat-row">
+                            <div className="usage-stat-info">
+                              <div className="stat-label-wrap">
+                                <Flame size={14} className="icon-flame" />
+                                <span>Heating / Cooling Level</span>
+                              </div>
+                              <span className="usage-value-text font-mono">
+                                {(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta) > 0
+                                  ? `Heating (+${(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta).toFixed(1)}${usageStats.unitSymbol || '°F'})`
+                                  : (usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta) < 0
+                                    ? `Cooling (${(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta).toFixed(1)}${usageStats.unitSymbol || '°F'})`
+                                    : 'Disabled'}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Column: 2x2 Grid of Action Cards */}
+                <div className="home-split-right">
+                  <div className="action-cards-grid-2x2">
+                    {infoBoxes.map((box) => (
+                      <div key={box.id} className="grid-action-card">
+                        <div className="card-top-head">
+                          <div className="card-icon-box">
+                            <box.icon size={22} />
+                          </div>
+                          {box.number && <span className="card-big-number">{box.number}</span>}
+                        </div>
+                        <div className="card-content-body">
+                          <h3 className="card-title-main">{box.title}</h3>
+                          <p className="card-desc-text">{box.desc}</p>
+                        </div>
+                        {box.actionLabel && (
+                          <button
+                            className="card-bottom-btn"
+                            onClick={() => box.targetTab && setActiveTab(box.targetTab)}
+                          >
+                            {box.actionLabel}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )
           )}
 
           {activeTab === 'upgrades' && (
