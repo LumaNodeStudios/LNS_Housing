@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sofa, Bed, Lamp, Tv, Utensils, Bath, Search, Package, Check, Trash2, Camera, Move, RotateCw, X, ShoppingCart, ShoppingBag, Hammer, ArrowLeft, Grid, ArrowDown, CreditCard, Banknote, Keyboard } from 'lucide-react';
+import {
+  Sofa, Bed, Lamp, Tv, Utensils, Bath, Search, Package, Check, Trash2,
+  Camera, Move, RotateCw, X, ShoppingCart, ShoppingBag, Hammer, ArrowLeft,
+  Grid, ArrowDown, CreditCard, Banknote, Keyboard, SlidersHorizontal,
+  Plus, Minus, RotateCcw, Copy, CheckCheck
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Modeler3D from './Modeler3D';
 import './FurnitureMenu.css';
@@ -17,6 +22,7 @@ const CONTROLS = [
       { keys: ['E'], desc: 'Position mode' },
       { keys: ['R'], desc: 'Rotate mode' },
       { keys: ['G'], desc: 'Place on ground' },
+      { keys: ['Manual Pos'], desc: 'Click the adjustment button on top right to fine-tune exact coordinates' },
       { keys: ['Del'], desc: 'Delete the selected item (bought or in basket)' },
     ]
   },
@@ -33,6 +39,99 @@ const CONTROLS = [
     ]
   },
 ];
+
+const CoordInput = ({ value, onChange, precision = 4, disabled }) => {
+  const [localVal, setLocalVal] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
+
+  useEffect(() => {
+    if (!isFocused) {
+      setLocalVal(value !== undefined && !isNaN(value) ? Number(value).toFixed(precision) : '0.0000');
+    }
+  }, [value, isFocused, precision]);
+
+  const commit = (val) => {
+    const parsed = parseFloat(val);
+    if (!isNaN(parsed)) {
+      onChange(parseFloat(parsed.toFixed(precision)));
+    } else {
+      setLocalVal(Number(value || 0).toFixed(precision));
+    }
+  };
+
+  return (
+    <input
+      type="number"
+      step="any"
+      disabled={disabled}
+      className="manual-pos-input"
+      value={isFocused ? localVal : (value !== undefined && !isNaN(value) ? Number(value).toFixed(precision) : '0.0000')}
+      onFocus={(e) => {
+        setIsFocused(true);
+        setLocalVal(e.target.value);
+        e.target.select();
+      }}
+      onChange={(e) => {
+        setLocalVal(e.target.value);
+        const parsed = parseFloat(e.target.value);
+        if (!isNaN(parsed)) {
+          onChange(parseFloat(parsed.toFixed(precision)));
+        }
+      }}
+      onBlur={(e) => {
+        setIsFocused(false);
+        commit(e.target.value);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          commit(e.target.value);
+          e.currentTarget.blur();
+        }
+        e.stopPropagation();
+      }}
+    />
+  );
+};
+
+const NudgeBtn = ({ onClick, children, title, className = '', disabled }) => {
+  const timeoutRef = useRef(null);
+  const intervalRef = useRef(null);
+  const onClickRef = useRef(onClick);
+  onClickRef.current = onClick;
+
+  const startHold = (e) => {
+    if (disabled || e.button !== 0) return;
+    e.preventDefault();
+    if (onClickRef.current) onClickRef.current();
+    timeoutRef.current = setTimeout(() => {
+      intervalRef.current = setInterval(() => {
+        if (onClickRef.current) onClickRef.current();
+      }, 70);
+    }, 280);
+  };
+
+  const endHold = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    timeoutRef.current = null;
+    intervalRef.current = null;
+  };
+
+  return (
+    <button
+      type="button"
+      className={`manual-pos-nudge-btn ${className}`}
+      disabled={disabled}
+      onMouseDown={startHold}
+      onMouseUp={endHold}
+      onMouseLeave={endHold}
+      tabIndex={-1}
+      title={title}
+    >
+      {children}
+    </button>
+  );
+};
 
 const FurnitureImage = React.memo(function FurnitureImage({ item, ItemIcon }) {
   const [loaded, setLoaded] = useState(false);
@@ -95,6 +194,12 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
   const [freecamMode, setFreecamMode] = useState(false);
   const [placingKind, setPlacingKind] = useState(null); // 'new' | 'cart' | 'owned'
   const [showControls, setShowControls] = useState(false);
+  const [showManualPos, setShowManualPos] = useState(false);
+  const [objectCoords, setObjectCoords] = useState({ x: 0, y: 0, z: 0 });
+  const [objectRotation, setObjectRotation] = useState({ x: 0, y: 0, z: 0 });
+  const [posStep, setPosStep] = useState(0.01);
+  const [rotStep, setRotStep] = useState(1);
+  const [copiedTransform, setCopiedTransform] = useState(null);
   const [toast, setToast] = useState(null);
 
   const showToast = (msg) => {
@@ -142,6 +247,40 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
         setIsPlacing(true);
         setPlacingItem(event.data.data);
         setPlacingKind(event.data.data.kind || 'owned');
+      } else if (event.data.action === 'setupModel') {
+        if (event.data.data) {
+          if (event.data.data.objectPosition) {
+            setObjectCoords({
+              x: parseFloat(Number(event.data.data.objectPosition.x || 0).toFixed(4)),
+              y: parseFloat(Number(event.data.data.objectPosition.y || 0).toFixed(4)),
+              z: parseFloat(Number(event.data.data.objectPosition.z || 0).toFixed(4)),
+            });
+          }
+          if (event.data.data.objectRotation) {
+            setObjectRotation({
+              x: parseFloat(Number(event.data.data.objectRotation.x || 0).toFixed(2)),
+              y: parseFloat(Number(event.data.data.objectRotation.y || 0).toFixed(2)),
+              z: parseFloat(Number(event.data.data.objectRotation.z || 0).toFixed(2)),
+            });
+          }
+        }
+      } else if (event.data.action === 'syncObjectState') {
+        if (event.data.data) {
+          if (event.data.data.position) {
+            setObjectCoords({
+              x: parseFloat(Number(event.data.data.position.x || 0).toFixed(4)),
+              y: parseFloat(Number(event.data.data.position.y || 0).toFixed(4)),
+              z: parseFloat(Number(event.data.data.position.z || 0).toFixed(4)),
+            });
+          }
+          if (event.data.data.rotation) {
+            setObjectRotation({
+              x: parseFloat(Number(event.data.data.rotation.x || 0).toFixed(2)),
+              y: parseFloat(Number(event.data.data.rotation.y || 0).toFixed(2)),
+              z: parseFloat(Number(event.data.data.rotation.z || 0).toFixed(2)),
+            });
+          }
+        }
       } else if (event.data.action === 'addToCart') {
         setCart(prevCart => [...prevCart, event.data.data]);
       } else if (event.data.action === 'setCart') {
@@ -214,7 +353,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
       if (e.button !== 0) return;
       if (isPlacing || freecamMode || showPaymentModal) return;
       if (e.target.closest && e.target.closest(
-        '.furniture-sidebar-container, .placement-controls, .placement-mode-controls, .controls-help-btn, .controls-popup, .payment-modal-overlay'
+        '.furniture-sidebar-container, .placement-controls, .placement-mode-controls, .controls-help-btn, .manual-pos-btn, .controls-popup, .manual-pos-popup, .payment-modal-overlay'
       )) return;
 
       post('clickWorld', {
@@ -369,6 +508,91 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
         console.error('Error buying cart items:', err);
       }
     }
+  };
+
+  const updateCoord = (axis, val) => {
+    if (!isPlacing) return;
+    const num = parseFloat(Number(val).toFixed(4));
+    setObjectCoords(prev => {
+      const nextPos = { ...prev, [axis]: num };
+      post('moveObject', nextPos);
+      return nextPos;
+    });
+  };
+
+  const nudgeCoord = (axis, delta) => {
+    if (!isPlacing) return;
+    setObjectCoords(prev => {
+      const currentVal = Number(prev[axis] || 0);
+      const nextVal = parseFloat((currentVal + delta).toFixed(4));
+      const nextPos = { ...prev, [axis]: nextVal };
+      post('moveObject', nextPos);
+      return nextPos;
+    });
+  };
+
+  const updateRotation = (axis, val) => {
+    if (!isPlacing) return;
+    const num = parseFloat(Number(val).toFixed(2));
+    setObjectRotation(prev => {
+      const nextRot = { ...prev, [axis]: num };
+      post('rotateObject', nextRot);
+      return nextRot;
+    });
+  };
+
+  const nudgeRotation = (axis, delta) => {
+    if (!isPlacing) return;
+    setObjectRotation(prev => {
+      const currentVal = Number(prev[axis] || 0);
+      let nextVal = parseFloat((currentVal + delta).toFixed(2));
+      if (axis === 'z') {
+        if (nextVal >= 360) nextVal = nextVal % 360;
+        if (nextVal < 0) nextVal = (nextVal % 360 + 360) % 360;
+      }
+      const nextRot = { ...prev, [axis]: nextVal };
+      post('rotateObject', nextRot);
+      return nextRot;
+    });
+  };
+
+  const handleResetRotation = () => {
+    if (!isPlacing) return;
+    const zeroRot = { x: 0, y: 0, z: 0 };
+    setObjectRotation(zeroRot);
+    post('rotateObject', zeroRot);
+    showToast('Rotation Reset');
+  };
+
+  const handleSnapHeading = (angle) => {
+    if (!isPlacing) return;
+    setObjectRotation(prev => {
+      let nextZ = parseFloat(((Number(prev.z || 0) + angle) % 360).toFixed(2));
+      if (nextZ < 0) nextZ = (nextZ + 360) % 360;
+      const nextRot = { ...prev, z: nextZ };
+      post('rotateObject', nextRot);
+      return nextRot;
+    });
+  };
+
+  const handleCopyTransform = () => {
+    if (!isPlacing) return;
+    setCopiedTransform({
+      position: { ...objectCoords },
+      rotation: { ...objectRotation }
+    });
+    showToast('Transform Copied');
+  };
+
+  const handlePasteTransform = () => {
+    if (!isPlacing || !copiedTransform) return;
+    const nextPos = { ...copiedTransform.position };
+    const nextRot = { ...copiedTransform.rotation };
+    setObjectCoords(nextPos);
+    setObjectRotation(nextRot);
+    post('moveObject', nextPos);
+    post('rotateObject', nextRot);
+    showToast('Transform Pasted');
   };
 
   const handleClose = () => {
@@ -760,16 +984,34 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
         viewport (Modeler3D's gizmo). Rendering them as siblings fixes both.
       */}
 
+      {/* Top Right Buttons */}
       <button
         className={`controls-help-btn ${showControls ? 'active' : ''}`}
         onMouseDown={(e) => e.preventDefault()}
-        onClick={() => setShowControls(v => !v)}
+        onClick={() => {
+          setShowControls(v => !v);
+          if (!showControls) setShowManualPos(false);
+        }}
         tabIndex={-1}
         title="Controls"
       >
         <Keyboard size={18} />
       </button>
 
+      <button
+        className={`manual-pos-btn ${showManualPos ? 'active' : ''}`}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => {
+          setShowManualPos(v => !v);
+          if (!showManualPos) setShowControls(false);
+        }}
+        tabIndex={-1}
+        title="Manual Transform (Position & Rotation)"
+      >
+        <SlidersHorizontal size={18} />
+      </button>
+
+      {/* Controls Popup */}
       <AnimatePresence>
         {showControls && (
           <motion.div
@@ -802,6 +1044,242 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
         )}
       </AnimatePresence>
 
+      {/* Manual Position / Transform Popup */}
+      <AnimatePresence>
+        {showManualPos && (
+          <motion.div
+            className="manual-pos-popup"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}
+          >
+            <div className="controls-popup-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>MANUAL ROTATION</span>
+              </div>
+              <button className="payment-modal-close" onClick={() => setShowManualPos(false)}>
+                <X size={16} />
+              </button>
+            </div>
+
+            {isPlacing ? (
+              <>
+                <div className="manual-pos-item-info">
+                  <span className="manual-pos-item-label">{placingItem?.label || 'Selected Object'}</span>
+                  <span className="manual-pos-item-meta">{placingItem?.model || 'Position & Rotation'}</span>
+                </div>
+
+                {/* Position Step Selector */}
+                <div className="manual-pos-step-section">
+                  <div className="manual-pos-section-label">
+                    <span>Position Step</span>
+                    <span className="badge">{posStep}m</span>
+                  </div>
+                  <div className="manual-pos-step-pills">
+                    {[0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0].map((step) => (
+                      <button
+                        key={step}
+                        type="button"
+                        className={`manual-pos-step-pill ${posStep === step ? 'active' : ''}`}
+                        onClick={() => setPosStep(step)}
+                      >
+                        {step}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Position (Coordinates) */}
+                <div className="manual-pos-step-section">
+                  <div className="manual-pos-section-label">
+                    <span>Coordinates (X, Y, Z)</span>
+                  </div>
+                  <div className="manual-pos-axis-grid">
+                    <div className="manual-pos-axis-row">
+                      <div className="manual-pos-axis-badge axis-x" title="X Axis (East / West)">X</div>
+                      <NudgeBtn title={`Subtract ${posStep}m`} onClick={() => nudgeCoord('x', -posStep)}>
+                        <Minus size={12} />
+                      </NudgeBtn>
+                      <CoordInput
+                        value={objectCoords.x}
+                        onChange={(val) => updateCoord('x', val)}
+                        precision={4}
+                      />
+                      <NudgeBtn title={`Add ${posStep}m`} onClick={() => nudgeCoord('x', posStep)}>
+                        <Plus size={12} />
+                      </NudgeBtn>
+                    </div>
+
+                    <div className="manual-pos-axis-row">
+                      <div className="manual-pos-axis-badge axis-y" title="Y Axis (North / South)">Y</div>
+                      <NudgeBtn title={`Subtract ${posStep}m`} onClick={() => nudgeCoord('y', -posStep)}>
+                        <Minus size={12} />
+                      </NudgeBtn>
+                      <CoordInput
+                        value={objectCoords.y}
+                        onChange={(val) => updateCoord('y', val)}
+                        precision={4}
+                      />
+                      <NudgeBtn title={`Add ${posStep}m`} onClick={() => nudgeCoord('y', posStep)}>
+                        <Plus size={12} />
+                      </NudgeBtn>
+                    </div>
+
+                    <div className="manual-pos-axis-row">
+                      <div className="manual-pos-axis-badge axis-z" title="Z Axis (Height / Elevation)">Z</div>
+                      <NudgeBtn title={`Subtract ${posStep}m`} onClick={() => nudgeCoord('z', -posStep)}>
+                        <Minus size={12} />
+                      </NudgeBtn>
+                      <CoordInput
+                        value={objectCoords.z}
+                        onChange={(val) => updateCoord('z', val)}
+                        precision={4}
+                      />
+                      <NudgeBtn title={`Add ${posStep}m`} onClick={() => nudgeCoord('z', posStep)}>
+                        <Plus size={12} />
+                      </NudgeBtn>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rotation Step Selector */}
+                <div className="manual-pos-step-section">
+                  <div className="manual-pos-section-label">
+                    <span>Rotation Step</span>
+                    <span className="badge">{rotStep}°</span>
+                  </div>
+                  <div className="manual-pos-step-pills">
+                    {[0.5, 1, 5, 15, 45, 90].map((step) => (
+                      <button
+                        key={step}
+                        type="button"
+                        className={`manual-pos-step-pill ${rotStep === step ? 'active' : ''}`}
+                        onClick={() => setRotStep(step)}
+                      >
+                        {step}°
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Rotation (Angles) */}
+                <div className="manual-pos-step-section">
+                  <div className="manual-pos-section-label">
+                    <span>Orientation (Degrees)</span>
+                  </div>
+                  <div className="manual-pos-axis-grid">
+                    <div className="manual-pos-axis-row">
+                      <div className="manual-pos-axis-badge axis-yaw" title="Heading / Yaw (Rotation around vertical axis)">Yaw</div>
+                      <NudgeBtn title={`Rotate -${rotStep}°`} onClick={() => nudgeRotation('z', -rotStep)}>
+                        <Minus size={12} />
+                      </NudgeBtn>
+                      <CoordInput
+                        value={objectRotation.z}
+                        onChange={(val) => updateRotation('z', val)}
+                        precision={2}
+                      />
+                      <NudgeBtn title={`Rotate +${rotStep}°`} onClick={() => nudgeRotation('z', rotStep)}>
+                        <Plus size={12} />
+                      </NudgeBtn>
+                    </div>
+
+                    <div className="manual-pos-axis-row">
+                      <div className="manual-pos-axis-badge axis-pitch" title="Pitch (Tilt forward/back)">Pitch</div>
+                      <NudgeBtn title={`Tilt -${rotStep}°`} onClick={() => nudgeRotation('x', -rotStep)}>
+                        <Minus size={12} />
+                      </NudgeBtn>
+                      <CoordInput
+                        value={objectRotation.x}
+                        onChange={(val) => updateRotation('x', val)}
+                        precision={2}
+                      />
+                      <NudgeBtn title={`Tilt +${rotStep}°`} onClick={() => nudgeRotation('x', rotStep)}>
+                        <Plus size={12} />
+                      </NudgeBtn>
+                    </div>
+
+                    <div className="manual-pos-axis-row">
+                      <div className="manual-pos-axis-badge axis-roll" title="Roll (Tilt left/right)">Roll</div>
+                      <NudgeBtn title={`Roll -${rotStep}°`} onClick={() => nudgeRotation('y', -rotStep)}>
+                        <Minus size={12} />
+                      </NudgeBtn>
+                      <CoordInput
+                        value={objectRotation.y}
+                        onChange={(val) => updateRotation('y', val)}
+                        precision={2}
+                      />
+                      <NudgeBtn title={`Roll +${rotStep}°`} onClick={() => nudgeRotation('y', rotStep)}>
+                        <Plus size={12} />
+                      </NudgeBtn>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Action Helpers */}
+                <div className="manual-pos-actions">
+                  <button
+                    type="button"
+                    className="manual-pos-action-btn"
+                    onClick={() => post('placeOnGround')}
+                    title="Snap to floor/surface"
+                  >
+                    <ArrowDown size={13} />
+                    <span>On Ground</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="manual-pos-action-btn"
+                    onClick={handleResetRotation}
+                    title="Reset rotation to 0,0,0"
+                  >
+                    <RotateCcw size={13} />
+                    <span>Reset Rot</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="manual-pos-action-btn"
+                    onClick={() => handleSnapHeading(90)}
+                    title="Turn 90 degrees clockwise"
+                  >
+                    <RotateCw size={13} />
+                    <span>Yaw +90°</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="manual-pos-action-btn"
+                    onClick={handleCopyTransform}
+                    title="Copy current position and rotation"
+                  >
+                    <Copy size={13} />
+                    <span>Copy Pos</span>
+                  </button>
+                  {copiedTransform && (
+                    <button
+                      type="button"
+                      className="manual-pos-action-btn full-width"
+                      onClick={handlePasteTransform}
+                      title="Paste copied position and rotation"
+                    >
+                      <CheckCheck size={13} />
+                      <span>Paste Copied Transform</span>
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="manual-pos-empty">
+                <Move size={32} className="manual-pos-empty-icon" />
+                <span className="manual-pos-empty-title">No Furniture Selected</span>
+                <p className="manual-pos-empty-desc">
+                  Click any placed prop in your room or select an item from the catalog to adjust its exact coordinates and rotation.
+                </p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {toast && <div className="controls-toast">{toast}</div>}
 
       {freecamMode && (
@@ -812,9 +1290,31 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
 
       <Modeler3D
         active={isPlacing}
+        currentPosition={objectCoords}
+        currentRotation={objectRotation}
+        onDragEnd={(data) => {
+          if (data && data.position) {
+            setObjectCoords({
+              x: parseFloat(Number(data.position.x || 0).toFixed(4)),
+              y: parseFloat(Number(data.position.y || 0).toFixed(4)),
+              z: parseFloat(Number(data.position.z || 0).toFixed(4)),
+            });
+          }
+          if (data && data.rotation) {
+            setObjectRotation({
+              x: parseFloat(Number(data.rotation.x || 0).toFixed(2)),
+              y: parseFloat(Number(data.rotation.y || 0).toFixed(2)),
+              z: parseFloat(Number(data.rotation.z || 0).toFixed(2)),
+            });
+          }
+        }}
         onUpdate={(data) => {
-          post('moveObject', data.position);
-          post('rotateObject', data.rotation);
+          if (data.position) {
+            post('moveObject', data.position);
+          }
+          if (data.rotation) {
+            post('rotateObject', data.rotation);
+          }
         }}
       />
 

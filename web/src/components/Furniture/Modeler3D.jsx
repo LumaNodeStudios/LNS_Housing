@@ -6,10 +6,11 @@ import * as THREE from 'three';
 const convertToThree = (pos) => ({ x: pos.x, y: pos.z, z: -pos.y });
 const convertToGTA = (pos) => ({ x: pos.x, y: -pos.z, z: pos.y });
 
-const Scene = ({ cameraData, objectPos, objectRot, mode, onUpdate, onModeChange }) => {
+const Scene = ({ cameraData, objectPos, objectRot, mode, onUpdate, onModeChange, onDragChange }) => {
   const { camera } = useThree();
   const controlsRef = useRef();
   const meshRef = useRef();
+  const isDraggingRef = useRef(false);
 
   useEffect(() => {
     if (cameraData) {
@@ -35,6 +36,45 @@ const Scene = ({ cameraData, objectPos, objectRot, mode, onUpdate, onModeChange 
     window.addEventListener('contextmenu', handleContextMenu);
     return () => window.removeEventListener('contextmenu', handleContextMenu);
   }, [mode, onModeChange]);
+
+  useEffect(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+
+    const handleDragging = (e) => {
+      isDraggingRef.current = !!e.value;
+      if (onDragChange) {
+        onDragChange(!!e.value);
+      }
+    };
+
+    controls.addEventListener('dragging-changed', handleDragging);
+    return () => {
+      controls.removeEventListener('dragging-changed', handleDragging);
+    };
+  }, [onDragChange]);
+
+  // Only sync mesh position from external state when NOT actively dragging!
+  useEffect(() => {
+    if (isDraggingRef.current) return;
+    if (meshRef.current && objectPos) {
+      const threePos = convertToThree(objectPos);
+      meshRef.current.position.set(threePos.x, threePos.y, threePos.z);
+    }
+  }, [objectPos]);
+
+  // Only sync mesh rotation from external state when NOT actively dragging!
+  useEffect(() => {
+    if (isDraggingRef.current) return;
+    if (meshRef.current && objectRot) {
+      meshRef.current.rotation.set(
+        THREE.MathUtils.degToRad(objectRot.x || 0),
+        THREE.MathUtils.degToRad(objectRot.z || 0),
+        -THREE.MathUtils.degToRad(objectRot.y || 0),
+        'YXZ'
+      );
+    }
+  }, [objectRot]);
 
   const handleObjectChange = () => {
     if (meshRef.current) {
@@ -84,12 +124,27 @@ const Scene = ({ cameraData, objectPos, objectRot, mode, onUpdate, onModeChange 
   );
 };
 
-const Modeler3D = ({ active, onUpdate }) => {
+const Modeler3D = ({ active, onUpdate, onDragEnd, currentPosition, currentRotation }) => {
   const [cameraData, setCameraData] = useState(null);
   const [position, setPosition] = useState({ x: 0, y: 0, z: 0 });
   const [rotation, setRotation] = useState({ x: 0, y: 0, z: 0 });
   const [mode, setMode] = useState('translate');
   const [isInitialized, setIsInitialized] = useState(false);
+  const isDraggingRef = useRef(false);
+  const latestDataRef = useRef(null);
+
+  useEffect(() => {
+    if (!isDraggingRef.current && currentPosition) {
+      setPosition(currentPosition);
+    }
+  }, [currentPosition]);
+
+  useEffect(() => {
+    if (!isDraggingRef.current && currentRotation) {
+      setRotation(currentRotation);
+    }
+  }, [currentRotation]);
+
   useEffect(() => {
     const handleMessage = (event) => {
       if (event.data.action === 'setupModel') {
@@ -117,7 +172,9 @@ const Modeler3D = ({ active, onUpdate }) => {
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, []); useEffect(() => {
+  }, []);
+
+  useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
         return;
@@ -135,9 +192,19 @@ const Modeler3D = ({ active, onUpdate }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const handleDragChange = (dragging) => {
+    isDraggingRef.current = dragging;
+    if (!dragging && latestDataRef.current) {
+      setPosition(latestDataRef.current.position);
+      setRotation(latestDataRef.current.rotation);
+      if (onDragEnd) {
+        onDragEnd(latestDataRef.current);
+      }
+    }
+  };
+
   const handleGizmoUpdate = (data) => {
-    setPosition(data.position);
-    setRotation(data.rotation);
+    latestDataRef.current = data;
     onUpdate(data);
   };
 
@@ -173,6 +240,7 @@ const Modeler3D = ({ active, onUpdate }) => {
             mode={mode}
             onUpdate={handleGizmoUpdate}
             onModeChange={setMode}
+            onDragChange={handleDragChange}
           />
         )}
       </Canvas>
