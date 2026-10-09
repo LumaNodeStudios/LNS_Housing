@@ -327,14 +327,117 @@ end
 -- Stash / Inventory Integrations
 function Bridge.Server.RegisterStash(propertyId, furnitureId, storageConfig, label)
     debugPrint('info', 'Bridge.Server.RegisterStash', {propertyId = propertyId, furnitureId = furnitureId, storageConfig = storageConfig, label = label})
-    if GetResourceState('ox_inventory') == 'started' then
-        local stashId = string.format('housing_%d_%s', propertyId, furnitureId)
-        local slots = storageConfig and storageConfig.slots or Settings.Stash.slots
-        local weight = storageConfig and storageConfig.weight or Settings.Stash.weight
-        local stashLabel = label or Settings.Stash.label
+    local stashId, stashLabel, slots, weight
+    if furnitureId and (type(furnitureId) == 'string' or type(furnitureId) == 'number') and not storageConfig and not label and type(propertyId) == 'number' then
+        stashId = string.format('housing_%d_%s', propertyId, furnitureId)
+        stashLabel = Settings.Stash.label
+        slots = Settings.Stash.slots
+        weight = Settings.Stash.weight
+    elseif furnitureId and (type(furnitureId) == 'string' or type(furnitureId) == 'number') then
+        stashId = string.format('housing_%d_%s', propertyId, furnitureId)
+        slots = storageConfig and storageConfig.slots or Settings.Stash.slots
+        weight = storageConfig and storageConfig.weight or Settings.Stash.weight
+        stashLabel = label or (storageConfig and storageConfig.label) or Settings.Stash.label
+    else
+        stashId = tostring(propertyId)
+        stashLabel = furnitureId or Settings.Stash.label
+        slots = (type(storageConfig) == 'table' and storageConfig.slots) or (type(storageConfig) == 'number' and storageConfig) or Settings.Stash.slots
+        weight = (type(storageConfig) == 'table' and storageConfig.weight) or (type(label) == 'number' and label) or Settings.Stash.weight
+    end
+
+    if Bridge.Inventory == 'ox_inventory' then
         exports.ox_inventory:RegisterStash(stashId, stashLabel, slots, weight)
     else
-        debugPrint('warn', 'ox_inventory not started')
+        debugPrint('warn', 'No supported inventory found or started for RegisterStash')
+    end
+end
+
+function Bridge.Server.Search(source, searchType, item, metadata)
+    debugPrint('info', 'Bridge.Server.Search', {source = source, searchType = searchType, item = item})
+    if Bridge.Inventory == 'ox_inventory' then
+        return exports.ox_inventory:Search(source, searchType, item, metadata)
+    end
+    return searchType == 'count' and 0 or {}
+end
+
+function Bridge.Server.AddItem(source, item, count, metadata, slot)
+    debugPrint('info', 'Bridge.Server.AddItem', {source = source, item = item, count = count, slot = slot})
+    if Bridge.Inventory == 'ox_inventory' then
+        return exports.ox_inventory:AddItem(source, item, count, metadata, slot)
+    end
+    return false
+end
+
+function Bridge.Server.RemoveItem(source, item, count, metadata, slot)
+    debugPrint('info', 'Bridge.Server.RemoveItem', {source = source, item = item, count = count, slot = slot})
+    if Bridge.Inventory == 'ox_inventory' then
+        return exports.ox_inventory:RemoveItem(source, item, count, metadata, slot)
+    end
+    return false
+end
+
+function Bridge.Server.GetOfflineKeyCount(propertyId, isApartment, itemName, onlineIdentifiers)
+    if not itemName then return 0 end
+    onlineIdentifiers = onlineIdentifiers or {}
+    local count = 0
+
+    if Bridge.Inventory == 'ox_inventory' then
+        local success, rows = pcall(MySQL.query.await, 'SELECT name, data FROM ox_inventory WHERE data LIKE ?', {'%' .. itemName .. '%'})
+        if success and rows then
+            for _, row in ipairs(rows) do
+                local isOnline = false
+                for onlineId in pairs(onlineIdentifiers) do
+                    if string.find(row.name, onlineId, 1, true) then
+                        isOnline = true
+                        break
+                    end
+                end
+
+                if not isOnline then
+                    local data = json.decode(row.data)
+                    if data then
+                        for _, item in pairs(data) do
+                            if item.name == itemName and item.metadata then
+                                local meta = item.metadata
+                                local match = (meta.propertyId == propertyId or tostring(meta.propertyId) == tostring(propertyId) or (tonumber(meta.propertyId) and tonumber(meta.propertyId) == tonumber(propertyId)))
+                                if match and (meta.isApartment == true) == (isApartment == true) then
+                                    count = count + (item.count or 1)
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return count
+end
+
+function Bridge.Server.RemoveOfflineKeys(propertyId, itemName)
+    if not itemName then return end
+
+    if Bridge.Inventory == 'ox_inventory' then
+        local success, rows = pcall(MySQL.query.await, 'SELECT name, data FROM ox_inventory WHERE data LIKE ?', {'%' .. itemName .. '%'})
+        if success and rows then
+            for _, row in ipairs(rows) do
+                local data = json.decode(row.data)
+                if data then
+                    local modified = false
+                    local newItems = {}
+                    for slotIdx, item in pairs(data) do
+                        if item and item.name == itemName and item.metadata and (item.metadata.propertyId == propertyId or tonumber(item.metadata.propertyId) == tonumber(propertyId) or tostring(item.metadata.propertyId) == tostring(propertyId)) and not item.metadata.isApartment then
+                            modified = true
+                        else
+                            newItems[slotIdx] = item
+                        end
+                    end
+                    if modified then
+                        MySQL.update.await('UPDATE ox_inventory SET data = ? WHERE name = ?', {json.encode(newItems), row.name})
+                    end
+                end
+            end
+        end
     end
 end
 

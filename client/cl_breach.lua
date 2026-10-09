@@ -29,7 +29,7 @@ local function EnsureBreachingWeapon()
     local weaponHash = joaat(raidItem)
 
     if GetSelectedPedWeapon(ped) ~= weaponHash then
-        local count = exports.ox_inventory:Search('count', raidItem)
+        local count = Bridge.Client.Search('count', raidItem)
         if count and count > 0 then
             SetCurrentPedWeapon(ped, weaponHash, true)
             Wait(200)
@@ -733,7 +733,7 @@ function StartPoliceStashRaid(propertyId, stashId)
     end
 
     local accessTool = Settings.Security.PoliceAccessTool or 'police_access_tool'
-    local count = exports.ox_inventory:Search('count', accessTool)
+    local count = Bridge.Client.Search('count', accessTool)
     if not count or count < 1 then
         Bridge.Client.Notify('You need a Police Access Tool to raid this storage!', 'error')
         return
@@ -768,7 +768,7 @@ function StartPoliceStashRaid(propertyId, stashId)
         TriggerServerEvent('LNS_Housing:server:policeRaidStash', propertyId, fullStashId)
         Bridge.Client.Notify('Storage breached successfully!', 'success')
         if fullStashId then
-            exports.ox_inventory:openInventory('stash', fullStashId)
+            Bridge.Client.OpenInventory('stash', fullStashId)
         end
     else
         Bridge.Client.Notify('Storage raid cancelled.', 'error')

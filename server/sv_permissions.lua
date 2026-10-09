@@ -67,7 +67,7 @@ function HasPhysicalKey(source, targetId, isApartment)
     local pk = Settings.Security.PhysicalKeys
     if not pk or not pk.Enabled then return nil end
 
-    local slots = exports.ox_inventory:Search(source, 'slots', pk.Item)
+    local slots = Bridge.Server.Search(source, 'slots', pk.Item)
     if not slots or #slots == 0 then return false end
 
     local hasMatchingKey = false

@@ -537,44 +537,25 @@ function ResetPropertyOwnershipData(id)
     if LockedStashes then LockedStashes[id] = nil end
 
     local pk = Settings and Settings.Security and Settings.Security.PhysicalKeys
-    if pk and pk.Enabled and GetResourceState('ox_inventory') == 'started' then
+    if pk and pk.Enabled then
         pcall(function()
             local players = GetPlayers()
             for i = 1, #players do
                 local pId = tonumber(players[i])
                 if pId then
-                    local slots = exports.ox_inventory:Search(pId, 'slots', pk.Item)
+                    local slots = Bridge.Server.Search(pId, 'slots', pk.Item)
                     if slots then
                         for _, slot in ipairs(slots) do
                             local meta = slot.metadata or {}
                             if (meta.propertyId == id or tonumber(meta.propertyId) == tonumber(id)) and not meta.isApartment then
-                                exports.ox_inventory:RemoveItem(pId, pk.Item, slot.count or 1, meta, slot.slot)
+                                Bridge.Server.RemoveItem(pId, pk.Item, slot.count or 1, meta, slot.slot)
                             end
                         end
                     end
                 end
             end
 
-            local success, rows = pcall(MySQL.query.await, 'SELECT name, data FROM ox_inventory WHERE data LIKE ?', {'%' .. pk.Item .. '%'})
-            if success and rows then
-                for _, row in ipairs(rows) do
-                    local data = json.decode(row.data)
-                    if data then
-                        local modified = false
-                        local newItems = {}
-                        for slotIdx, item in pairs(data) do
-                            if item and item.name == pk.Item and item.metadata and (item.metadata.propertyId == id or tonumber(item.metadata.propertyId) == tonumber(id)) and not item.metadata.isApartment then
-                                modified = true
-                            else
-                                newItems[slotIdx] = item
-                            end
-                        end
-                        if modified then
-                            MySQL.update.await('UPDATE ox_inventory SET data = ? WHERE name = ?', {json.encode(newItems), row.name})
-                        end
-                    end
-                end
-            end
+            Bridge.Server.RemoveOfflineKeys(id, pk.Item)
         end)
     end
 

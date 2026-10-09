@@ -35,6 +35,13 @@ elseif GetResourceState('yseries') == 'started' then
     Bridge.PhoneScript = 'yseries'
 end
 
+-- Auto-detect active inventory system
+if GetResourceState('ox_inventory') == 'started' then
+    Bridge.Inventory = 'ox_inventory'
+elseif GetResourceState('inventory') == 'started' then
+    Bridge.Inventory = 'Chezza-Inventory'
+end
+
 local Settings = lib.load('shared.settings')
 
 -- Global Debug Print Utility using ox_lib print

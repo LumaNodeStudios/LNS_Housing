@@ -91,7 +91,7 @@ local function GetPhysicalKeyCount(propertyId, isApartment)
                 onlineIdentifiers[identifier] = true
             end
 
-            local slots = exports.ox_inventory:Search(pId, 'slots', pk.Item)
+            local slots = Bridge.Server.Search(pId, 'slots', pk.Item)
             if slots then
                 for _, slot in ipairs(slots) do
                     local meta = slot.metadata or {}
@@ -103,32 +103,8 @@ local function GetPhysicalKeyCount(propertyId, isApartment)
         end
     end
 
-    local success, rows = pcall(MySQL.query.await, 'SELECT name, data FROM ox_inventory WHERE data LIKE ?', {'%' .. pk.Item .. '%'})
-    if success and rows then
-        for _, row in ipairs(rows) do
-            local isOnline = false
-            for onlineId in pairs(onlineIdentifiers) do
-                if string.find(row.name, onlineId, 1, true) then
-                    isOnline = true
-                    break
-                end
-            end
-
-            if not isOnline then
-                local data = json.decode(row.data)
-                if data then
-                    for _, item in pairs(data) do
-                        if item.name == pk.Item and item.metadata then
-                            local meta = item.metadata
-                            if MatchPropertyId(meta.propertyId, propertyId) and (meta.isApartment == true) == (isApartment == true) then
-                                count = count + (item.count or 1)
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
+    local offlineCount = Bridge.Server.GetOfflineKeyCount(propertyId, isApartment, pk.Item, onlineIdentifiers)
+    count = count + offlineCount
 
     return count
 end
@@ -155,13 +131,13 @@ RegisterNetEvent('LNS_Housing:server:cutPhysicalKey', function(propertyId, isApa
         return
     end
 
-    local blankCount = exports.ox_inventory:Search(src, 'count', Settings.Locksmith.BlankKeyItem)
+    local blankCount = Bridge.Server.Search(src, 'count', Settings.Locksmith.BlankKeyItem)
     if not blankCount or blankCount < 1 then
         Bridge.Server.Notify(src, 'You need a blank key to cut a new one.', 'error')
         return
     end
 
-    local removed = exports.ox_inventory:RemoveItem(src, Settings.Locksmith.BlankKeyItem, 1)
+    local removed = Bridge.Server.RemoveItem(src, Settings.Locksmith.BlankKeyItem, 1)
     if not removed then
         Bridge.Server.Notify(src, 'Could not use the blank key.', 'error')
         return
@@ -169,14 +145,14 @@ RegisterNetEvent('LNS_Housing:server:cutPhysicalKey', function(propertyId, isApa
 
     local label = isApartment and ('Apartment Room #' .. propertyId) or (Properties[propertyId] and Properties[propertyId].label or 'Property')
 
-    local given = exports.ox_inventory:AddItem(src, pk.Item, 1, {
+    local given = Bridge.Server.AddItem(src, pk.Item, 1, {
         propertyId = propertyId,
         isApartment = isApartment,
         description = 'Key to: ' .. label
     })
 
     if not given then
-        exports.ox_inventory:AddItem(src, Settings.Locksmith.BlankKeyItem, 1)
+        Bridge.Server.AddItem(src, Settings.Locksmith.BlankKeyItem, 1)
         Bridge.Server.Notify(src, 'Could not cut the key (inventory full?).', 'error')
         return
     end

@@ -17,56 +17,98 @@
 
 ## Overview
 
-**LNS Housing** by **LumaNode Studios** is a state-of-the-art, feature-complete housing and real estate system designed for FiveM servers. It completely replaces legacy, unoptimized housing resources with a modern, database-backed solution.
+**LNS Housing** by **LumaNode Studios** is a state-of-the-art, feature-complete housing and real estate ecosystem engineered for modern FiveM servers. Designed to replace outdated, unoptimized housing resources, LNS Housing combines a database-backed foundation with high-performance bridging and an ultra-modern React 19 UI suite.
 
-Rather than just a simple spawn-and-teleport script, **LNS Housing** introduces deep, immersive mechanics: **interactive furniture shop and placement**, a **dynamic lawn growth and mowing system**, **real estate agency job flows** with contracts and employee permissions, and a highly optimized **starter apartments framework** with seamless spawn integrations.
+Going far beyond standard teleport-and-stash scripts, **LNS Housing** introduces deep, immersive living mechanics: an **interactive electricity and power grid** with circuit breaker trips, **interior climate & temperature control**, a **real-time lawn growth and mowing simulation**, **timed auctions and rental contracts with legal paper signing**, **interactive 3D battering ram police breaches**, **live doorbell camera feeds**, an **NPC locksmith with physical key support**, and an **automated green-screen prop thumbnail pipeline** with CDN upload integration.
 
 ---
 
-## Features
+## Key Features
 
-### Advanced Property Management & Editing
-* **In-Game House Creator:** Admin commands (`/createhouse`) to quickly define shell locations, entrance/exit coordinates, pricing, and allowed agencies.
-* **MLO & Shell support:** Built-in tools for both MLO-based houses and traditional teleporting shell interiors.
-* **Wall Colors & Customization:** Real-time interior wall painting/color selection, allowing players to truly personalize their houses.
+### 🏢 Real Estate Agency & Market Economy
+* **Interactive Tablet UI (`/housing`):** Full-featured dashboard for browsing listings, managing properties, and checking agency balances.
+* **Versatile Sales Models:**
+  * **Direct Sale:** Standard bank purchase with instant ownership transfer.
+  * **Timed Auctions:** Live real-time bidding system with configurable starting bids and timers.
+  * **Rental Leases:** Recurring weekly lease payments with automatic database billing (even for offline players).
+* **Legal Paper Contract System:** Agents draft official purchase or rental contracts specifying deposits and commissions. Clients review and sign authentic, physical-style paper contract documents (`ContractPaper`).
+* **Tenant & Lease Management:** Automated grace periods, late fees, lockout modes, temporary retrieval periods, and realtor eviction controls.
+* **Renter Blacklist:** Real estate agencies can blacklist delinquent renters with Citizen ID, name, and reason tracking.
+* **In-Game 3-Step Property Wizard:** Complete in-game creator tool with door picking, garage coordinates, vehicle spawn points, breaker box locations, doorbell camera placement, and camera screenshot capture.
 
-### Interactive Furniture & Shop
-* **Rich Furniture Catalog:** Dozens of pre-configured furniture props across sofas, chairs, beds, tables, storage containers, lights, and decor.
-* **Dynamic Placement UI:** Smooth translation, rotation, and height adjustment tools to position props precisely in-game.
-* **Stashes & Wardrobes:** Place storage crates, lockers, wardrobes, or safes anywhere. Placing storage furniture automatically registers the containers with the inventory system.
+### ⚡ Electricity, Power Grid & Climate Simulation
+* **Dynamic Electrical Load:** Configurable kWh consumption per placed appliance (lamps, TVs, refrigerators, heating units).
+* **Circuit Breakers & Overload:** Exceeding maximum circuit capacity trips the breaker, plunging the house into darkness until reset via an interactive skill-check minigame.
+* **Electrical Upgrades:** Upgradable grid tiers from Standard Circuit (5.0 kWh) up to Industrial Power Grid (50.0 kWh).
+* **Ambient Climate & Temperature:** Furniture items impact room heating and cooling (°C or °F), visible in real time on the property dashboard.
 
-### Dynamic Lawn Mower & Yard System
-* **Grass Growth:** Grass props spawn dynamically in designated yard zones, growing in height over time.
-* **Lawn Maintenance:** Players must mow their yard using a lawnmower item or drivable mower vehicles to maintain their properties.
-* **Yard Customization:** Define specific lawn zone boundaries for any property using the built-in zone editor.
+### 🛡️ Security, Raids & Locksmith
+* **Upgradable Locks (Tiers 0–5):** Upgradable security tiers featuring scaled lockpicking minigame difficulty (rotational angles, speed, and rounds).
+* **Burglar Alarm System:** Configurable failed-attempt thresholds trigger audible burglar sirens backed by custom audio packs (`lns_sounds.dat54.rel` / `lns_bank.awc`).
+* **Interactive 3D Battering Ram Breach:** Police use physical mouse drag-and-strike mechanics to repeatedly ram doors open with custom animations, models, and impact audio.
+* **Police Stash Raids:** Authorized officers can force open locked storage containers using dedicated breach tools.
+* **Physical Key System & NPC Locksmith:** Metadata-bound key items (`house_key`) cut from blank keys at an NPC locksmith, featuring support for stolen key burglary RP and per-property key limits.
+* **Doorbell Camera & Live Feed:** Physical CCTV camera prop mounted at entrance, offering live security camera viewing and interactive 3D camera repositioning.
 
-### Real Estate & Contracts
-* **Agent Dashboard:** Real estate agents access a custom panel (`/properties`) to manage listings, adjust pricing, and hire employees.
-* **Draft Purchase Contracts:** Draft legal agreements specifying commission rates, deposit requirements, and buyer parameters.
-* **Agency Permissions:** Granular agent grades control access to creating listings, editing details, managing employees, or drafting contracts.
+### 🛋️ Furniture Studio & Automated Thumbnail Pipeline
+* **Massive Catalog:** Over 5,000+ lines of pre-configured furniture props across seating, tables, beds, lighting, decor, and storage.
+* **Precision 3D Modeler:** Freecam mode, translation/rotation gizmos, snapping controls, alpha transparency previews, and real-time shopping cart.
+* **Functional Props:** Place interactive storage stashes (`ox_inventory`), wardrobes (`illenium-appearance`), property control tablets, and character logout points.
+* **Automated Green-Screen Prop Pipeline (`/takeshots`):** Built-in studio isolation that spawns props in a private routing bucket, frames them, captures screenshots, strips chroma-key green in Node.js, sharpens/crops thumbnails, and uploads directly to **Qbox CDN**, **Fivemanage**, **Cloudflare R2**, or local storage.
 
-### Security & Raids
-* **Lockpicking:** Immersive minigame to lockpick house and apartment doors.
-* **Police Breaches:** Authorize law enforcement agents to raid properties, bypass door locks, and search stashes under active warrants.
+### 🌱 Dynamic Lawn Mower & Yard Simulation
+* **Real-Time Grass Growth:** Deterministic, server-synced grass growth simulation across polygon yard zones defined via in-game zone tools.
+* **Interactive Mowing:** Push lawnmowers with custom prop handling and walking animations, or ride-on mower vehicles (`mower`).
+* **Dynamic Culling:** Grass props dynamically sink, disappear when cut, and render efficiently based on player proximity.
+
+### 🏠 Starter Apartments
+* **Turnkey Multi-Unit Housing:** Complete starter apartment system with pre-configured WIWANG Apartments SQL data.
+* **Concierge & Shared Services:** Lobby receptionist NPC, shared breaker boxes, and routing bucket isolation.
+* **In-Game Apartment Creator:** Create and edit multi-room apartment complexes on the fly (`/createapartment`, `/editapartment`).
+
+---
+
+## 🛠️ Dependencies & Compatibility
+
+### Frameworks
+* **Qbox** (`qbx_core`)
+* **ESX** (`es_extended`)
+
+### Required Resources
+* **[ox_lib](https://github.com/overextended/ox_lib)**
+* **[oxmysql](https://github.com/overextended/oxmysql)**
+* **[ox_target](https://github.com/overextended/ox_target)**
+* **[ox_doorlock](https://github.com/overextended/ox_doorlock)**
+* **[ox_inventory](https://github.com/overextended/ox_inventory)**
+* **[screencapture](https://github.com/overextended/screencapture)** *(Required for prop and property screenshot features)*
+
+### Optional Integrations (Auto-Detected)
+* **Garages:** `qbx_garages`, `jg-advancedgarages`, `cd_garage`, `op-garages`
+* **Phones:** `sd-phone`, `lb-phone`, `roadphone`, `yseries`
+* **Dispatch:** `ps-dispatch`, `qs-dispatch`, `cd_dispatch`, `linden_dispatch`
+* **Banking:** `Renewed-Banking`, `oneclub_banking`, `esx_addonaccount`
+* **Wardrobe:** `illenium-appearance`
 
 ---
 
 ## 📖 Documentation
 
-https://lumanodestudios.vercel.app/docs/lns_housing
+Full documentation, installation guides, and configuration breakdowns are available at:
+https://www.lumanodestudios.com/docs/lns_housing
 
 ---
 
 ## Credits & Acknowledgements
 
-**LNS Housing** is developed and distributed by **[LumaNode Studios](https://github.com/LumaNodeStudios)**. 
+**LNS Housing** is developed and distributed by **[LumaNode Studios](https://github.com/LumaNodeStudios)**.
 
-Special thanks to **[Project Sloth](https://github.com/Project-Sloth)** for their work on **[ps-housing](https://github.com/Project-Sloth/ps-housing)** and **[ps-realtor](https://github.com/Project-Sloth/ps-realtor)**, which served as reference and inspiration for some of the codebase's logic.
-
-We also thank the wider FiveM developer community and the creators of **ox_lib** and **ox_doorlock** for providing key integration libraries that make this script lightweight and performant.
+Special thanks to:
+* **[Project Sloth](https://github.com/Project-Sloth)** (ps-housing & ps-realtor), where some logic and code was referenced and adapted.
+* The **[Overextended](https://github.com/overextended)** team for **ox_lib**, **ox_doorlock**, **ox_inventory**, and **screencapture**.
+* **K4MB1 Maps** for interior shell designs.
 
 ---
 
 <div align="center">
-  <p><i>A premium resource developed by <a href="https://github.com/LumaNodeStudios">LumaNode Studios</a></i></p>
+  <p><i>A premium open-source resource developed by <a href="https://github.com/LumaNodeStudios">LumaNode Studios</a></i></p>
 </div>

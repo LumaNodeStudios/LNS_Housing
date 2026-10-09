@@ -435,7 +435,7 @@ function LockpickStash(propertyId, stashId)
     end
 
     local lockpickItem = Settings.Security.LockpickItem or 'lockpick'
-    local count = exports.ox_inventory:Search('count', lockpickItem)
+    local count = Bridge.Client.Search('count', lockpickItem)
     if not count or count < 1 then
         Bridge.Client.Notify('You need a lockpick to pick this storage lock!', 'error')
         return
@@ -459,7 +459,7 @@ function LockpickStash(propertyId, stashId)
     if success then
         TriggerServerEvent('LNS_Housing:server:lockpickSuccess', propertyId, 'stash', stashId)
         Bridge.Client.Notify('You successfully picked the stash lock!', 'success')
-        exports.ox_inventory:openInventory('stash', stashId)
+        Bridge.Client.OpenInventory('stash', stashId)
     else
         Bridge.Client.Notify('You failed to pick the stash lock.', 'error')
     end

@@ -1451,7 +1451,7 @@ exports('GiveApartmentPhysicalKey', function(roomId, targetSource)
     local roomData = getRoomDataById(roomId)
     if not roomData then return false end
 
-    local added = exports.ox_inventory:AddItem(targetSource, pk.Item, 1, {
+    local added = Bridge.Server.AddItem(targetSource, pk.Item, 1, {
         propertyId = roomId,
         isApartment = true,
         description = 'Key to: Apartment Room #' .. roomId

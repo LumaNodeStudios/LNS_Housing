@@ -52,7 +52,7 @@ RegisterNetEvent('LNS_Housing:server:policeRaidDoor', function(propertyId, prope
     end
 
     local raidItem = Settings.Security.RaidItem or 'WEAPON_BATTERINGRAM'
-    local itemCount = exports.ox_inventory:Search(src, 'count', raidItem)
+    local itemCount = Bridge.Server.Search(src, 'count', raidItem)
     if itemCount < 1 then
         Bridge.Server.Notify(src, 'You do not have the required breaching weapon!', 'error')
         return
@@ -114,7 +114,7 @@ RegisterNetEvent('LNS_Housing:server:policeRaidStash', function(propertyId, stas
     end
 
     local accessTool = Settings.Security.PoliceAccessTool or 'police_access_tool'
-    local itemCount = exports.ox_inventory:Search(src, 'count', accessTool)
+    local itemCount = Bridge.Server.Search(src, 'count', accessTool)
     if itemCount < 1 then
         Bridge.Server.Notify(src, 'You do not have the required Police Access Tool!', 'error')
         return

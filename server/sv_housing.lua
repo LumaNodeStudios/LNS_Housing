@@ -1024,7 +1024,7 @@ exports('GivePhysicalKey', function(propertyId, targetSource)
     local pk = Settings.Security.PhysicalKeys
     if not pk or not pk.Enabled then return false end
 
-    local added = exports.ox_inventory:AddItem(targetSource, pk.Item, 1, {
+    local added = Bridge.Server.AddItem(targetSource, pk.Item, 1, {
         propertyId = propertyId,
         isApartment = false,
         description = 'Key to: ' .. p.label

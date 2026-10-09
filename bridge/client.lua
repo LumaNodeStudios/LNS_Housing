@@ -135,14 +135,32 @@ function Bridge.Client.OpenWardrobe(propertyId, furnitureId)
     end
 end
 
+function Bridge.Client.OpenInventory(invType, invId)
+    debugPrint('info', 'Bridge.Client.OpenInventory', {invType = invType, invId = invId})
+    if Bridge.Inventory == 'ox_inventory' then
+        exports.ox_inventory:openInventory(invType, invId)
+    else
+        debugPrint('error', 'No supported inventory found or started!')
+    end
+end
+
 function Bridge.Client.OpenStash(propertyId, furnitureId)
     debugPrint('info', 'Opening stash', {propertyId = propertyId, furnitureId = furnitureId})
-    if GetResourceState('ox_inventory') == 'started' then
-        local stashId = string.format('housing_%d_%s', propertyId, furnitureId)
-        exports.ox_inventory:openInventory('stash', stashId)
+    local stashId
+    if furnitureId then
+        stashId = string.format('housing_%d_%s', propertyId, furnitureId)
     else
-        debugPrint('error', 'No inventory found!')
+        stashId = tostring(propertyId)
     end
+    Bridge.Client.OpenInventory('stash', stashId)
+end
+
+function Bridge.Client.Search(searchType, item, metadata)
+    debugPrint('info', 'Bridge.Client.Search', {searchType = searchType, item = item})
+    if Bridge.Inventory == 'ox_inventory' then
+        return exports.ox_inventory:Search(searchType, item, metadata)
+    end
+    return searchType == 'count' and 0 or {}
 end
 
 function Bridge.Client.Notify(msg, type)
