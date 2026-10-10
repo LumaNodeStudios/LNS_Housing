@@ -78,7 +78,7 @@ local function IsPerishableItem(slotData)
     if not durability or type(durability) ~= 'number' or durability <= 100 then
         return false
     end
-    local itemDef = exports.ox_inventory:Items(slotData.name)
+    local itemDef = Bridge.Server.GetItemDef(slotData.name)
     local degrade = slotData.metadata.originalDegrade or slotData.metadata.degrade or (itemDef and itemDef.degrade)
     return degrade and degrade > 0
 end
@@ -103,7 +103,7 @@ local function ApplyFridgePreservation(invId, slotData, multiplier)
         return
     end
 
-    local itemDef = exports.ox_inventory:Items(slotData.name)
+    local itemDef = Bridge.Server.GetItemDef(slotData.name)
     local baseDegrade = tonumber(slotData.metadata.originalDegrade) 
         or tonumber(slotData.metadata.degrade) 
         or (itemDef and tonumber(itemDef.degrade))
@@ -126,7 +126,7 @@ local function ApplyFridgePreservation(invId, slotData, multiplier)
     meta.durability = newDurability
     meta.degrade = newDegrade
 
-    exports.ox_inventory:SetMetadata(invId, slotData.slot, meta)
+    Bridge.Server.SetItemMetadata(invId, slotData.slot, meta)
 
     debugPrint('info', ('[LNS_Housing:Fridge] ---------------- Decay Analysis ----------------'))
     debugPrint('info', ('[LNS_Housing:Fridge] Item: %s (Slot %d) in Fridge Stash: %s'):format(slotData.name, slotData.slot, tostring(invId)))
@@ -144,7 +144,7 @@ local function RemoveFridgePreservation(invId, slotData)
     local mult = tonumber(slotData.metadata.fridgeMultiplier) or 1.0
     local originalDegrade = tonumber(slotData.metadata.originalDegrade)
     if not originalDegrade then
-        local itemDef = exports.ox_inventory:Items(slotData.name)
+        local itemDef = Bridge.Server.GetItemDef(slotData.name)
         originalDegrade = itemDef and tonumber(itemDef.degrade)
     end
 
@@ -174,7 +174,7 @@ local function RemoveFridgePreservation(invId, slotData)
         meta.degrade = originalDegrade
     end
 
-    exports.ox_inventory:SetMetadata(invId, slotData.slot, meta)
+    Bridge.Server.SetItemMetadata(invId, slotData.slot, meta)
 
     debugPrint('info', ('[LNS_Housing:Fridge] ---------------- Decay Analysis ----------------'))
     debugPrint('info', ('[LNS_Housing:Fridge] Item: %s (Slot %d) removed from Fridge / Stash: %s'):format(slotData.name, slotData.slot, tostring(invId)))
@@ -187,7 +187,7 @@ end
 
 local function SyncInventorySlot(invId, slotNumber, isFridge)
     if not invId or not slotNumber then return end
-    local inv = exports.ox_inventory:GetInventory(invId)
+    local inv = Bridge.Server.GetInventory(invId)
     if not inv or not inv.items then return end
     local slotData = inv.items[slotNumber]
     if not slotData or not slotData.name or not slotData.metadata then return end
@@ -223,7 +223,7 @@ local function SyncInventorySlot(invId, slotNumber, isFridge)
 end
 
 local function SyncFridgeInventory(invId)
-    local inv = exports.ox_inventory:GetInventory(invId)
+    local inv = Bridge.Server.GetInventory(invId)
     if not inv or not inv.items then return end
 
     local isFridge = IsFridgeStash(invId)
@@ -249,9 +249,9 @@ local hooksInitialized = false
 
 local function InitFridgeHooks()
     if hooksInitialized then return end
-    if GetResourceState('ox_inventory') ~= 'started' then return end
+    if not Bridge or not Bridge.Server or not Bridge.Server.IsInventoryStarted or not Bridge.Server.IsInventoryStarted() then return end
 
-    local swapHookId = exports.ox_inventory:registerHook('swapItems', function(payload)
+    local swapHookId = Bridge.Server.RegisterInventoryHook('swapItems', function(payload)
         return true
     end)
 
@@ -299,7 +299,7 @@ local function InitFridgeHooks()
         end)
     end
 
-    exports.ox_inventory:registerHook('openInventory', function(payload)
+    Bridge.Server.RegisterInventoryHook('openInventory', function(payload)
         if not payload then return true end
         local invId = payload.inventoryId and tostring(payload.inventoryId)
         if invId and IsFridgeStash(invId) then
@@ -309,7 +309,7 @@ local function InitFridgeHooks()
     end)
 
     hooksInitialized = true
-    debugPrint('info', '[LNS_Housing] Refrigerator durability preservation hooks successfully initialized with ox_inventory.')
+    debugPrint('info', '[LNS_Housing] Refrigerator durability preservation hooks successfully initialized via bridge.')
 end
 
 InitFridgeHooks()

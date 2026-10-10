@@ -148,7 +148,7 @@ function Bridge.Client.OpenStash(propertyId, furnitureId)
     debugPrint('info', 'Opening stash', {propertyId = propertyId, furnitureId = furnitureId})
     local stashId
     if furnitureId then
-        stashId = string.format('housing_%d_%s', propertyId, furnitureId)
+        stashId = string.format('housing_%s_%s', tostring(propertyId), tostring(furnitureId))
     else
         stashId = tostring(propertyId)
     end

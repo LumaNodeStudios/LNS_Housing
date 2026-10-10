@@ -67,7 +67,8 @@ server_scripts {
     'server/sv_screenshot.lua',
     'server/sv_screenshot.js',
     'server/sv_electricity.lua',
-    'server/sv_fridge.lua'
+    'server/sv_fridge.lua',
+    'server/sv_trash.lua'
 }
 
 dependencies {

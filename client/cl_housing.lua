@@ -413,16 +413,19 @@ function OpenBelongingsRetrieval(propertyId)
         end
 
         if itemData and itemData.isStorage then
-            local isFridge = itemData.isFridge or itemData.type == 'fridge' or (itemData.id and tostring(itemData.id):lower():find('fridge'))
-            table.insert(options, {
-                title = f.label or itemData.label or (isFridge and 'Refrigerator' or 'Storage Unit'),
-                description = isFridge and 'Retrieve items from this refrigerator' or 'Retrieve items from this storage unit',
-                icon = isFridge and 'snowflake' or 'box',
-                arrow = true,
-                onSelect = function()
-                    Bridge.Client.OpenStash(propertyId, f.id)
-                end
-            })
+            local isTrash = itemData.isTrash or itemData.type == 'trash' or itemData.isDisposal or itemData.type == 'disposal'
+            if not isTrash then
+                local isFridge = itemData.isFridge or itemData.type == 'fridge' or (itemData.id and tostring(itemData.id):lower():find('fridge'))
+                table.insert(options, {
+                    title = f.label or itemData.label or (isFridge and 'Refrigerator' or 'Storage Unit'),
+                    description = isFridge and 'Retrieve items from this refrigerator' or 'Retrieve items from this storage unit',
+                    icon = isFridge and 'snowflake' or 'box',
+                    arrow = true,
+                    onSelect = function()
+                        Bridge.Client.OpenStash(propertyId, f.id)
+                    end
+                })
+            end
         end
     end
 
@@ -705,73 +708,91 @@ function LoadFurnitures(propertyId)
 
                         if itemData and itemData.isStorage then
                             local stashId = string.format('housing_%s_%s', tostring(propertyId), tostring(f.id))
-                            local isFridge = itemData.isFridge or itemData.type == 'fridge' or (itemData.id and tostring(itemData.id):lower():find('fridge'))
-                            local stashLabel = f.label or itemData.label or (isFridge and 'Refrigerator' or 'Storage Unit')
-                            exports.ox_target:addLocalEntity(obj, {
-                                {
-                                    label = isFridge and 'Open Refrigerator' or 'Open Storage',
-                                    icon = isFridge and 'fas fa-snowflake' or 'fas fa-box-open',
-                                    debug = Settings.Debug.Zones,
-                                    onSelect = function()
-                                        OpenStorageHandler(propertyId, f.id, stashId, stashLabel, isFridge)
-                                    end,
-                                    canInteract = function()
-                                        return true
-                                    end
-                                },
-                                {
-                                    label = isFridge and 'Lock/Unlock Refrigerator' or 'Lock/Unlock Storage',
-                                    icon = 'fas fa-key',
-                                    debug = Settings.Debug.Zones,
-                                    onSelect = function()
-                                        local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'storage')
-                                        if not hasAccess then
-                                            Bridge.Client.Notify('You do not have permission to lock/unlock this ' .. (isFridge and 'refrigerator.' or 'storage.'), 'error')
-                                            return
+                            local isTrash = itemData.isTrash or itemData.type == 'trash' or itemData.isDisposal or itemData.type == 'disposal'
+                            local isFridge = not isTrash and (itemData.isFridge or itemData.type == 'fridge' or (itemData.id and tostring(itemData.id):lower():find('fridge')))
+                            local stashLabel = f.label or itemData.label or (isTrash and 'Trash Can' or (isFridge and 'Refrigerator' or 'Storage Unit'))
+
+                            if isTrash then
+                                exports.ox_target:addLocalEntity(obj, {
+                                    {
+                                        label = 'Open Waste Bin',
+                                        icon = 'fas fa-trash-can',
+                                        debug = Settings.Debug.Zones,
+                                        onSelect = function()
+                                            Bridge.Client.OpenStash(propertyId, f.id)
+                                        end,
+                                        canInteract = function()
+                                            return true
                                         end
-                                        TriggerServerEvent('LNS_Housing:server:toggleStashLock', propertyId, stashId)
-                                    end,
-                                    canInteract = function()
-                                        return HasPropertyAccessLocal(p, 'storage')
-                                    end
-                                },
-                                {
-                                    label = isFridge and 'Reset Refrigerator Passcode' or 'Reset Storage Passcode',
-                                    icon = 'fas fa-shield-alt',
-                                    debug = Settings.Debug.Zones,
-                                    onSelect = function()
-                                        ResetStoragePasscodeHandler(propertyId, f.id, stashId, stashLabel, isFridge)
-                                    end,
-                                    canInteract = function()
-                                        return HasPropertyAccessLocal(p, 'storage')
-                                    end
-                                },
-                                {
-                                    label = isFridge and 'Lockpick Refrigerator' or 'Lockpick Storage',
-                                    icon = 'fas fa-mask',
-                                    items = Settings.Security.LockpickItem,
-                                    onSelect = function()
-                                        LockpickStash(propertyId, stashId)
-                                    end,
-                                    canInteract = function()
-                                        if itemData.canLockpick == false or itemData.canlockpick == false then return false end
-                                        if p.isApartment then
-                                            if Settings.Apartments and not Settings.Apartments.CanBreakIn then return false end
-                                        else
-                                            if Settings.Housing and not Settings.Housing.CanBreakIn then return false end
+                                    }
+                                })
+                            else
+                                exports.ox_target:addLocalEntity(obj, {
+                                    {
+                                        label = isFridge and 'Open Refrigerator' or 'Open Storage',
+                                        icon = isFridge and 'fas fa-snowflake' or 'fas fa-box-open',
+                                        debug = Settings.Debug.Zones,
+                                        onSelect = function()
+                                            OpenStorageHandler(propertyId, f.id, stashId, stashLabel, isFridge)
+                                        end,
+                                        canInteract = function()
+                                            return true
                                         end
-                                        return not HasPropertyAccessLocal(p, 'storage')
-                                    end
-                                },
-                                {
-                                    label = isFridge and 'Raid Refrigerator' or 'Raid Storage',
-                                    icon = 'fas fa-shield-halved',
-                                    items = Settings.Security.PoliceAccessTool or 'police_access_tool',
-                                    onSelect = function()
-                                        StartPoliceStashRaid(propertyId, f.id)
-                                    end
-                                }
-                            })
+                                    },
+                                    {
+                                        label = isFridge and 'Lock/Unlock Refrigerator' or 'Lock/Unlock Storage',
+                                        icon = 'fas fa-key',
+                                        debug = Settings.Debug.Zones,
+                                        onSelect = function()
+                                            local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'storage')
+                                            if not hasAccess then
+                                                Bridge.Client.Notify('You do not have permission to lock/unlock this ' .. (isFridge and 'refrigerator.' or 'storage.'), 'error')
+                                                return
+                                            end
+                                            TriggerServerEvent('LNS_Housing:server:toggleStashLock', propertyId, stashId)
+                                        end,
+                                        canInteract = function()
+                                            return HasPropertyAccessLocal(p, 'storage')
+                                        end
+                                    },
+                                    {
+                                        label = isFridge and 'Reset Refrigerator Passcode' or 'Reset Storage Passcode',
+                                        icon = 'fas fa-shield-alt',
+                                        debug = Settings.Debug.Zones,
+                                        onSelect = function()
+                                            ResetStoragePasscodeHandler(propertyId, f.id, stashId, stashLabel, isFridge)
+                                        end,
+                                        canInteract = function()
+                                            return HasPropertyAccessLocal(p, 'storage')
+                                        end
+                                    },
+                                    {
+                                        label = isFridge and 'Lockpick Refrigerator' or 'Lockpick Storage',
+                                        icon = 'fas fa-mask',
+                                        items = Settings.Security.LockpickItem,
+                                        onSelect = function()
+                                            LockpickStash(propertyId, stashId)
+                                        end,
+                                        canInteract = function()
+                                            if itemData.canLockpick == false or itemData.canlockpick == false then return false end
+                                            if p.isApartment then
+                                                if Settings.Apartments and not Settings.Apartments.CanBreakIn then return false end
+                                            else
+                                                if Settings.Housing and not Settings.Housing.CanBreakIn then return false end
+                                            end
+                                            return not HasPropertyAccessLocal(p, 'storage')
+                                        end
+                                    },
+                                    {
+                                        label = isFridge and 'Raid Refrigerator' or 'Raid Storage',
+                                        icon = 'fas fa-shield-halved',
+                                        items = Settings.Security.PoliceAccessTool or 'police_access_tool',
+                                        onSelect = function()
+                                            StartPoliceStashRaid(propertyId, f.id)
+                                        end
+                                    }
+                                })
+                            end
                         end
 
                         if itemData and itemData.isWardrobe then

@@ -28,6 +28,16 @@ return {
                 price = 0,
                 type = 'clothing',
                 isWardrobe = true
+            },
+            {
+                id = 'v_res_tre_trashbin',
+                label = 'Trash Can',
+                model = 'prop_bin_07d',
+                price = 0,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 15, weight = 50000 }
             }
         }
     },
@@ -7873,122 +7883,228 @@ return {
     },]]
     {
         id = 'trashcans',
-        label = 'Trashcans',
-        icon = 'Package',
+        label = 'Trashcans & Disposal',
+        icon = 'Trash2',
         items = {
             {
                 id = 'prop_bin_07a',
-                label = 'Bin 07a',
+                label = 'Office Waste Bin',
                 model = 'prop_bin_07a',
-                price = 80
+                price = 80,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 10, weight = 30000 }
             },
             {
                 id = 'prop_bin_07b',
-                label = 'Bin 07b',
+                label = 'Mesh Wastepaper Basket',
                 model = 'prop_bin_07b',
-                price = 80
+                price = 80,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 10, weight = 30000 }
             },
             {
                 id = 'prop_bin_07c',
-                label = 'Bin 07c',
+                label = 'Small Pedal Bin',
                 model = 'prop_bin_07c',
-                price = 80
+                price = 80,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 10, weight = 30000 }
             },
             {
                 id = 'prop_bin_07d',
-                label = 'Bin 07d',
+                label = 'Kitchen Pedal Bin',
                 model = 'prop_bin_07d',
-                price = 80
+                price = 90,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 15, weight = 50000 }
             },
             {
                 id = 'prop_bin_08a',
-                label = 'Bin 08a',
+                label = 'Stainless Steel Kitchen Bin',
                 model = 'prop_bin_08a',
-                price = 90
+                price = 120,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 15, weight = 50000 }
             },
             {
                 id = 'prop_bin_08open',
-                label = 'Bin 08open',
+                label = 'Open Stainless Steel Bin',
                 model = 'prop_bin_08open',
-                price = 90
+                price = 110,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 15, weight = 50000 }
             },
             {
                 id = 'prop_cs_bin_01',
-                label = 'Bin 01',
+                label = 'Classic Trash Bin',
                 model = 'prop_cs_bin_01',
-                price = 90
+                price = 90,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 15, weight = 50000 }
             },
             {
                 id = 'prop_cs_bin_01_skinned',
-                label = 'Bin 01 Skinned',
+                label = 'Painted Trash Bin',
                 model = 'prop_cs_bin_01_skinned',
-                price = 90
+                price = 90,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 15, weight = 50000 }
             },
             {
                 id = 'prop_cs_bin_03',
-                label = 'Bin 03',
+                label = 'Black Trash Bin',
                 model = 'prop_cs_bin_03',
-                price = 90
+                price = 90,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 15, weight = 50000 }
             },
             {
                 id = 'prop_bin_03a',
-                label = 'Bin 03a',
+                label = 'Plastic Garbage Bin',
                 model = 'prop_bin_03a',
-                price = 80
+                price = 80,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 15, weight = 50000 }
             },
             {
                 id = 'prop_bin_04a',
-                label = 'Bin 04a',
+                label = 'Street Trash Can',
                 model = 'prop_bin_04a',
-                price = 80
+                price = 80,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 15, weight = 50000 }
             },
             {
                 id = 'prop_cs_bin_02',
-                label = 'Bin 1',
+                label = 'Tall Waste Can',
                 model = 'prop_cs_bin_02',
-                price = 100
+                price = 100,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 15, weight = 50000 }
             },
             {
                 id = 'prop_fbibombbin',
-                label = 'Bin 3',
+                label = 'Reinforced Steel Bin',
                 model = 'prop_fbibombbin',
-                price = 100
+                price = 150,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 20, weight = 60000 }
             },
             {
                 id = 'prop_bin_06a',
-                label = 'Bin 4',
+                label = 'Outdoor Trash Can',
                 model = 'prop_bin_06a',
-                price = 150
+                price = 150,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 20, weight = 60000 }
             },
             {
                 id = 'prop_bin_10b',
-                label = 'Bin 5',
+                label = 'Industrial Garbage Bin',
                 model = 'prop_bin_10b',
-                price = 150
+                price = 150,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 25, weight = 80000 }
             },
             {
                 id = 'prop_bin_11b',
-                label = 'Bin 6',
+                label = 'Wheelie Bin (Blue)',
                 model = 'prop_bin_11b',
-                price = 150
+                price = 180,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 30, weight = 100000 }
             },
             {
                 id = 'prop_bin_11a',
-                label = 'Bin 7',
+                label = 'Wheelie Bin (Green)',
                 model = 'prop_bin_11a',
-                price = 150
+                price = 180,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 30, weight = 100000 }
             },
             {
                 id = 'prop_bin_13a',
-                label = 'Large bin',
+                label = 'Park Trash Can',
                 model = 'prop_bin_13a',
-                price = 150
+                price = 150,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 25, weight = 80000 }
+            },
+            {
+                id = 'prop_bin_01a',
+                label = 'Downtown Trash Can',
+                model = 'prop_bin_01a',
+                price = 120,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 20, weight = 60000 }
+            },
+            {
+                id = 'prop_dumpster_01a',
+                label = 'Commercial Dumpster (Green)',
+                model = 'prop_dumpster_01a',
+                price = 500,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 50, weight = 200000 }
+            },
+            {
+                id = 'prop_dumpster_02a',
+                label = 'Commercial Dumpster (Blue)',
+                model = 'prop_dumpster_02a',
+                price = 500,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 50, weight = 200000 }
             },
             {
                 id = 'prop_rub_binbag_sd_01',
-                label = 'Bin bag',
+                label = 'Trash Bag',
                 model = 'prop_rub_binbag_sd_01',
-                price = 100
+                price = 30,
+                type = 'trash',
+                isStorage = true,
+                isTrash = true,
+                storage = { slots = 10, weight = 20000 }
             }
         }
     },

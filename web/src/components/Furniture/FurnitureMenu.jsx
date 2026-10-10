@@ -373,7 +373,8 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
     Tv: Tv,
     Utensils: Utensils,
     Bath: Bath,
-    Package: Package
+    Package: Package,
+    Trash2: Trash2
   };
 
   const categories = React.useMemo(() =>

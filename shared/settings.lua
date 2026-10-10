@@ -144,6 +144,17 @@ return {
     },
 
     ----------------------------------------------------------------------------
+    -- Trash Can & Waste Disposal Settings
+    ----------------------------------------------------------------------------
+    TrashCan = {
+        Enabled = true,                     -- Enable or disable trash can / waste disposal furniture
+        Slots = 15,                         -- Default trash can storage slots
+        Weight = 50000,                     -- Default trash can weight capacity (in grams)
+        DestroyOnClose = true,              -- Permanently delete all items placed inside when inventory is closed
+        NotifyOnDestroy = true,             -- Notify player when items are permanently destroyed
+    },
+
+    ----------------------------------------------------------------------------
     -- Rent & Eviction Management
     ----------------------------------------------------------------------------
     Rent = {

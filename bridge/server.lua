@@ -329,12 +329,12 @@ function Bridge.Server.RegisterStash(propertyId, furnitureId, storageConfig, lab
     debugPrint('info', 'Bridge.Server.RegisterStash', {propertyId = propertyId, furnitureId = furnitureId, storageConfig = storageConfig, label = label})
     local stashId, stashLabel, slots, weight
     if furnitureId and (type(furnitureId) == 'string' or type(furnitureId) == 'number') and not storageConfig and not label and type(propertyId) == 'number' then
-        stashId = string.format('housing_%d_%s', propertyId, furnitureId)
+        stashId = string.format('housing_%s_%s', tostring(propertyId), tostring(furnitureId))
         stashLabel = Settings.Stash.label
         slots = Settings.Stash.slots
         weight = Settings.Stash.weight
     elseif furnitureId and (type(furnitureId) == 'string' or type(furnitureId) == 'number') then
-        stashId = string.format('housing_%d_%s', propertyId, furnitureId)
+        stashId = string.format('housing_%s_%s', tostring(propertyId), tostring(furnitureId))
         slots = storageConfig and storageConfig.slots or Settings.Stash.slots
         weight = storageConfig and storageConfig.weight or Settings.Stash.weight
         stashLabel = label or (storageConfig and storageConfig.label) or Settings.Stash.label
@@ -372,6 +372,67 @@ function Bridge.Server.RemoveItem(source, item, count, metadata, slot)
     debugPrint('info', 'Bridge.Server.RemoveItem', {source = source, item = item, count = count, slot = slot})
     if Bridge.Inventory == 'ox_inventory' then
         return exports.ox_inventory:RemoveItem(source, item, count, metadata, slot)
+    end
+    return false
+end
+
+function Bridge.Server.ClearInventory(invId, keepItems)
+    debugPrint('info', 'Bridge.Server.ClearInventory', {invId = invId})
+    if not invId then return false end
+    if Bridge.Inventory == 'ox_inventory' then
+        return exports.ox_inventory:ClearInventory(invId, keepItems)
+    end
+    return false
+end
+
+function Bridge.Server.GetInventory(invId)
+    if not invId then return nil end
+    if Bridge.Inventory == 'ox_inventory' then
+        return exports.ox_inventory:GetInventory(invId)
+    end
+    return nil
+end
+
+function Bridge.Server.GetInventoryItems(invId)
+    local inv = Bridge.Server.GetInventory(invId)
+    return inv and inv.items or {}
+end
+
+function Bridge.Server.RegisterInventoryHook(event, cb, options)
+    debugPrint('info', 'Bridge.Server.RegisterInventoryHook', {event = event})
+    if Bridge.Inventory == 'ox_inventory' then
+        return exports.ox_inventory:registerHook(event, cb, options)
+    end
+    return nil
+end
+
+function Bridge.Server.GetItemDef(itemName)
+    if not itemName then return nil end
+    if Bridge.Inventory == 'ox_inventory' then
+        return exports.ox_inventory:Items(itemName)
+    end
+    return nil
+end
+
+function Bridge.Server.SetItemMetadata(invId, slot, metadata)
+    if not invId or not slot then return false end
+    if Bridge.Inventory == 'ox_inventory' then
+        return exports.ox_inventory:SetMetadata(invId, slot, metadata)
+    end
+    return false
+end
+
+function Bridge.Server.OnClosedInventory(cb)
+    if Bridge.Inventory == 'ox_inventory' then
+        AddEventHandler('ox_inventory:closedInventory', function(playerId, invId)
+            cb(playerId, invId)
+        end)
+    end
+end
+
+function Bridge.Server.IsInventoryStarted()
+    if Bridge.Inventory == 'ox_inventory' then
+        return GetResourceState('ox_inventory') == 'started'
     end
     return false
 end
@@ -459,8 +520,13 @@ function Bridge.Server.RegisterPropertyStashes(propertyId, furnitureList)
             Bridge.Server.RegisterStash(propertyId, f.id, itemData.storage, f.label)
             local isFridge = itemData.isFridge or itemData.type == 'fridge'
             if isFridge and RegisterFridgeStash then
-                local stashId = string.format('housing_%d_%s', propertyId, f.id)
+                local stashId = string.format('housing_%s_%s', tostring(propertyId), tostring(f.id))
                 RegisterFridgeStash(stashId, propertyId, f.id)
+            end
+            local isTrash = itemData.isTrash or itemData.type == 'trash' or itemData.isDisposal or itemData.type == 'disposal'
+            if isTrash and RegisterTrashStash then
+                local stashId = string.format('housing_%s_%s', tostring(propertyId), tostring(f.id))
+                RegisterTrashStash(stashId, propertyId, f.id)
             end
         end
     end
