@@ -134,7 +134,9 @@ button:hover {
 .panel-container,
 .re-container,
 .apt-creator-modal,
-.furniture-menu-container {
+.furniture-menu-container,
+.keypad-overlay,
+.keypad-container {
   pointer-events: auto;
 }
 

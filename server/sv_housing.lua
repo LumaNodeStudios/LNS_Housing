@@ -1,7 +1,8 @@
 local Settings = lib.load('shared.settings')
 local MotionAlertCooldown = {}
 local ActiveAlarms = {}
-local LockedStashes = {}
+LockedStashes = {}
+StoragePasscodes = {}
 TemporaryAccess = { doors = {}, stashes = {} }
 FailedAttempts = {}
 
@@ -1015,6 +1016,64 @@ lib.callback.register('LNS_Housing:server:isStashLocked', function(source, stash
         LockedStashes[stashId] = true
     end
     return LockedStashes[stashId]
+end)
+
+lib.callback.register('LNS_Housing:server:getStorageInfo', function(source, propertyId, stashId)
+    debugPrint('info', 'LNS_Housing:server:getStorageInfo called', {source = source, propertyId = propertyId, stashId = stashId})
+    local isApartment = Properties[propertyId] == nil
+    local hasAccess = CheckPermission(source, isApartment and 'apartment' or 'house', propertyId, 'storage')
+    if StoragePasscodes[stashId] == nil then
+        local row = MySQL.single.await('SELECT passcode FROM housing_storage_passcodes WHERE stash_id = ?', { stashId })
+        if row and row.passcode then
+            StoragePasscodes[stashId] = tostring(row.passcode)
+        end
+    end
+    local hasPasscode = (StoragePasscodes[stashId] ~= nil and StoragePasscodes[stashId] ~= '')
+    if LockedStashes[stashId] == nil then
+        LockedStashes[stashId] = true
+    end
+    return {
+        hasPasscode = hasPasscode,
+        isLocked = LockedStashes[stashId],
+        canManage = hasAccess
+    }
+end)
+
+lib.callback.register('LNS_Housing:server:verifyStoragePasscode', function(source, propertyId, stashId, enteredPasscode)
+    debugPrint('info', 'LNS_Housing:server:verifyStoragePasscode called', {source = source, propertyId = propertyId, stashId = stashId})
+    if StoragePasscodes[stashId] == nil then
+        local row = MySQL.single.await('SELECT passcode FROM housing_storage_passcodes WHERE stash_id = ?', { stashId })
+        if row and row.passcode then
+            StoragePasscodes[stashId] = tostring(row.passcode)
+        end
+    end
+    local realPasscode = StoragePasscodes[stashId]
+    if not realPasscode then
+        return { success = false, message = 'No passcode set for this storage.' }
+    end
+    if tostring(enteredPasscode) == tostring(realPasscode) then
+        return { success = true }
+    end
+    return { success = false, message = 'Incorrect passcode' }
+end)
+
+lib.callback.register('LNS_Housing:server:setStoragePasscode', function(source, propertyId, stashId, newPasscode, isReset)
+    debugPrint('info', 'LNS_Housing:server:setStoragePasscode called', {source = source, propertyId = propertyId, stashId = stashId, isReset = isReset})
+    local isApartment = Properties[propertyId] == nil
+    local hasAccess = CheckPermission(source, isApartment and 'apartment' or 'house', propertyId, 'storage')
+    if not hasAccess then
+        return { success = false, message = 'You do not have permission to manage this storage.' }
+    end
+    local codeStr = tostring(newPasscode or ''):gsub('%s+', '')
+    if #codeStr < 4 or #codeStr > 8 then
+        return { success = false, message = 'Passcode must be between 4 and 8 digits.' }
+    end
+    StoragePasscodes[stashId] = codeStr
+    MySQL.query.await('INSERT INTO housing_storage_passcodes (stash_id, passcode) VALUES (?, ?) ON DUPLICATE KEY UPDATE passcode = ?', {
+        stashId, codeStr, codeStr
+    })
+    LockedStashes[stashId] = true
+    return { success = true }
 end)
 
 exports('GivePhysicalKey', function(propertyId, targetSource)

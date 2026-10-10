@@ -1,0 +1,458 @@
+.keypad-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  user-select: none;
+  pointer-events: auto !important;
+}
+
+.keypad-container {
+  width: 380px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: var(--shadow-main);
+  position: relative;
+  overflow: hidden;
+  transition: var(--transition-fast);
+  pointer-events: auto !important;
+}
+
+/* Shake Animation */
+.keypad-shake {
+  animation: keypadShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes keypadShake {
+
+  10%,
+  90% {
+    transform: translate3d(-3px, 0, 0);
+  }
+
+  20%,
+  80% {
+    transform: translate3d(5px, 0, 0);
+  }
+
+  30%,
+  50%,
+  70% {
+    transform: translate3d(-6px, 0, 0);
+  }
+
+  40%,
+  60% {
+    transform: translate3d(6px, 0, 0);
+  }
+}
+
+/* Header */
+.keypad-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.keypad-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.keypad-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.keypad-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.keypad-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.keypad-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.badge-locked {
+  background: rgba(var(--danger-rgb), 0.15);
+  color: #fb7185;
+  border: 1px solid rgba(var(--danger-rgb), 0.3);
+}
+
+.badge-register {
+  background: rgba(var(--primary-rgb), 0.15);
+  color: var(--primary);
+  border: 1px solid rgba(var(--primary-rgb), 0.3);
+}
+
+.badge-reset {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.keypad-subtitle {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.keypad-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.keypad-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-dim);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  transition: var(--transition-fast);
+  cursor: pointer;
+  pointer-events: auto !important;
+}
+
+.keypad-action-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.keypad-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-dim);
+  color: var(--text-muted);
+  transition: var(--transition-fast);
+  cursor: pointer;
+  pointer-events: auto !important;
+}
+
+.keypad-close-btn:hover {
+  color: var(--danger);
+  background: rgba(var(--danger-rgb), 0.1);
+  border-color: rgba(var(--danger-rgb), 0.3);
+}
+
+/* PIN Screen / Display */
+.keypad-screen {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-dim);
+  border-radius: 12px;
+  padding: 14px 18px;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  position: relative;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.keypad-screen.screen-error {
+  border-color: var(--danger);
+  background: rgba(var(--danger-rgb), 0.08);
+}
+
+.keypad-screen.screen-success {
+  border-color: var(--success);
+  background: rgba(var(--success-rgb), 0.08);
+}
+
+.screen-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.screen-digits-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.screen-dot-slot {
+  width: 22px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.dot-bullet {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--primary);
+  animation: dotPop 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.dot-char {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary);
+  font-family: monospace;
+  animation: dotPop 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.dot-placeholder {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.screen-dot-slot.current .dot-placeholder {
+  background: rgba(var(--primary-rgb), 0.45);
+}
+
+@keyframes dotPop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.screen-status-msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.screen-status-msg.success {
+  color: var(--success);
+}
+
+.screen-status-msg.error {
+  color: var(--danger);
+}
+
+.screen-controls {
+  display: flex;
+  align-items: center;
+}
+
+.screen-toggle-vis {
+  color: var(--text-muted);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: var(--transition-fast);
+  cursor: pointer;
+  pointer-events: auto !important;
+}
+
+.screen-toggle-vis:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Keypad Grid */
+.keypad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.keypad-btn {
+  height: 54px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-dim);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-main);
+  transition: all 0.15s ease;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  pointer-events: auto !important;
+}
+
+.keypad-btn * {
+  pointer-events: none;
+}
+
+.keypad-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.keypad-btn:active:not(:disabled) {
+  transform: translateY(1px);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.keypad-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-main-num {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+
+.btn-sub-letters {
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.action-key {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.action-key:hover:not(:disabled) {
+  color: var(--text-main);
+}
+
+.clear-btn:hover:not(:disabled) {
+  border-color: rgba(var(--warning-rgb), 0.3);
+  color: #fde047;
+}
+
+.backspace-btn:hover:not(:disabled) {
+  border-color: rgba(var(--danger-rgb), 0.3);
+  color: #fb7185;
+}
+
+/* Submit Button */
+.keypad-submit-btn {
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  pointer-events: auto !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.btn-unlock,
+.btn-register {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: var(--primary-text);
+}
+
+.btn-unlock:hover:not(:disabled),
+.btn-register:hover:not(:disabled) {
+  filter: brightness(0.95);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
+}
+
+.btn-reset {
+  background: rgba(168, 85, 247, 0.2);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  color: #e9d5ff;
+}
+
+.btn-reset:hover:not(:disabled) {
+  background: rgba(168, 85, 247, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
+}
+
+.keypad-submit-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.submit-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-top-color: #000;
+  border-radius: 50%;
+  animation: keypadSpin 0.7s linear infinite;
+}
+
+@keyframes keypadSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Footer Hint */
+.keypad-footer-hint {
+  text-align: center;
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.2px;
+}

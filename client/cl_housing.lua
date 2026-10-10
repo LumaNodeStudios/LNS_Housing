@@ -32,6 +32,47 @@ RegisterNUICallback('closeUI', function(_, cb)
     cb('ok')
 end)
 
+RegisterNUICallback('closeStorageKeypad', function(_, cb)
+    debugPrint('info', 'NUI callback: closeStorageKeypad')
+    SetNuiFocus(false, false)
+    cb('ok')
+end)
+
+RegisterNUICallback('submitStoragePasscode', function(data, cb)
+    debugPrint('info', 'NUI callback: submitStoragePasscode', data)
+    if not data or not data.propertyId or not data.stashId or not data.passcode then
+        cb({ success = false, message = 'Invalid data provided' })
+        return
+    end
+
+    if data.mode == 'register' or data.mode == 'reset' then
+        local res = lib.callback.await('LNS_Housing:server:setStoragePasscode', false, data.propertyId, data.stashId, data.passcode, data.mode == 'reset')
+        if res and res.success then
+            SetNuiFocus(false, false)
+            Bridge.Client.Notify(data.mode == 'reset' and 'Storage passcode updated successfully!' or 'Storage passcode registered successfully!', 'success')
+            if data.mode == 'register' then
+                Wait(300)
+                Bridge.Client.OpenStash(data.propertyId, data.furnitureId)
+            end
+            cb({ success = true })
+        else
+            cb({ success = false, message = res and res.message or 'Failed to set passcode' })
+        end
+    elseif data.mode == 'unlock' then
+        local res = lib.callback.await('LNS_Housing:server:verifyStoragePasscode', false, data.propertyId, data.stashId, data.passcode)
+        if res and res.success then
+            SetNuiFocus(false, false)
+            cb({ success = true })
+            Wait(300)
+            Bridge.Client.OpenStash(data.propertyId, data.furnitureId)
+        else
+            cb({ success = false, message = res and res.message or 'Incorrect passcode' })
+        end
+    else
+        cb({ success = false, message = 'Unknown mode' })
+    end
+end)
+
 RegisterNUICallback('viewDoorbellCamera', function(data, cb)
     debugPrint('info', 'NUI callback: viewDoorbellCamera', data)
     SetNuiFocus(false, false)
@@ -398,6 +439,76 @@ function OpenBelongingsRetrieval(propertyId)
     lib.showContext('housing_belongings_retrieval')
 end
 
+function OpenStorageHandler(propertyId, furnitureId, stashId, stashLabel, isFridge)
+    local storageInfo = lib.callback.await('LNS_Housing:server:getStorageInfo', false, propertyId, stashId)
+    if not storageInfo then
+        Bridge.Client.OpenStash(propertyId, furnitureId)
+        return
+    end
+
+    if not storageInfo.hasPasscode then
+        if storageInfo.canManage then
+            SetNuiFocus(true, true)
+            SendNUIMessage({
+                action = 'openStorageKeypad',
+                data = {
+                    mode = 'register',
+                    propertyId = propertyId,
+                    furnitureId = furnitureId,
+                    stashId = stashId,
+                    title = stashLabel,
+                    isFridge = isFridge,
+                    canReset = false
+                }
+            })
+        else
+            Bridge.Client.Notify('This storage is not configured yet. The owner must set the passcode first.', 'error')
+        end
+        return
+    end
+
+    if not storageInfo.isLocked then
+        Bridge.Client.OpenStash(propertyId, furnitureId)
+        return
+    end
+
+    SetNuiFocus(true, true)
+    SendNUIMessage({
+        action = 'openStorageKeypad',
+        data = {
+            mode = 'unlock',
+            propertyId = propertyId,
+            furnitureId = furnitureId,
+            stashId = stashId,
+            title = stashLabel,
+            isFridge = isFridge,
+            canReset = storageInfo.canManage
+        }
+    })
+end
+
+function ResetStoragePasscodeHandler(propertyId, furnitureId, stashId, stashLabel, isFridge)
+    local storageInfo = lib.callback.await('LNS_Housing:server:getStorageInfo', false, propertyId, stashId)
+    if not storageInfo or not storageInfo.canManage then
+        Bridge.Client.Notify('You do not have permission to reset this storage passcode.', 'error')
+        return
+    end
+
+    SetNuiFocus(true, true)
+    SendNUIMessage({
+        action = 'openStorageKeypad',
+        data = {
+            mode = 'reset',
+            propertyId = propertyId,
+            furnitureId = furnitureId,
+            stashId = stashId,
+            title = stashLabel,
+            isFridge = isFridge,
+            canReset = false
+        }
+    })
+end
+
 function LockpickStash(propertyId, stashId)
     local p = Properties[propertyId]
     local isApartment = false
@@ -593,23 +704,16 @@ function LoadFurnitures(propertyId)
                         end
 
                         if itemData and itemData.isStorage then
-                            local stashId = string.format('housing_%d_%s', propertyId, f.id)
+                            local stashId = string.format('housing_%s_%s', tostring(propertyId), tostring(f.id))
                             local isFridge = itemData.isFridge or itemData.type == 'fridge' or (itemData.id and tostring(itemData.id):lower():find('fridge'))
+                            local stashLabel = f.label or itemData.label or (isFridge and 'Refrigerator' or 'Storage Unit')
                             exports.ox_target:addLocalEntity(obj, {
                                 {
                                     label = isFridge and 'Open Refrigerator' or 'Open Storage',
                                     icon = isFridge and 'fas fa-snowflake' or 'fas fa-box-open',
                                     debug = Settings.Debug.Zones,
                                     onSelect = function()
-                                        local isLocked = lib.callback.await('LNS_Housing:server:isStashLocked', false, stashId)
-                                        if isLocked then
-                                            local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'storage')
-                                            if not hasAccess then
-                                                Bridge.Client.Notify(isFridge and 'This refrigerator is locked.' or 'This storage is locked.', 'error')
-                                                return
-                                            end
-                                        end
-                                        Bridge.Client.OpenStash(propertyId, f.id)
+                                        OpenStorageHandler(propertyId, f.id, stashId, stashLabel, isFridge)
                                     end,
                                     canInteract = function()
                                         return true
@@ -626,6 +730,17 @@ function LoadFurnitures(propertyId)
                                             return
                                         end
                                         TriggerServerEvent('LNS_Housing:server:toggleStashLock', propertyId, stashId)
+                                    end,
+                                    canInteract = function()
+                                        return HasPropertyAccessLocal(p, 'storage')
+                                    end
+                                },
+                                {
+                                    label = isFridge and 'Reset Refrigerator Passcode' or 'Reset Storage Passcode',
+                                    icon = 'fas fa-shield-alt',
+                                    debug = Settings.Debug.Zones,
+                                    onSelect = function()
+                                        ResetStoragePasscodeHandler(propertyId, f.id, stashId, stashLabel, isFridge)
                                     end,
                                     canInteract = function()
                                         return HasPropertyAccessLocal(p, 'storage')

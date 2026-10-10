@@ -266,6 +266,14 @@ MySQL.ready(function()
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ]])
 
+    MySQL.query.await([[
+        CREATE TABLE IF NOT EXISTS `housing_storage_passcodes` (
+            `stash_id` VARCHAR(100) PRIMARY KEY,
+            `passcode` VARCHAR(20) NOT NULL,
+            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ]])
+
     if Settings.Apartments and Settings.Apartments.Enabled then
         MySQL.query.await([[
             CREATE TABLE IF NOT EXISTS player_apartments (
@@ -535,6 +543,14 @@ function ResetPropertyOwnershipData(id)
     if ActiveAlarms then ActiveAlarms[id] = nil end
     if MotionAlertCooldown then MotionAlertCooldown[id] = nil end
     if LockedStashes then LockedStashes[id] = nil end
+    if StoragePasscodes then
+        for k in pairs(StoragePasscodes) do
+            if k:find('housing_' .. id .. '_') == 1 then
+                StoragePasscodes[k] = nil
+            end
+        end
+        MySQL.query('DELETE FROM housing_storage_passcodes WHERE stash_id LIKE ?', { 'housing_' .. id .. '_%' })
+    end
 
     local pk = Settings and Settings.Security and Settings.Security.PhysicalKeys
     if pk and pk.Enabled then

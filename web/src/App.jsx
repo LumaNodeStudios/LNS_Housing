@@ -7,6 +7,7 @@ import ContractPaper from './components/RealEstate/ContractPaper';
 import ApartmentCreator from './components/ApartmentCreator/ApartmentCreator';
 import ScreenshotProgress from './components/ScreenshotProgress/ScreenshotProgress';
 import BreachMinigame from './components/BreachMinigame/BreachMinigame';
+import StorageKeypad from './components/StorageKeypad/StorageKeypad';
 import { AnimatePresence } from 'framer-motion';
 
 function App() {
@@ -18,6 +19,8 @@ function App() {
   const [showApartmentCreator, setShowApartmentCreator] = useState(false);
   const [showApartmentEditor, setShowApartmentEditor] = useState(false);
   const [showBreachMinigame, setShowBreachMinigame] = useState(false);
+  const [showStorageKeypad, setShowStorageKeypad] = useState(false);
+  const [storageKeypadData, setStorageKeypadData] = useState(null);
   const [screenshotProgress, setScreenshotProgress] = useState(null);
 
   const [isVisible, setIsVisible] = useState(true);
@@ -40,6 +43,7 @@ function App() {
     setShowApartmentCreator(false);
     setShowApartmentEditor(false);
     setShowBreachMinigame(false);
+    setShowStorageKeypad(false);
   };
 
   useEffect(() => {
@@ -119,6 +123,15 @@ function App() {
           break;
         case 'closeUI':
           closeAll();
+          break;
+        case 'openStorageKeypad':
+          closeAll();
+          setIsVisible(true);
+          setStorageKeypadData(data);
+          setShowStorageKeypad(true);
+          break;
+        case 'closeStorageKeypad':
+          setShowStorageKeypad(false);
           break;
         case 'startBreachMinigame':
           setIsVisible(true);
@@ -550,6 +563,22 @@ function App() {
                   });
                 }
                 closeAll();
+              }}
+            />
+          )}
+
+          {showStorageKeypad && (
+            <StorageKeypad
+              key="storagekeypad"
+              data={storageKeypadData}
+              onClose={() => {
+                setShowStorageKeypad(false);
+                if (window.GetParentResourceName) {
+                  fetch(`https://${window.GetParentResourceName()}/closeStorageKeypad`, {
+                    method: 'POST',
+                    body: JSON.stringify({})
+                  });
+                }
               }}
             />
           )}
