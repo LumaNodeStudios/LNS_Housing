@@ -372,10 +372,11 @@ function OpenBelongingsRetrieval(propertyId)
         end
 
         if itemData and itemData.isStorage then
+            local isFridge = itemData.isFridge or itemData.type == 'fridge' or (itemData.id and tostring(itemData.id):lower():find('fridge'))
             table.insert(options, {
-                title = f.label or itemData.label or 'Storage Unit',
-                description = 'Retrieve items from this storage unit',
-                icon = 'box',
+                title = f.label or itemData.label or (isFridge and 'Refrigerator' or 'Storage Unit'),
+                description = isFridge and 'Retrieve items from this refrigerator' or 'Retrieve items from this storage unit',
+                icon = isFridge and 'snowflake' or 'box',
                 arrow = true,
                 onSelect = function()
                     Bridge.Client.OpenStash(propertyId, f.id)
@@ -593,17 +594,18 @@ function LoadFurnitures(propertyId)
 
                         if itemData and itemData.isStorage then
                             local stashId = string.format('housing_%d_%s', propertyId, f.id)
+                            local isFridge = itemData.isFridge or itemData.type == 'fridge' or (itemData.id and tostring(itemData.id):lower():find('fridge'))
                             exports.ox_target:addLocalEntity(obj, {
                                 {
-                                    label = 'Open Storage',
-                                    icon = 'fas fa-box-open',
+                                    label = isFridge and 'Open Refrigerator' or 'Open Storage',
+                                    icon = isFridge and 'fas fa-snowflake' or 'fas fa-box-open',
                                     debug = Settings.Debug.Zones,
                                     onSelect = function()
                                         local isLocked = lib.callback.await('LNS_Housing:server:isStashLocked', false, stashId)
                                         if isLocked then
                                             local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'storage')
                                             if not hasAccess then
-                                                Bridge.Client.Notify('This storage is locked.', 'error')
+                                                Bridge.Client.Notify(isFridge and 'This refrigerator is locked.' or 'This storage is locked.', 'error')
                                                 return
                                             end
                                         end
@@ -614,13 +616,13 @@ function LoadFurnitures(propertyId)
                                     end
                                 },
                                 {
-                                    label = 'Lock/Unlock Storage',
+                                    label = isFridge and 'Lock/Unlock Refrigerator' or 'Lock/Unlock Storage',
                                     icon = 'fas fa-key',
                                     debug = Settings.Debug.Zones,
                                     onSelect = function()
                                         local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'storage')
                                         if not hasAccess then
-                                            Bridge.Client.Notify('You do not have permission to lock/unlock this storage.', 'error')
+                                            Bridge.Client.Notify('You do not have permission to lock/unlock this ' .. (isFridge and 'refrigerator.' or 'storage.'), 'error')
                                             return
                                         end
                                         TriggerServerEvent('LNS_Housing:server:toggleStashLock', propertyId, stashId)
@@ -630,7 +632,7 @@ function LoadFurnitures(propertyId)
                                     end
                                 },
                                 {
-                                    label = 'Lockpick Storage',
+                                    label = isFridge and 'Lockpick Refrigerator' or 'Lockpick Storage',
                                     icon = 'fas fa-mask',
                                     items = Settings.Security.LockpickItem,
                                     onSelect = function()
@@ -647,7 +649,7 @@ function LoadFurnitures(propertyId)
                                     end
                                 },
                                 {
-                                    label = 'Raid Storage',
+                                    label = isFridge and 'Raid Refrigerator' or 'Raid Storage',
                                     icon = 'fas fa-shield-halved',
                                     items = Settings.Security.PoliceAccessTool or 'police_access_tool',
                                     onSelect = function()

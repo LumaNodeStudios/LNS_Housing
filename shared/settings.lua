@@ -133,6 +133,17 @@ return {
     },
 
     ----------------------------------------------------------------------------
+    -- Refrigerator & Perishable Preservation Settings
+    ----------------------------------------------------------------------------
+    Fridge = {
+        Enabled = true,                     -- Enable or disable fridge durability loss slowdown for food/drinks
+        DecayMultiplier = 10.0,             -- Decay slowdown factor (e.g. 10.0 = food/drinks spoil 10x slower in fridges)
+        Slots = 40,                         -- Default fridge storage slots
+        Weight = 60000,                     -- Default fridge storage weight capacity (in grams)
+        RequirePower = true,                -- If electricity system is enabled, fridges only slow decay when breaker is active
+    },
+
+    ----------------------------------------------------------------------------
     -- Rent & Eviction Management
     ----------------------------------------------------------------------------
     Rent = {

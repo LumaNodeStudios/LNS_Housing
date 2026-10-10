@@ -457,6 +457,11 @@ function Bridge.Server.RegisterPropertyStashes(propertyId, furnitureList)
 
         if itemData and itemData.isStorage then
             Bridge.Server.RegisterStash(propertyId, f.id, itemData.storage, f.label)
+            local isFridge = itemData.isFridge or itemData.type == 'fridge'
+            if isFridge and RegisterFridgeStash then
+                local stashId = string.format('housing_%d_%s', propertyId, f.id)
+                RegisterFridgeStash(stashId, propertyId, f.id)
+            end
         end
     end
 end

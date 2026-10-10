@@ -3774,14 +3774,6 @@ return {
         icon = 'Tv',
         items = {
             {
-                id = 'prop_trailr_fridge',
-                label = 'Old Fridge',
-                model = 'prop_trailr_fridge',
-                price = 300,
-                powerConsumption = 2.5,
-                tempEffect = -2.0
-            },
-            {
                 id = 'v_res_fh_speaker',
                 label = 'Speaker',
                 model = 'v_res_fh_speaker',
@@ -5201,7 +5193,11 @@ return {
                 model = 'v_res_fridgemoda',
                 price = 150,
                 powerConsumption = 2.5,
-                tempEffect = -2.0
+                tempEffect = -2.0,
+                type = 'fridge',
+                isStorage = true,
+                isFridge = true,
+                storage = { slots = 50, weight = 80000 }
             },
             {
                 id = 'v_res_fridgemodsml',
@@ -5209,7 +5205,11 @@ return {
                 model = 'v_res_fridgemodsml',
                 price = 150,
                 powerConsumption = 2.5,
-                tempEffect = -2.0
+                tempEffect = -2.0,
+                type = 'fridge',
+                isStorage = true,
+                isFridge = true,
+                storage = { slots = 40, weight = 60000 }
             },
             {
                 id = 'prop_fridge_01',
@@ -5217,7 +5217,11 @@ return {
                 model = 'prop_fridge_01',
                 price = 150,
                 powerConsumption = 2.5,
-                tempEffect = -2.0
+                tempEffect = -2.0,
+                type = 'fridge',
+                isStorage = true,
+                isFridge = true,
+                storage = { slots = 50, weight = 80000 }
             },
             {
                 id = 'prop_fridge_03',
@@ -5225,7 +5229,11 @@ return {
                 model = 'prop_fridge_03',
                 price = 150,
                 powerConsumption = 2.5,
-                tempEffect = -2.0
+                tempEffect = -2.0,
+                type = 'fridge',
+                isStorage = true,
+                isFridge = true,
+                storage = { slots = 50, weight = 80000 }
             },
             {
                 id = 'prop_cooker_03',
@@ -5391,7 +5399,11 @@ return {
                 model = 'v_res_tre_fridge',
                 price = 500,
                 powerConsumption = 2.5,
-                tempEffect = -2.0
+                tempEffect = -2.0,
+                type = 'fridge',
+                isStorage = true,
+                isFridge = true,
+                storage = { slots = 40, weight = 60000 }
             },
             {
                 id = 'apa_mp_h_acc_coffeemachine_01',
@@ -5545,67 +5557,133 @@ return {
                 id = 'ba_prop_battle_bar_beerfridge_01',
                 label = 'Beer Fridge',
                 model = 'ba_prop_battle_bar_beerfridge_01',
-                price = 1300
+                price = 1300,
+                powerConsumption = 2.0,
+                tempEffect = -1.5,
+                type = 'fridge',
+                isStorage = true,
+                isFridge = true,
+                storage = { slots = 35, weight = 50000 }
             },
             {
                 id = 'ba_prop_battle_bar_fridge_01',
                 label = 'Beer Fridge',
                 model = 'ba_prop_battle_bar_fridge_01',
-                price = 1300
+                price = 1300,
+                powerConsumption = 2.0,
+                tempEffect = -1.5,
+                type = 'fridge',
+                isStorage = true,
+                isFridge = true,
+                storage = { slots = 35, weight = 50000 }
             },
             {
                 id = 'prop_bar_fridge_01',
                 label = 'Beer Fridge',
                 model = 'prop_bar_fridge_01',
-                price = 1300
+                price = 1300,
+                powerConsumption = 2.0,
+                tempEffect = -1.5,
+                type = 'fridge',
+                isStorage = true,
+                isFridge = true,
+                storage = { slots = 35, weight = 50000 }
             },
             {
                 id = 'ba_prop_battle_bar_fridge_02',
                 label = 'Beer Fridge',
                 model = 'ba_prop_battle_bar_fridge_02',
-                price = 1450
+                price = 1450,
+                powerConsumption = 2.0,
+                tempEffect = -1.5,
+                type = 'fridge',
+                isStorage = true,
+                isFridge = true,
+                storage = { slots = 35, weight = 50000 }
             },
             {
                 id = 'prop_bar_fridge_03',
                 label = 'Beer Fridge',
                 model = 'prop_bar_fridge_03',
-                price = 1100
+                price = 1100,
+                powerConsumption = 2.0,
+                tempEffect = -1.5,
+                type = 'fridge',
+                isStorage = true,
+                isFridge = true,
+                storage = { slots = 35, weight = 50000 }
             },
             {
                 id = 'prop_bar_fridge_04',
                 label = 'Beer Fridge',
                 model = 'prop_bar_fridge_04',
-                price = 1400
+                price = 1400,
+                powerConsumption = 2.0,
+                tempEffect = -1.5,
+                type = 'fridge',
+                isStorage = true,
+                isFridge = true,
+                storage = { slots = 35, weight = 50000 }
             },
             {
                 id = 'v_ilev_mm_fridgeint',
                 label = 'Fridge Int',
                 model = 'v_ilev_mm_fridgeint',
-                price = 900
+                price = 900,
+                powerConsumption = 2.5,
+                tempEffect = -2.0,
+                type = 'fridge',
+                isStorage = true,
+                isFridge = true,
+                storage = { slots = 40, weight = 60000 }
             },
             {
                 id = 'v_ilev_mm_fridge_l',
                 label = 'Fridge L',
                 model = 'v_ilev_mm_fridge_l',
-                price = 450
+                price = 450,
+                powerConsumption = 1.5,
+                tempEffect = -1.0,
+                type = 'fridge',
+                isStorage = true,
+                isFridge = true,
+                storage = { slots = 30, weight = 40000 }
             },
             {
                 id = 'v_ilev_mm_fridge_r',
                 label = 'Fridge R',
                 model = 'v_ilev_mm_fridge_r',
-                price = 450
+                price = 450,
+                powerConsumption = 1.5,
+                tempEffect = -1.0,
+                type = 'fridge',
+                isStorage = true,
+                isFridge = true,
+                storage = { slots = 30, weight = 40000 }
             },
             {
                 id = 'prop_vend_fridge01',
                 label = 'Fridge 03',
                 model = 'prop_vend_fridge01',
-                price = 900
+                price = 900,
+                powerConsumption = 3.0,
+                tempEffect = -2.5,
+                type = 'fridge',
+                isStorage = true,
+                isFridge = true,
+                storage = { slots = 50, weight = 80000 }
             },
             {
                 id = 'bkr_prop_meth_chiller_01a',
                 label = 'Meth Fridge 01',
                 model = 'bkr_prop_meth_chiller_01a',
-                price = 2300
+                price = 2300,
+                powerConsumption = 3.0,
+                tempEffect = -3.0,
+                type = 'fridge',
+                isStorage = true,
+                isFridge = true,
+                storage = { slots = 50, weight = 80000 }
             },
             {
                 id = 'prop_microwave_1',
@@ -12092,7 +12170,11 @@ return {
                 model = 'v_ret_ml_fridge02',
                 price = 100,
                 powerConsumption = 2.5,
-                tempEffect = -2.0
+                tempEffect = -2.0,
+                type = 'fridge',
+                isStorage = true,
+                isFridge = true,
+                storage = { slots = 40, weight = 60000 }
             },
             {
                 id = 'v_ret_ps_bag_01',
