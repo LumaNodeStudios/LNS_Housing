@@ -12,6 +12,7 @@ files {
     'web/dist/index.html',
     'web/dist/**/*',
     'stream/[Shells]/*.ytyp',
+    'stream/[Props]/[CleaningRobot]/*.ytyp',
     'sound/data/lns_sounds.dat54.rel',
     'sound/audiodirectory/lns_bank.awc',
     'data/weapons.meta',
@@ -78,19 +79,15 @@ dependencies {
 }
 
 data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/starter_shells_k4mb1.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/mula_prop_cleandock.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/mula_prop_cleandock_small_occupied.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/mula_prop_cleandock_tall.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/mula_prop_cleandock_tall_occupied.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/mula_prop_cleanrobot.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/mula_prop_cleanrobot_small.ytyp'
 data_file 'AUDIO_WAVEPACK'  'sound/audiodirectory'
 data_file 'AUDIO_SOUNDDATA' 'sound/data/lns_sounds.dat'
 data_file 'WEAPONINFO_FILE' 'data/weapons.meta'
 data_file 'WEAPON_ANIMATIONS_FILE' 'data/weaponanimations.meta'
 data_file 'WEAPON_METADATA_FILE' 'data/weaponarchetypes.meta'
 data_file 'PED_PERSONALITY_FILE' 'data/pedpersonality.meta'
-
-escrow_ignore {
-    'shared/*.lua',
-    'bridge/*.lua',
-    'stream/[Shells]/*.ydr',
-    'stream/[Shells]/*.ymf',
-    'stream/[Shells]/*.ytyp',
-    'stream/[Shells]/*.ymap',
-    'stream/[Shells]/*.ymap',
-}
