@@ -1,6 +1,3 @@
--- server/sv_migrate_nolag.lua
--- LNS_Housing: Automated NoLag Properties Migration Utility
-
 local function Log(msg, level)
     level = level or 'info'
     local prefix = '^5[LNS_Housing Migration]^7'
@@ -26,7 +23,6 @@ end
 function RunNoLagMigration(isDryRun)
     Log(('Starting NoLag Properties migration (%s mode)...'):format(isDryRun and '^3DRY-RUN^7' or '^1LIVE EXECUTION^7'))
 
-    -- 1. Check if NoLag's core 'properties' table exists
     local check = MySQL.query.await([[
         SELECT TABLE_NAME 
         FROM information_schema.TABLES 
@@ -38,14 +34,12 @@ function RunNoLagMigration(isDryRun)
         return false, 'Table "properties" does not exist'
     end
 
-    -- 2. Fetch all NoLag properties
     local noLagProps = MySQL.query.await('SELECT * FROM properties')
     if not noLagProps or #noLagProps == 0 then
         Log('Table "properties" is empty. Nothing to migrate.', 'warn')
         return false, 'Table "properties" is empty'
     end
 
-    -- 3. Fetch existing LNS property IDs
     local existingLns = MySQL.query.await('SELECT id FROM housing_properties')
     local existingIds = {}
     if existingLns then
@@ -54,7 +48,6 @@ function RunNoLagMigration(isDryRun)
         end
     end
 
-    -- 4. Fetch Keyholders / Roommates from 'properties_owners' or 'property_keys'
     local keyholders = {}
     pcall(function()
         local rows = MySQL.query.await([[
@@ -72,7 +65,6 @@ function RunNoLagMigration(isDryRun)
         end
     end)
 
-    -- If properties_owners wasn't found or was empty, check property_keys
     pcall(function()
         local rows = MySQL.query.await([[
             SELECT * FROM property_keys;
@@ -89,7 +81,6 @@ function RunNoLagMigration(isDryRun)
         end
     end)
 
-    -- 5. Audit stats
     local collisions = 0
     local mloCount = 0
     local shellCount = 0
@@ -138,7 +129,6 @@ function RunNoLagMigration(isDryRun)
         }
     end
 
-    -- 6. LIVE CONVERSION & IMPORT
     local importedCount = 0
     local stashesMigrated = 0
 
@@ -149,7 +139,6 @@ function RunNoLagMigration(isDryRun)
         local rawDoors = ParseJson(p.doors, {})
         local rawStorages = ParseJson(p.storages, {})
 
-        -- Coordinates / Spawn Point
         local enterCoords = rawMeta.enterData or rawMeta.entry or (rawMeta.yardZone and rawMeta.yardZone.center) or rawMeta.coords
         local spawnData = nil
         if enterCoords then
@@ -161,7 +150,6 @@ function RunNoLagMigration(isDryRun)
             }
         end
 
-        -- Polygon Zones
         local zoneData = { points = {}, thickness = 10.0 }
         if rawMeta.yardZone and rawMeta.yardZone.points and #rawMeta.yardZone.points > 0 then
             zoneData.points = rawMeta.yardZone.points
@@ -170,7 +158,6 @@ function RunNoLagMigration(isDryRun)
             zoneData.points = rawMeta.area
         end
 
-        -- Doors / Ox Doorlock IDs
         local doorList = {}
         if type(rawDoors) == 'table' then
             for _, d in ipairs(rawDoors) do
@@ -181,7 +168,6 @@ function RunNoLagMigration(isDryRun)
             table.insert(doorList, tonumber(rawDoors))
         end
 
-        -- Keyholders and Permissions
         local extraKeys = keyholders[propId] or {}
         local entryList = {}
         local storageList = {}
@@ -199,7 +185,6 @@ function RunNoLagMigration(isDryRun)
             manage = {}
         }
 
-        -- Garage Data
         local garageData = nil
         if rawMeta.garage then
             garageData = {
@@ -240,7 +225,6 @@ function RunNoLagMigration(isDryRun)
 
         local saleType = (p.payment and string.lower(tostring(p.payment)) == 'rent') and 'rent' or 'direct'
 
-        -- Insert or Update in housing_properties
         MySQL.query.await([[
             INSERT INTO housing_properties 
                 (id, label, price, owner, doors, permissions, metadata, furniture, sale_type, zone_data, yard_zone_data, garage)
@@ -272,7 +256,6 @@ function RunNoLagMigration(isDryRun)
             garageData and 2 or 0
         })
 
-        -- Migrate distinct storage records if present
         if type(rawStorages) == 'table' and #rawStorages > 0 then
             for idx, stash in ipairs(rawStorages) do
                 local stashId = string.format('housing_%s_%s', propId, idx)
@@ -285,7 +268,6 @@ function RunNoLagMigration(isDryRun)
             end
         end
 
-        -- Remap ox_inventory stashes (property_<id> -> housing_<id>)
         pcall(function()
             MySQL.query.await([[
                 UPDATE ox_inventory 
@@ -298,7 +280,6 @@ function RunNoLagMigration(isDryRun)
             })
         end)
 
-        -- Remap qb-inventory stashitems if present
         pcall(function()
             MySQL.query.await([[
                 UPDATE stashitems 
@@ -319,7 +300,6 @@ function RunNoLagMigration(isDryRun)
         Log(('Registered %s dedicated storage records.'):format(stashesMigrated), 'info')
     end
 
-    -- Reload properties into runtime memory and enrich doorlocks
     if LoadProperties then
         pcall(LoadProperties)
         for id, _ in pairs(Properties) do
