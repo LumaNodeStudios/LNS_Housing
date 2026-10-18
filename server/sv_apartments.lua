@@ -18,6 +18,12 @@ if not Settings.Apartments or not Settings.Apartments.Enabled then
         debugPrint('info', 'claimNewCharacterSpawn fallback called', {source = source})
         return { shouldSpawn = false }
     end)
+    exports('GetApartments', function() return {} end)
+    exports('GetPlayerApartment', function() return nil end)
+    exports('GetPlayerApartments', function() return {} end)
+    exports('GetAllApartments', function() return {} end)
+    exports('GetApartment', function() return nil end)
+    exports('GetApartmentInfo', function() return nil end)
     return
 end
 
@@ -1458,4 +1464,296 @@ exports('GiveApartmentPhysicalKey', function(roomId, targetSource)
     })
 
     return added and true or false
+end)
+
+--------------------------------------------------------------------------------
+-- MDT & External Script Apartment Exports
+--------------------------------------------------------------------------------
+
+local function ResolveApartmentTarget(target)
+    if not target then return nil, nil end
+    local numSrc = tonumber(target)
+    local citizenid = nil
+    local license = nil
+
+    if numSrc and GetPlayerPing(numSrc) > 0 then
+        citizenid = Bridge.Server.GetIdentifier(numSrc)
+        license = GetPlayerLicense(numSrc)
+    elseif type(target) == 'string' then
+        if target:sub(1, 8) == 'license:' then
+            license = target
+            local aptRow = MySQL.single.await('SELECT citizenid FROM apartments WHERE citizenid = ? LIMIT 1', {target})
+            if aptRow then
+                citizenid = aptRow.citizenid
+            else
+                local pRow = MySQL.single.await('SELECT citizenid FROM players WHERE license = ? LIMIT 1', {target})
+                if pRow then citizenid = pRow.citizenid end
+            end
+        else
+            citizenid = target
+            local onlinePlayer = Bridge.Server.IsPlayerOnline(target)
+            if onlinePlayer and onlinePlayer.PlayerData and onlinePlayer.PlayerData.source then
+                license = GetPlayerLicense(onlinePlayer.PlayerData.source)
+            else
+                local pRow = MySQL.single.await('SELECT license FROM players WHERE citizenid = ? LIMIT 1', {target})
+                if pRow then license = pRow.license end
+            end
+        end
+    elseif numSrc then
+        citizenid = Bridge.Server.GetIdentifier(numSrc) or tostring(target)
+        license = GetPlayerLicense(numSrc)
+    end
+
+    return citizenid, license
+end
+
+local function FormatApartmentForMDT(aptData, roomData)
+    local roomId = (roomData and roomData.id) or (aptData and aptData.room_id)
+    if not roomId then return nil end
+
+    local building = (Settings.Apartments and Settings.Apartments.Building) or {}
+    local buildingLabel = building.label or "WIWANG Apartments"
+    local buildingCoords = building.coords
+
+    local roomName = (roomData and roomData.room_name) or ("Apartment Room #" .. tostring(roomId))
+    local fullLabel = buildingLabel .. " - " .. roomName
+
+    local doorCoords = roomData and roomData.doorCoords
+    local spawnCoords = roomData and roomData.spawn
+    local coords = doorCoords or (spawnCoords and vec3(spawnCoords.x, spawnCoords.y, spawnCoords.z)) or buildingCoords
+
+    local citizenid = aptData and aptData.citizenid or nil
+    local ownerName = nil
+
+    if citizenid then
+        local onlinePlayer = Bridge.Server.IsPlayerOnline(citizenid)
+        if onlinePlayer and onlinePlayer.PlayerData and onlinePlayer.PlayerData.source then
+            ownerName = Bridge.Server.GetPlayerName(onlinePlayer.PlayerData.source)
+        else
+            pcall(function()
+                if Bridge.Framework == 'qbx' then
+                    local pRow = MySQL.single.await('SELECT charinfo FROM players WHERE citizenid = ? LIMIT 1', {citizenid})
+                    if pRow and pRow.charinfo then
+                        local charinfo = json.decode(pRow.charinfo)
+                        if charinfo and charinfo.firstname and charinfo.lastname then
+                            ownerName = charinfo.firstname .. ' ' .. charinfo.lastname
+                        end
+                    end
+                elseif Bridge.Framework == 'esx' then
+                    local uRow = MySQL.single.await('SELECT firstname, lastname FROM users WHERE identifier = ? LIMIT 1', {citizenid})
+                    if uRow and uRow.firstname and uRow.lastname then
+                        ownerName = uRow.firstname .. ' ' .. uRow.lastname
+                    end
+                end
+            end)
+        end
+    end
+
+    local perms = aptData and aptData.permissions
+    if type(perms) == 'string' then
+        perms = json.decode(perms) or {}
+    elseif type(perms) ~= 'table' then
+        perms = { entry = {}, storage = {}, wardrobe = {}, manage = {} }
+    end
+
+    local keyholders = {}
+    if perms.entry then
+        for _, cid in ipairs(perms.entry) do
+            table.insert(keyholders, cid)
+        end
+    end
+
+    local doorId = roomDoors and roomDoors[roomId]
+
+    return {
+        id = roomId,
+        roomId = roomId,
+        room_id = roomId,
+        label = fullLabel,
+        name = roomName,
+        room_name = roomName,
+        building = buildingLabel,
+        building_label = buildingLabel,
+        buildingCoords = buildingCoords,
+        coords = coords,
+        enter = coords,
+        doorCoords = doorCoords,
+        spawn = spawnCoords,
+        doorId = doorId,
+        price = (roomData and roomData.price) or 0,
+        citizenid = citizenid,
+        owner = citizenid,
+        ownerName = ownerName or 'Unknown',
+        permissions = perms,
+        keyholders = keyholders,
+        isStarter = roomData and (roomData.isStarter or roomData.is_starter) or false,
+        isApartment = true,
+        type = "apartment",
+        security_level = aptData and aptData.security_level or 0,
+        wall_color = aptData and aptData.wall_color or 0,
+    }
+end
+
+local function GetPlayerApartmentsServer(target)
+    WaitForDb()
+    if not target then return {} end
+
+    local citizenid, license = ResolveApartmentTarget(target)
+    if not citizenid and not license then return {} end
+
+    local apartmentsList = {}
+    local seenRooms = {}
+
+    -- 1. Query apartments table where citizenid matches
+    if citizenid then
+        local rows = MySQL.query.await('SELECT * FROM apartments WHERE citizenid = ?', {citizenid})
+        if rows then
+            for _, row in ipairs(rows) do
+                local roomId = tonumber(row.room_id) or row.room_id
+                if roomId and not seenRooms[roomId] then
+                    seenRooms[roomId] = true
+                    local roomData = getRoomDataById(roomId)
+                    local formatted = FormatApartmentForMDT(row, roomData)
+                    if formatted then
+                        table.insert(apartmentsList, formatted)
+                    end
+                end
+            end
+        end
+    end
+
+    -- 2. Query player_apartments if room was assigned via license and not found yet
+    if license then
+        local paRow = MySQL.single.await('SELECT room_id FROM player_apartments WHERE license = ?', {license})
+        if paRow and paRow.room_id then
+            local roomId = tonumber(paRow.room_id) or paRow.room_id
+            if roomId and not seenRooms[roomId] then
+                seenRooms[roomId] = true
+                local aptRow = MySQL.single.await('SELECT * FROM apartments WHERE room_id = ?', {roomId}) or {
+                    room_id = roomId,
+                    citizenid = citizenid
+                }
+                local roomData = getRoomDataById(roomId)
+                local formatted = FormatApartmentForMDT(aptRow, roomData)
+                if formatted then
+                    table.insert(apartmentsList, formatted)
+                end
+            end
+        end
+    end
+
+    -- 3. Also check playerRooms memory cache in case DB hasn't flushed or for active session
+    if license and playerRooms and playerRooms[license] then
+        local roomId = playerRooms[license]
+        if roomId and not seenRooms[roomId] then
+            seenRooms[roomId] = true
+            local aptRow = { room_id = roomId, citizenid = citizenid }
+            local roomData = getRoomDataById(roomId)
+            local formatted = FormatApartmentForMDT(aptRow, roomData)
+            if formatted then
+                table.insert(apartmentsList, formatted)
+            end
+        end
+    end
+
+    -- 4. Check if citizen is a keyholder on any other apartments
+    if citizenid then
+        local allApts = MySQL.query.await('SELECT * FROM apartments WHERE citizenid != ?', {citizenid})
+        if allApts then
+            for _, row in ipairs(allApts) do
+                local roomId = tonumber(row.room_id) or row.room_id
+                if roomId and not seenRooms[roomId] and row.permissions then
+                    local perms = json.decode(row.permissions)
+                    if perms and perms.entry then
+                        for _, cid in ipairs(perms.entry) do
+                            if cid == citizenid then
+                                seenRooms[roomId] = true
+                                local roomData = getRoomDataById(roomId)
+                                local formatted = FormatApartmentForMDT(row, roomData)
+                                if formatted then
+                                    formatted.isKeyholder = true
+                                    table.insert(apartmentsList, formatted)
+                                end
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return apartmentsList
+end
+
+local function GetAllApartmentsServer()
+    WaitForDb()
+    local rooms = Settings.Rooms or {}
+    local results = {}
+    
+    local aptRows = MySQL.query.await('SELECT * FROM apartments')
+    local aptByRoom = {}
+    if aptRows then
+        for _, row in ipairs(aptRows) do
+            local rId = tonumber(row.room_id) or row.room_id
+            if rId and not aptByRoom[rId] then
+                aptByRoom[rId] = row
+            end
+        end
+    end
+
+    for _, room in ipairs(rooms) do
+        local aptRow = aptByRoom[room.id] or { room_id = room.id }
+        local formatted = FormatApartmentForMDT(aptRow, room)
+        if formatted then
+            table.insert(results, formatted)
+        end
+    end
+
+    return results
+end
+
+local function GetApartmentByIdServer(roomId)
+    WaitForDb()
+    if not roomId then return nil end
+    local rId = tonumber(roomId) or roomId
+    local roomData = getRoomDataById(rId)
+    if not roomData then return nil end
+
+    local aptRow = MySQL.single.await('SELECT * FROM apartments WHERE room_id = ? OR room_id = ? LIMIT 1', {rId, tostring(rId)})
+    return FormatApartmentForMDT(aptRow or { room_id = rId }, roomData)
+end
+
+-- Export to retrieve apartments (if target passed: player apartments; if no target: all apartments)
+exports('GetApartments', function(target)
+    if target and target ~= '' then
+        return GetPlayerApartmentsServer(target)
+    else
+        return GetAllApartmentsServer()
+    end
+end)
+
+-- Export to get single primary apartment for target player
+exports('GetPlayerApartment', function(target)
+    local apts = GetPlayerApartmentsServer(target)
+    return apts and apts[1] or nil
+end)
+
+-- Export to get all apartments for target player
+exports('GetPlayerApartments', function(target)
+    return GetPlayerApartmentsServer(target)
+end)
+
+-- Export to get all apartments
+exports('GetAllApartments', function()
+    return GetAllApartmentsServer()
+end)
+
+-- Export to get specific apartment room info by ID
+exports('GetApartment', function(roomId)
+    return GetApartmentByIdServer(roomId)
+end)
+
+exports('GetApartmentInfo', function(roomId)
+    return GetApartmentByIdServer(roomId)
 end)

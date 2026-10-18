@@ -212,14 +212,21 @@ function SaveProperty(id)
 end
 
 local function GetPlayerProperties(source)
+    if not DbReady then WaitForDb() end
     if not source then return {} end
-    local src = tonumber(source) or source
     local identifier = nil
+    local numSrc = tonumber(source)
 
-    if type(src) == 'number' then
-        identifier = Bridge.Server.GetIdentifier(src)
-    elseif type(src) == 'string' then
-        identifier = Bridge.Server.GetIdentifier(src) or src
+    if numSrc and GetPlayerPing(numSrc) > 0 then
+        identifier = Bridge.Server.GetIdentifier(numSrc)
+    end
+
+    if not identifier then
+        if type(source) == 'string' then
+            identifier = Bridge.Server.GetIdentifier(source) or source
+        elseif numSrc then
+            identifier = Bridge.Server.GetIdentifier(numSrc) or tostring(source)
+        end
     end
 
     if not identifier then return {} end
@@ -227,6 +234,10 @@ local function GetPlayerProperties(source)
     local playerProps = {}
     for _, p in pairs(Properties) do
         if p.owner == identifier then
+            if not p.coords and GetEntranceCoordsServer then
+                p.coords = GetEntranceCoordsServer(p)
+                p.enter = p.coords
+            end
             table.insert(playerProps, p)
         end
     end
@@ -236,6 +247,12 @@ end
 exports('GetProperties', function() return Properties end)
 exports('GetProperty', function(id) return Properties[id] end)
 exports('GetPlayerProperties', GetPlayerProperties)
+exports('GetOwnedProperties', GetPlayerProperties)
+exports('GetPlayerOwnedProperties', GetPlayerProperties)
+exports('GetPropertiesByPlayer', GetPlayerProperties)
+exports('GetPropertiesByCitizenId', function(citizenid)
+    return GetPlayerProperties(citizenid)
+end)
 
 MySQL.ready(function()
     MySQL.query.await([[
