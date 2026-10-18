@@ -1,9 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Home, MapPin, DollarSign, Database, Save, Trash2, Camera, Tag, Zap, EyeOff } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Plus, X, Home, MapPin, DollarSign, Database, Save, Trash2, Camera, Tag, Zap, EyeOff, ChevronLeft, ChevronRight, Maximize2, ImageOff } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import CustomSelect from '../Common/CustomSelect';
 import './Creator.css';
 
-const Creator = ({ electricityEnabled = true }) => {
+const Creator = ({ electricityEnabled = true, shells = [] }) => {
+  const shellOptions = (shells && shells.length > 0) ? shells : [
+    { value: 'Standard Motel', label: 'Standard Motel', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/standardmotel_shell.png', type: 'shell' },
+    { value: 'Modern Hotel', label: 'Modern Hotel', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/modernhotel_shell.png', type: 'shell' },
+    { value: 'Apartment Furnished', label: 'Apartment Furnished', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/furnitured_midapart.png', type: 'shell' },
+    { value: 'Apartment Unfurnished', label: 'Apartment Unfurnished', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_v16mid.png', type: 'shell' },
+    { value: 'Apartment 2 Unfurnished', label: 'Apartment 2 Unfurnished', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_v16low.png', type: 'shell' },
+    { value: 'Garage', label: 'Garage', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_garagem.png', type: 'shell' },
+    { value: 'Office', label: 'Office', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_office1.png', type: 'shell' },
+    { value: 'Store', label: 'Store', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_store1.png', type: 'shell' },
+    { value: 'Warehouse', label: 'Warehouse', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_warehouse1.png', type: 'shell' },
+    { value: 'Container', label: 'Container', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/container_shell.png', type: 'shell' },
+    { value: '2 Floor House', label: '2 Floor House', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_michael.png', type: 'shell' },
+    { value: 'House 1', label: 'House 1', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_frankaunt.png', type: 'shell' },
+    { value: 'House 2', label: 'House 2', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_ranch.png', type: 'shell' },
+    { value: 'House 3', label: 'House 3', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_lester.png', type: 'shell' },
+    { value: 'House 4', label: 'House 4', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_trevor.png', type: 'shell' },
+    { value: 'Trailer', label: 'Trailer', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_trailer.png', type: 'shell' },
+    { value: 'Eclipse Penthouse 1', label: 'Eclipse Penthouse 1', previewUrl: '', type: 'ipl' },
+    { value: 'Eclipse Penthouse 2', label: 'Eclipse Penthouse 2', previewUrl: '', type: 'ipl' },
+    { value: 'Eclipse Penthouse 3', label: 'Eclipse Penthouse 3', previewUrl: '', type: 'ipl' }
+  ];
+
+  const [previewModalImage, setPreviewModalImage] = useState(null);
   const [formData, setFormData] = useState({
     name: 'New Property',
     type: 'Residential',
@@ -27,6 +51,18 @@ const Creator = ({ electricityEnabled = true }) => {
     entranceCoords: null,
     breakerCoords: null
   });
+
+  const currentShellOption = shellOptions.find(opt => String(opt.value) === String(formData.shell)) || shellOptions[0];
+  const currentShellIndex = shellOptions.findIndex(opt => String(opt.value) === String(formData.shell));
+
+  const handlePrevShell = () => {
+    const idx = currentShellIndex <= 0 ? shellOptions.length - 1 : currentShellIndex - 1;
+    setFormData(prev => ({ ...prev, shell: shellOptions[idx].value }));
+  };
+  const handleNextShell = () => {
+    const idx = currentShellIndex >= shellOptions.length - 1 ? 0 : currentShellIndex + 1;
+    setFormData(prev => ({ ...prev, shell: shellOptions[idx].value }));
+  };
 
   const [walkMode, setWalkMode] = useState(false);
 
@@ -325,30 +361,90 @@ const Creator = ({ electricityEnabled = true }) => {
 
           {!formData.mlo && (
             <>
-              <div className="input-field" style={{ marginTop: '10px', marginBottom: '15px' }}>
-                <label><Database size={14} /> Shell Model</label>
-                <select
+              <div style={{ marginTop: '10px', marginBottom: '15px' }}>
+                <CustomSelect
+                  icon={Database}
+                  label="Shell Model"
                   name="shell"
                   value={formData.shell || 'Standard Motel'}
+                  options={shellOptions}
                   onChange={(e) => setFormData(prev => ({ ...prev, shell: e.target.value }))}
-                >
-                  <option value="Standard Motel">Standard Motel</option>
-                  <option value="Modern Hotel">Modern Hotel</option>
-                  <option value="Apartment Furnished">Apartment Furnished</option>
-                  <option value="Apartment Unfurnished">Apartment Unfurnished</option>
-                  <option value="Apartment 2 Unfurnished">Apartment 2 Unfurnished</option>
-                  <option value="Garage">Garage</option>
-                  <option value="Office">Office</option>
-                  <option value="Store">Store</option>
-                  <option value="Warehouse">Warehouse</option>
-                  <option value="Container">Container</option>
-                  <option value="2 Floor House">2 Floor House</option>
-                  <option value="House 1">House 1</option>
-                  <option value="House 2">House 2</option>
-                  <option value="House 3">House 3</option>
-                  <option value="House 4">House 4</option>
-                  <option value="Trailer">Trailer</option>
-                </select>
+                />
+
+                <div className="re-shell-preview-card" style={{ marginTop: '8px' }}>
+                  {currentShellOption?.previewUrl ? (
+                    <div className="re-shell-preview-media">
+                      <img
+                        src={currentShellOption.previewUrl}
+                        alt={currentShellOption.label}
+                        className="re-shell-preview-img"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const fallback = e.currentTarget.parentElement?.querySelector('.re-shell-preview-fallback');
+                          if (fallback) fallback.style.display = 'flex';
+                        }}
+                      />
+                      <div className="re-shell-preview-fallback" style={{ display: 'none' }}>
+                        <ImageOff size={24} />
+                        <span>Failed to load preview image</span>
+                        <small className="re-shell-preview-url-text">{currentShellOption.previewUrl}</small>
+                      </div>
+
+                      <div className="re-shell-preview-overlay">
+                        <div className="re-shell-preview-top">
+                          <span className={`re-shell-type-pill ${currentShellOption.type || 'shell'}`}>
+                            {(currentShellOption.type || 'shell').toUpperCase()}
+                          </span>
+                          <button
+                            type="button"
+                            className="re-shell-zoom-btn"
+                            title="View Full Resolution"
+                            onClick={() => setPreviewModalImage({ url: currentShellOption.previewUrl, title: currentShellOption.label, type: currentShellOption.type })}
+                          >
+                            <Maximize2 size={13} />
+                          </button>
+                        </div>
+
+                        <div className="re-shell-nav-controls">
+                          <button type="button" className="re-shell-nav-btn left" onClick={handlePrevShell} title="Previous Interior">
+                            <ChevronLeft size={16} />
+                          </button>
+                          <button type="button" className="re-shell-nav-btn right" onClick={handleNextShell} title="Next Interior">
+                            <ChevronRight size={16} />
+                          </button>
+                        </div>
+
+                        <div className="re-shell-preview-bottom">
+                          <div className="re-shell-preview-info">
+                            <span className="re-shell-preview-title">{currentShellOption.label}</span>
+                          </div>
+                          <span className="re-shell-counter">{Math.max(1, currentShellIndex + 1)} / {shellOptions.length}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="re-shell-preview-empty">
+                      <div className="re-shell-empty-icon-wrap">
+                        <Home size={24} className="re-shell-empty-icon" />
+                      </div>
+                      <div className="re-shell-empty-texts">
+                        <span className="re-shell-empty-title">{currentShellOption?.label || 'Selected Interior'}</span>
+                        <span className="re-shell-empty-desc">
+                          No preview image configured. Add <code>previewUrl = "..."</code> in <code>shared/settings.lua</code>
+                        </span>
+                      </div>
+                      <div className="re-shell-empty-nav">
+                        <button type="button" className="re-shell-mini-nav-btn" onClick={handlePrevShell}>
+                          <ChevronLeft size={12} /> Previous
+                        </button>
+                        <span className="re-shell-counter">{Math.max(1, currentShellIndex + 1)} / {shellOptions.length}</span>
+                        <button type="button" className="re-shell-mini-nav-btn" onClick={handleNextShell}>
+                          Next <ChevronRight size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="input-field" style={{ marginTop: '10px', marginBottom: '15px' }}>
@@ -494,6 +590,42 @@ const Creator = ({ electricityEnabled = true }) => {
         <button className="btn btn-secondary" onClick={handleClose}><Trash2 size={16} /> Discard</button>
         <button className="btn btn-primary" onClick={() => fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/createHouse`, { method: 'POST', body: JSON.stringify(formData) })}><Save size={16} /> Create Property</button>
       </div>
+
+      <AnimatePresence>
+        {previewModalImage && (
+          <div className="re-shell-lightbox-modal" onClick={() => setPreviewModalImage(null)}>
+            <motion.div
+              className="re-shell-lightbox-content"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={previewModalImage.url}
+                alt={previewModalImage.title}
+                className="re-shell-lightbox-img"
+              />
+              <div className="re-shell-lightbox-bar">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className={`re-shell-type-pill ${previewModalImage.type || 'shell'}`}>
+                    {(previewModalImage.type || 'shell').toUpperCase()}
+                  </span>
+                  <span className="re-shell-lightbox-title">{previewModalImage.title}</span>
+                </div>
+                <button
+                  type="button"
+                  className="re-shell-lightbox-close"
+                  onClick={() => setPreviewModalImage(null)}
+                >
+                  <X size={14} /> Close Preview
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

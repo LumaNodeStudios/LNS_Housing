@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './CustomSelect.css';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Check } from 'lucide-react';
+import { ChevronDown, Check, Home } from 'lucide-react';
 
 const CustomSelect = ({ label, icon: Icon, value, options = [], onChange, name, placeholder = "Select option...", className = '' }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -42,9 +42,24 @@ const CustomSelect = ({ label, icon: Icon, value, options = [], onChange, name, 
                 className={`re-custom-select-trigger ${isOpen ? 'active' : ''}`}
                 onClick={() => setIsOpen(!isOpen)}
             >
-                <span className="re-custom-select-value">
-                    {selectedOption ? selectedOption.label : placeholder}
-                </span>
+                <div className="re-custom-select-value-group">
+                    {selectedOption?.previewUrl ? (
+                        <img
+                            src={selectedOption.previewUrl}
+                            alt=""
+                            className="re-custom-select-trigger-thumb"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                    ) : null}
+                    <span className="re-custom-select-value">
+                        {selectedOption ? selectedOption.label : placeholder}
+                    </span>
+                    {selectedOption?.type && (
+                        <span className={`re-custom-select-type-tag ${selectedOption.type}`}>
+                            {selectedOption.type.toUpperCase()}
+                        </span>
+                    )}
+                </div>
                 <ChevronDown size={14} className={`re-custom-select-arrow ${isOpen ? 'open' : ''}`} />
             </div>
 
@@ -68,7 +83,24 @@ const CustomSelect = ({ label, icon: Icon, value, options = [], onChange, name, 
                                     className={`re-custom-select-option ${String(value) === String(option.value) ? 'selected' : ''}`}
                                     onClick={() => handleSelect(option.value)}
                                 >
+                                    {option.previewUrl ? (
+                                        <img
+                                            src={option.previewUrl}
+                                            alt=""
+                                            className="re-custom-select-option-thumb"
+                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                        />
+                                    ) : (option.type ? (
+                                        <div className="re-custom-select-option-placeholder">
+                                            <Home size={12} />
+                                        </div>
+                                    ) : null)}
                                     <span className="option-text">{option.label}</span>
+                                    {option.type && (
+                                        <span className={`re-custom-select-type-tag ${option.type}`}>
+                                            {option.type.toUpperCase()}
+                                        </span>
+                                    )}
                                     {String(value) === String(option.value) && <Check size={12} className="option-check" />}
                                 </div>
                             ))

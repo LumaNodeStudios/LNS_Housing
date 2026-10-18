@@ -10,10 +10,132 @@ import BreachMinigame from './components/BreachMinigame/BreachMinigame';
 import StorageKeypad from './components/StorageKeypad/StorageKeypad';
 import { AnimatePresence } from 'framer-motion';
 
+const isLocalDev = typeof window !== 'undefined' && !window.GetParentResourceName;
+
+const MOCK_ADMIN_PERMISSION = {
+  allowed: true,
+  job: 'realestate',
+  grade: 100,
+  citizenid: 'ADMIN001',
+  agencyLabel: 'Dynasty 8 Real Estate',
+  societyBalance: 2500000,
+  defaultCommission: 10,
+  permissions: {
+    createHouse: true,
+    draftContract: true,
+    manageListings: true,
+    manageEmployees: true,
+  }
+};
+
+const MOCK_SHELLS = [
+  { value: 'Standard Motel', label: 'Standard Motel', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/standardmotel_shell.png', type: 'shell' },
+  { value: 'Modern Hotel', label: 'Modern Hotel', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/modernhotel_shell.png', type: 'shell' },
+  { value: 'Apartment Furnished', label: 'Apartment Furnished', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/furnitured_midapart.png', type: 'shell' },
+  { value: 'Apartment Unfurnished', label: 'Apartment Unfurnished', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_v16mid.png', type: 'shell' },
+  { value: 'Apartment 2 Unfurnished', label: 'Apartment 2 Unfurnished', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_v16low.png', type: 'shell' },
+  { value: 'Garage', label: 'Garage', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_garagem.png', type: 'shell' },
+  { value: 'Office', label: 'Office', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_office1.png', type: 'shell' },
+  { value: 'Store', label: 'Store', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_store1.png', type: 'shell' },
+  { value: 'Warehouse', label: 'Warehouse', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_warehouse1.png', type: 'shell' },
+  { value: 'Container', label: 'Container', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/container_shell.png', type: 'shell' },
+  { value: '2 Floor House', label: '2 Floor House', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_michael.png', type: 'shell' },
+  { value: 'House 1', label: 'House 1', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_frankaunt.png', type: 'shell' },
+  { value: 'House 2', label: 'House 2', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_ranch.png', type: 'shell' },
+  { value: 'House 3', label: 'House 3', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_lester.png', type: 'shell' },
+  { value: 'House 4', label: 'House 4', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_trevor.png', type: 'shell' },
+  { value: 'Trailer', label: 'Trailer', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_trailer.png', type: 'shell' },
+  { value: 'Eclipse Penthouse 1', label: 'Eclipse Penthouse 1', previewUrl: '', type: 'ipl' },
+  { value: 'Eclipse Penthouse 2', label: 'Eclipse Penthouse 2', previewUrl: '', type: 'ipl' },
+  { value: 'Eclipse Penthouse 3', label: 'Eclipse Penthouse 3', previewUrl: '', type: 'ipl' }
+];
+
+const MOCK_PROPERTIES = {
+  1: {
+    id: 1,
+    label: "3671 Whispymound Drive",
+    type: "Residential",
+    price: 850000,
+    sale_type: "direct",
+    region: "Vinewood Hills",
+    slots: 2,
+    size: 2400,
+    owner: null,
+    image: "https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/3671WhispymoundDr-GTAOe.webp",
+    metadata: {
+      shell: "Standard Motel",
+      allow_wall_colors: true
+    }
+  },
+  2: {
+    id: 2,
+    label: "Eclipse Penthouse Suite",
+    type: "Residential",
+    price: 1500000,
+    sale_type: "direct",
+    region: "Rockford Hills",
+    slots: 4,
+    size: 4200,
+    owner: null,
+    image: "https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/eclipse_towers.webp",
+    metadata: {
+      shell: "Eclipse Penthouse 1",
+      allow_wall_colors: true
+    }
+  },
+  3: {
+    id: 3,
+    label: "Galileo Luxury Villa",
+    type: "Residential",
+    price: 2200000,
+    sale_type: "auction",
+    region: "Richman",
+    slots: 6,
+    size: 5800,
+    owner: null,
+    image: "https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/richman_mansion.webp",
+    auction_data: {
+      status: "active",
+      current_bid: 2450000,
+      bid_count: 5,
+      highest_bidder: "CID99823",
+      highest_bidder_name: "Michael De Santa",
+      end_time: Date.now() + 86400000
+    },
+    metadata: {
+      shell: "2 Floor House",
+      allow_wall_colors: true
+    }
+  },
+  4: {
+    id: 4,
+    label: "South Rockford Apartment",
+    type: "Apartment",
+    price: 15000,
+    sale_type: "rent",
+    region: "South Los Santos",
+    slots: 1,
+    size: 1100,
+    owner: "CID54321",
+    owner_name: "Franklin Clinton",
+    image: "https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/standardmotel_shell.png",
+    metadata: {
+      shell: "Apartment Furnished",
+      allow_wall_colors: true,
+      rent_debt: 0,
+      missed_payments: 0,
+      rent_history: [
+        { date: "2026-10-10", amount: 15000, type: "Weekly Rent", status: "Paid" },
+        { date: "2026-10-03", amount: 15000, type: "Weekly Rent", status: "Paid" }
+      ]
+    }
+  }
+};
+
 function App() {
   const [showPanel, setShowPanel] = useState(false);
   const [showFurniture, setShowFurniture] = useState(false);
-  const [showRealEstate, setShowRealEstate] = useState(false);
+  const [showRealEstate, setShowRealEstate] = useState(true);
   const [showContractPaper, setShowContractPaper] = useState(false);
   const [contractPaperData, setContractPaperData] = useState(null);
   const [showApartmentCreator, setShowApartmentCreator] = useState(false);
@@ -25,20 +147,22 @@ function App() {
 
   const [isVisible, setIsVisible] = useState(true);
   const [propertyData, setPropertyData] = useState(null);
-  const [allProperties, setAllProperties] = useState({});
+  const [allProperties, setAllProperties] = useState(isLocalDev ? MOCK_PROPERTIES : {});
   const [furnitureData, setFurnitureData] = useState([]);
   const [ownedItems, setOwnedItems] = useState([]);
-  const [hasPermission, setHasPermission] = useState(false);
+  const [hasPermission, setHasPermission] = useState(isLocalDev ? MOCK_ADMIN_PERMISSION : false);
   const [initialTab, setInitialTab] = useState('browse');
   const [onlyBuyViaContracts, setOnlyBuyViaContracts] = useState(false);
   const [apartmentCreatorData, setApartmentCreatorData] = useState({ isEdit: false, rooms: [] });
-  const [shells, setShells] = useState([]);
+  const [shells, setShells] = useState(isLocalDev ? MOCK_SHELLS : []);
   const [electricityEnabled, setElectricityEnabled] = useState(true);
 
   const closeAll = () => {
     setShowPanel(false);
     setShowFurniture(false);
-    setShowRealEstate(false);
+    if (!isLocalDev) {
+      setShowRealEstate(false);
+    }
     setShowContractPaper(false);
     setShowApartmentCreator(false);
     setShowApartmentEditor(false);

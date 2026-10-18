@@ -8,7 +8,7 @@ import {
     Clock, Maximize, Filter, Settings, Gavel, Play, Pause, Square,
     Plus, Database, Save, Trash2, Camera, FileText, Percent,
     Briefcase, UserCheck, History, UserPlus, UserX, ChevronLeft, ChevronRight, Check, ChevronDown, ChevronUp,
-    EyeOff
+    EyeOff, Maximize2, ImageOff
 } from 'lucide-react';
 
 const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts, shells, onOpenPaperContract, electricityEnabled = true }) => {
@@ -39,23 +39,28 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         }));
     };
     const shellOptions = (shells && shells.length > 0) ? shells : [
-        { value: 'Standard Motel', label: 'Standard Motel' },
-        { value: 'Modern Hotel', label: 'Modern Hotel' },
-        { value: 'Apartment Furnished', label: 'Apartment Furnished' },
-        { value: 'Apartment Unfurnished', label: 'Apartment Unfurnished' },
-        { value: 'Apartment 2 Unfurnished', label: 'Apartment 2 Unfurnished' },
-        { value: 'Garage', label: 'Garage' },
-        { value: 'Office', label: 'Office' },
-        { value: 'Store', label: 'Store' },
-        { value: 'Warehouse', label: 'Warehouse' },
-        { value: 'Container', label: 'Container' },
-        { value: '2 Floor House', label: '2 Floor House' },
-        { value: 'House 1', label: 'House 1' },
-        { value: 'House 2', label: 'House 2' },
-        { value: 'House 3', label: 'House 3' },
-        { value: 'House 4', label: 'House 4' },
-        { value: 'Trailer', label: 'Trailer' }
+        { value: 'Standard Motel', label: 'Standard Motel', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/standardmotel_shell.png', type: 'shell' },
+        { value: 'Modern Hotel', label: 'Modern Hotel', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/modernhotel_shell.png', type: 'shell' },
+        { value: 'Apartment Furnished', label: 'Apartment Furnished', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/furnitured_midapart.png', type: 'shell' },
+        { value: 'Apartment Unfurnished', label: 'Apartment Unfurnished', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_v16mid.png', type: 'shell' },
+        { value: 'Apartment 2 Unfurnished', label: 'Apartment 2 Unfurnished', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_v16low.png', type: 'shell' },
+        { value: 'Garage', label: 'Garage', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_garagem.png', type: 'shell' },
+        { value: 'Office', label: 'Office', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_office1.png', type: 'shell' },
+        { value: 'Store', label: 'Store', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_store1.png', type: 'shell' },
+        { value: 'Warehouse', label: 'Warehouse', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_warehouse1.png', type: 'shell' },
+        { value: 'Container', label: 'Container', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/container_shell.png', type: 'shell' },
+        { value: '2 Floor House', label: '2 Floor House', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_michael.png', type: 'shell' },
+        { value: 'House 1', label: 'House 1', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_frankaunt.png', type: 'shell' },
+        { value: 'House 2', label: 'House 2', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_ranch.png', type: 'shell' },
+        { value: 'House 3', label: 'House 3', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_lester.png', type: 'shell' },
+        { value: 'House 4', label: 'House 4', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_trevor.png', type: 'shell' },
+        { value: 'Trailer', label: 'Trailer', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_trailer.png', type: 'shell' },
+        { value: 'Eclipse Penthouse 1', label: 'Eclipse Penthouse 1', previewUrl: '', type: 'ipl' },
+        { value: 'Eclipse Penthouse 2', label: 'Eclipse Penthouse 2', previewUrl: '', type: 'ipl' },
+        { value: 'Eclipse Penthouse 3', label: 'Eclipse Penthouse 3', previewUrl: '', type: 'ipl' }
     ];
+
+    const [previewModalImage, setPreviewModalImage] = useState(null);
 
     const [filter, setFilter] = useState('all');
     const [search, setSearch] = useState('');
@@ -176,6 +181,18 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         cameraModel: null,
         cameraFov: null
     });
+
+    const currentShellOption = shellOptions.find(opt => String(opt.value) === String(formData.shell)) || shellOptions[0];
+    const currentShellIndex = shellOptions.findIndex(opt => String(opt.value) === String(formData.shell));
+
+    const handlePrevShell = () => {
+        const idx = currentShellIndex <= 0 ? shellOptions.length - 1 : currentShellIndex - 1;
+        setFormData(prev => ({ ...prev, shell: shellOptions[idx].value }));
+    };
+    const handleNextShell = () => {
+        const idx = currentShellIndex >= shellOptions.length - 1 ? 0 : currentShellIndex + 1;
+        setFormData(prev => ({ ...prev, shell: shellOptions[idx].value }));
+    };
 
     const [editingHasDoorbellCamera, setEditingHasDoorbellCamera] = useState(false);
 
@@ -333,7 +350,26 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
 
         if (!window.GetParentResourceName) {
             console.log(`Contract drafted for Player ID: ${targetId}`);
-            setActiveTab('browse');
+            const newContract = {
+                id: Date.now(),
+                property_id: draftData.propertyId,
+                property_label: properties?.[draftData.propertyId]?.label || `Property #${draftData.propertyId}`,
+                client_name: nearbyPlayers.find(p => String(p.id) === String(targetId))?.name || `Player #${targetId}`,
+                agent_name: 'Admin Realtor',
+                type: draftData.type,
+                price: parseFloat(draftData.price),
+                status: 'pending'
+            };
+            setAgencyContracts(prev => [newContract, ...prev]);
+            setPendingContracts(prev => [newContract, ...prev]);
+            setDraftData({
+                propertyId: '',
+                price: '',
+                type: 'buy',
+                commissionRate: hasPermission?.defaultCommission || 10
+            });
+            setSelectedNearbyPlayer('');
+            setActiveTab('contracts');
             return;
         }
 
@@ -394,6 +430,39 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     const handleUpdateProperty = () => {
         if (!window.GetParentResourceName) {
             console.log(`Listing updated locally: ${formData.name}`);
+            const updated = { ...properties };
+            if (updated[editingPropertyId]) {
+                updated[editingPropertyId] = {
+                    ...updated[editingPropertyId],
+                    label: formData.name,
+                    price: parseFloat(formData.price),
+                    sale_type: formData.saleType,
+                    type: formData.type,
+                    garage: parseInt(formData.slots, 10) || 0,
+                    slots: parseInt(formData.slots, 10) || 0,
+                    allowWallColors: formData.allowWallColors,
+                    image: formData.image,
+                    doors: formData.doors,
+                    zone_data: formData.zone_data,
+                    yard_zone_data: formData.yard_zone_data,
+                    hasYard: formData.hasYard,
+                    metadata: {
+                        ...(updated[editingPropertyId].metadata || {}),
+                        shell: formData.mlo ? 'mlo' : formData.shell,
+                        allow_wall_colors: formData.allowWallColors,
+                        entrance: formData.entranceCoords,
+                        garage_data: formData.garageCoords ? { ...formData.garageCoords, spawn: formData.garageSpawnCoords } : null,
+                        breaker_coords: formData.breakerCoords,
+                        doorbell_camera: !!formData.cameraPosition,
+                        camera_coords: formData.cameraPosition,
+                        camera_aim: formData.cameraAim,
+                        camera_heading: formData.cameraHeading,
+                        camera_model: formData.cameraModel,
+                        camera_fov: formData.cameraFov,
+                    }
+                };
+                window.postMessage({ action: 'updateProperties', data: updated }, '*');
+            }
             setEditingPropertyId(null);
             resetCreatorForm();
             return;
@@ -443,6 +512,9 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             onConfirm: () => {
                 if (!window.GetParentResourceName) {
                     console.log(`Deleted locally: #${id}`);
+                    const updated = { ...properties };
+                    delete updated[id];
+                    window.postMessage({ action: 'updateProperties', data: updated }, '*');
                     setConfirmModal(null);
                     return;
                 }
@@ -467,6 +539,16 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             onConfirm: () => {
                 if (!window.GetParentResourceName) {
                     console.log(`Tenant evicted locally: #${id}`);
+                    const updated = { ...properties };
+                    if (updated[id]) {
+                        updated[id].owner = null;
+                        updated[id].owner_name = null;
+                        if (updated[id].metadata) {
+                            updated[id].metadata.rent_debt = 0;
+                            updated[id].metadata.missed_payments = 0;
+                        }
+                        window.postMessage({ action: 'updateProperties', data: updated }, '*');
+                    }
                     setConfirmModal(null);
                     return;
                 }
@@ -491,6 +573,12 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             onConfirm: () => {
                 if (!window.GetParentResourceName) {
                     console.log(`Lease terminated locally: #${id}`);
+                    const updated = { ...properties };
+                    if (updated[id]) {
+                        updated[id].owner = null;
+                        updated[id].owner_name = null;
+                        window.postMessage({ action: 'updateProperties', data: updated }, '*');
+                    }
                     setConfirmModal(null);
                     return;
                 }
@@ -533,10 +621,14 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         if (!window.GetParentResourceName) {
             const updated = { ...properties };
             if (updated[selectedProperty.id]) {
+                if (!updated[selectedProperty.id].auction_data) updated[selectedProperty.id].auction_data = {};
                 updated[selectedProperty.id].auction_data.current_bid = bidAmount;
                 updated[selectedProperty.id].auction_data.highest_bidder = 'LocalDev';
+                updated[selectedProperty.id].auction_data.highest_bidder_name = 'Admin (LocalDev)';
                 window.postMessage({ action: 'updateProperties', data: updated }, '*');
             }
+            setSelectedProperty(null);
+            return;
         }
 
         fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/placeBid`, {
@@ -551,8 +643,11 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             const updated = { ...properties };
             if (updated[selectedProperty.id]) {
                 updated[selectedProperty.id].owner = 'LocalDev';
+                updated[selectedProperty.id].owner_name = 'Admin (LocalDev)';
                 window.postMessage({ action: 'updateProperties', data: updated }, '*');
             }
+            setSelectedProperty(null);
+            return;
         }
 
         fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/buyProperty`, {
@@ -566,6 +661,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         if (!window.GetParentResourceName) {
             const updated = { ...properties };
             if (updated[id]) {
+                if (!updated[id].auction_data) updated[id].auction_data = {};
                 if (action === 'start') updated[id].auction_data.status = 'live';
                 else if (action === 'pause') updated[id].auction_data.status = 'paused';
                 else if (action === 'end') updated[id].auction_data.status = 'pending';
@@ -575,6 +671,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 }
                 window.postMessage({ action: 'updateProperties', data: updated }, '*');
             }
+            return;
         }
 
         fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/controlAuction`, {
@@ -584,6 +681,10 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     };
 
     const handleClose = () => {
+        if (!window.GetParentResourceName) {
+            console.log('Close UI triggered in localdev');
+            return;
+        }
         fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/closeUI`, {
             method: 'POST',
             body: JSON.stringify({})
@@ -599,6 +700,17 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     };
 
     const handleCaptureInterior = () => {
+        if (!window.GetParentResourceName) {
+            setFormData(prev => ({
+                ...prev,
+                interiorId: 10425,
+                interiorCoords: { x: -826.53, y: -700.2, z: 27.06 },
+                interiorCenter: { x: -826.53, y: -700.2, z: 27.06 },
+                roomCount: 3,
+                currentRoom: 1
+            }));
+            return;
+        }
         fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/captureInterior`, {
             method: 'POST',
             body: JSON.stringify({})
@@ -619,6 +731,10 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     };
 
     const handleCreateZone = () => {
+        if (!window.GetParentResourceName) {
+            setFormData(prev => ({ ...prev, zone_data: { points: [{ x: -820, y: -700 }, { x: -830, y: -700 }, { x: -830, y: -710 }, { x: -820, y: -710 }] } }));
+            return;
+        }
         fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/createZone`, {
             method: 'POST',
             body: JSON.stringify({})
@@ -632,6 +748,10 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     };
 
     const handleCreateYardZone = () => {
+        if (!window.GetParentResourceName) {
+            setFormData(prev => ({ ...prev, yard_zone_data: { points: [{ x: -815, y: -695 }, { x: -835, y: -695 }, { x: -835, y: -715 }, { x: -815, y: -715 }] } }));
+            return;
+        }
         fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/createYardZone`, {
             method: 'POST',
             body: JSON.stringify({})
@@ -645,6 +765,10 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     };
 
     const handleTakePhoto = () => {
+        if (!window.GetParentResourceName) {
+            setFormData(prev => ({ ...prev, image: 'images/shells/standard_motel.jpg' }));
+            return;
+        }
         fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/takePhoto`, {
             method: 'POST',
             body: JSON.stringify({})
@@ -658,6 +782,10 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     };
 
     const handlePickEntranceCoords = () => {
+        if (!window.GetParentResourceName) {
+            setFormData(prev => ({ ...prev, entranceCoords: { x: -826.53, y: -700.2, z: 27.06 } }));
+            return;
+        }
         fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/pickEntranceCoords`, {
             method: 'POST',
             body: JSON.stringify({})
@@ -671,6 +799,10 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     };
 
     const handlePickBreakerCoords = () => {
+        if (!window.GetParentResourceName) {
+            setFormData(prev => ({ ...prev, breakerCoords: { x: -828.53, y: -702.2, z: 27.06 } }));
+            return;
+        }
         fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/pickBreakerCoords`, {
             method: 'POST',
             body: JSON.stringify({})
@@ -684,6 +816,10 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     };
 
     const handlePickGarageCoords = () => {
+        if (!window.GetParentResourceName) {
+            setFormData(prev => ({ ...prev, garageCoords: { x: -820.5, y: -695.2, z: 26.5 } }));
+            return;
+        }
         fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/pickGarageCoords`, {
             method: 'POST',
             body: JSON.stringify({})
@@ -697,6 +833,10 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     };
 
     const handlePickGarageSpawnCoords = () => {
+        if (!window.GetParentResourceName) {
+            setFormData(prev => ({ ...prev, garageSpawnCoords: { x: -818.5, y: -693.2, z: 26.5, w: 90.0 } }));
+            return;
+        }
         fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/pickGarageSpawnCoords`, {
             method: 'POST',
             body: JSON.stringify({})
@@ -710,6 +850,17 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     };
 
     const handlePickCameraPlacement = () => {
+        if (!window.GetParentResourceName) {
+            setFormData(prev => ({
+                ...prev,
+                cameraPosition: { x: -825.0, y: -698.0, z: 28.5 },
+                cameraAim: { x: -826.53, y: -700.2, z: 27.06 },
+                cameraHeading: 180,
+                cameraModel: 'prop_cctv_cam_07a',
+                cameraFov: 60
+            }));
+            return;
+        }
         fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/pickCameraPlacement`, {
             method: 'POST',
             body: JSON.stringify({})
@@ -781,6 +932,43 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             garageCoords: parseInt(formData.slots, 10) > 0 ? formData.garageCoords : null,
             garageSpawnCoords: parseInt(formData.slots, 10) > 0 ? formData.garageSpawnCoords : null,
         };
+        if (!window.GetParentResourceName) {
+            const currentList = Array.isArray(properties) ? properties : Object.values(properties || {});
+            const newId = (currentList.length > 0 ? Math.max(...currentList.map(p => Number(p.id) || 0)) : 0) + 1;
+            const newProp = {
+                id: newId,
+                label: payload.name || `Property #${newId}`,
+                price: parseFloat(payload.price) || 250000,
+                sale_type: payload.saleType || 'direct',
+                type: payload.mlo ? 'MLO' : (payload.shell || 'Residential'),
+                region: 'Los Santos',
+                garage: parseInt(payload.slots, 10) || 0,
+                size: 2400,
+                owner: null,
+                image: payload.image || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+                metadata: {
+                    shell: payload.mlo ? 'mlo' : payload.shell,
+                    allow_wall_colors: payload.allowWallColors,
+                    entrance: payload.entranceCoords,
+                    garage_data: payload.garageCoords ? { ...payload.garageCoords, spawn: payload.garageSpawnCoords } : null,
+                    breaker_coords: payload.breakerCoords,
+                    doorbell_camera: !!payload.cameraPosition,
+                    camera_coords: payload.cameraPosition,
+                    camera_aim: payload.cameraAim,
+                    camera_heading: payload.cameraHeading,
+                    camera_model: payload.cameraModel,
+                    camera_fov: payload.cameraFov,
+                },
+                ...payload
+            };
+            const updated = {
+                ...(properties || {}),
+                [newId]: newProp
+            };
+            window.postMessage({ action: 'updateProperties', data: updated }, '*');
+            resetCreatorForm();
+            return;
+        }
         fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/createHouse`, {
             method: 'POST',
             body: JSON.stringify(payload)
@@ -876,7 +1064,6 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                     <th>Label</th>
                                     <th>Sale Type</th>
                                     <th>Status</th>
-                                    <th>Action</th>
                                     <th>Tenant Info</th>
                                     <th>Price/Bid</th>
                                     <th>Actions</th>
@@ -1590,6 +1777,82 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                     onChange={(e) => setFormData(prev => ({ ...prev, shell: e.target.value }))}
                                                 />
 
+                                                {/* Shell / IPL Image Preview Box */}
+                                                <div className="re-shell-preview-card">
+                                                    {currentShellOption?.previewUrl ? (
+                                                        <div className="re-shell-preview-media">
+                                                            <img
+                                                                src={currentShellOption.previewUrl}
+                                                                alt={currentShellOption.label}
+                                                                className="re-shell-preview-img"
+                                                                onError={(e) => {
+                                                                    e.currentTarget.style.display = 'none';
+                                                                    const fallback = e.currentTarget.parentElement?.querySelector('.re-shell-preview-fallback');
+                                                                    if (fallback) fallback.style.display = 'flex';
+                                                                }}
+                                                            />
+                                                            <div className="re-shell-preview-fallback" style={{ display: 'none' }}>
+                                                                <ImageOff size={24} />
+                                                                <span>Failed to load preview image</span>
+                                                                <small className="re-shell-preview-url-text">{currentShellOption.previewUrl}</small>
+                                                            </div>
+
+                                                            <div className="re-shell-preview-overlay">
+                                                                <div className="re-shell-preview-top">
+                                                                    <span className={`re-shell-type-pill ${currentShellOption.type || 'shell'}`}>
+                                                                        {(currentShellOption.type || 'shell').toUpperCase()}
+                                                                    </span>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="re-shell-zoom-btn"
+                                                                        title="View Full Resolution"
+                                                                        onClick={() => setPreviewModalImage({ url: currentShellOption.previewUrl, title: currentShellOption.label, type: currentShellOption.type })}
+                                                                    >
+                                                                        <Maximize2 size={13} />
+                                                                    </button>
+                                                                </div>
+
+                                                                <div className="re-shell-nav-controls">
+                                                                    <button type="button" className="re-shell-nav-btn left" onClick={handlePrevShell} title="Previous Interior">
+                                                                        <ChevronLeft size={16} />
+                                                                    </button>
+                                                                    <button type="button" className="re-shell-nav-btn right" onClick={handleNextShell} title="Next Interior">
+                                                                        <ChevronRight size={16} />
+                                                                    </button>
+                                                                </div>
+
+                                                                <div className="re-shell-preview-bottom">
+                                                                    <div className="re-shell-preview-info">
+                                                                        <span className="re-shell-preview-title">{currentShellOption.label}</span>
+                                                                    </div>
+                                                                    <span className="re-shell-counter">{Math.max(1, currentShellIndex + 1)} / {shellOptions.length}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="re-shell-preview-empty">
+                                                            <div className="re-shell-empty-icon-wrap">
+                                                                <Home size={24} className="re-shell-empty-icon" />
+                                                            </div>
+                                                            <div className="re-shell-empty-texts">
+                                                                <span className="re-shell-empty-title">{currentShellOption?.label || 'Selected Interior'}</span>
+                                                                <span className="re-shell-empty-desc">
+                                                                    No preview image configured. Add <code>previewUrl = "..."</code> in <code>shared/settings.lua</code>
+                                                                </span>
+                                                            </div>
+                                                            <div className="re-shell-empty-nav">
+                                                                <button type="button" className="re-shell-mini-nav-btn" onClick={handlePrevShell}>
+                                                                    <ChevronLeft size={12} /> Previous
+                                                                </button>
+                                                                <span className="re-shell-counter">{Math.max(1, currentShellIndex + 1)} / {shellOptions.length}</span>
+                                                                <button type="button" className="re-shell-mini-nav-btn" onClick={handleNextShell}>
+                                                                    Next <ChevronRight size={12} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+
                                                 <div className="re-interactive-row">
                                                     <div className="re-interactive-info">
                                                         <span className="re-interactive-label">Entrance Position (Teleport Target)</span>
@@ -2118,6 +2381,40 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                         </table>
                                     </div>
                                 </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+
+                {previewModalImage && (
+                    <div className="re-shell-lightbox-modal" onClick={() => setPreviewModalImage(null)}>
+                        <motion.div
+                            className="re-shell-lightbox-content"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            transition={{ duration: 0.2 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <img
+                                src={previewModalImage.url}
+                                alt={previewModalImage.title}
+                                className="re-shell-lightbox-img"
+                            />
+                            <div className="re-shell-lightbox-bar">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span className={`re-shell-type-pill ${previewModalImage.type || 'shell'}`}>
+                                        {(previewModalImage.type || 'shell').toUpperCase()}
+                                    </span>
+                                    <span className="re-shell-lightbox-title">{previewModalImage.title}</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    className="re-shell-lightbox-close"
+                                    onClick={() => setPreviewModalImage(null)}
+                                >
+                                    <X size={14} /> Close Preview
+                                </button>
                             </div>
                         </motion.div>
                     </div>

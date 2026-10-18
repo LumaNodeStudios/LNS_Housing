@@ -790,6 +790,26 @@ if Settings.Housing and Settings.Housing.Creator and Settings.Housing.Creator.Co
         end
 
         local properties = lib.callback.await('LNS_Housing:server:getProperties', false)
+
+        local shellList = {}
+        for name, data in pairs(Settings.Shells or {}) do
+            table.insert(shellList, {
+                value = name,
+                label = data.label or name,
+                previewUrl = data.previewUrl or '',
+                type = 'shell'
+            })
+        end
+        for name, data in pairs(Settings.IPLs or {}) do
+            table.insert(shellList, {
+                value = name,
+                label = data.label or name,
+                previewUrl = data.previewUrl or '',
+                type = 'ipl'
+            })
+        end
+        table.sort(shellList, function(a, b) return a.label < b.label end)
+
         SendNUIMessage({
             action = 'openRealEstate',
             data = {
@@ -797,6 +817,7 @@ if Settings.Housing and Settings.Housing.Creator and Settings.Housing.Creator.Co
                 hasPermission = true,
                 activeTab = 'creator',
                 onlyBuyViaContracts = Settings.RealEstate.OnlyBuyViaContracts,
+                shells = shellList,
                 electricityEnabled = (Settings.Electricity == nil or Settings.Electricity.Enabled ~= false)
             }
         })
