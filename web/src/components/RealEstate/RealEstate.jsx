@@ -411,7 +411,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             doors: p.doors || [],
             zone_data: p.zone_data || null,
             yard_zone_data: p.yard_zone_data || null,
-            hasYard: !!p.hasYard,
+            hasYard: !!(p.hasYard || (p.yard_zone_data && p.yard_zone_data.points && p.yard_zone_data.points.length >= 3)),
             image: p.image || null,
             entranceType: hasEntranceCoords ? 'coords' : 'door',
             entranceCoords: p.metadata && p.metadata.entrance ? p.metadata.entrance : null,

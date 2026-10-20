@@ -1466,10 +1466,6 @@ exports('GiveApartmentPhysicalKey', function(roomId, targetSource)
     return added and true or false
 end)
 
---------------------------------------------------------------------------------
--- MDT & External Script Apartment Exports
---------------------------------------------------------------------------------
-
 local function ResolveApartmentTarget(target)
     if not target then return nil, nil end
     local numSrc = tonumber(target)
@@ -1604,7 +1600,6 @@ local function GetPlayerApartmentsServer(target)
     local apartmentsList = {}
     local seenRooms = {}
 
-    -- 1. Query apartments table where citizenid matches
     if citizenid then
         local rows = MySQL.query.await('SELECT * FROM apartments WHERE citizenid = ?', {citizenid})
         if rows then
@@ -1622,7 +1617,6 @@ local function GetPlayerApartmentsServer(target)
         end
     end
 
-    -- 2. Query player_apartments if room was assigned via license and not found yet
     if license then
         local paRow = MySQL.single.await('SELECT room_id FROM player_apartments WHERE license = ?', {license})
         if paRow and paRow.room_id then
@@ -1642,7 +1636,6 @@ local function GetPlayerApartmentsServer(target)
         end
     end
 
-    -- 3. Also check playerRooms memory cache in case DB hasn't flushed or for active session
     if license and playerRooms and playerRooms[license] then
         local roomId = playerRooms[license]
         if roomId and not seenRooms[roomId] then
@@ -1656,7 +1649,6 @@ local function GetPlayerApartmentsServer(target)
         end
     end
 
-    -- 4. Check if citizen is a keyholder on any other apartments
     if citizenid then
         local allApts = MySQL.query.await('SELECT * FROM apartments WHERE citizenid != ?', {citizenid})
         if allApts then
@@ -1724,7 +1716,6 @@ local function GetApartmentByIdServer(roomId)
     return FormatApartmentForMDT(aptRow or { room_id = rId }, roomData)
 end
 
--- Export to retrieve apartments (if target passed: player apartments; if no target: all apartments)
 exports('GetApartments', function(target)
     if target and target ~= '' then
         return GetPlayerApartmentsServer(target)
@@ -1733,23 +1724,19 @@ exports('GetApartments', function(target)
     end
 end)
 
--- Export to get single primary apartment for target player
 exports('GetPlayerApartment', function(target)
     local apts = GetPlayerApartmentsServer(target)
     return apts and apts[1] or nil
 end)
 
--- Export to get all apartments for target player
 exports('GetPlayerApartments', function(target)
     return GetPlayerApartmentsServer(target)
 end)
 
--- Export to get all apartments
 exports('GetAllApartments', function()
     return GetAllApartmentsServer()
 end)
 
--- Export to get specific apartment room info by ID
 exports('GetApartment', function(roomId)
     return GetApartmentByIdServer(roomId)
 end)

@@ -41,6 +41,7 @@ function LoadProperties()
             v.auction_data = json.decode(v.auction_data or '{"current_bid": 0, "highest_bidder": null, "status": "paused"}')
             v.price = tonumber(v.price) or 0
             v.yard_zone_data = json.decode(v.yard_zone_data or 'null')
+            v.hasYard = (v.yard_zone_data and v.yard_zone_data.points and #v.yard_zone_data.points >= 3) and true or false
             v.last_mowed = tonumber(v.last_mowed) or 0
             v.lawn_data = json.decode(v.lawn_data or '{}')
             v.agency = v.agency or nil
@@ -195,6 +196,7 @@ function CreateProperty(data)
         }
         Properties[id].size = Properties[id].metadata.size
         Properties[id].region = Properties[id].metadata.region
+        Properties[id].hasYard = (Properties[id].yard_zone_data and Properties[id].yard_zone_data.points and #Properties[id].yard_zone_data.points >= 3) and true or false
         EnrichPropertyDoorlockData(Properties[id])
         return Properties[id]
     end
