@@ -141,6 +141,21 @@ return {
         Slots = 40,                         -- Default fridge storage slots
         Weight = 60000,                     -- Default fridge storage weight capacity (in grams)
         RequirePower = true,                -- If electricity system is enabled, fridges only slow decay when breaker is active
+
+        -- Item Decay Filtering Mode:
+        -- 'none'      : All perishable items placed in the fridge have decay slowed down (default).
+        -- 'whitelist' : ONLY items listed in ItemFilter will have decay slowed down (unlisted items decay at normal speed).
+        -- 'blacklist' : Items listed in ItemFilter decay at normal speed (they are excluded from fridge decay slowdown).
+        FilterMode = 'none',                -- 'none' | 'whitelist' | 'blacklist'
+
+        -- Whitelist or Blacklist items to filter based on FilterMode.
+        -- Supports list format: { 'water', 'sandwich', 'burger' }
+        -- Or table format:       { ['water'] = true, ['sandwich'] = true }
+        ItemFilter = {
+            -- 'water',
+            -- 'sandwich',
+            -- 'burger',
+        },
     },
 
     ----------------------------------------------------------------------------

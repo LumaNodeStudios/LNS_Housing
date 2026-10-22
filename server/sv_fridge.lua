@@ -83,6 +83,65 @@ local function IsPerishableItem(slotData)
     return degrade and degrade > 0
 end
 
+local function IsItemAllowedInFridge(itemName)
+    if not itemName then return false, "Invalid item name" end
+    if not Settings.Fridge then return true end
+
+    local mode = Settings.Fridge.FilterMode
+    if type(mode) == 'string' then
+        mode = mode:lower()
+    end
+
+    local filterList = Settings.Fridge.ItemFilter or Settings.Fridge.ItemList or Settings.Fridge.Items
+
+    if not mode or mode == 'none' or mode == '' then
+        if Settings.Fridge.Whitelist and type(Settings.Fridge.Whitelist) == 'table' then
+            mode = 'whitelist'
+            filterList = Settings.Fridge.Whitelist
+        elseif Settings.Fridge.Blacklist and type(Settings.Fridge.Blacklist) == 'table' then
+            mode = 'blacklist'
+            filterList = Settings.Fridge.Blacklist
+        end
+    end
+
+    if not mode or mode == 'none' or mode == 'disabled' or mode == false then
+        return true
+    end
+
+    if not filterList or type(filterList) ~= 'table' then
+        return true
+    end
+
+    local itemLower = itemName:lower()
+    local isListed = false
+
+    for k, v in pairs(filterList) do
+        if type(k) == 'string' and k:lower() == itemLower and (v == true or v == 1) then
+            isListed = true
+            break
+        elseif type(v) == 'string' and v:lower() == itemLower then
+            isListed = true
+            break
+        end
+    end
+
+    if mode == 'whitelist' then
+        if isListed then
+            return true
+        else
+            return false, "Item is not in fridge whitelist"
+        end
+    elseif mode == 'blacklist' then
+        if isListed then
+            return false, "Item is blacklisted from fridge decay slowdown"
+        else
+            return true
+        end
+    end
+
+    return true
+end
+
 local function ApplyFridgePreservation(invId, slotData, multiplier)
     if not slotData or not slotData.slot or not slotData.metadata then return end
     if slotData.metadata.inFridge then return end
@@ -195,7 +254,9 @@ local function SyncInventorySlot(invId, slotNumber, isFridge)
     if isFridge then
         local active = IsFridgeActive(invId)
         local mult = GetFridgeMultiplier(invId)
-        if active and mult > 1.0 then
+        local allowed, filterReason = IsItemAllowedInFridge(slotData.name)
+
+        if active and mult > 1.0 and allowed then
             if not slotData.metadata.inFridge then
                 if IsPerishableItem(slotData) then
                     ApplyFridgePreservation(invId, slotData, mult)
@@ -209,7 +270,9 @@ local function SyncInventorySlot(invId, slotNumber, isFridge)
             if slotData.metadata.inFridge then
                 RemoveFridgePreservation(invId, slotData)
             else
-                local reason = not active and "Fridge inactive (power off or disabled)" or ("Multiplier is x%.1f (must be > 1.0)"):format(mult)
+                local reason = not active and "Fridge inactive (power off or disabled)"
+                    or (not allowed and filterReason)
+                    or ("Multiplier is x%.1f (must be > 1.0)"):format(mult)
                 debugPrint('info', ('[LNS_Housing:Fridge] Item: %s (Slot %d) in Fridge Stash: %s | Decay Slowed: NO (%s)'):format(
                     slotData.name, slotData.slot, tostring(invId), reason
                 ))
@@ -232,7 +295,8 @@ local function SyncFridgeInventory(invId)
 
     for slotIdx, slotData in pairs(inv.items) do
         if slotData and slotData.metadata then
-            if isFridge and active and mult > 1.0 then
+            local allowed = isFridge and IsItemAllowedInFridge(slotData.name)
+            if isFridge and active and mult > 1.0 and allowed then
                 if IsPerishableItem(slotData) and not slotData.metadata.inFridge then
                     ApplyFridgePreservation(invId, slotData, mult)
                 end
