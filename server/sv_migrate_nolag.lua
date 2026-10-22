@@ -447,21 +447,21 @@ function RunNoLagMigration(isDryRun)
             local doorRegistered = false
 
             if oxDoorlockStarted and dData then
+                local doorName = (p.label or p.address or ('Property #' .. propId)) .. ' - ' .. (dRow.name or 'Door')
                 local existingDoor = nil
-                if exports.ox_doorlock and exports.ox_doorlock.getDoor then
-                    pcall(function() existingDoor = exports.ox_doorlock:getDoor(dId) end)
+                if exports.ox_doorlock and exports.ox_doorlock.getDoorFromName then
+                    pcall(function() existingDoor = exports.ox_doorlock:getDoorFromName(doorName) end)
                 end
 
-                if existingDoor then
-                    table.insert(doorList, dId)
+                if existingDoor and existingDoor.id then
+                    table.insert(doorList, existingDoor.id)
                     doorRegistered = true
                 else
-                    local doorName = (p.label or p.address or ('Property #' .. propId)) .. ' - ' .. (dRow.name or 'Door')
                     if dData.doors and type(dData.doors) == 'table' and #dData.doors > 0 then
                         local panels = {}
                         for idx, panel in ipairs(dData.doors) do
                             panels[idx] = {
-                                model = panel.model,
+                                model = tonumber(panel.model) or panel.model,
                                 coords = vector3(panel.coords.x, panel.coords.y, panel.coords.z),
                                 heading = tonumber(panel.heading) or 0.0
                             }
@@ -482,7 +482,7 @@ function RunNoLagMigration(isDryRun)
                         local ok, createdId = pcall(function()
                             return exports.ox_doorlock:createDoor({
                                 name = doorName,
-                                model = dData.model,
+                                model = tonumber(dData.model) or dData.model,
                                 coords = vector3(dData.coords.x, dData.coords.y, dData.coords.z),
                                 heading = tonumber(dData.heading) or 0.0,
                                 state = tonumber(dData.state) or 1,
@@ -495,10 +495,6 @@ function RunNoLagMigration(isDryRun)
                         end
                     end
                 end
-            end
-
-            if not doorRegistered and dId then
-                table.insert(doorList, dId)
             end
         end
 
@@ -700,16 +696,24 @@ function RunNoLagMigration(isDryRun)
             end
 
             if panelPos then
+                local panelHeading = (spawnData and (spawnData.h or spawnData.w)) or 0.0
                 table.insert(furnitureList, {
                     id = 99999,
                     model = 'reh_prop_reh_tablet_01a',
                     label = 'Property Panel',
                     position = panelPos,
-                    rotation = { x = 0.0, y = 0.0, z = 0.0 },
+                    rotation = { x = 0.0, y = 0.0, z = panelHeading },
                     category = 'prerequisites',
                     price = 0
                 })
             end
+        end
+
+        local propImage = nil
+        if rawMeta.images and type(rawMeta.images) == 'table' and #rawMeta.images > 0 then
+            propImage = rawMeta.images[1]
+        elseif type(rawMeta.image) == 'string' and rawMeta.image ~= '' then
+            propImage = rawMeta.image
         end
 
         local lnsMetadata = {
@@ -738,8 +742,8 @@ function RunNoLagMigration(isDryRun)
 
         MySQL.query.await([[
             INSERT INTO housing_properties 
-                (id, label, price, owner, door_id, doors, permissions, metadata, furniture, sale_type, zone_data, yard_zone_data, garage)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, label, price, owner, door_id, doors, permissions, metadata, furniture, sale_type, zone_data, yard_zone_data, garage, image)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
                 label = VALUES(label),
                 price = VALUES(price),
@@ -752,7 +756,8 @@ function RunNoLagMigration(isDryRun)
                 sale_type = VALUES(sale_type),
                 zone_data = VALUES(zone_data),
                 yard_zone_data = VALUES(yard_zone_data),
-                garage = VALUES(garage);
+                garage = VALUES(garage),
+                image = VALUES(image);
         ]], {
             propId,
             p.label or p.address or ('Property #' .. propId),
@@ -766,7 +771,8 @@ function RunNoLagMigration(isDryRun)
             saleType,
             json.encode(zoneData),
             json.encode(yardZoneData),
-            garageSlots
+            garageSlots,
+            propImage
         })
 
         pcall(function()

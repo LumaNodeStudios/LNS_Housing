@@ -1055,7 +1055,7 @@ function RegisterPropertyZones(p, forceShell)
         local points = {}
         for i = 1, #p.zone_data.points do
             local pt = p.zone_data.points[i]
-            points[i] = vector3(pt.x, pt.y, pt.z + (thickness / 2))
+            points[i] = vector3(pt.x, pt.y, pt.z)
         end
 
         PropertyZones[p.id] = lib.zones.poly({

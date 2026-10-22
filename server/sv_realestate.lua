@@ -371,26 +371,48 @@ lib.callback.register('LNS_Housing:server:updateListingDetails', function(source
         p.metadata.breaker_coords = data.breakerCoords
     end
 
-    if data.entranceType == 'coords' then
+    if data.interiorId or data.interior_id then
+        p.metadata.interior_id = tonumber(data.interiorId or data.interior_id)
+    end
+    if data.interiorCoords or data.interior_coords then
+        p.metadata.interior_coords = data.interiorCoords or data.interior_coords
+    end
+    if data.interiorCenter or data.interior_center then
+        p.metadata.interior_center = data.interiorCenter or data.interior_center
+    end
+    if data.roomCount or data.room_count then
+        p.metadata.room_count = tonumber(data.roomCount or data.room_count)
+    end
+
+    if data.entranceCoords then
         p.metadata.entrance = data.entranceCoords
-        if p.metadata.locked == nil then
-            p.metadata.locked = true
-        end
-        p.doors = {}
-        if data.entranceCoords then
+        p.metadata.spawn = {
+            x = data.entranceCoords.x,
+            y = data.entranceCoords.y,
+            z = data.entranceCoords.z,
+            h = data.entranceCoords.h or 0.0
+        }
+    elseif data.entranceType ~= 'coords' then
+        p.metadata.entrance = nil
+    end
+
+    if p.metadata.locked == nil then
+        p.metadata.locked = true
+    end
+
+    if data.doors and #data.doors > 0 then
+        local doorIds, processedSpawn = ProcessPropertyDoors(data.doors, p.label)
+        p.doors = doorIds
+        if processedSpawn and not p.metadata.spawn then
             p.metadata.spawn = {
-                x = data.entranceCoords.x,
-                y = data.entranceCoords.y,
-                z = data.entranceCoords.z,
-                h = data.entranceCoords.h or 0.0
+                x = processedSpawn.x,
+                y = processedSpawn.y,
+                z = processedSpawn.z,
+                h = processedSpawn.w or 0.0
             }
         end
-    else
-        p.metadata.entrance = nil
-        if data.doors then
-            local doorIds = ProcessPropertyDoors(data.doors, p.label)
-            p.doors = doorIds
-        end
+    elseif data.entranceType == 'coords' and (not data.doors or #data.doors == 0) then
+        p.doors = {}
     end
 
     SyncPropertyDoor(propertyId)
