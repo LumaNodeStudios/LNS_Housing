@@ -135,7 +135,7 @@ const MOCK_PROPERTIES = {
 function App() {
   const [showPanel, setShowPanel] = useState(false);
   const [showFurniture, setShowFurniture] = useState(false);
-  const [showRealEstate, setShowRealEstate] = useState(true);
+  const [showRealEstate, setShowRealEstate] = useState(false);
   const [showContractPaper, setShowContractPaper] = useState(false);
   const [contractPaperData, setContractPaperData] = useState(null);
   const [showApartmentCreator, setShowApartmentCreator] = useState(false);
