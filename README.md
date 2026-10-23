@@ -106,6 +106,8 @@ Special thanks to:
 * **[Project Sloth](https://github.com/Project-Sloth)** (ps-housing & ps-realtor), where some logic and code was referenced and adapted.
 * The **[Overextended](https://github.com/overextended)** team for **ox_lib**, **ox_doorlock**, **ox_inventory**, and **screencapture**.
 * **K4MB1 Maps** for interior shell designs.
+* **mulawastaken** for the cleaning robot props.
+* **nicc.exe** for extensive testing.
 
 ---
 

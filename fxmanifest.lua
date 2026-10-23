@@ -70,12 +70,14 @@ server_scripts {
     'server/sv_electricity.lua',
     'server/sv_fridge.lua',
     'server/sv_trash.lua',
-    'server/sv_migrate_nolag.lua'
+    'server/migrate/sv_migrate_nolag.lua'
 }
 
 dependencies {
     'ox_lib',
     'oxmysql',
+    'ox_doorlock',
+    'ox_target',
     'screencapture'
 }
 
