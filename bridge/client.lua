@@ -286,15 +286,15 @@ function Bridge.Client.RegisterGarage(propertyId, label, garageData)
                             if Bridge.GarageScript == 'jg-advancedgarages' then
                                 TriggerEvent('jg-advancedgarages:client:store-vehicle', garageName, "car")
                             elseif Bridge.GarageScript == 'cd_garage' then
-                                TriggerEvent('cd_garage:StoreVehicle_Main', 1, false, false)
+                                TriggerEvent('cd_garage:PropertyGarage:StoreVehicle')
                             end
                         else
+                            local spawn = garageData.spawn or garageData
+                            local spawnCoords = vector4(spawn.x, spawn.y, spawn.z, spawn.h or 0.0)
                             if Bridge.GarageScript == 'jg-advancedgarages' then
-                                local spawn = garageData.spawn or garageData
-                                local spawnCoords = vector4(spawn.x, spawn.y, spawn.z, spawn.h or 0.0)
                                 TriggerEvent('jg-advancedgarages:client:open-garage', garageName, "car", spawnCoords)
                             elseif Bridge.GarageScript == 'cd_garage' then
-                                TriggerEvent('cd_garage:PropertyGarage', 'quick', nil)
+                                TriggerEvent('cd_garage:PropertyGarage:Open', spawnCoords)
                             end
                         end
                     end
