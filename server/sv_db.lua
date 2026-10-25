@@ -29,7 +29,11 @@ function LoadProperties()
             if v.metadata.max_power == nil then v.metadata.max_power = (Settings.Electricity and Settings.Electricity.DefaultMaxPower) or 5.0 end
             if v.metadata.power_level == nil then v.metadata.power_level = 1 end
             if v.metadata.breaker_tripped == nil then v.metadata.breaker_tripped = false end
-            if v.metadata.breaker_coords == nil then v.metadata.breaker_coords = nil end
+            local propType = v.property_type or (v.metadata and (v.metadata.property_type or v.metadata.type)) or 'Residential'
+            if propType == 'Commerce' then propType = 'Commercial' end
+            v.property_type = propType
+            v.type = propType
+            v.metadata.property_type = propType
             v.size = v.metadata.size
             v.region = v.metadata.region
             
@@ -92,7 +96,10 @@ function CreateProperty(data)
         }
     end
 
-    local id = MySQL.insert.await('INSERT INTO housing_properties (label, price, doors, image, sale_type, auction_data, zone_data, metadata, yard_zone_data, last_mowed, lawn_data, agency, agent_cid, commission_rate, garage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', {
+    local propType = data.type or data.property_type or 'Residential'
+    if propType == 'Commerce' then propType = 'Commercial' end
+
+    local id = MySQL.insert.await('INSERT INTO housing_properties (label, price, doors, image, sale_type, auction_data, zone_data, metadata, yard_zone_data, last_mowed, lawn_data, agency, agent_cid, commission_rate, garage, property_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', {
         data.name or data.label, 
         data.price, 
         json.encode(data.doors or {}), 
@@ -122,6 +129,7 @@ function CreateProperty(data)
             garage_data = data.garage_data or nil,
             size = data.size or 0,
             region = data.region or 'Unknown',
+            property_type = propType,
             camera_coords = data.camera_coords or nil,
             camera_aim = data.camera_aim or nil,
             camera_model = data.camera_model or nil,
@@ -138,7 +146,8 @@ function CreateProperty(data)
         data.agency or nil,
         data.agent_cid or nil,
         data.commission_rate or 10,
-        tonumber(data.slots) or 2
+        tonumber(data.slots) or 2,
+        propType
     })
     
     if id then
@@ -192,8 +201,13 @@ function CreateProperty(data)
             agency = data.agency or nil,
             agent_cid = data.agent_cid or nil,
             commission_rate = data.commission_rate or 10,
-            garage = tonumber(data.slots) or 2
+            garage = tonumber(data.slots) or 2,
+            type = propType,
+            property_type = propType
         }
+        Properties[id].metadata.property_type = propType
+        Properties[id].type = propType
+        Properties[id].property_type = propType
         Properties[id].size = Properties[id].metadata.size
         Properties[id].region = Properties[id].metadata.region
         Properties[id].hasYard = (Properties[id].yard_zone_data and Properties[id].yard_zone_data.points and #Properties[id].yard_zone_data.points >= 3) and true or false
@@ -208,8 +222,16 @@ function SaveProperty(id)
     local p = Properties[id]
     if not p then return end
     
-    MySQL.update.await('UPDATE housing_properties SET label = ?, price = ?, owner = ?, permissions = ?, metadata = ?, furniture = ?, zone_data = ?, doors = ?, image = ?, sale_type = ?, auction_data = ?, yard_zone_data = ?, last_mowed = ?, lawn_data = ?, agency = ?, agent_cid = ?, commission_rate = ?, garage = ? WHERE id = ?', {
-        p.label, p.price, p.owner, json.encode(p.permissions), json.encode(p.metadata), json.encode(p.furniture), json.encode(p.zone_data or {}), json.encode(p.doors or {}), p.image or nil, p.sale_type or 'direct', json.encode(p.auction_data), json.encode(p.yard_zone_data or nil), p.last_mowed or 0, json.encode(p.lawn_data or {}), p.agency or nil, p.agent_cid or nil, p.commission_rate or 10, p.garage or 2, id
+    local propType = p.property_type or p.type or (p.metadata and (p.metadata.property_type or p.metadata.type)) or 'Residential'
+    if propType == 'Commerce' then propType = 'Commercial' end
+    p.type = propType
+    p.property_type = propType
+    if p.metadata then
+        p.metadata.property_type = propType
+    end
+
+    MySQL.update.await('UPDATE housing_properties SET label = ?, price = ?, owner = ?, permissions = ?, metadata = ?, furniture = ?, zone_data = ?, doors = ?, image = ?, sale_type = ?, auction_data = ?, yard_zone_data = ?, last_mowed = ?, lawn_data = ?, agency = ?, agent_cid = ?, commission_rate = ?, garage = ?, property_type = ? WHERE id = ?', {
+        p.label, p.price, p.owner, json.encode(p.permissions), json.encode(p.metadata), json.encode(p.furniture), json.encode(p.zone_data or {}), json.encode(p.doors or {}), p.image or nil, p.sale_type or 'direct', json.encode(p.auction_data), json.encode(p.yard_zone_data or nil), p.last_mowed or 0, json.encode(p.lawn_data or {}), p.agency or nil, p.agent_cid or nil, p.commission_rate or 10, p.garage or 2, propType, id
     })
 end
 
@@ -272,6 +294,7 @@ MySQL.ready(function()
             `sale_type` VARCHAR(20) DEFAULT 'direct',
             `auction_data` LONGTEXT DEFAULT '{"current_bid": 0, "highest_bidder": null, "status": "paused"}',
             `zone_data` LONGTEXT DEFAULT '{"points":[], "thickness": 10.0}',
+            `property_type` VARCHAR(50) DEFAULT 'Residential',
             `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ]])
@@ -487,6 +510,12 @@ MySQL.ready(function()
         local cols = MySQL.query.await("SHOW COLUMNS FROM `housing_properties` LIKE 'garage'")
         if not cols or #cols == 0 then
             MySQL.query.await("ALTER TABLE `housing_properties` ADD COLUMN `garage` INT DEFAULT 2")
+        end
+    end)
+    pcall(function()
+        local cols = MySQL.query.await("SHOW COLUMNS FROM `housing_properties` LIKE 'property_type'")
+        if not cols or #cols == 0 then
+            MySQL.query.await("ALTER TABLE `housing_properties` ADD COLUMN `property_type` VARCHAR(50) DEFAULT 'Residential'")
         end
     end)
 

@@ -348,6 +348,13 @@ lib.callback.register('LNS_Housing:server:updateListingDetails', function(source
     p.yard_zone_data = data.yard_zone_data or p.yard_zone_data
 
     if not p.metadata then p.metadata = {} end
+    if data.type or data.property_type then
+        local propType = data.type or data.property_type
+        if propType == 'Commerce' then propType = 'Commercial' end
+        p.type = propType
+        p.property_type = propType
+        p.metadata.property_type = propType
+    end
     p.metadata.shell = data.mlo and 'mlo' or (data.shell or p.metadata.shell or 'Standard Motel')
     p.metadata.allow_wall_colors = data.allowWallColors or false
 

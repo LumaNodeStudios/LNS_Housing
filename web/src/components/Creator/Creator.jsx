@@ -274,9 +274,9 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
             </div>
             <div className="input-field">
               <label><Database size={14} /> Property Type</label>
-              <select name="type" value={formData.type} onChange={handleInputChange}>
+              <select name="type" value={formData.type === 'Commerce' ? 'Commercial' : (formData.type || 'Residential')} onChange={handleInputChange}>
                 <option value="Residential">Residential</option>
-                <option value="Commerce">Commerce</option>
+                <option value="Commercial">Commercial</option>
                 <option value="Industrial">Industrial</option>
                 <option value="Apartment">Apartment</option>
               </select>

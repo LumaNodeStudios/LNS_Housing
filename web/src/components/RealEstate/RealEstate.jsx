@@ -399,9 +399,11 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         setCurrentStep(1);
         const hasEntranceCoords = !!(p.metadata && p.metadata.entrance);
         setEditingHasDoorbellCamera(!!(p.metadata && p.metadata.doorbell_camera));
+        const rawType = p.type || (p.metadata && p.metadata.property_type) || p.property_type || 'Residential';
+        const normalizedType = rawType === 'Commerce' ? 'Commercial' : rawType;
         setFormData({
             name: p.label || 'New Property',
-            type: p.type || 'Residential',
+            type: normalizedType,
             price: p.price || 150000,
             mlo: !p.metadata || !p.metadata.shell || p.metadata.shell === 'mlo',
             shell: p.metadata && p.metadata.shell ? p.metadata.shell : 'mlo',
@@ -952,7 +954,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 label: payload.name || `Property #${newId}`,
                 price: parseFloat(payload.price) || 250000,
                 sale_type: payload.saleType || 'direct',
-                type: payload.mlo ? 'MLO' : (payload.shell || 'Residential'),
+                type: (payload.type === 'Commerce' ? 'Commercial' : payload.type) || 'Residential',
                 region: 'Los Santos',
                 garage: parseInt(payload.slots, 10) || 0,
                 size: 2400,
@@ -1019,7 +1021,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                             </div>
                             <div className="detail-item">
                                 <div className="detail-label"><Tag size={12} /> Type</div>
-                                <div className="detail-value">{p.type || 'Residential'}</div>
+                                <div className="detail-value">{(p.type === 'Commerce' ? 'Commercial' : p.type) || (p.metadata && (p.metadata.property_type === 'Commerce' ? 'Commercial' : p.metadata.property_type)) || 'Residential'}</div>
                             </div>
                             <div className="detail-item">
                                 <div className="detail-label"><Warehouse size={12} /> Garage Slots</div>
@@ -1626,10 +1628,10 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                             icon={Database}
                                             label="Property Category"
                                             name="type"
-                                            value={formData.type}
+                                            value={formData.type === 'Commerce' ? 'Commercial' : (formData.type || 'Residential')}
                                             options={[
                                                 { value: 'Residential', label: 'Residential' },
-                                                { value: 'Commerce', label: 'Commerce' },
+                                                { value: 'Commercial', label: 'Commercial' },
                                                 { value: 'Industrial', label: 'Industrial' },
                                                 { value: 'Apartment', label: 'Apartment' }
                                             ]}

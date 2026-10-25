@@ -650,7 +650,7 @@ const Panel = ({ data: initialData }) => {
                       <span className="meta-pill-item"><Clock size={12} /> {formatTime(currentTime)}</span>
                       <span className="meta-pill-item"><Calendar size={12} /> {formatDate(currentTime)}</span>
                       <span className="meta-pill-item"><MapPin size={12} /> {propertyData.streetName || propertyData.label || 'Unknown'}</span>
-                      <span className="meta-pill-item"><Building size={12} /> Residential</span>
+                      <span className="meta-pill-item"><Building size={12} /> {(propertyData.type === 'Commerce' ? 'Commercial' : propertyData.type) || (propertyData.metadata && (propertyData.metadata.property_type === 'Commerce' ? 'Commercial' : propertyData.metadata.property_type)) || 'Residential'}</span>
                     </div>
                     <h1 className="welcome-title-hero">
                       Welcome, <span>{propertyData.playerName || 'Resident'}</span>
