@@ -25,7 +25,6 @@ shared_scripts {
     '@ox_lib/init.lua',
     'shared/furniture.lua',
     'shared/settings.lua',
-    'shared/sv_settings.lua',
     'bridge/shared.lua'
 }
 
@@ -52,6 +51,7 @@ client_scripts {
 
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
+    'shared/sv_settings.lua',
     'bridge/server.lua',
     'server/sv_version.lua',
     'server/sv_db.lua',
