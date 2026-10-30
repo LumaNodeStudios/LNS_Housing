@@ -614,10 +614,7 @@ local function teleportToStarterApartment()
         
         DoScreenFadeIn(1000)
         
-        lib.notify({
-            description = 'Welcome to your new starter apartment! You can customize it and store items here.',
-            type = 'success'
-        })
+        Bridge.Client.Notify('Welcome to your new starter apartment! You can customize it and store items here.', 'success')
     end
 end
 
