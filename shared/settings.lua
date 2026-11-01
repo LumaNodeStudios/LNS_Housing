@@ -170,6 +170,196 @@ return {
     },
 
     ----------------------------------------------------------------------------
+    -- Property & Apartment Trash Buildup & Cleanliness Settings
+    ----------------------------------------------------------------------------
+    Trash = {
+        Enabled = true,                     -- Enable or disable property & apartment trash buildup over time
+        BuildupInterval = 7200,             -- Time in seconds (e.g. 7200 = 2 hours) for each trash pile to accumulate
+        MaxTrash = 5,                       -- Maximum number of trash piles that can accumulate in a property/apartment
+        CleanDuration = 4000,               -- Duration in milliseconds to clean/pickup a trash pile
+        ThrowDuration = 2500,               -- Duration in milliseconds to toss a trash bag into a street dumpster
+        RequireKeyAccess = false,           -- If true, only players with keys/entry permission can clean trash inside (if false, visitors/cleaners can help)
+
+        -- Trash models spawned on the floor inside properties when trash accumulates
+        TrashModels = {
+            'prop_rub_litter_01',
+            'prop_rub_litter_02',
+            'prop_rub_litter_03',
+            'prop_rub_box_02',
+            'prop_rub_binbag_01',
+            'prop_rub_binbag_03b',
+            'prop_cs_rub_binbag_01',
+            'prop_food_bs_bag_02',
+            'ng_proc_box_01a',
+            'prop_rub_cardpile_05',
+        },
+
+        -- Carried trash bag prop attachment settings
+        CarryProp = {
+            model = 'prop_cs_street_binbag_01',
+            bone = 57005,                   -- SKEL_R_Hand
+            offset = vec3(0.12, 0.0, 0.0),
+            rotation = vec3(-80.0, 0.0, 0.0),
+        },
+
+        -- Street Dumpster Models for ox_target:addModel
+        -- Trash must be taken outside and thrown into any of these dumpster models
+        DumpsterModels = {
+            'prop_dumpster_01a',
+            'prop_dumpster_02a',
+            'prop_dumpster_02b',
+            'prop_dumpster_4a',
+            'prop_dumpster_4b',
+            'prop_dumpster_3a',
+            'prop_cs_dumpster_01a',
+            'p_dumpster_t',
+            'prop_bin_05a',
+            'prop_bin_06a',
+            'prop_bin_07a',
+            'prop_bin_08a',
+            'prop_bin_10a',
+            'prop_bin_11a',
+            'prop_bin_12a',
+            'prop_bin_13a',
+            'prop_bin_14a',
+            'prop_bin_beach_01a',
+            'prop_bin_delpiero',
+            'prop_recyclebin_01a',
+            'prop_recyclebin_02_c',
+            'prop_recyclebin_04_a',
+            'prop_recyclebin_04_b',
+            'prop_recyclebin_05_a',
+        },
+
+        -- Optional Cash/Money reward for properly disposing of trash in a street dumpster
+        Reward = {
+            Enabled = true,
+            Min = 15,
+            Max = 50,
+            Account = 'money',             -- 'money' or 'cash'
+        },
+
+        -- Visual flies swarm particle effect inside properties when trash is at maximum level
+        FliesEffect = true,
+
+        -- Curated floor offsets for standard shells (relative to shell origin)
+        ShellOffsets = {
+            ['Standard Motel'] = {
+                vec3(0.5, 0.2, 0.0),
+                vec3(-1.2, 1.0, 0.0),
+                vec3(1.4, -1.2, 0.0),
+                vec3(-0.8, -1.5, 0.0),
+                vec3(0.0, 1.5, 0.0),
+            },
+            ['Modern Hotel'] = {
+                vec3(2.5, 2.0, -0.75),
+                vec3(-2.0, 1.5, -0.75),
+                vec3(1.8, -1.5, -0.75),
+                vec3(-1.5, -2.0, -0.75),
+                vec3(3.2, 0.0, -0.75),
+            },
+            ['Apartment Furnished'] = {
+                vec3(0.5, -4.5, 0.0),
+                vec3(-1.8, -3.0, 0.0),
+                vec3(2.2, -6.5, 0.0),
+                vec3(-1.2, -7.5, 0.0),
+                vec3(1.5, -2.0, 0.0),
+            },
+            ['Apartment Unfurnished'] = {
+                vec3(0.8, -5.0, -0.5),
+                vec3(-2.0, -4.0, -0.5),
+                vec3(2.5, -8.0, -0.5),
+                vec3(-1.5, -9.0, -0.5),
+                vec3(1.0, -11.0, -0.5),
+            },
+            ['Apartment 2 Unfurnished'] = {
+                vec3(2.0, -3.0, -1.0),
+                vec3(-1.5, -2.5, -1.0),
+                vec3(3.0, -4.5, -1.0),
+                vec3(-2.2, -4.0, -1.0),
+                vec3(0.5, -1.5, -1.0),
+            },
+            ['Trailer'] = {
+                vec3(0.4, 0.5, -0.48),
+                vec3(-0.6, 1.8, -0.48),
+                vec3(0.5, -1.0, -0.48),
+                vec3(-0.5, -0.2, -0.48),
+                vec3(0.0, 2.5, -0.48),
+            },
+            ['House 1'] = {
+                vec3(1.5, -2.0, -0.57),
+                vec3(-1.8, -1.5, -0.57),
+                vec3(2.0, -4.0, -0.57),
+                vec3(-1.2, -4.5, -0.57),
+                vec3(0.5, 0.5, -0.57),
+            },
+            ['House 2'] = {
+                vec3(1.2, -1.5, -1.1),
+                vec3(-2.0, -2.0, -1.1),
+                vec3(1.8, -3.5, -1.1),
+                vec3(-1.5, 0.5, -1.1),
+                vec3(0.2, -4.0, -1.1),
+            },
+            ['House 3'] = {
+                vec3(1.5, -2.0, -0.37),
+                vec3(-1.2, -1.5, -0.37),
+                vec3(2.2, -3.5, -0.37),
+                vec3(-1.8, -4.0, -0.37),
+                vec3(0.0, -0.5, -0.37),
+            },
+            ['House 4'] = {
+                vec3(1.0, -1.0, -0.41),
+                vec3(-1.5, -0.5, -0.41),
+                vec3(1.8, -2.5, -0.41),
+                vec3(-1.0, -2.0, -0.41),
+                vec3(0.2, 1.0, -0.41),
+            },
+            ['Garage'] = {
+                vec3(4.0, 0.0, -0.76),
+                vec3(8.0, 1.5, -0.76),
+                vec3(10.0, -1.0, -0.76),
+                vec3(2.0, -1.5, -0.76),
+                vec3(6.0, 2.0, -0.76),
+            },
+            ['2 Floor House'] = {
+                vec3(-4.0, 2.0, -4.07),
+                vec3(-6.0, 4.0, -4.07),
+                vec3(-2.0, 3.5, -4.07),
+                vec3(-5.0, 0.5, -4.07),
+                vec3(-1.5, 1.0, -4.07),
+            },
+            ['Container'] = {
+                vec3(0.0, -2.0, -0.22),
+                vec3(-0.5, -3.5, -0.22),
+                vec3(0.5, -1.0, -0.22),
+                vec3(-0.4, -0.5, -0.22),
+                vec3(0.4, -4.5, -0.22),
+            },
+            ['Office'] = {
+                vec3(0.5, 2.0, -0.73),
+                vec3(-1.5, 1.5, -0.73),
+                vec3(1.8, 3.5, -0.73),
+                vec3(-1.2, 3.0, -0.73),
+                vec3(0.0, 4.0, -0.73),
+            },
+            ['Store'] = {
+                vec3(-1.0, -2.0, -0.62),
+                vec3(1.5, -1.5, -0.62),
+                vec3(-1.8, 0.5, -0.62),
+                vec3(1.2, 1.0, -0.62),
+                vec3(0.0, -3.0, -0.62),
+            },
+            ['Warehouse'] = {
+                vec3(-3.0, 1.5, -0.95),
+                vec3(-5.0, -1.0, -0.95),
+                vec3(1.0, 2.0, -0.95),
+                vec3(2.5, -1.5, -0.95),
+                vec3(-1.0, -0.5, -0.95),
+            },
+        }
+    },
+
+    ----------------------------------------------------------------------------
     -- Rent & Eviction Management
     ----------------------------------------------------------------------------
     Rent = {
