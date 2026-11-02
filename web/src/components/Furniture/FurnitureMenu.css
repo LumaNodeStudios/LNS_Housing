@@ -204,6 +204,8 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0 15px 15px 15px;
+  contain: layout style;
+  will-change: scroll-position;
 }
 
 .items-grid-scroll::-webkit-scrollbar {
@@ -239,9 +241,11 @@
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.15s ease, background 0.15s ease;
   position: relative;
   overflow: hidden;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 96px;
 }
 
 .item-card:hover {
@@ -309,13 +313,12 @@
   object-fit: cover;
   z-index: 3;
   pointer-events: none;
-  transition: opacity 0.15s ease-out;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15));
+  transition: transform 0.15s ease-out, opacity 0.15s ease-out;
 }
 
 .item-card:hover .furniture-img {
   transform: scale(1.08);
-  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.25));
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.35));
 }
 
 

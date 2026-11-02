@@ -134,14 +134,41 @@ const NudgeBtn = ({ onClick, children, title, className = '', disabled }) => {
   );
 };
 
+const imageStatusCache = new Map();
+
 const FurnitureImage = React.memo(function FurnitureImage({ item, ItemIcon }) {
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
   const imageUrl = item?.imageUrl || (item?.model ? `assets/furniture/${item.model}.png` : null);
+  const cachedStatus = imageUrl ? imageStatusCache.get(imageUrl) : 'error';
+
+  const [loaded, setLoaded] = useState(cachedStatus === 'loaded');
+  const [error, setError] = useState(cachedStatus === 'error' || !imageUrl);
 
   useEffect(() => {
-    setLoaded(false);
-    setError(false);
+    if (!imageUrl) {
+      setError(true);
+      return;
+    }
+    const current = imageStatusCache.get(imageUrl);
+    if (current === 'loaded') {
+      setLoaded(true);
+      setError(false);
+    } else if (current === 'error') {
+      setLoaded(false);
+      setError(true);
+    } else {
+      setLoaded(false);
+      setError(false);
+    }
+  }, [imageUrl]);
+
+  const handleLoad = React.useCallback(() => {
+    if (imageUrl) imageStatusCache.set(imageUrl, 'loaded');
+    setLoaded(true);
+  }, [imageUrl]);
+
+  const handleError = React.useCallback(() => {
+    if (imageUrl) imageStatusCache.set(imageUrl, 'error');
+    setError(true);
   }, [imageUrl]);
 
   return (
@@ -152,9 +179,10 @@ const FurnitureImage = React.memo(function FurnitureImage({ item, ItemIcon }) {
             src={imageUrl}
             alt={item?.label || 'Furniture'}
             className="furniture-img"
+            loading="lazy"
             decoding="async"
-            onLoad={() => setLoaded(true)}
-            onError={() => setError(true)}
+            onLoad={handleLoad}
+            onError={handleError}
             style={{
               opacity: loaded ? 1 : 0,
               position: loaded ? 'static' : 'absolute',
@@ -169,6 +197,7 @@ const FurnitureImage = React.memo(function FurnitureImage({ item, ItemIcon }) {
           src={furnitureFallbackImg}
           alt={item?.label || 'Furniture'}
           className="furniture-img furniture-fallback-img"
+          loading="lazy"
           decoding="async"
         />
       )}
@@ -179,7 +208,7 @@ const FurnitureImage = React.memo(function FurnitureImage({ item, ItemIcon }) {
 const ItemCard = React.memo(function ItemCard({ item, ItemIcon, isPlacing, isThisPlacing, onHoverIn, onHoverOut, onClick }) {
   return (
     <div
-      className={`item-card ${isPlacing ? (isThisPlacing ? 'is-placing' : 'disabled') : ''} item-card-anim`}
+      className={`item-card ${isPlacing ? (isThisPlacing ? 'is-placing' : 'disabled') : ''}`}
       onMouseEnter={onHoverIn}
       onMouseLeave={onHoverOut}
       onClick={onClick}
@@ -413,6 +442,23 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
       item.label.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [items, activeCategory, activeCategoryData, searchQuery]);
+
+  const [visibleCount, setVisibleCount] = useState(60);
+
+  useEffect(() => {
+    setVisibleCount(60);
+  }, [activeCategory, searchQuery]);
+
+  const displayedItems = React.useMemo(() => {
+    return filteredItems.slice(0, visibleCount);
+  }, [filteredItems, visibleCount]);
+
+  const handleGridScroll = React.useCallback((e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop - clientHeight < 600) {
+      setVisibleCount((prev) => (prev < filteredItems.length ? Math.min(prev + 60, filteredItems.length) : prev));
+    }
+  }, [filteredItems.length]);
 
   const filteredOwnedItems = Array.isArray(ownedItems)
     ? ownedItems.filter(item =>
@@ -705,9 +751,13 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                       {activeCategory === 'all' ? 'ALL FURNITURE' : (activeCategoryData?.label?.toUpperCase() || 'ITEMS')}
                     </div>
 
-                    <div className="items-grid-scroll" key={`${activeTab}-${activeCategory}`}>
+                    <div
+                      className="items-grid-scroll"
+                      key={`${activeTab}-${activeCategory}`}
+                      onScroll={handleGridScroll}
+                    >
                       <div className="items-grid">
-                        {filteredItems.map((item) => {
+                        {displayedItems.map((item) => {
                           const ItemIcon = getItemIcon(item);
                           const itemKey = `${item.categoryId || activeCategory}-${item.id}`;
                           return (
