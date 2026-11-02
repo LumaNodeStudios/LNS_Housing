@@ -130,3 +130,15 @@ lib.callback.register('LNS_Housing:server:getFurnitureImages', function(source)
     end
     return {}
 end)
+
+lib.addCommand('checkfurniture', {
+    help = 'Audit all furniture prop models to verify valid assets (Admin only)',
+}, function(source, args, raw)
+    debugPrint('info', 'Command /checkfurniture executed', {source = source})
+    if not CheckPermission(source, 'admin') then
+        Bridge.Server.Notify(source, 'You do not have permission to use this command.', 'error')
+        return
+    end
+
+    TriggerClientEvent('LNS_Housing:client:checkFurniture', source)
+end)

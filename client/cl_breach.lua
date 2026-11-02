@@ -57,7 +57,7 @@ local function LoadRamPropModel(modelName)
         if name then
             local hash = type(name) == 'number' and name or joaat(name)
             if IsModelInCdimage(hash) and IsModelValid(hash) then
-                RequestModel(hash)
+                lib.requestModel(hash)
                 local timeout = GetGameTimer() + 3000
                 while not HasModelLoaded(hash) and GetGameTimer() < timeout do
                     Wait(10)

@@ -14,16 +14,49 @@ RegisterNetEvent('LNS_Housing:client:screenshotProcessed', function(model)
     end
 end)
 
-local function LoadModel(modelHash)
-    if not IsModelInCdimage(modelHash) or not IsModelValid(modelHash) then
-        return false
+local PinnedInteriors = {
+    2562,   -- Trevor's Trailer (v_res_tre_*, v_res_tt_*)
+    166657, -- Michael's Mansion (v_res_d_*, v_res_m_*, v_res_j_*)
+    197889, -- Franklin Aunt (v_res_fa_*)
+    206849, -- Franklin (v_res_fh_*)
+    171777, -- Floyd (v_res_*)
+    197121, -- Strip club (v_club_*)
+    92674,  -- Lester factory
+    7170,   -- Simeon
+    141313, -- Apartment Hi 1
+    145665, -- Apartment Hi 2
+    207105, 206081, 206337, 208129, 207617, 207361, 206593, 208385, -- Stilt houses
+    149761, -- House low
+    148225, -- House mid
+}
+
+local IplsToLoad = {
+    "trevorstrailertidy",
+    "TrevorsTrailerTrash",
+    "apa_v_mp_h_01_a",
+    "apa_v_mp_h_02_a",
+    "apa_v_mp_h_03_a",
+    "apa_v_mp_h_04_a",
+    "apa_v_mp_h_05_a",
+    "apa_v_mp_h_06_a",
+    "apa_v_mp_h_07_a",
+    "apa_v_mp_h_08_a",
+}
+
+local function LoadModel(modelInput)
+    local hash = tonumber(modelInput) or GetHashKey(modelInput)
+    if not hash or hash == 0 then return false end
+    if HasModelLoaded(hash) then return true end
+
+    local ok = pcall(lib.requestModel, hash, 5000)
+    if ok and HasModelLoaded(hash) then return true end
+
+    RequestModel(hash)
+    local timeout = GetGameTimer() + 5000
+    while not HasModelLoaded(hash) and GetGameTimer() < timeout do
+        Wait(50)
     end
-    lib.requestModel(modelHash)
-    local timeout = GetGameTimer() + 3000
-    while not HasModelLoaded(modelHash) and GetGameTimer() < timeout do
-        Wait(10)
-    end
-    return HasModelLoaded(modelHash)
+    return HasModelLoaded(hash)
 end
 
 local function DrawQuad(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, r, g, b, a)
@@ -111,14 +144,11 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
     end
 
     if #itemsToCapture == 0 and targetModel then
-        local hash = tonumber(targetModel) or GetHashKey(targetModel)
-        if IsModelInCdimage(hash) and IsModelValid(hash) then
-            table.insert(itemsToCapture, {
-                model = targetModel,
-                label = targetModel,
-                price = 0
-            })
-        end
+        table.insert(itemsToCapture, {
+            model = targetModel,
+            label = targetModel,
+            price = 0
+        })
     end
 
     if #itemsToCapture == 0 then
@@ -155,6 +185,19 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
 
     Bridge.Client.Notify('Starting furniture screenshots. Capturing ' .. #itemsToCapture .. ' item(s)...', 'inform')
     Wait(1000)
+
+    -- Pin interior archetypes and set streaming focus so residential props stream properly
+    for _, interiorId in ipairs(PinnedInteriors) do
+        if IsValidInterior(interiorId) then
+            PinInteriorInMemory(interiorId)
+        end
+    end
+    for _, ipl in ipairs(IplsToLoad) do
+        if not IsIplActive(ipl) then
+            RequestIpl(ipl)
+        end
+    end
+    SetFocusPosAndVel(0.0, 0.0, -150.0, 0.0, 0.0, 0.0)
 
     local drawingGreenScreen = true
     CreateThread(function()
@@ -235,12 +278,13 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
                     Wait(50)
                 end
             else
-                lib.print.error('Failed to screenshot model: ' .. item.model)
+                debugPrint('error', 'Failed to screenshot model: ' .. tostring(item.model))
+                print('Failed to screenshot model: ' .. tostring(item.model))
             end
 
             DeleteEntity(obj)
         else
-            lib.print.error('Model load timeout: ' .. item.model)
+            lib.print.error(string.format('Model load invalid: %s (in CdImage: %s, isValid: %s)', tostring(item.model), tostring(IsModelInCdimage(hash)), tostring(IsModelValid(hash))))
         end
         Wait(50)
     end
@@ -257,6 +301,14 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
     if cam and DoesCamExist(cam) then
         DestroyCam(cam, false)
     end
+
+    -- Clean up pinned interiors and focus
+    for _, interiorId in ipairs(PinnedInteriors) do
+        if IsValidInterior(interiorId) then
+            UnpinInterior(interiorId)
+        end
+    end
+    ClearFocus()
 
     TriggerServerEvent('LNS_Housing:server:resetScreenshotBucket')
     SetEntityCoords(ped, originalCoords.x, originalCoords.y, originalCoords.z, false, false, false, false)

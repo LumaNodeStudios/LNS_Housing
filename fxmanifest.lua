@@ -2,6 +2,8 @@ fx_version 'cerulean'
 game 'gta5'
 lua54 'yes'
 
+this_is_a_map 'yes'
+
 author 'LumaNode Studios'
 description 'LumaNode Studios - Advanced Housing System'
 version '0.1.8'
@@ -46,7 +48,8 @@ client_scripts {
     'client/cl_apartments.lua',
     'client/cl_locksmith.lua',
     'client/cl_screenshot.lua',
-    'client/cl_electricity.lua'
+    'client/cl_electricity.lua',
+    'client/cl_trash.lua'
 }
 
 server_scripts {
@@ -74,20 +77,22 @@ server_scripts {
 }
 
 dependencies {
+    '/gameBuild:3258',
     'ox_lib',
     'oxmysql',
     'ox_doorlock',
     'ox_target',
-    'screencapture'
+    'screencapture',
+    'bob74_ipl'
 }
 
 data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/starter_shells_k4mb1.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/mula_prop_cleandock.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/mula_prop_cleandock_small_occupied.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/mula_prop_cleandock_tall.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/mula_prop_cleandock_tall_occupied.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/mula_prop_cleanrobot.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/mula_prop_cleanrobot_small.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Props]/[CleaningRobot]/mula_prop_cleandock.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Props]/[CleaningRobot]/mula_prop_cleandock_small_occupied.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Props]/[CleaningRobot]/mula_prop_cleandock_tall.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Props]/[CleaningRobot]/mula_prop_cleandock_tall_occupied.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Props]/[CleaningRobot]/mula_prop_cleanrobot.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Props]/[CleaningRobot]/mula_prop_cleanrobot_small.ytyp'
 data_file 'AUDIO_WAVEPACK'  'sound/audiodirectory'
 data_file 'AUDIO_SOUNDDATA' 'sound/data/lns_sounds.dat'
 data_file 'WEAPONINFO_FILE' 'data/weapons.meta'

@@ -142,6 +142,7 @@ function EnterApartmentRoom(roomData)
     }
 
     LoadFurnitures(roomData.id)
+    if LoadPropertyTrash then LoadPropertyTrash(roomData.id, true) end
 
     CreateThread(function()
         local attempts = 0
@@ -181,6 +182,7 @@ function LeaveApartmentRoom(roomId)
     local targetId = roomId or CurrentApartmentId
     if targetId and (CurrentApartmentId == targetId or not roomId) then
         UnloadFurnitures(targetId)
+        if UnloadPropertyTrash then UnloadPropertyTrash(targetId) end
         CurrentApartmentId = nil
         if InsidePropertyId == targetId then
             InsidePropertyId = nil
@@ -1040,6 +1042,9 @@ AddEventHandler('onResourceStop', function(resourceName)
 end)
 
 local function CleanUpApartmentSession()
+    if UnloadPropertyTrash then
+        UnloadPropertyTrash()
+    end
     if CurrentApartmentId then
         UnloadFurnitures(CurrentApartmentId)
     elseif MyApartmentId then

@@ -17,3 +17,14 @@ lib.addCommand('takeshots', {
 
     TriggerClientEvent('LNS_Housing:client:startScreenshots', source, args.model)
 end)
+
+RegisterNetEvent('LNS_Housing:server:setScreenshotBucket', function(bucket)
+    local src = source
+    if not CheckPermission(src, 'admin') then return end
+    SetPlayerRoutingBucket(src, bucket or 999)
+end)
+
+RegisterNetEvent('LNS_Housing:server:resetScreenshotBucket', function()
+    local src = source
+    SetPlayerRoutingBucket(src, 0)
+end)

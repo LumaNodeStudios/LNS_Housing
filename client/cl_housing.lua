@@ -668,6 +668,22 @@ local function ParseVector3(data)
     )
 end
 
+local function LoadFurnitureModel(modelInput)
+    local hash = tonumber(modelInput) or GetHashKey(modelInput)
+    if not hash or hash == 0 then return nil end
+    if HasModelLoaded(hash) then return hash end
+
+    local ok = pcall(lib.requestModel, hash, 5000)
+    if ok and HasModelLoaded(hash) then return hash end
+
+    RequestModel(hash)
+    local endTimer = GetGameTimer() + 5000
+    while not HasModelLoaded(hash) and GetGameTimer() < endTimer do
+        Wait(50)
+    end
+    return HasModelLoaded(hash) and hash or nil
+end
+
 function LoadFurnitures(propertyId)
     local p = Properties[propertyId]
     if not p or not p.furniture then return end
@@ -677,11 +693,8 @@ function LoadFurnitures(propertyId)
 
     for _, f in ipairs(p.furniture) do
         CreateThread(function()
-            local hash = tonumber(f.model) or GetHashKey(f.model)
-            
-            if IsModelInCdimage(hash) and IsModelValid(hash) then
-                local success = pcall(lib.requestModel, hash, 1000)
-                if success then
+            local hash = LoadFurnitureModel(f.model)
+            if hash then
                     if not LoadedFurniture[propertyId] then return end
                     
                     local pos = ParseVector3(f.position)
@@ -879,11 +892,8 @@ function LoadFurnitures(propertyId)
                             DeleteEntity(obj)
                         end
                     end
-                else
-                    lib.print.error(("Model '%s' (hash: %s) timed out loading. Skipping..."):format(tostring(f.model), tostring(hash)))
-                end
             else
-                lib.print.error(("Model '%s' (hash: %s) is invalid or missing in game assets. Skipping..."):format(tostring(f.model), tostring(hash)))
+                debugPrint('warn', ("Model '%s' failed to load. Skipping..."):format(tostring(f.model)))
             end
         end)
     end
@@ -985,6 +995,8 @@ local function EnterWalkInProperty(propertyId)
     InsidePropertyId = propertyId
     TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', propertyId)
     LoadFurnitures(propertyId)
+    if LoadPropertyTrash then LoadPropertyTrash(propertyId, false) end
+    if LoadPropertyTrash then LoadPropertyTrash(propertyId, false) end
     if CheckPropertyTemperatureNotify then CheckPropertyTemperatureNotify(propertyId) end
 
     if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'furniture') then
@@ -1012,6 +1024,7 @@ local function LeaveWalkInProperty()
     end
     lib.removeRadialItem('housing_furniture')
     UnloadFurnitures(oldPropId)
+    if UnloadPropertyTrash then UnloadPropertyTrash(oldPropId) end
     TriggerServerEvent('LNS_Housing:server:leavePropertyBucket')
 end
 
@@ -1064,6 +1077,7 @@ function RegisterPropertyZones(p, forceShell)
             debug = Settings.Debug.Zones,
             onEnter = function()
                 LoadFurnitures(p.id)
+                if LoadPropertyTrash then LoadPropertyTrash(p.id, false) end
                 if CheckPropertyTemperatureNotify then CheckPropertyTemperatureNotify(p.id) end
                 if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', p.id, 'furniture') then
                     InsidePropertyId = p.id
@@ -1082,6 +1096,7 @@ function RegisterPropertyZones(p, forceShell)
             end,
             onExit = function()
                 UnloadFurnitures(p.id)
+                if UnloadPropertyTrash then UnloadPropertyTrash(p.id) end
                 lib.removeRadialItem('housing_furniture')
                 if InsidePropertyId == p.id then
                     InsidePropertyId = nil
@@ -1404,6 +1419,10 @@ function CleanUpHousingSession()
         for propertyId, _ in pairs(LoadedFurniture) do
             UnloadFurnitures(propertyId)
         end
+    end
+
+    if UnloadPropertyTrash then
+        UnloadPropertyTrash()
     end
 
     if LoadedCameraProps then
@@ -2043,6 +2062,7 @@ function EnterShellProperty(propertyId)
     InsidePropertyId = propertyId
     TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', propertyId)
     LoadFurnitures(propertyId)
+    if LoadPropertyTrash then LoadPropertyTrash(propertyId, false) end
 
     if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'furniture') then
         HasFurnitureManagePermission = true
@@ -2078,6 +2098,7 @@ function LeaveShellProperty(propertyId)
         InsidePropertyId = nil
         HasFurnitureManagePermission = false
     end
+    if UnloadPropertyTrash then UnloadPropertyTrash(propertyId) end
     TriggerServerEvent('LNS_Housing:server:leavePropertyBucket')
 
     if ExitTargets[propertyId] then
@@ -2391,6 +2412,7 @@ function SpawnInHouse(id)
             InsidePropertyId = id
             TriggerServerEvent('LNS_Housing:server:enterPropertyBucket', id)
             LoadFurnitures(id)
+            if LoadPropertyTrash then LoadPropertyTrash(id, false) end
 
             if lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'furniture') then
                 HasFurnitureManagePermission = true

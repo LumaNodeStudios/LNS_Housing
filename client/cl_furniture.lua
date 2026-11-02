@@ -1,3 +1,19 @@
+local function SafeRequestModel(modelInput, timeout)
+    local hash = tonumber(modelInput) or GetHashKey(modelInput)
+    if not hash or hash == 0 then return nil end
+    if HasModelLoaded(hash) then return hash end
+
+    local ok = pcall(lib.requestModel, hash, timeout or 5000)
+    if ok and HasModelLoaded(hash) then return hash end
+
+    RequestModel(hash)
+    local endTimer = GetGameTimer() + (timeout or 5000)
+    while not HasModelLoaded(hash) and GetGameTimer() < endTimer do
+        Wait(50)
+    end
+    return HasModelLoaded(hash) and hash or nil
+end
+
 local Settings = lib.load('shared.settings')
 local Furniture = lib.load('shared.furniture')
 local Freecam = Freecam
@@ -528,8 +544,7 @@ Modeler = {
                 originalRot = objectRot,
             }
         else
-            local hash = GetHashKey(model)
-            lib.requestModel(hash)
+            local hash = SafeRequestModel(model) or GetHashKey(model)
 
             local spawn = data.position or self.CurrentCameraLookAt
             curObject = CreateObjectNoOffset(hash, spawn.x, spawn.y, spawn.z, false, false, false)
@@ -764,8 +779,7 @@ Modeler = {
     SpawnCartProps = function(self)
         for cartId, item in pairs(self.Cart) do
             if not item.entity or not DoesEntityExist(item.entity) then
-                local hash = tonumber(item.model) or GetHashKey(item.model)
-                lib.requestModel(hash)
+                local hash = SafeRequestModel(item.model) or tonumber(item.model) or GetHashKey(item.model)
                 local obj = CreateObjectNoOffset(hash, item.position.x, item.position.y, item.position.z, false, false, false)
                 SetEntityRotation(obj, item.rotation.x, item.rotation.y, item.rotation.z, 2, true)
                 FreezeEntityPosition(obj, true)
@@ -902,9 +916,7 @@ Modeler = {
 
     SpawnHoverObject = function(self, data)
         local currentSession = self.HoverSession
-        local hash = GetHashKey(data.model)
-        
-        lib.requestModel(hash)
+        local hash = SafeRequestModel(data.model) or GetHashKey(data.model)
         
         if currentSession ~= self.HoverSession then
             return
@@ -979,7 +991,6 @@ Modeler = {
         end
     end
 }
-
 
 RegisterNUICallback("previewFurniture", function(data, cb)
 	Modeler:StartPlacement(data)
@@ -1239,15 +1250,45 @@ CreateThread(function()
     end
 end)
 
-RegisterCommand('checkfurniture', function()
+local function RunFurnitureCheck()
     lib.print.info('Starting furniture check...')
     local invalidCount = 0
     local validCount = 0
 
+    local pinnedInteriors = {
+        2562,   -- Trevor's Trailer
+        166657, -- Michael's Mansion
+        197889, -- Franklin Aunt
+        206849, -- Franklin
+        171777, -- Floyd
+        197121, -- Strip club
+        92674,  -- Lester factory
+        7170,   -- Simeon
+        141313, 145665,
+        207105, 206081, 206337, 208129, 207617, 207361, 206593, 208385,
+        149761, 148225
+    }
+    for _, id in ipairs(pinnedInteriors) do
+        if IsValidInterior(id) then
+            PinInteriorInMemory(id)
+        end
+    end
+
     for _, category in ipairs(Furniture) do
         for _, item in ipairs(category.items) do
             local hash = tonumber(item.model) or GetHashKey(item.model)
-            if IsModelInCdimage(hash) then
+            local isValid = false
+            if IsModelInCdimage(hash) or IsModelValid(hash) or HasModelLoaded(hash) then
+                isValid = true
+            else
+                local success = pcall(lib.requestModel, hash, 1500)
+                if success and HasModelLoaded(hash) then
+                    isValid = true
+                    SetModelAsNoLongerNeeded(hash)
+                end
+            end
+
+            if isValid then
                 validCount = validCount + 1
             else
                 lib.print.error(string.format('Model NOT in game: %s (%s) under category: %s', item.model, item.label, category.label))
@@ -1256,8 +1297,18 @@ RegisterCommand('checkfurniture', function()
         end
     end
 
+    for _, id in ipairs(pinnedInteriors) do
+        if IsValidInterior(id) then
+            UnpinInterior(id)
+        end
+    end
+
     lib.print.info(string.format('Check finished. Valid models: %d, Non-existent models: %d', validCount, invalidCount))
-end, false)
+end
+
+RegisterNetEvent('LNS_Housing:client:checkFurniture', function()
+    RunFurnitureCheck()
+end)
 
 local function TryOpenFurnitureMenu()
     if not HasFurnitureManagePermission then return end
