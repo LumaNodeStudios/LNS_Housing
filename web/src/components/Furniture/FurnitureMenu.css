@@ -329,6 +329,33 @@
   transform: scale(1.05);
 }
 
+.furniture-fallback-img {
+  width: 48px;
+  height: 48px;
+  max-width: 55%;
+  max-height: 55%;
+  object-fit: contain;
+  opacity: 0.85;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, filter 0.2s ease;
+}
+
+.item-card:hover .furniture-fallback-img {
+  opacity: 1;
+  transform: scale(1.1);
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.35));
+}
+
+.cart-item-preview .furniture-fallback-img,
+.editor-item-preview .furniture-fallback-img {
+  width: 26px;
+  height: 26px;
+  max-width: 65%;
+  max-height: 65%;
+  object-fit: contain;
+  opacity: 0.85;
+}
+
 .owned-badge {
   position: absolute;
   top: 8px;

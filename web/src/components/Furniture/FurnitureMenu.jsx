@@ -8,6 +8,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import Modeler3D from './Modeler3D';
 import './FurnitureMenu.css';
+import furnitureFallbackImg from '../../assets/furniture_fallback.png';
 
 const CONTROLS = [
   {
@@ -135,35 +136,42 @@ const NudgeBtn = ({ onClick, children, title, className = '', disabled }) => {
 
 const FurnitureImage = React.memo(function FurnitureImage({ item, ItemIcon }) {
   const [loaded, setLoaded] = useState(false);
-  const [contentReady, setContentReady] = useState(false);
   const [error, setError] = useState(false);
-  const imageUrl = item.imageUrl || `assets/furniture/${item.model}.png`;
+  const imageUrl = item?.imageUrl || (item?.model ? `assets/furniture/${item.model}.png` : null);
 
   useEffect(() => {
-    const id = requestAnimationFrame(() => setContentReady(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
+    setLoaded(false);
+    setError(false);
+  }, [imageUrl]);
 
   return (
     <div className="icon-wrapper">
-      {!error && (
+      {imageUrl && !error ? (
+        <>
+          <img
+            src={imageUrl}
+            alt={item?.label || 'Furniture'}
+            className="furniture-img"
+            decoding="async"
+            onLoad={() => setLoaded(true)}
+            onError={() => setError(true)}
+            style={{
+              opacity: loaded ? 1 : 0,
+              position: loaded ? 'static' : 'absolute',
+            }}
+          />
+          {!loaded && (
+            <div className="furniture-img-spinner" aria-hidden="true" />
+          )}
+        </>
+      ) : (
         <img
-          src={imageUrl}
-          alt={item.label}
-          className="furniture-img"
+          src={furnitureFallbackImg}
+          alt={item?.label || 'Furniture'}
+          className="furniture-img furniture-fallback-img"
           decoding="async"
-          onLoad={() => setLoaded(true)}
-          onError={() => setError(true)}
-          style={{
-            opacity: loaded ? 1 : 0,
-            position: loaded ? 'static' : 'absolute',
-          }}
         />
       )}
-      {!loaded && !error && (
-        <div className="furniture-img-spinner" aria-hidden="true" />
-      )}
-      {error && <ItemIcon size={28} className="placeholder" />}
     </div>
   );
 });
