@@ -173,12 +173,6 @@ return {
                 price = 1000
             },
             {
-                id = 'v_club_officesofa',
-                label = 'pauper Couch rood',
-                model = 'v_club_officesofa',
-                price = 500
-            },
-            {
                 id = 'bkr_prop_clubhouse_sofa_01a',
                 label = 'Black Couch',
                 model = 'bkr_prop_clubhouse_sofa_01a',
@@ -762,22 +756,10 @@ return {
                 price = 1000
             },
             {
-                id = 'v_club_barchair',
-                label = 'Chair 8',
-                model = 'v_club_barchair',
-                price = 300
-            },
-            {
                 id = 'prop_off_chair_04',
                 label = 'Desk Chair 2',
                 model = 'prop_off_chair_04',
                 price = 300
-            },
-            {
-                id = 'v_club_stagechair',
-                label = 'Fauteuil roze',
-                model = 'v_club_stagechair',
-                price = 500
             },
             {
                 id = 'v_club_officechair',
@@ -1973,25 +1955,6 @@ return {
                 storage = { slots = 50, weight = 100000 }
             },
             {
-                id = 'v_61_lng_mesh_unitc',
-                label = 'Bookcase white',
-                model = 'v_61_lng_mesh_unitc',
-                price = 500,
-                type = 'storage',
-                isStorage = true,
-                storage = { slots = 50, weight = 100000 }
-            },
-            {
-                id = 'ba_wardrobe',
-                label = 'kledingkast',
-                model = 'ba_wardrobe',
-                price = 500,
-                type = 'storage',
-                isStorage = true,
-                storage = { slots = 50, weight = 100000 },
-                isWardrobe = true
-            },
-            {
                 id = 'apa_mp_h_str_sideboardl_06',
                 label = 'Cupboard  modern',
                 model = 'apa_mp_h_str_sideboardl_06',
@@ -2552,12 +2515,6 @@ return {
                 price = 300
             },
             {
-                id = 'v_club_vu_table',
-                label = 'Coverd Table',
-                model = 'v_club_vu_table',
-                price = 300
-            },
-            {
                 id = 'apa_mp_h_tab_sidelrg_07',
                 label = 'koffieTable glas',
                 model = 'apa_mp_h_tab_sidelrg_07',
@@ -3115,14 +3072,6 @@ return {
                 tempEffect = 0.1
             },
             {
-                id = 'V_44_D_emis',
-                label = 'Test Light',
-                model = 'V_44_D_emis',
-                price = 100,
-                powerConsumption = 0.2,
-                tempEffect = 0.1
-            },
-            {
                 id = 'prop_wall_light_07a',
                 label = 'lantaarn',
                 model = 'prop_wall_light_07a',
@@ -3167,14 +3116,6 @@ return {
                 label = 'Big lamp',
                 model = 'v_med_p_floorlamp',
                 price = 300,
-                powerConsumption = 0.2,
-                tempEffect = 0.1
-            },
-            {
-                id = 'v_club_vu_lamp',
-                label = 'Smal lamp',
-                model = 'v_club_vu_lamp',
-                price = 100,
                 powerConsumption = 0.2,
                 tempEffect = 0.1
             },
@@ -7143,12 +7084,6 @@ return {
                 price = 500
             },
             {
-                id = 'apa_mp_stilts_bed_art',
-                label = '3d art',
-                model = 'apa_mp_stilts_bed_art',
-                price = 300
-            },
-            {
                 id = 'ex_office_swag_paintings03',
                 label = 'Paintingen Ground',
                 model = 'ex_office_swag_paintings03',
@@ -7189,12 +7124,6 @@ return {
                 label = 'abstract Painting 5',
                 model = 'ex_p_h_acc_artwallm_03',
                 price = 750
-            },
-            {
-                id = 'apa_mp_stilts_a_study_pics',
-                label = 'Paintingen',
-                model = 'apa_mp_stilts_a_study_pics',
-                price = 500
             },
             {
                 id = 'apa_mp_h_acc_artwallm_02',
@@ -7526,12 +7455,6 @@ return {
                 id = 'v_res_m_statue',
                 label = 'Sculpture',
                 model = 'v_res_m_statue',
-                price = 300
-            },
-            {
-                id = 'v_20_ornaeagle',
-                label = 'Figurine adelaar',
-                model = 'v_20_ornaeagle',
                 price = 300
             },
             {
@@ -11421,12 +11344,6 @@ return {
                 price = 100
             },
             {
-                id = 'v_24_wdr_mesh_rugs',
-                label = 'Rag',
-                model = 'v_24_wdr_mesh_rugs',
-                price = 500
-            },
-            {
                 id = 'apa_mp_h_acc_rugwooll_04',
                 label = 'Rug 2',
                 model = 'apa_mp_h_acc_rugwooll_04',
@@ -11454,12 +11371,6 @@ return {
                 id = 'apa_mp_h_acc_rugwoolm_04',
                 label = 'Rug 6',
                 model = 'apa_mp_h_acc_rugwoolm_04',
-                price = 500
-            },
-            {
-                id = 'v_club_rack',
-                label = 'kledingrek',
-                model = 'v_club_rack',
                 price = 500
             },
             {
@@ -12473,12 +12384,6 @@ return {
                 label = 'Fertilizer',
                 model = 'bkr_prop_weed_bucket_01b',
                 price = 100
-            },
-            {
-                id = 'v_club_vusnaketank',
-                label = 'terrarium',
-                model = 'v_club_vusnaketank',
-                price = 500
             },
             {
                 id = 'prop_pooltable_02',
