@@ -185,7 +185,6 @@ return {
             'prop_rub_litter_01',
             'prop_rub_litter_02',
             'prop_rub_litter_03',
-            'prop_rub_box_02',
             'prop_rub_binbag_01',
             'prop_rub_binbag_03b',
             'prop_cs_rub_binbag_01',
