@@ -1,6 +1,18 @@
 const path = require('path');
 const fs = require('fs');
 const { PNG } = require('pngjs');
+const webp = require('webp-wasm');
+
+webp.load().catch((err) => {
+    console.log('^3[LNS_Housing]^0 WebP WASM preload warning: ' + err.message);
+});
+
+function getContentType(filename) {
+    if (filename.endsWith('.webp')) return 'image/webp';
+    if (filename.endsWith('.png')) return 'image/png';
+    if (filename.endsWith('.jpg') || filename.endsWith('.jpeg')) return 'image/jpeg';
+    return 'image/webp';
+}
 const FormData = require('form-data');
 const axios = require('axios');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
@@ -95,7 +107,7 @@ async function uploadToFivemanage(buffer, filename, token, url = 'https://api.fi
     const form = new FormData();
     form.append('file', buffer, {
         filename: filename,
-        contentType: 'image/png',
+        contentType: getContentType(filename),
     });
     form.append('filename', filename);
     if (folder) form.append('path', folder);
@@ -130,7 +142,7 @@ async function uploadToR2(buffer, filename, config) {
         Bucket: config.Bucket,
         Key: key,
         Body: buffer,
-        ContentType: 'image/png',
+        ContentType: getContentType(filename),
     }));
 
     const baseUrl = config.PublicUrl.endsWith('/') ? config.PublicUrl.slice(0, -1) : config.PublicUrl;
@@ -141,7 +153,7 @@ async function uploadToQbox(buffer, filename, apiKey) {
     const form = new FormData();
     form.append('file', buffer, {
         filename: filename,
-        contentType: 'image/png',
+        contentType: getContentType(filename),
     });
 
     const response = await axios.post('https://api.qbox.re/v1/file', form, {
@@ -379,7 +391,13 @@ onNet('LNS_Housing:server:processScreenshot', async (payload) => {
 
             const resizedImg = resizePNGObject(img, 256, 256);
 
-            outputData = PNG.sync.write(resizedImg, { colorType: 6 });
+            const webpBuffer = await webp.encode({
+                data: new Uint8ClampedArray(resizedImg.data),
+                width: resizedImg.width,
+                height: resizedImg.height
+            }, { quality: 85 });
+
+            outputData = Buffer.from(webpBuffer);
         } catch (e) {
             console.log('^3[LNS_Housing]^0 Image processing failed: ' + e.message);
         }
@@ -395,7 +413,7 @@ onNet('LNS_Housing:server:processScreenshot', async (payload) => {
         const storageType = (storage.Type || 'local').toLowerCase();
 
         if (storageType === 'local') {
-            const outputPath = path.resolve(path.join(OUTPUT_DIR, modelName + '.png'));
+            const outputPath = path.resolve(path.join(OUTPUT_DIR, modelName + '.webp'));
             if (!outputPath.startsWith(OUTPUT_DIR + path.sep)) {
                 console.log('^1[LNS_Housing]^0 Refused capture: path traversal blocked for ' + modelName);
                 return;
@@ -409,7 +427,7 @@ onNet('LNS_Housing:server:processScreenshot', async (payload) => {
                 return;
             }
             try {
-                const url = await uploadToFivemanage(outputData, `${modelName}.png`, config.Token, config.Url, config.Folder || null);
+                const url = await uploadToFivemanage(outputData, `${modelName}.webp`, config.Token, config.Url, config.Folder || null);
                 await saveFurnitureMapping(modelName, url);
             } catch (err) {
                 console.log('^1[LNS_Housing]^0 Fivemanage upload failed: ' + err.message);
@@ -421,7 +439,7 @@ onNet('LNS_Housing:server:processScreenshot', async (payload) => {
                 return;
             }
             try {
-                const url = await uploadToR2(outputData, `${modelName}.png`, config);
+                const url = await uploadToR2(outputData, `${modelName}.webp`, config);
                 await saveFurnitureMapping(modelName, url);
             } catch (err) {
                 console.log('^1[LNS_Housing]^0 Cloudflare R2 upload failed: ' + err.message);
@@ -433,7 +451,7 @@ onNet('LNS_Housing:server:processScreenshot', async (payload) => {
                 return;
             }
             try {
-                const url = await uploadToQbox(outputData, `${modelName}.png`, config.ApiKey);
+                const url = await uploadToQbox(outputData, `${modelName}.webp`, config.ApiKey);
                 await saveFurnitureMapping(modelName, url);
             } catch (err) {
                 console.log('^1[LNS_Housing]^0 Qbox CDN upload failed: ' + err.message);

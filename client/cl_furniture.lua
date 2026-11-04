@@ -94,7 +94,7 @@ Modeler = {
                         if mappings[item.model] then
                             item.imageUrl = mappings[item.model]
                         elseif baseUrl then
-                            item.imageUrl = baseUrl .. item.model .. '.png'
+                            item.imageUrl = baseUrl .. item.model .. '.webp'
                         else
                             item.imageUrl = nil
                         end

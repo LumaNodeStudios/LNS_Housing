@@ -163,18 +163,28 @@ function App() {
     primaryText: '#000000'
   });
 
-  const hexToRgb = (hex) => {
-    if (!hex) return '110, 211, 243';
-    let cleaned = String(hex).replace('#', '').trim();
-    if (cleaned.length === 3) {
-      cleaned = cleaned.split('').map((c) => c + c).join('');
+  const hexToRgb = (color) => {
+    if (!color) return '110, 211, 243';
+    const str = String(color).trim();
+    const rgbMatch = str.match(/rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+    if (rgbMatch) {
+      return `${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}`;
     }
-    const num = parseInt(cleaned, 16);
-    if (isNaN(num)) return '110, 211, 243';
-    const r = (num >> 16) & 255;
-    const g = (num >> 8) & 255;
-    const b = num & 255;
-    return `${r}, ${g}, ${b}`;
+
+    let hex = str.replace(/^#/, '').trim();
+    if (hex.length === 3 || hex.length === 4) {
+      const r = parseInt(hex[0] + hex[0], 16);
+      const g = parseInt(hex[1] + hex[1], 16);
+      const b = parseInt(hex[2] + hex[2], 16);
+      if (!isNaN(r) && !isNaN(g) && !isNaN(b)) return `${r}, ${g}, ${b}`;
+    } else if (hex.length >= 6) {
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      if (!isNaN(r) && !isNaN(g) && !isNaN(b)) return `${r}, ${g}, ${b}`;
+    }
+
+    return '110, 211, 243';
   };
 
   useEffect(() => {
@@ -186,7 +196,9 @@ function App() {
       root.style.setProperty('--primary-rgb', rgb);
       root.style.setProperty('--primary-glow', `rgba(${rgb}, 0.15)`);
       root.style.setProperty('--border-hover', theme.primary);
-      root.style.setProperty('--select-arrow', `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(theme.primary)}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`);
+            const rawHex = String(theme.primary).replace(/^#/, '').trim();
+      const arrowHex = '#' + (rawHex.length >= 6 ? rawHex.substring(0, 6) : rawHex);
+      root.style.setProperty('--select-arrow', `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(arrowHex)}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`);
     }
     if (theme.primaryDark) {
       root.style.setProperty('--primary-dark', theme.primaryDark);

@@ -137,18 +137,21 @@ const NudgeBtn = ({ onClick, children, title, className = '', disabled }) => {
 const imageStatusCache = new Map();
 
 const FurnitureImage = React.memo(function FurnitureImage({ item, ItemIcon }) {
-  const imageUrl = item?.imageUrl || (item?.model ? `assets/furniture/${item.model}.png` : null);
-  const cachedStatus = imageUrl ? imageStatusCache.get(imageUrl) : 'error';
+  const initialUrl = item?.imageUrl || (item?.model ? `assets/furniture/${item.model}.webp` : null);
+  const [currentUrl, setCurrentUrl] = useState(initialUrl);
+  const cachedStatus = currentUrl ? imageStatusCache.get(currentUrl) : 'error';
 
   const [loaded, setLoaded] = useState(cachedStatus === 'loaded');
-  const [error, setError] = useState(cachedStatus === 'error' || !imageUrl);
+  const [error, setError] = useState(cachedStatus === 'error' || !currentUrl);
 
   useEffect(() => {
-    if (!imageUrl) {
+    const url = item?.imageUrl || (item?.model ? `assets/furniture/${item.model}.webp` : null);
+    setCurrentUrl(url);
+    if (!url) {
       setError(true);
       return;
     }
-    const current = imageStatusCache.get(imageUrl);
+    const current = imageStatusCache.get(url);
     if (current === 'loaded') {
       setLoaded(true);
       setError(false);
@@ -159,24 +162,31 @@ const FurnitureImage = React.memo(function FurnitureImage({ item, ItemIcon }) {
       setLoaded(false);
       setError(false);
     }
-  }, [imageUrl]);
+  }, [item?.imageUrl, item?.model]);
 
   const handleLoad = React.useCallback(() => {
-    if (imageUrl) imageStatusCache.set(imageUrl, 'loaded');
+    if (currentUrl) imageStatusCache.set(currentUrl, 'loaded');
     setLoaded(true);
-  }, [imageUrl]);
+  }, [currentUrl]);
 
   const handleError = React.useCallback(() => {
-    if (imageUrl) imageStatusCache.set(imageUrl, 'error');
+    if (currentUrl && currentUrl.endsWith('.webp')) {
+      const pngFallback = currentUrl.replace(/\.webp$/, '.png');
+      if (!imageStatusCache.has(pngFallback)) {
+        setCurrentUrl(pngFallback);
+        return;
+      }
+    }
+    if (currentUrl) imageStatusCache.set(currentUrl, 'error');
     setError(true);
-  }, [imageUrl]);
+  }, [currentUrl]);
 
   return (
     <div className="icon-wrapper">
-      {imageUrl && !error ? (
+      {currentUrl && !error ? (
         <>
           <img
-            src={imageUrl}
+            src={currentUrl}
             alt={item?.label || 'Furniture'}
             className="furniture-img"
             loading="lazy"
