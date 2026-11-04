@@ -64,7 +64,7 @@ Modeler = {
         self:UpdateOwnedItems()
         self:StartSelectionThread()
 
-        SendNUIMessage({ action = "setVisible", data = true })
+        SendNUIMessage({ action = "setVisible", data = true, theme = lib.load('shared.theme') or Theme })
 
         local cartList = {}
         for _, item in pairs(self.Cart) do

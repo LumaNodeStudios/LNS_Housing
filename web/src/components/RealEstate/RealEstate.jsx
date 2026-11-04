@@ -1125,7 +1125,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                 {canManageListings && (
                                                     <>
                                                         <button className="manage-action-btn edit-btn" onClick={() => handleStartEdit(p)} title="Edit Listing"><Settings size={12} /></button>
-                                                        <button className="manage-action-btn" onClick={() => setHistoryProperty(p)} title="View History" style={{ background: 'rgba(110, 211, 243, 0.08)', color: 'var(--primary)' }}><History size={12} /></button>
+                                                        <button className="manage-action-btn" onClick={() => setHistoryProperty(p)} title="View History" style={{ background: 'rgba(var(--primary-rgb), 0.08)', color: 'var(--primary)' }}><History size={12} /></button>
                                                         {p.owner && (
                                                             <button className="manage-action-btn evict-btn" onClick={() => handleEvictTenant(p.id)} title="Evict Tenant"><X size={12} /></button>
                                                         )}
@@ -2077,9 +2077,9 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '6px',
-                                background: walkMode ? 'rgba(56, 189, 248, 0.3)' : 'rgba(56, 189, 248, 0.12)',
-                                border: '1px solid rgba(56, 189, 248, 0.35)',
-                                color: '#38bdf8',
+                                background: walkMode ? 'rgba(var(--primary-rgb), 0.3)' : 'rgba(var(--primary-rgb), 0.12)',
+                                border: '1px solid rgba(var(--primary-rgb), 0.35)',
+                                color: 'var(--primary)',
                                 padding: '6px 12px',
                                 borderRadius: '6px',
                                 fontSize: '11px',

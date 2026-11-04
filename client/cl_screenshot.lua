@@ -169,7 +169,8 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
         action = 'startScreenshots',
         data = {
             total = #itemsToCapture
-        }
+        },
+        theme = lib.load('shared.theme') or Theme
     })
 
     CreateThread(function()

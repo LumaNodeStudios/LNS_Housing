@@ -1,6 +1,30 @@
 lib.require('@qbx_core.modules.lib')
 local Settings = lib.load('shared.settings')
 local Furniture = lib.load('shared.furniture')
+local rawTheme = lib.load('shared.theme')
+Theme = (rawTheme and (rawTheme.Theme or rawTheme)) or Theme
+
+RegisterNUICallback('getTheme', function(_, cb)
+    local raw = lib.load('shared.theme')
+    local theme = (raw and (raw.Theme or raw)) or Theme
+    cb(theme or {
+        primary = '#6ed3f3',
+        primaryDark = '#4fbfdf',
+        primaryText = '#000000'
+    })
+end)
+
+CreateThread(function()
+    Wait(1000)
+    local raw = lib.load('shared.theme')
+    local currentTheme = (raw and (raw.Theme or raw)) or Theme
+    if currentTheme then
+        SendNUIMessage({
+            action = 'setTheme',
+            theme = currentTheme
+        })
+    end
+end)
 local CurrentProperty = nil
 local CurrentInterior = 0
 local PropertyBlips = {}

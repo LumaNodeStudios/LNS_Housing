@@ -38,7 +38,8 @@ RegisterNetEvent('LNS_Housing:client:openPanel', function(propertyData)
 
     SendNUIMessage({
         action = 'openPanel',
-        data = propertyData
+        data = propertyData,
+        theme = lib.load('shared.theme') or Theme
     })
     SetNuiFocus(true, true)
 end)

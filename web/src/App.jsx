@@ -157,6 +157,65 @@ function App() {
   const [shells, setShells] = useState(isLocalDev ? MOCK_SHELLS : []);
   const [electricityEnabled, setElectricityEnabled] = useState(true);
 
+  const [theme, setTheme] = useState({
+    primary: '#6ed3f3',
+    primaryDark: '#4fbfdf',
+    primaryText: '#000000'
+  });
+
+  const hexToRgb = (hex) => {
+    if (!hex) return '110, 211, 243';
+    let cleaned = String(hex).replace('#', '').trim();
+    if (cleaned.length === 3) {
+      cleaned = cleaned.split('').map((c) => c + c).join('');
+    }
+    const num = parseInt(cleaned, 16);
+    if (isNaN(num)) return '110, 211, 243';
+    const r = (num >> 16) & 255;
+    const g = (num >> 8) & 255;
+    const b = num & 255;
+    return `${r}, ${g}, ${b}`;
+  };
+
+  useEffect(() => {
+    if (!theme) return;
+    const root = document.documentElement;
+    if (theme.primary) {
+      root.style.setProperty('--primary', theme.primary);
+      const rgb = hexToRgb(theme.primary);
+      root.style.setProperty('--primary-rgb', rgb);
+      root.style.setProperty('--primary-glow', `rgba(${rgb}, 0.15)`);
+      root.style.setProperty('--border-hover', theme.primary);
+      root.style.setProperty('--select-arrow', `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(theme.primary)}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`);
+    }
+    if (theme.primaryDark) {
+      root.style.setProperty('--primary-dark', theme.primaryDark);
+    }
+    if (theme.primaryText) {
+      root.style.setProperty('--primary-text', theme.primaryText);
+    }
+  }, [theme]);
+
+  useEffect(() => {
+    if (window.GetParentResourceName) {
+      fetch(`https://${window.GetParentResourceName()}/getTheme`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: JSON.stringify({})
+      })
+        .then((res) => res.json())
+        .then((themeData) => {
+          const t = themeData?.Theme || themeData;
+          if (t && t.primary) {
+            setTheme((prev) => ({ ...prev, ...t }));
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
+
   const closeAll = () => {
     setShowPanel(false);
     setShowFurniture(false);
@@ -174,7 +233,24 @@ function App() {
     const handleMessage = (event) => {
       const { action, data } = event.data;
 
+      let incomingTheme = event.data?.theme || data?.theme;
+      if (incomingTheme) {
+        if (incomingTheme.Theme) incomingTheme = incomingTheme.Theme;
+        setTheme((prev) => ({ ...prev, ...incomingTheme }));
+      }
+
       switch (action) {
+        case 'setTheme': {
+          let t = data?.theme || data || event.data?.theme;
+          if (t?.Theme) t = t.Theme;
+          if (t) {
+            setTheme((prev) => ({
+              ...prev,
+              ...t
+            }));
+          }
+          break;
+        }
         case 'openContractPaper':
           closeAll();
           setIsVisible(true);
@@ -606,7 +682,18 @@ function App() {
   }, [showBreachMinigame]);
 
   return (
-    <div className="app-container" style={{ visibility: isVisible ? 'visible' : 'hidden' }}>
+    <div
+      className="app-container"
+      style={{
+        visibility: isVisible ? 'visible' : 'hidden',
+        '--primary': theme.primary,
+        '--primary-dark': theme.primaryDark,
+        '--primary-text': theme.primaryText,
+        '--primary-rgb': hexToRgb(theme.primary),
+        '--primary-glow': `rgba(${hexToRgb(theme.primary)}, 0.15)`,
+        '--border-hover': theme.primary
+      }}
+    >
       <ScreenshotProgress progress={screenshotProgress} />
       <div className="ui-wrapper">
         <AnimatePresence mode="wait">

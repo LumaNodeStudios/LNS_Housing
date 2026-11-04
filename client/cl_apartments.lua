@@ -69,12 +69,14 @@ local function OpenApartmentCreatorUI(isEdit)
         rooms = lib.callback.await('LNS_Housing:server:getApartmentRooms', false)
         SendNUIMessage({
             action = 'openApartmentEditor',
-            data = rooms or {}
+            data = rooms or {},
+            theme = lib.load('shared.theme') or Theme
         })
     else
         SendNUIMessage({
             action = 'openApartmentCreator',
-            data = {}
+            data = {},
+            theme = lib.load('shared.theme') or Theme
         })
     end
     SetNuiFocus(true, true)

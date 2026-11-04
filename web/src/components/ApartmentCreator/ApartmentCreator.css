@@ -575,9 +575,9 @@
 }
 
 .apt-walk-mode-btn.active {
-    background: rgba(59, 130, 246, 0.2);
-    border-color: rgba(59, 130, 246, 0.4);
-    color: #93c5fd;
+    background: rgba(var(--primary-rgb), 0.2);
+    border-color: rgba(var(--primary-rgb), 0.4);
+    color: var(--primary);
 }
 
 .apt-creator-modal.walk-mode-active {

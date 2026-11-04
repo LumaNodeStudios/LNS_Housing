@@ -27,6 +27,7 @@ shared_scripts {
     '@ox_lib/init.lua',
     'shared/furniture.lua',
     'shared/settings.lua',
+    'shared/theme.lua',
     'bridge/shared.lua'
 }
 

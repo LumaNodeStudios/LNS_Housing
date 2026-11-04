@@ -703,7 +703,7 @@ function StartPoliceRaid(propertyId, propertyType, doorId)
     SetEntityCollision(currentRamProp, false, false)
 
     SetNuiFocus(true, true)
-    SendNUIMessage({ action = 'startBreachMinigame' })
+    SendNUIMessage({ action = 'startBreachMinigame', theme = lib.load('shared.theme') or Theme })
 
     CreateThread(function()
         while isBreaching do
