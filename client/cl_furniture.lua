@@ -1,3 +1,7 @@
+local Settings = lib.load('shared.settings')
+local Furniture = lib.load('shared.furniture')
+local Freecam = Freecam
+
 local function SafeRequestModel(modelInput, timeout)
     local hash = tonumber(modelInput) or GetHashKey(modelInput)
     if not hash or hash == 0 then return nil end
@@ -14,15 +18,21 @@ local function SafeRequestModel(modelInput, timeout)
     return HasModelLoaded(hash) and hash or nil
 end
 
-local Settings = lib.load('shared.settings')
-local Furniture = lib.load('shared.furniture')
-local Freecam = Freecam
-
 local function FindCatalogItem(model)
+    local targetHash = tonumber(model) or GetHashKey(model)
     for _, category in ipairs(Furniture) do
         for _, item in ipairs(category.items) do
-            if item.model == model then
+            local itemHash = tonumber(item.model) or GetHashKey(item.model)
+            if itemHash == targetHash then
                 return item, category.id
+            end
+            if item.variants then
+                for _, variant in ipairs(item.variants) do
+                    local varHash = tonumber(variant.model or item.model) or GetHashKey(variant.model or item.model)
+                    if varHash == targetHash then
+                        return item, category.id, variant
+                    end
+                end
             end
         end
     end
@@ -98,6 +108,19 @@ Modeler = {
                         else
                             item.imageUrl = nil
                         end
+
+                        if item.variants then
+                            for _, variant in ipairs(item.variants) do
+                                local vModel = variant.model or item.model
+                                if mappings[vModel] then
+                                    variant.imageUrl = mappings[vModel]
+                                elseif baseUrl then
+                                    variant.imageUrl = baseUrl .. vModel .. '.webp'
+                                else
+                                    variant.imageUrl = nil
+                                end
+                            end
+                        end
                     end
                 end
 
@@ -162,7 +185,7 @@ Modeler = {
         return nil
     end,
 
-        GetCartItemFromEntity = function(self, entity)
+    GetCartItemFromEntity = function(self, entity)
         for _, item in pairs(self.Cart) do
             if item.entity == entity then return item end
         end
@@ -347,6 +370,8 @@ Modeler = {
             label = d.label,
             price = d.price,
             category = d.category,
+            textureVariation = d.textureVariation,
+            variantId = d.variantId,
             position = GetEntityCoords(self.CurrentObject),
             rotation = GetEntityRotation(self.CurrentObject, 2),
         }
@@ -382,6 +407,8 @@ Modeler = {
             label = clip.label,
             price = clip.price,
             category = clip.category,
+            textureVariation = clip.textureVariation,
+            variantId = clip.variantId,
             position = clip.position,
             rotation = clip.rotation,
             fromPaste = true,
@@ -395,12 +422,13 @@ Modeler = {
                 label = clip.label,
                 price = clip.price,
                 category = clip.category,
+                textureVariation = clip.textureVariation,
             }
         })
         return true
     end,
 
-        DeleteCurrent = function(self)
+    DeleteCurrent = function(self)
         if not self.IsMenuActive or not self.CurrentObject or not self.PlacingData then return false end
 
         local d = self.PlacingData
@@ -516,7 +544,7 @@ Modeler = {
         return camPos
     end,
 
-        StartPlacement = function(self, data)
+    StartPlacement = function(self, data)
         self:HoverOut()
         local model = data.model or data.object
         local catalog, catalogCategory = FindCatalogItem(model)
@@ -531,6 +559,13 @@ Modeler = {
             curObject = data.entity
             objectPos = GetEntityCoords(curObject)
             objectRot = GetEntityRotation(curObject, 2)
+            local texVar = data.textureVariation
+            if texVar == nil and GetObjectTextureVariation then
+                local ok, currentTex = pcall(GetObjectTextureVariation, curObject)
+                if ok and currentTex and currentTex >= 0 then
+                    texVar = currentTex
+                end
+            end
 
             self.PlacingData = {
                 kind = data.kind or 'owned',
@@ -540,14 +575,21 @@ Modeler = {
                 label = data.label or (catalog and catalog.label),
                 price = data.price or (catalog and catalog.price),
                 category = data.category or catalogCategory,
+                textureVariation = texVar ~= nil and tonumber(texVar) or nil,
+                variantId = data.variantId,
                 originalPos = objectPos,
                 originalRot = objectRot,
+                originalModel = model,
+                originalTexVar = texVar ~= nil and tonumber(texVar) or nil,
             }
         else
             local hash = SafeRequestModel(model) or GetHashKey(model)
 
             local spawn = data.position or self.CurrentCameraLookAt
             curObject = CreateObjectNoOffset(hash, spawn.x, spawn.y, spawn.z, false, false, false)
+            if data.textureVariation ~= nil then
+                SetObjectTextureVariation(curObject, tonumber(data.textureVariation))
+            end
             if data.rotation then
                 SetEntityRotation(curObject, data.rotation.x, data.rotation.y, data.rotation.z, 2, true)
             end
@@ -560,6 +602,8 @@ Modeler = {
                 label = data.label or (catalog and catalog.label),
                 price = data.price or (catalog and catalog.price),
                 category = data.category or catalogCategory,
+                textureVariation = data.textureVariation ~= nil and tonumber(data.textureVariation) or nil,
+                variantId = data.variantId,
                 fromPaste = data.fromPaste,
             }
         end
@@ -645,7 +689,83 @@ Modeler = {
         SetEntityRotation(self.CurrentObject, data.x + 0.0, data.y + 0.0, data.z + 0.0, 2, true)
     end,
 
-        StopPlacement = function(self, options)
+    ChangeVariant = function(self, data)
+        if not self.CurrentObject or not DoesEntityExist(self.CurrentObject) then return end
+        data = data or {}
+
+        local newModel = data.model
+        local newTexVar = (data.textureVariation ~= nil and data.textureVariation ~= '') and tonumber(data.textureVariation) or nil
+        local currentModel = self.PlacingData and self.PlacingData.model
+
+        if newModel and currentModel and (tonumber(newModel) or GetHashKey(newModel)) ~= (tonumber(currentModel) or GetHashKey(currentModel)) then
+            local hash = SafeRequestModel(newModel) or GetHashKey(newModel)
+            if hash then
+                local pos = GetEntityCoords(self.CurrentObject)
+                local rot = GetEntityRotation(self.CurrentObject, 2)
+                local oldObj = self.CurrentObject
+
+                local newObj = CreateObjectNoOffset(hash, pos.x, pos.y, pos.z, false, false, false)
+                if DoesEntityExist(newObj) then
+                    SetEntityRotation(newObj, rot.x, rot.y, rot.z, 2, true)
+                    FreezeEntityPosition(newObj, true)
+                    SetEntityCollision(newObj, false, false)
+                    SetEntityAlpha(newObj, self.CurrentObjectAlpha, false)
+                    SetEntityDrawOutline(newObj, true)
+                    SetEntityDrawOutlineColor(255, 255, 255, 255)
+
+                    if newTexVar ~= nil then
+                        SetObjectTextureVariation(newObj, newTexVar)
+                    end
+
+                    if self.PlacingData and self.PlacingData.kind == 'owned' and self.PlacingData.id then
+                        if LoadedFurniture[self.property_id] then
+                            LoadedFurniture[self.property_id][self.PlacingData.id] = newObj
+                        end
+                    elseif self.PlacingData and self.PlacingData.kind == 'cart' and self.PlacingData.cartId then
+                        if self.Cart[self.PlacingData.cartId] then
+                            self.Cart[self.PlacingData.cartId].entity = newObj
+                            self.Cart[self.PlacingData.cartId].model = newModel
+                        end
+                    end
+
+                    DeleteEntity(oldObj)
+                    self.CurrentObject = newObj
+                    if self.PlacingData then
+                        self.PlacingData.model = newModel
+                    end
+                end
+            end
+        elseif newTexVar ~= nil then
+            SetObjectTextureVariation(self.CurrentObject, newTexVar)
+        else
+            SetObjectTextureVariation(self.CurrentObject, 0)
+        end
+
+        if self.PlacingData then
+            self.PlacingData.textureVariation = newTexVar
+            if data.label then
+                self.PlacingData.label = data.label
+            end
+            if data.price ~= nil then
+                self.PlacingData.price = data.price
+            end
+            if data.variantId then
+                self.PlacingData.variantId = data.variantId
+            end
+        end
+
+        local pos = GetEntityCoords(self.CurrentObject)
+        local rot = GetEntityRotation(self.CurrentObject, 2)
+        SendNUIMessage({
+            action = "syncObjectState",
+            data = {
+                position = { x = pos.x, y = pos.y, z = pos.z },
+                rotation = { x = rot.x, y = rot.y, z = rot.z }
+            }
+        })
+    end,
+
+    StopPlacement = function(self, options)
         if self.CurrentObject == nil then return end
         options = options or {}
 
@@ -660,14 +780,55 @@ Modeler = {
                 if cartItem then
                     cartItem.position = GetEntityCoords(ent)
                     cartItem.rotation = GetEntityRotation(ent, 2)
+                    if data.textureVariation ~= nil then
+                        cartItem.textureVariation = data.textureVariation
+                    end
+                    if data.model then
+                        cartItem.model = data.model
+                    end
+                    if data.label then
+                        cartItem.label = data.label
+                    end
+                    if data.price ~= nil then
+                        cartItem.price = data.price
+                    end
                 end
             end
         else
             if data.kind == 'new' then
                 DeleteEntity(ent)
+            elseif data.kind == 'owned' then
+                if data.originalModel and data.model and (tonumber(data.originalModel) or GetHashKey(data.originalModel)) ~= (tonumber(data.model) or GetHashKey(data.model)) then
+                    local origHash = SafeRequestModel(data.originalModel) or GetHashKey(data.originalModel)
+                    if origHash then
+                        local origObj = CreateObjectNoOffset(origHash, data.originalPos.x, data.originalPos.y, data.originalPos.z, false, false, false)
+                        if DoesEntityExist(origObj) then
+                            SetEntityRotation(origObj, data.originalRot.x, data.originalRot.y, data.originalRot.z, 2, true)
+                            if data.originalTexVar ~= nil then
+                                SetObjectTextureVariation(origObj, tonumber(data.originalTexVar))
+                            end
+                            if LoadedFurniture[self.property_id] then
+                                LoadedFurniture[self.property_id][data.id] = origObj
+                            end
+                            DeleteEntity(ent)
+                            ent = origObj
+                        end
+                    end
+                else
+                    if data.originalPos then
+                        SetEntityCoords(ent, data.originalPos.x, data.originalPos.y, data.originalPos.z)
+                        SetEntityRotation(ent, data.originalRot.x, data.originalRot.y, data.originalRot.z, 2, true)
+                    end
+                    if data.originalTexVar ~= nil then
+                        SetObjectTextureVariation(ent, tonumber(data.originalTexVar))
+                    end
+                end
             elseif data.originalPos then
                 SetEntityCoords(ent, data.originalPos.x, data.originalPos.y, data.originalPos.z)
                 SetEntityRotation(ent, data.originalRot.x, data.originalRot.y, data.originalRot.z, 2, true)
+                if data.originalTexVar ~= nil then
+                    SetObjectTextureVariation(ent, tonumber(data.originalTexVar))
+                end
             end
         end
 
@@ -736,9 +897,20 @@ Modeler = {
         if not property or not property.furniture then return end
         
         for i, item in ipairs(property.furniture) do
-            if item.id == furnitureId then
+            if item.id == furnitureId or tostring(item.id) == tostring(furnitureId) then
                 item.position = pos
                 item.rotation = rot
+                if self.PlacingData then
+                    if self.PlacingData.model then
+                        item.model = self.PlacingData.model
+                    end
+                    if self.PlacingData.textureVariation ~= nil then
+                        item.textureVariation = self.PlacingData.textureVariation
+                    end
+                    if self.PlacingData.label then
+                        item.label = self.PlacingData.label
+                    end
+                end
                 break
             end
         end
@@ -766,7 +938,8 @@ Modeler = {
                 entity = entity,
                 position = item.position,
                 rotation = item.rotation,
-                category = item.category
+                category = item.category,
+                textureVariation = item.textureVariation,
             })
         end
 
@@ -786,6 +959,9 @@ Modeler = {
                 SetEntityCollision(obj, true, true)
                 SetEntityAlpha(obj, 255, false)
                 SetEntityDrawOutline(obj, false)
+                if item.textureVariation ~= nil then
+                    SetObjectTextureVariation(obj, tonumber(item.textureVariation))
+                end
                 item.entity = obj
             end
         end
@@ -800,15 +976,21 @@ Modeler = {
         end
     end,
 
-        AddToCart = function(self, data)
+    AddToCart = function(self, data)
         if not self.CurrentObject then return end
 
         local cartId = tostring(math.random(100000, 999999)) .. '_' .. tostring(GetGameTimer())
+        local finalModel = (self.PlacingData and self.PlacingData.model) or data.model
+        local finalLabel = (self.PlacingData and self.PlacingData.label) or data.label
+        local finalPrice = (self.PlacingData and self.PlacingData.price) or data.price or 0
+        local finalTexVar = (self.PlacingData and self.PlacingData.textureVariation ~= nil) and self.PlacingData.textureVariation or (data.textureVariation ~= nil and tonumber(data.textureVariation) or nil)
+
         local item = {
             cartId = cartId,
-            label = data.label,
-            model = data.model,
-            price = data.price or 0,
+            label = finalLabel,
+            model = finalModel,
+            price = finalPrice,
+            textureVariation = finalTexVar,
             entity = self.CurrentObject,
             position = GetEntityCoords(self.CurrentObject),
             rotation = GetEntityRotation(self.CurrentObject, 2),
@@ -871,7 +1053,8 @@ Modeler = {
                 label = v.label,
                 position = v.position,
                 rotation = v.rotation,
-                category = v.category
+                category = v.category,
+                textureVariation = v.textureVariation,
             }
         end
 
@@ -898,6 +1081,18 @@ Modeler = {
     end,
 
     HoverIn = function(self, data)
+        if not data or not data.model then return end
+        local hash = tonumber(data.model) or GetHashKey(data.model)
+
+        if self.HoverObject and DoesEntityExist(self.HoverObject) and GetEntityModel(self.HoverObject) == hash then
+            self.HoverSession = self.HoverSession + 1
+            self.PendingHoverItem = nil
+            local texVar = (data.textureVariation ~= nil and data.textureVariation ~= '') and tonumber(data.textureVariation) or 0
+            SetObjectTextureVariation(self.HoverObject, texVar)
+            self.IsHovering = true
+            return
+        end
+
         self:HoverOut()
         self.HoverSession = self.HoverSession + 1
         self.PendingHoverItem = data
@@ -927,6 +1122,8 @@ Modeler = {
         SetEntityCoords(self.HoverObject, lookAt.x, lookAt.y, lookAt.z)
         FreezeEntityPosition(self.HoverObject, true)
         SetEntityCollision(self.HoverObject, false, false)
+        local texVar = (data.textureVariation ~= nil and data.textureVariation ~= '') and tonumber(data.textureVariation) or 0
+        SetObjectTextureVariation(self.HoverObject, texVar)
 
         self.IsHovering = true
         CreateThread(function()
@@ -994,6 +1191,11 @@ Modeler = {
 
 RegisterNUICallback("previewFurniture", function(data, cb)
 	Modeler:StartPlacement(data)
+	cb("ok")
+end)
+
+RegisterNUICallback("changeVariant", function(data, cb)
+	Modeler:ChangeVariant(data)
 	cb("ok")
 end)
 

@@ -66,15 +66,13 @@ return {
             },
             {
                 id = 'prop_ld_farm_couch01',
-                label = 'Old treesits couch',
+                label = 'Old Farm Couch',
                 model = 'prop_ld_farm_couch01',
-                price = 300
-            },
-            {
-                id = 'prop_ld_farm_couch02',
-                label = 'Old striped couch',
-                model = 'prop_ld_farm_couch02',
-                price = 300
+                price = 300,
+                variants = {
+                    { id = 'wood', label = 'Wood Frame', model = 'prop_ld_farm_couch01', price = 300 },
+                    { id = 'striped', label = 'Striped Cushions', model = 'prop_ld_farm_couch02', price = 300 }
+                }
             },
             {
                 id = 'v_res_d_armchair',
@@ -126,27 +124,15 @@ return {
             },
             {
                 id = 'v_res_tre_sofa',
-                label = 'Couch 6',
+                label = 'Trevor Couch',
                 model = 'v_res_tre_sofa',
-                price = 700
-            },
-            {
-                id = 'v_res_tre_sofa_mess_a',
-                label = 'Couch 7',
-                model = 'v_res_tre_sofa_mess_a',
-                price = 700
-            },
-            {
-                id = 'v_res_tre_sofa_mess_b',
-                label = 'Couch 8',
-                model = 'v_res_tre_sofa_mess_b',
-                price = 700
-            },
-            {
-                id = 'v_res_tre_sofa_mess_c',
-                label = 'Couch 9',
-                model = 'v_res_tre_sofa_mess_c',
-                price = 700
+                price = 700,
+                variants = {
+                    { id = 'clean', label = 'Normal', model = 'v_res_tre_sofa', price = 700 },
+                    { id = 'mess_a', label = 'Pillows Off', model = 'v_res_tre_sofa_mess_a', price = 700 },
+                    { id = 'mess_b', label = 'Dirty / Stained', model = 'v_res_tre_sofa_mess_b', price = 700 },
+                    { id = 'mess_c', label = 'Worn Out', model = 'v_res_tre_sofa_mess_c', price = 700 }
+                }
             },
             {
                 id = 'v_res_tt_sofa',
@@ -354,9 +340,15 @@ return {
             },
             {
                 id = 'imp_prop_impexp_sofabed_01a',
-                label = 'Sofa bed',
+                label = 'Modern Sofa Bed',
                 model = 'imp_prop_impexp_sofabed_01a',
-                price = 1000
+                price = 1000,
+                variants = {
+                    { id = 'tint_0', label = 'Slate Charcoal', textureVariation = 0, color = '#2B2B2B' },
+                    { id = 'tint_1', label = 'Forest Pine', textureVariation = 1, color = '#3B5B3F' },
+                    { id = 'tint_2', label = 'Steel Blue', textureVariation = 2, color = '#243A54' },
+                    { id = 'tint_3', label = 'Warm Mocha', textureVariation = 3, color = '#4C403A' }
+                }
             },
             {
                 id = 'prop_t_sofa_02',
@@ -396,27 +388,23 @@ return {
             },
             {
                 id = 'v_tre_sofa_mess_b_s',
-                label = 'Tre Sofa Okay',
+                label = 'Trevor Small Sofa',
                 model = 'v_tre_sofa_mess_b_s',
-                price = 100
-            },
-            {
-                id = 'v_tre_sofa_mess_c_s',
-                label = 'Tre Sofa Mess',
-                model = 'v_tre_sofa_mess_c_s',
-                price = 20
+                price = 100,
+                variants = {
+                    { id = 'okay', label = 'Normal', model = 'v_tre_sofa_mess_b_s', price = 100 },
+                    { id = 'messy', label = 'Messy / Dirty', model = 'v_tre_sofa_mess_c_s', price = 100 }
+                }
             },
             {
                 id = 'xm_lab_sofa_01',
-                label = 'Tre Sofa',
+                label = 'Modern Leather Sofa',
                 model = 'xm_lab_sofa_01',
-                price = 1200
-            },
-            {
-                id = 'xm_lab_sofa_02',
-                label = 'Tre Sofa Black',
-                model = 'xm_lab_sofa_02',
-                price = 1200
+                price = 1200,
+                variants = {
+                    { id = 'white', label = 'Grey / White', model = 'xm_lab_sofa_01', price = 1200, color = '#cccccc' },
+                    { id = 'black', label = 'Black Leather', model = 'xm_lab_sofa_02', price = 1200, color = '#222222' }
+                }
             },
             {
                 id = 'prop_bench_01a',
@@ -979,9 +967,21 @@ return {
             },
             {
                 id = 'ba_prop_battle_control_seat',
-                label = 'Gaming chair',
+                label = 'Control Console Seat',
                 model = 'ba_prop_battle_control_seat',
-                price = 500
+                price = 750,
+                variants = {
+                    { id = 'tint_0', label = 'Crimson Red / Black', textureVariation = 0, color = '#FF0000' },
+                    { id = 'tint_1', label = 'Desert Tan / White', textureVariation = 1, color = '#63573F' },
+                    { id = 'tint_2', label = 'Cyber Lilac', textureVariation = 2, color = '#C191D0' },
+                    { id = 'tint_3', label = 'Tactical Khaki', textureVariation = 3, color = '#9C9862' },
+                    { id = 'tint_4', label = 'Navy Blue / White', textureVariation = 4, color = '#1C1B60' },
+                    { id = 'tint_5', label = 'Burnt Sunset Orange', textureVariation = 5, color = '#DB521E' },
+                    { id = 'tint_6', label = 'Deep Violet / Black', textureVariation = 6, color = '#662395' },
+                    { id = 'tint_7', label = 'Arctic White', textureVariation = 7, color = '#EBEEF4' },
+                    { id = 'tint_8', label = 'Earth Bronze', textureVariation = 8, color = '#A08370' },
+                    { id = 'tint_9', label = 'Espresso / Black', textureVariation = 9, color = '#5A4839' }
+                }
             },
             {
                 id = 'hei_heist_din_chair_01',
@@ -1027,9 +1027,17 @@ return {
             },
             {
                 id = 'prop_table_05_chr',
-                label = 'Table Chair 05',
+                label = 'Modern Dining Chair',
                 model = 'prop_table_05_chr',
-                price = 80
+                price = 120,
+                variants = {
+                    { id = 'tint_0', label = 'Pure White', textureVariation = 0, color = '#FFFFFF' },
+                    { id = 'tint_1', label = 'Terracotta Rust', textureVariation = 1, color = '#AD4917' },
+                    { id = 'tint_2', label = 'Warm Caramel', textureVariation = 2, color = '#9C794E' },
+                    { id = 'tint_3', label = 'Denim Blue', textureVariation = 3, color = '#394F75' },
+                    { id = 'tint_4', label = 'Burgundy Red', textureVariation = 4, color = '#760000' },
+                    { id = 'tint_5', label = 'Olive Green', textureVariation = 5, color = '#394C34' }
+                }
             },
             {
                 id = 'prop_table_06_chr',
@@ -1159,9 +1167,19 @@ return {
             },
             {
                 id = 'bkr_prop_biker_chairstrip_01',
-                label = 'Chair Strip Biker 01',
+                label = 'Leather Club Armchair',
                 model = 'bkr_prop_biker_chairstrip_01',
-                price = 120
+                price = 350,
+                variants = {
+                    { id = 'tint_0', label = 'Dark Cocoa Brown', textureVariation = 0, color = '#311200' },
+                    { id = 'tint_1', label = 'Vintage Tan', textureVariation = 1, color = '#493E00' },
+                    { id = 'tint_2', label = 'Moss Green', textureVariation = 2, color = '#283F0C' },
+                    { id = 'tint_3', label = 'Forest Pine', textureVariation = 3, color = '#2D5145' },
+                    { id = 'tint_4', label = 'Midnight Navy', textureVariation = 4, color = '#1F1E4C' },
+                    { id = 'tint_5', label = 'Deep Plum', textureVariation = 5, color = '#4F1E5C' },
+                    { id = 'tint_6', label = 'Stealth Black', textureVariation = 6, color = '#202020' },
+                    { id = 'tint_7', label = 'Amber Ochre', textureVariation = 7, color = '#BC7617' }
+                }
             },
             {
                 id = 'bkr_prop_biker_chairstrip_02',
@@ -1201,9 +1219,14 @@ return {
             },
             {
                 id = 'ex_prop_offchair_exec_04',
-                label = 'Office Chair 04',
+                label = 'Executive Leather Chair',
                 model = 'ex_prop_offchair_exec_04',
-                price = 185
+                price = 650,
+                variants = {
+                    { id = 'tint_0', label = 'Onyx Black', textureVariation = 0, color = '#292929' },
+                    { id = 'tint_1', label = 'Espresso Brown', textureVariation = 1, color = '#71645B' },
+                    { id = 'tint_2', label = 'Alabaster White', textureVariation = 2, color = '#D7D3CC' }
+                }
             },
             {
                 id = 'imp_prop_impexp_offchair_01a',
@@ -1321,9 +1344,26 @@ return {
             },
             {
                 id = 'gr_prop_highendchair_gr_01a',
-                label = 'Gaming chair',
+                label = 'High End Ergonomic Chair',
                 model = 'gr_prop_highendchair_gr_01a',
-                price = 1215
+                price = 1215,
+                variants = {
+                    { id = 'tint_0', label = 'Racing Red / Black', textureVariation = 0, color = '#FF0000' },
+                    { id = 'tint_1', label = 'Platinum Silver', textureVariation = 1, color = '#D3D3D3' },
+                    { id = 'tint_2', label = 'Saddle Tan / Silver', textureVariation = 2, color = '#887047' },
+                    { id = 'tint_3', label = 'Sage Green / Silver', textureVariation = 3, color = '#6A6F49' },
+                    { id = 'tint_4', label = 'Walnut Brown / Silver', textureVariation = 4, color = '#5F4D3C' },
+                    { id = 'tint_5', label = 'Anthracite Black', textureVariation = 5, color = '#515151' },
+                    { id = 'tint_6', label = 'Mint Teal / Black', textureVariation = 6, color = '#73B39C' },
+                    { id = 'tint_7', label = 'Crimson Wine / Black', textureVariation = 7, color = '#691B1B' },
+                    { id = 'tint_8', label = 'Desert Tan / Black', textureVariation = 8, color = '#887047' },
+                    { id = 'tint_9', label = 'Military Olive / Black', textureVariation = 9, color = '#6A6F49' },
+                    { id = 'tint_10', label = 'Navy Blue / Black', textureVariation = 10, color = '#344160' },
+                    { id = 'tint_11', label = 'Pitch Black', textureVariation = 11, color = '#151515' },
+                    { id = 'tint_12', label = 'Dark Cherry', textureVariation = 12, color = '#691B1B' },
+                    { id = 'tint_13', label = 'Olive Drab', textureVariation = 13, color = '#6A6F49' },
+                    { id = 'tint_14', label = 'Midnight Blue', textureVariation = 14, color = '#344160' }
+                }
             },
             {
                 id = 'prop_table_02_chr',
@@ -2783,6 +2823,30 @@ return {
                 label = 'Lounger Table',
                 model = 'prop_patio_lounger1_table',
                 price = 800
+            },
+            {
+                id = 'prop_patio_lounger1',
+                label = 'Patio Sun Lounger',
+                model = 'prop_patio_lounger1',
+                price = 650,
+                variants = {
+                    { id = 'tint_0', label = 'Linen White', textureVariation = 0, color = '#FDFAF9' },
+                    { id = 'tint_1', label = 'Terracotta Orange', textureVariation = 1, color = '#AD4F17' },
+                    { id = 'tint_2', label = 'Nautical Blue', textureVariation = 2, color = '#394F75' },
+                    { id = 'tint_3', label = 'Olive Green', textureVariation = 3, color = '#394C34' }
+                }
+            },
+            {
+                id = 'prop_table_para_comb_04',
+                label = 'Patio Table & Parasol',
+                model = 'prop_table_para_comb_04',
+                price = 950,
+                variants = {
+                    { id = 'tint_0', label = 'Linen White', textureVariation = 0, color = '#FFFFFF' },
+                    { id = 'tint_1', label = 'Terracotta Orange', textureVariation = 1, color = '#AD4917' },
+                    { id = 'tint_2', label = 'Nautical Blue', textureVariation = 2, color = '#394F75' },
+                    { id = 'tint_3', label = 'Olive Green', textureVariation = 3, color = '#394C34' }
+                }
             },
             {
                 id = 'ex_mp_h_din_table_05',
@@ -5067,9 +5131,15 @@ return {
             },
             {
                 id = 'bkr_prop_clubhouse_jukebox_01b',
-                label = 'Jukebox 01b',
+                label = 'Vintage Neon Jukebox',
                 model = 'bkr_prop_clubhouse_jukebox_01b',
-                price = 920
+                price = 920,
+                variants = {
+                    { id = 'tint_0', label = 'Midnight Chrome', textureVariation = 0, color = '#202020' },
+                    { id = 'tint_1', label = 'Retro Cherry / White', textureVariation = 1, color = '#BD4C4E' },
+                    { id = 'tint_2', label = 'Classic Maroon / Cream', textureVariation = 2, color = '#8E1214' },
+                    { id = 'tint_3', label = 'Antique Brass / Gold', textureVariation = 3, color = '#A4863B' }
+                }
             },
             {
                 id = 'bkr_prop_clubhouse_jukebox_02a',
@@ -6093,13 +6163,13 @@ return {
             },
             {
                 id = 'prop_tint_towel',
-                label = 'Hand Towels',
+                label = 'Single Hand Towel',
                 model = 'prop_tint_towel',
                 price = 15
             },
             {
                 id = 'prop_tint_towels_01',
-                label = 'Hand Towels',
+                label = 'Folded Hand Towels',
                 model = 'prop_tint_towels_01',
                 price = 120
             },
@@ -7960,9 +8030,19 @@ return {
             },
             {
                 id = 'v_prop_floatcandle',
-                label = 'Candle Float',
+                label = 'Floating Lotus Candle',
                 model = 'v_prop_floatcandle',
-                price = 15
+                price = 45,
+                variants = {
+                    { id = 'tint_0', label = 'Warm Vanilla', textureVariation = 0, color = '#FAEAC7' },
+                    { id = 'tint_1', label = 'Pastel Coral', textureVariation = 1, color = '#F4A0A0' },
+                    { id = 'tint_2', label = 'Periwinkle Blue', textureVariation = 2, color = '#7FA1D1' },
+                    { id = 'tint_3', label = 'Soft Lavender', textureVariation = 3, color = '#B7A0F0' },
+                    { id = 'tint_4', label = 'Peach Nectar', textureVariation = 4, color = '#F4B274' },
+                    { id = 'tint_5', label = 'Orchid Lilac', textureVariation = 5, color = '#B56FF4' },
+                    { id = 'tint_6', label = 'Mint Blossom', textureVariation = 6, color = '#ADF4A0' },
+                    { id = 'tint_7', label = 'Wild Rose', textureVariation = 7, color = '#F45073' }
+                }
             },
             {
                 id = 'apa_mp_h_acc_candles_05',
@@ -9034,9 +9114,27 @@ return {
             },
             {
                 id = 'vw_prop_casino_art_vase_06a',
-                label = 'Casino Art Vase 06a',
+                label = 'Luxury Ceramic Vase',
                 model = 'vw_prop_casino_art_vase_06a',
-                price = 680
+                price = 450,
+                variants = {
+                    { id = 'tint_0', label = 'Pure White', textureVariation = 0, color = '#F3F3F3' },
+                    { id = 'tint_1', label = 'Silver Grey', textureVariation = 1, color = '#A6A6A6' },
+                    { id = 'tint_2', label = 'Charcoal Grey', textureVariation = 2, color = '#4A4849' },
+                    { id = 'tint_3', label = 'Obsidian Black', textureVariation = 3, color = '#141414' },
+                    { id = 'tint_4', label = 'Sand Beige', textureVariation = 4, color = '#D3C8BF' },
+                    { id = 'tint_5', label = 'Dusty Rose', textureVariation = 5, color = '#8B6067' },
+                    { id = 'tint_6', label = 'Burgundy Wine', textureVariation = 6, color = '#5B1A18' },
+                    { id = 'tint_7', label = 'Indigo Purple', textureVariation = 7, color = '#4B4A70' },
+                    { id = 'tint_8', label = 'Canary Yellow', textureVariation = 8, color = '#FFDB2E' },
+                    { id = 'tint_9', label = 'Hot Magenta', textureVariation = 9, color = '#D93993' },
+                    { id = 'tint_10', label = 'Electric Cyan', textureVariation = 10, color = '#1CB2EA' },
+                    { id = 'tint_11', label = 'Lime Green', textureVariation = 11, color = '#36DD00' },
+                    { id = 'tint_12', label = 'Sage Mist', textureVariation = 12, color = '#95A4A7' },
+                    { id = 'tint_13', label = 'Cobalt Blue', textureVariation = 13, color = '#252A59' },
+                    { id = 'tint_14', label = 'Flame Orange', textureVariation = 14, color = '#CD3416' },
+                    { id = 'tint_15', label = 'Crimson Red', textureVariation = 15, color = '#920000' }
+                }
             },
             {
                 id = 'vw_prop_casino_art_vase_07a',
@@ -9238,9 +9336,27 @@ return {
             },
             {
                 id = 'vw_prop_casino_art_panther_01a',
-                label = 'Casino Art Panther 01a',
+                label = 'Geometric Panther Statue',
                 model = 'vw_prop_casino_art_panther_01a',
-                price = 240
+                price = 1800,
+                variants = {
+                    { id = 'tint_0', label = 'Gloss White', textureVariation = 0, color = '#F3F3F3' },
+                    { id = 'tint_1', label = 'Silver Chrome', textureVariation = 1, color = '#A6A6A6' },
+                    { id = 'tint_2', label = 'Gunmetal', textureVariation = 2, color = '#4A4849' },
+                    { id = 'tint_3', label = 'Matte Black', textureVariation = 3, color = '#141414' },
+                    { id = 'tint_4', label = 'Warm Clay', textureVariation = 4, color = '#D3C8BF' },
+                    { id = 'tint_5', label = 'Blush Pink', textureVariation = 5, color = '#8B6067' },
+                    { id = 'tint_6', label = 'Crimson Maroon', textureVariation = 6, color = '#5B1A18' },
+                    { id = 'tint_7', label = 'Royal Violet', textureVariation = 7, color = '#4B4A70' },
+                    { id = 'tint_8', label = 'Gold Leaf', textureVariation = 8, color = '#FFDB2E' },
+                    { id = 'tint_9', label = 'Neon Fuchsia', textureVariation = 9, color = '#D93993' },
+                    { id = 'tint_10', label = 'Cyber Blue', textureVariation = 10, color = '#1CB2EA' },
+                    { id = 'tint_11', label = 'Acid Lime', textureVariation = 11, color = '#36DD00' },
+                    { id = 'tint_12', label = 'Steel Teal', textureVariation = 12, color = '#95A4A7' },
+                    { id = 'tint_13', label = 'Deep Navy', textureVariation = 13, color = '#252A59' },
+                    { id = 'tint_14', label = 'Sunset Coral', textureVariation = 14, color = '#CD3416' },
+                    { id = 'tint_15', label = 'Ruby Blood', textureVariation = 15, color = '#920000' }
+                }
             },
             {
                 id = 'vw_prop_casino_art_panther_01b',

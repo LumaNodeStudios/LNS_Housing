@@ -3,12 +3,62 @@ import {
   Sofa, Bed, Lamp, Tv, Utensils, Bath, Search, Package, Check, Trash2,
   Camera, Move, RotateCw, X, ShoppingCart, ShoppingBag, Hammer, ArrowLeft,
   Grid, ArrowDown, CreditCard, Banknote, Keyboard, SlidersHorizontal,
-  Plus, Minus, RotateCcw, Copy, CheckCheck
+  Plus, Minus, RotateCcw, Copy, CheckCheck, Palette, Layers, Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Modeler3D from './Modeler3D';
 import './FurnitureMenu.css';
 import furnitureFallbackImg from '../../assets/furniture_fallback.png';
+
+export const getNormalizedVariants = (item) => {
+  if (!item) return [];
+  if (Array.isArray(item.variants) && item.variants.length > 0) {
+    return item.variants.map((v, idx) => ({
+      id: v.id || `${item.id || item.model}_var_${idx}`,
+      label: v.label || `Style ${idx + 1}`,
+      model: v.model || item.model,
+      textureVariation: v.textureVariation !== undefined ? v.textureVariation : undefined,
+      price: v.price !== undefined ? v.price : item.price,
+      color: v.color || null,
+      imageUrl: v.imageUrl || null,
+      description: v.description || null,
+    }));
+  }
+  if (Array.isArray(item.textureVariations) && item.textureVariations.length > 0) {
+    return item.textureVariations.map((tv, idx) => ({
+      id: tv.id || `${item.id || item.model}_tint_${idx}`,
+      label: tv.label || `Tint #${tv.index !== undefined ? tv.index : idx}`,
+      model: tv.model || item.model,
+      textureVariation: tv.index !== undefined ? tv.index : (tv.textureVariation !== undefined ? tv.textureVariation : idx),
+      price: tv.price !== undefined ? tv.price : item.price,
+      color: tv.color || null,
+      imageUrl: tv.imageUrl || null,
+    }));
+  }
+  if (typeof item.textureVariations === 'number' && item.textureVariations > 0) {
+    return Array.from({ length: item.textureVariations }, (_, idx) => ({
+      id: `${item.id || item.model}_tint_${idx}`,
+      label: `Tint #${idx}`,
+      model: item.model,
+      textureVariation: idx,
+      price: item.price,
+      color: null,
+      imageUrl: null,
+    }));
+  }
+  if (Array.isArray(item.colors) && item.colors.length > 0) {
+    return item.colors.map((c, idx) => ({
+      id: c.id || `${item.id || item.model}_col_${idx}`,
+      label: c.label || `Color ${idx + 1}`,
+      model: c.model || item.model,
+      textureVariation: c.index !== undefined ? c.index : (c.textureVariation !== undefined ? c.textureVariation : idx),
+      price: c.price !== undefined ? c.price : item.price,
+      color: c.color || null,
+      imageUrl: c.imageUrl || null,
+    }));
+  }
+  return [];
+};
 
 const CONTROLS = [
   {
@@ -215,7 +265,19 @@ const FurnitureImage = React.memo(function FurnitureImage({ item, ItemIcon }) {
   );
 });
 
-const ItemCard = React.memo(function ItemCard({ item, ItemIcon, isPlacing, isThisPlacing, onHoverIn, onHoverOut, onClick }) {
+const ItemCard = React.memo(function ItemCard({
+  item,
+  ItemIcon,
+  isPlacing,
+  isThisPlacing,
+  onHoverIn,
+  onHoverOut,
+  onClick,
+  onOpenVariants,
+}) {
+  const variants = React.useMemo(() => getNormalizedVariants(item), [item]);
+  const hasVariants = variants.length > 0;
+
   return (
     <div
       className={`item-card ${isPlacing ? (isThisPlacing ? 'is-placing' : 'disabled') : ''}`}
@@ -225,6 +287,20 @@ const ItemCard = React.memo(function ItemCard({ item, ItemIcon, isPlacing, isThi
     >
       <FurnitureImage item={item} ItemIcon={ItemIcon} />
       <span className="item-card-price">${item.price}</span>
+      {hasVariants && (
+        <button
+          type="button"
+          className="item-card-variant-btn"
+          title={`${variants.length} styles / colors available — click to view variants`}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onOpenVariants) onOpenVariants(item);
+          }}
+        >
+          <Palette size={11} className="variant-btn-icon" />
+          <span className="variant-btn-count">{variants.length}</span>
+        </button>
+      )}
     </div>
   );
 });
@@ -248,6 +324,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
   const [rotStep, setRotStep] = useState(1);
   const [copiedTransform, setCopiedTransform] = useState(null);
   const [toast, setToast] = useState(null);
+  const [variantParentItem, setVariantParentItem] = useState(null);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -263,13 +340,39 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
   useEffect(() => {
     setSearchQuery('');
     setSearchQueryOwned('');
+    setVariantParentItem(null);
   }, [activeTab]);
 
   useEffect(() => {
-    if (items.length > 0 && !activeCategory) {
-      setActiveCategory('all');
+    setVariantParentItem(null);
+  }, [activeCategory]);
+
+  const activeItemVariants = React.useMemo(() => {
+    return getNormalizedVariants(variantParentItem);
+  }, [variantParentItem]);
+
+  const parentForPlacing = React.useMemo(() => {
+    if (!isPlacing || !placingItem) return null;
+    if (variantParentItem) return variantParentItem;
+    for (const cat of items) {
+      if (!cat.items) continue;
+      for (const it of cat.items) {
+        if (
+          it.id === placingItem.id ||
+          it.id === placingItem.parentId ||
+          it.model === placingItem.model ||
+          (it.variants && it.variants.some(v => v.model === placingItem.model))
+        ) {
+          return it;
+        }
+      }
     }
-  }, [items, activeCategory]);
+    return null;
+  }, [isPlacing, placingItem, variantParentItem, items]);
+
+  const placingItemVariants = React.useMemo(() => {
+    return getNormalizedVariants(parentForPlacing);
+  }, [parentForPlacing]);
 
   useEffect(() => {
     // Fetch active cart on mount if any
@@ -493,17 +596,35 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
   };
 
   const hoverTimeoutRef = useRef(null);
+  const hoverOutTimeoutRef = useRef(null);
   const activeHoverItemRef = useRef(null);
   const activeHoverOwnedRef = useRef(null);
 
   const handleHoverIn = (item) => {
     if (isPlacing) return;
+    if (hoverOutTimeoutRef.current) {
+      clearTimeout(hoverOutTimeoutRef.current);
+      hoverOutTimeoutRef.current = null;
+    }
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+
+    // If already hovering the exact same model and textureVariation, do nothing
+    if (
+      activeHoverItemRef.current &&
+      activeHoverItemRef.current.model === item.model &&
+      activeHoverItemRef.current.textureVariation === item.textureVariation
+    ) {
+      return;
+    }
+
+    // If hovering a variant of the same base model (e.g. changing color tint), 0ms delay for instant live updates!
+    const isSameModel = activeHoverItemRef.current && activeHoverItemRef.current.model === item.model;
+    const delay = isSameModel ? 0 : 120;
 
     hoverTimeoutRef.current = setTimeout(() => {
       activeHoverItemRef.current = item;
       post('hoverIn', item);
-    }, 150);
+    }, delay);
   };
 
   const handleHoverOut = () => {
@@ -512,10 +633,15 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
       clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
     }
-    if (activeHoverItemRef.current) {
-      activeHoverItemRef.current = null;
-      post('hoverOut');
+    if (hoverOutTimeoutRef.current) {
+      clearTimeout(hoverOutTimeoutRef.current);
     }
+    hoverOutTimeoutRef.current = setTimeout(() => {
+      if (activeHoverItemRef.current) {
+        activeHoverItemRef.current = null;
+        post('hoverOut');
+      }
+    }, 80);
   };
 
   const handleHoverOwnedIn = (item) => {
@@ -547,6 +673,22 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
     setPlacingKind(activeTab === 'editor' ? 'owned' : 'new');
     post('unhoverOwnedItem');
     post('previewFurniture', item);
+  };
+
+  const handleSelectVariant = (variantItem, variant) => {
+    if (isPlacing) {
+      post('changeVariant', {
+        model: variant.model || variantItem.model,
+        textureVariation: variant.textureVariation !== undefined ? variant.textureVariation : null,
+        label: variantItem.label,
+        price: variant.price !== undefined ? variant.price : variantItem.price,
+        variantId: variant.id,
+      });
+      setPlacingItem(variantItem);
+      showToast('Variant Applied');
+    } else {
+      handlePreview(variantItem);
+    }
   };
 
   const handleAddToCart = (item) => {
@@ -746,46 +888,134 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                 </div>
 
                 {activeTab === 'shopping' ? (
-                  <>
-                    <div className={`search-bar ${isPlacing ? 'disabled' : ''}`} style={{ opacity: isPlacing ? 0.5 : 1, pointerEvents: isPlacing ? 'none' : 'auto' }}>
-                      <Search size={16} className="search-icon" />
-                      <input
-                        placeholder="Search furniture..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        disabled={isPlacing}
-                      />
-                    </div>
+                  variantParentItem ? (
+                    <div className="variants-view">
+                      <div className="variants-header">
+                        <button
+                          type="button"
+                          className="variants-back-btn"
+                          onClick={() => setVariantParentItem(null)}
+                          title="Back to Catalog"
+                        >
+                          <ArrowLeft size={15} />
+                          <span>CATALOG</span>
+                        </button>
+                        <div className="variants-header-info">
+                          <h2 className="variants-title">{variantParentItem.label}</h2>
+                          <span className="variants-badge">
+                            {activeItemVariants.length} {activeItemVariants.length === 1 ? 'Variant' : 'Variants / Styles'}
+                          </span>
+                        </div>
+                      </div>
 
-                    <div className="category-title">
-                      {activeCategory === 'all' ? 'ALL FURNITURE' : (activeCategoryData?.label?.toUpperCase() || 'ITEMS')}
-                    </div>
+                      <div className="variants-subtext">
+                        Select a style or color variation below to preview or place
+                      </div>
 
-                    <div
-                      className="items-grid-scroll"
-                      key={`${activeTab}-${activeCategory}`}
-                      onScroll={handleGridScroll}
-                    >
-                      <div className="items-grid">
-                        {displayedItems.map((item) => {
-                          const ItemIcon = getItemIcon(item);
-                          const itemKey = `${item.categoryId || activeCategory}-${item.id}`;
-                          return (
-                            <ItemCard
-                              key={itemKey}
-                              item={item}
-                              ItemIcon={ItemIcon}
-                              isPlacing={isPlacing}
-                              isThisPlacing={placingItem?.id === item.id}
-                              onHoverIn={() => handleHoverIn(item)}
-                              onHoverOut={handleHoverOut}
-                              onClick={() => handlePreview(item)}
-                            />
-                          );
-                        })}
+                      <div className="variants-grid-scroll">
+                        <div className="variants-grid">
+                          {activeItemVariants.map((variant, vIdx) => {
+                            const isCurrentActiveVariant =
+                              isPlacing &&
+                              placingItem &&
+                              ((variant.model && placingItem.model === variant.model) ||
+                               (!variant.model && placingItem.model === variantParentItem.model)) &&
+                              (variant.textureVariation === undefined || placingItem.textureVariation === variant.textureVariation);
+
+                            const variantItemForPreview = {
+                              ...variantParentItem,
+                              ...variant,
+                              categoryId: variantParentItem.categoryId || activeCategory,
+                              parentModel: variantParentItem.model,
+                              parentId: variantParentItem.id,
+                              label: `${variantParentItem.label} (${variant.label})`,
+                              variantLabel: variant.label,
+                            };
+
+                            return (
+                              <div
+                                key={variant.id || vIdx}
+                                className={`variant-card ${isCurrentActiveVariant ? 'is-active' : ''}`}
+                                onClick={() => handleSelectVariant(variantItemForPreview, variant)}
+                                onMouseEnter={() => handleHoverIn(variantItemForPreview)}
+                                onMouseLeave={handleHoverOut}
+                              >
+                                <div className="variant-preview-wrapper">
+                                  <FurnitureImage item={variantItemForPreview} ItemIcon={getItemIcon(variantParentItem)} />
+                                  {variant.color && (
+                                    <span
+                                      className="variant-color-indicator"
+                                      style={{ backgroundColor: variant.color }}
+                                      title={`Color: ${variant.color}`}
+                                    />
+                                  )}
+                                  {variant.textureVariation !== undefined && (
+                                    <span className="variant-tint-pill">
+                                      Tint #{variant.textureVariation}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="variant-card-info">
+                                  <span className="variant-card-name" title={variant.label}>{variant.label}</span>
+                                  <span className="variant-card-price">${variant.price}</span>
+                                </div>
+
+                                {isCurrentActiveVariant && (
+                                  <div className="variant-active-badge">
+                                    <Check size={11} />
+                                    <span>ACTIVE</span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
-                  </>
+                  ) : (
+                    <>
+                      <div className={`search-bar ${isPlacing ? 'disabled' : ''}`} style={{ opacity: isPlacing ? 0.5 : 1, pointerEvents: isPlacing ? 'none' : 'auto' }}>
+                        <Search size={16} className="search-icon" />
+                        <input
+                          placeholder="Search furniture..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          disabled={isPlacing}
+                        />
+                      </div>
+
+                      <div className="category-title">
+                        {activeCategory === 'all' ? 'ALL FURNITURE' : (activeCategoryData?.label?.toUpperCase() || 'ITEMS')}
+                      </div>
+
+                      <div
+                        className="items-grid-scroll"
+                        key={`${activeTab}-${activeCategory}`}
+                        onScroll={handleGridScroll}
+                      >
+                        <div className="items-grid">
+                          {displayedItems.map((item) => {
+                            const ItemIcon = getItemIcon(item);
+                            const itemKey = `${item.categoryId || activeCategory}-${item.id}`;
+                            return (
+                              <ItemCard
+                                key={itemKey}
+                                item={item}
+                                ItemIcon={ItemIcon}
+                                isPlacing={isPlacing}
+                                isThisPlacing={placingItem?.id === item.id}
+                                onHoverIn={() => handleHoverIn(item)}
+                                onHoverOut={handleHoverOut}
+                                onClick={() => handlePreview(item)}
+                                onOpenVariants={(vItem) => setVariantParentItem(vItem)}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  )
                 ) : (
                   <div className="cart-view">
                     <div className="cart-header">
@@ -849,7 +1079,10 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                                   </div>
                                   <div className="cart-item-details">
                                     <span className="cart-item-name">{item.label}</span>
-                                    <span className="cart-item-meta">{item.model || 'Furniture'}</span>
+                                    <span className="cart-item-meta">
+                                      {item.model || 'Furniture'}
+                                      {item.textureVariation !== undefined ? ` • Tint #${item.textureVariation}` : ''}
+                                    </span>
                                   </div>
                                   <div className="cart-item-actions">
                                     <span className="cart-item-price">${item.price.toLocaleString()}</span>
@@ -926,6 +1159,22 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                           {filteredOwnedItems.map((item, idx) => {
                             const ItemIcon = getItemIcon(item);
                             const isPlacingThisItem = placingItem?.id === item.id;
+                            let editorCatalogItem = null;
+                            for (const cat of items) {
+                              if (!cat.items) continue;
+                              for (const it of cat.items) {
+                                if (
+                                  it.model === item.model ||
+                                  (it.variants && it.variants.some(v => v.model === item.model))
+                                ) {
+                                  editorCatalogItem = it;
+                                  break;
+                                }
+                              }
+                              if (editorCatalogItem) break;
+                            }
+                            const editorVariants = editorCatalogItem ? getNormalizedVariants(editorCatalogItem) : [];
+
                             return (
                               <motion.div
                                 key={item.id || idx}
@@ -942,7 +1191,10 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                                 </div>
                                 <div className="editor-item-details">
                                   <span className="editor-item-name">{item.label}</span>
-                                  <span className="editor-item-meta">{item.model || 'Furniture'}</span>
+                                  <span className="editor-item-meta">
+                                    {item.model || 'Furniture'}
+                                    {item.textureVariation !== undefined ? ` • Tint #${item.textureVariation}` : ''}
+                                  </span>
                                   <div className="editor-item-actions">
                                     <button
                                       className="editor-move-btn"
@@ -953,6 +1205,25 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                                       <Move size={12} />
                                       <span>MOVE</span>
                                     </button>
+                                    {editorVariants.length > 0 && (
+                                      <button
+                                        type="button"
+                                        className="editor-variant-btn"
+                                        disabled={isPlacing && placingItem?.id !== item.id}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setActiveTab('shopping');
+                                          setVariantParentItem(editorCatalogItem);
+                                          if (!isPlacing) {
+                                            handlePreview(item);
+                                          }
+                                        }}
+                                        title="Change Style or Color Variant"
+                                      >
+                                        <Palette size={12} />
+                                        <span>STYLES ({editorVariants.length})</span>
+                                      </button>
+                                    )}
                                     <button
                                       className="editor-remove-btn"
                                       disabled={isPlacing}
@@ -1402,6 +1673,21 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
             <button className="placeonground-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} onClick={() => post('placeOnGround')}>
               <span>Place on Ground</span>
             </button>
+            {placingItemVariants.length > 0 && (
+              <button
+                type="button"
+                className="placeonground-btn variant-quick-btn"
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                onClick={() => {
+                  setActiveTab('shopping');
+                  setVariantParentItem(parentForPlacing);
+                }}
+                title="View & select styles or color variants"
+              >
+                <Palette size={13} />
+                <span>Styles ({placingItemVariants.length})</span>
+              </button>
+            )}
           </div>
 
           <div className="controls-footer" style={{ marginTop: '-5px' }}>

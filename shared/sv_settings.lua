@@ -9,7 +9,7 @@ return {
         
         -- Qbox CDN Configuration (https://docs.qbox.re/dashboard/cdn)
         Qbox = {
-            ApiKey = '' -- API key generated from your Qbox CDN dashboard
+            ApiKey = '20261030_CMZU3PjzHeYeRtgA8sncAo7' -- API key generated from your Qbox CDN dashboard
         },
 
         -- Fivemanage Configuration

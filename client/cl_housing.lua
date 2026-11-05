@@ -728,7 +728,7 @@ function LoadFurnitures(propertyId)
                         SetEntityRotation(obj, rot.x, rot.y, rot.z, 2, true)
                         FreezeEntityPosition(obj, true)
 
-                        if f.textureVariation then
+                        if f.textureVariation ~= nil then
                             SetObjectTextureVariation(obj, tonumber(f.textureVariation))
                         end
                         
