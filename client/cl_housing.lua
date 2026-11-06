@@ -733,12 +733,24 @@ function LoadFurnitures(propertyId)
                         end
                         
                         local itemData = nil
+                        local fHash = tonumber(f.model) or GetHashKey(f.model)
                         for _, cat in ipairs(Furniture) do
                             for _, item in ipairs(cat.items) do
-                                if (tonumber(item.model) or GetHashKey(item.model)) == (tonumber(f.model) or GetHashKey(f.model)) then
+                                local itemHash = tonumber(item.model) or GetHashKey(item.model)
+                                if itemHash == fHash then
                                     itemData = item
                                     break
                                 end
+                                if item.variants then
+                                    for _, variant in ipairs(item.variants) do
+                                        local varHash = tonumber(variant.model or item.model) or GetHashKey(variant.model or item.model)
+                                        if varHash == fHash then
+                                            itemData = item
+                                            break
+                                        end
+                                    end
+                                end
+                                if itemData then break end
                             end
                             if itemData then break end
                         end
@@ -886,7 +898,7 @@ function LoadFurnitures(propertyId)
                             })
                         end
 
-                        if itemData and itemData.id == 'lns_housing_panel' then
+                        if (itemData and (itemData.isPanel or itemData.id == 'lns_housing_panel')) or f.isPanel then
                             exports.ox_target:addLocalEntity(obj, {
                                 {
                                     label = p.isApartment and 'Open Apartment Panel' or 'Open House Panel',

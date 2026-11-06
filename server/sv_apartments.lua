@@ -33,6 +33,63 @@ local function GetPlayerLicense(src)
     return lic or lic2, lic2 or lic
 end
 
+local Furniture = lib.load('shared.furniture') or {}
+
+local function GetFurnitureItem(model)
+    local hash = tonumber(model) or (type(model) == 'string' and joaat(model))
+    for _, cat in ipairs(Furniture) do
+        for _, item in ipairs(cat.items or {}) do
+            local itemHash = tonumber(item.model) or (type(item.model) == 'string' and joaat(item.model))
+            if item.model == model or (hash and itemHash and itemHash == hash) then
+                return item, cat.id
+            end
+            if item.variants then
+                for _, variant in ipairs(item.variants) do
+                    local varHash = tonumber(variant.model or item.model) or (type(variant.model or item.model) == 'string' and joaat(variant.model or item.model))
+                    if (variant.model or item.model) == model or (hash and varHash and varHash == hash) then
+                        return item, cat.id, variant
+                    end
+                end
+            end
+        end
+    end
+    return nil, nil
+end
+
+local function IsPanelModel(model)
+    local item = GetFurnitureItem(model)
+    if item and (item.isPanel or item.id == 'lns_housing_panel') then
+        return true
+    end
+    return false
+end
+
+local function GetDefaultPanelFurniture()
+    for _, cat in ipairs(Furniture) do
+        for _, item in ipairs(cat.items or {}) do
+            if item.isPanel or item.id == 'lns_housing_panel' then
+                return item, cat.id
+            end
+        end
+    end
+    return {
+        model = 'reh_prop_reh_tablet_01a',
+        label = 'Property Panel'
+    }, 'prerequisites'
+end
+
+local function CreateDefaultPanelFurniture(pos, rot)
+    local defaultPanel, catId = GetDefaultPanelFurniture()
+    return {
+        id = math.random(100000, 999999),
+        model = defaultPanel.model,
+        label = defaultPanel.label or 'Property Panel',
+        position = vec3(pos.x or pos[1], pos.y or pos[2], pos.z or pos[3]),
+        rotation = vec3(rot.x or rot[1], rot.y or rot[2], rot.z or rot[3]),
+        category = catId or 'prerequisites'
+    }
+end
+
 local function CreateApartmentDoorlocks()
     if GetResourceState('ox_doorlock') ~= 'started' then
         return
@@ -324,14 +381,7 @@ local function OnPlayerLoaded(src)
         if not result then
             local initialFurniture = {}
             if roomData.tabletCoords then
-                table.insert(initialFurniture, {
-                    id = math.random(100000, 999999),
-                    model = 'reh_prop_reh_tablet_01a',
-                    label = 'Property Panel',
-                    position = vec3(roomData.tabletCoords.position.x, roomData.tabletCoords.position.y, roomData.tabletCoords.position.z),
-                    rotation = vec3(roomData.tabletCoords.rotation.x, roomData.tabletCoords.rotation.y, roomData.tabletCoords.rotation.z),
-                    category = 'prerequisites'
-                })
+                table.insert(initialFurniture, CreateDefaultPanelFurniture(roomData.tabletCoords.position, roomData.tabletCoords.rotation))
             end
 
             MySQL.insert.await('INSERT INTO apartments (citizenid, room_id, permissions, furniture, wall_color) VALUES (?, ?, ?, ?, ?)', {
@@ -434,14 +484,7 @@ lib.callback.register('LNS_Housing:server:claimNewCharacterSpawn', function(sour
         local roomData = getRoomDataById(roomId)
         local initialFurniture = {}
         if roomData and roomData.tabletCoords then
-            table.insert(initialFurniture, {
-                id = math.random(100000, 999999),
-                model = 'reh_prop_reh_tablet_01a',
-                label = 'Property Panel',
-                position = vec3(roomData.tabletCoords.position.x, roomData.tabletCoords.position.y, roomData.tabletCoords.position.z),
-                rotation = vec3(roomData.tabletCoords.rotation.x, roomData.tabletCoords.rotation.y, roomData.tabletCoords.rotation.z),
-                category = 'prerequisites'
-            })
+            table.insert(initialFurniture, CreateDefaultPanelFurniture(roomData.tabletCoords.position, roomData.tabletCoords.rotation))
         end
 
         MySQL.insert.await('INSERT INTO apartments (citizenid, room_id, permissions, furniture, wall_color, is_new) VALUES (?, ?, ?, ?, ?, ?)', {
@@ -516,14 +559,7 @@ lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, ro
             local roomData = getRoomDataById(roomId)
             local initialFurniture = {}
             if roomData and roomData.tabletCoords then
-                table.insert(initialFurniture, {
-                    id = math.random(100000, 999999),
-                    model = 'reh_prop_reh_tablet_01a',
-                    label = 'Property Panel',
-                    position = vec3(roomData.tabletCoords.position.x, roomData.tabletCoords.position.y, roomData.tabletCoords.position.z),
-                    rotation = vec3(roomData.tabletCoords.rotation.x, roomData.tabletCoords.rotation.y, roomData.tabletCoords.rotation.z),
-                    category = 'prerequisites'
-                })
+                table.insert(initialFurniture, CreateDefaultPanelFurniture(roomData.tabletCoords.position, roomData.tabletCoords.rotation))
             end
             MySQL.insert.await('INSERT INTO apartments (citizenid, room_id, permissions, furniture, wall_color) VALUES (?, ?, ?, ?, ?)', {
                 citizenid,
@@ -542,7 +578,7 @@ lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, ro
             local hasTablet = false
             local changed = false
             for _, f in ipairs(furnitureList) do
-                if f.model == 'reh_prop_reh_tablet_01a' then
+                if f.isPanel or IsPanelModel(f.model) then
                     local newPos = vec3(roomData.tabletCoords.position.x, roomData.tabletCoords.position.y, roomData.tabletCoords.position.z)
                     local newRot = vec3(roomData.tabletCoords.rotation.x, roomData.tabletCoords.rotation.y, roomData.tabletCoords.rotation.z)
                     local function isClose(v1, v2)
@@ -561,14 +597,7 @@ lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, ro
                 end
             end
             if not hasTablet then
-                table.insert(furnitureList, {
-                    id = math.random(100000, 999999),
-                    model = 'reh_prop_reh_tablet_01a',
-                    label = 'Property Panel',
-                    position = vec3(roomData.tabletCoords.position.x, roomData.tabletCoords.position.y, roomData.tabletCoords.position.z),
-                    rotation = vec3(roomData.tabletCoords.rotation.x, roomData.tabletCoords.rotation.y, roomData.tabletCoords.rotation.z),
-                    category = 'prerequisites'
-                })
+                table.insert(furnitureList, CreateDefaultPanelFurniture(roomData.tabletCoords.position, roomData.tabletCoords.rotation))
                 changed = true
             end
             if changed then
@@ -1361,14 +1390,7 @@ lib.callback.register('LNS_Housing:server:vacateApartmentRoom', function(source,
     local defaultFurniture = {}
 
     if roomData and roomData.tabletCoords then
-        table.insert(defaultFurniture, {
-            id = math.random(100000, 999999),
-            model = 'reh_prop_reh_tablet_01a',
-            label = 'Property Panel',
-            position = vec3(roomData.tabletCoords.position.x, roomData.tabletCoords.position.y, roomData.tabletCoords.position.z),
-            rotation = vec3(roomData.tabletCoords.rotation.x, roomData.tabletCoords.rotation.y, roomData.tabletCoords.rotation.z),
-            category = 'prerequisites'
-        })
+        table.insert(defaultFurniture, CreateDefaultPanelFurniture(roomData.tabletCoords.position, roomData.tabletCoords.rotation))
     end
 
     MySQL.query.await('DELETE FROM apartments WHERE room_id = ?', {roomId})

@@ -32,17 +32,52 @@ local function TableExists(tableName)
     return check and #check > 0
 end
 
-local function GetFurnitureCategory(model)
+local function GetFurnitureItem(model)
     local hash = tonumber(model) or (type(model) == 'string' and joaat(model))
     for _, cat in ipairs(Furniture) do
         for _, item in ipairs(cat.items or {}) do
             local itemHash = tonumber(item.model) or (type(item.model) == 'string' and joaat(item.model))
             if item.model == model or (hash and itemHash and itemHash == hash) then
-                return cat.id or 'furniture'
+                return item, cat.id
+            end
+            if item.variants then
+                for _, variant in ipairs(item.variants) do
+                    local varHash = tonumber(variant.model or item.model) or (type(variant.model or item.model) == 'string' and joaat(variant.model or item.model))
+                    if (variant.model or item.model) == model or (hash and varHash and varHash == hash) then
+                        return item, cat.id, variant
+                    end
+                end
             end
         end
     end
-    return 'furniture'
+    return nil, nil
+end
+
+local function GetFurnitureCategory(model)
+    local item, catId = GetFurnitureItem(model)
+    return catId or 'furniture'
+end
+
+local function IsPanelModel(model)
+    local item = GetFurnitureItem(model)
+    if item and (item.isPanel or item.id == 'lns_housing_panel') then
+        return true
+    end
+    return false
+end
+
+local function GetDefaultPanelFurniture()
+    for _, cat in ipairs(Furniture) do
+        for _, item in ipairs(cat.items or {}) do
+            if item.isPanel or item.id == 'lns_housing_panel' then
+                return item, cat.id
+            end
+        end
+    end
+    return {
+        model = 'reh_prop_reh_tablet_01a',
+        label = 'Property Panel'
+    }, 'prerequisites'
 end
 
 local function ResolveShellName(rawShell, isMlo)
@@ -573,7 +608,7 @@ function RunNoLagMigration(isDryRun)
 
         local hasPanel = false
         for _, furn in ipairs(furnitureList) do
-            if furn.model == 'reh_prop_reh_tablet_01a' then hasPanel = true break end
+            if furn.isPanel or IsPanelModel(furn.model) then hasPanel = true break end
         end
 
         if rawMeta.points and type(rawMeta.points) == 'table' then
@@ -696,15 +731,16 @@ function RunNoLagMigration(isDryRun)
             end
 
             if panelPos then
+                local defaultPanel, panelCat = GetDefaultPanelFurniture()
                 local panelHeading = (spawnData and (spawnData.h or spawnData.w)) or 0.0
                 table.insert(furnitureList, {
                     id = 99999,
-                    model = 'reh_prop_reh_tablet_01a',
-                    label = 'Property Panel',
+                    model = defaultPanel.model,
+                    label = defaultPanel.label or 'Property Panel',
                     position = panelPos,
                     rotation = { x = 0.0, y = 0.0, z = panelHeading },
-                    category = 'prerequisites',
-                    price = 0
+                    category = panelCat or 'prerequisites',
+                    price = tonumber(defaultPanel.price) or 0
                 })
             end
         end

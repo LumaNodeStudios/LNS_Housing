@@ -1,4 +1,5 @@
 local Settings = lib.load('shared.settings')
+local Furniture = lib.load('shared.furniture') or {}
 
 if not Settings.Apartments or not Settings.Apartments.Enabled then
     return
@@ -137,8 +138,13 @@ function EnterApartmentRoom(roomData)
             shell = roomData.shell or 'Apartment Furnished',
             interior_id = roomData.interior_id or roomData.interiorId,
             entrance = roomData.doorCoords and { x = roomData.doorCoords.x, y = roomData.doorCoords.y, z = roomData.doorCoords.z, h = roomData.doorHeading or 0.0 } or (roomData.spawn and { x = roomData.spawn.x, y = roomData.spawn.y, z = roomData.spawn.z, h = roomData.spawn.w or 0.0 }) or nil,
-            spawn = roomData.spawn and { x = roomData.spawn.x, y = roomData.spawn.y, z = roomData.spawn.z, w = roomData.spawn.w or 0.0 } or nil
+            spawn = roomData.spawn and { x = roomData.spawn.x, y = roomData.spawn.y, z = roomData.spawn.z, w = roomData.spawn.w or 0.0 } or nil,
+            interior_coords = roomData.interior_coords or roomData.interiorCoords,
+            interior_center = roomData.interior_center or roomData.interiorCenter,
+            corners = roomData.corners
         },
+        zone_data = roomData.corners and { points = roomData.corners } or nil,
+        corners = roomData.corners,
         furniture = roomInfo.furniture or {},
         isApartment = true
     }
@@ -1282,8 +1288,20 @@ TabletPlacement = {
     Result = nil
 }
 
+local function GetDefaultPanelModel()
+    for _, cat in ipairs(Furniture) do
+        for _, item in ipairs(cat.items or {}) do
+            if item.isPanel or item.id == 'lns_housing_panel' then
+                local m = item.model
+                return tonumber(m) or GetHashKey(m)
+            end
+        end
+    end
+    return `reh_prop_reh_tablet_01a`
+end
+
 local function PlaceDefaultTablet()
-    local model = `reh_prop_reh_tablet_01a`
+    local model = GetDefaultPanelModel()
     lib.requestModel(model)
     
     local ped = cache.ped

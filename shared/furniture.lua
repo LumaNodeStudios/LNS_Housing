@@ -9,6 +9,8 @@ return {
                 label = 'Property Panel',
                 model = 'reh_prop_reh_tablet_01a',
                 price = 0,
+                type = 'panel',
+                isPanel = true,
                 powerConsumption = 0.1,
                 tempEffect = 0.0
             },
