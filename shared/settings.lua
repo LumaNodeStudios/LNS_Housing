@@ -174,23 +174,21 @@ return {
     ----------------------------------------------------------------------------
     Trash = {
         Enabled = true,                     -- Enable or disable property & apartment trash buildup over time
-        BuildupInterval = 7200,             -- Time in seconds (e.g. 7200 = 2 hours) for each trash pile to accumulate
-        MaxTrash = 5,                       -- Maximum number of trash piles that can accumulate in a property/apartment
+        BuildupInterval = 50,             -- Time in seconds (e.g. 7200 = 2 hours) for each trash pile to accumulate
+        MaxTrash = 8,                       -- Maximum number of trash piles that can accumulate in a property/apartment
         CleanDuration = 4000,               -- Duration in milliseconds to clean/pickup a trash pile
         ThrowDuration = 2500,               -- Duration in milliseconds to toss a trash bag into a street dumpster
         RequireKeyAccess = false,           -- If true, only players with keys/entry permission can clean trash inside (if false, visitors/cleaners can help)
+        MinDoorDistance = 2.0,              -- Minimum distance in meters trash props must stay away from room/apartment entrance doors
+        MinWallMargin = 0.95,               -- Minimum distance in meters trash props must stay inside poly zone boundaries away from walls
+        MinPileSpread = 1.6,                -- Minimum distance in meters between individual trash piles so they spread naturally across the room
+        StrictRoomBounds = true,            -- Strictly validate room containment, interior IDs, and line-of-sight
 
         -- Trash models spawned on the floor inside properties when trash accumulates
         TrashModels = {
             'prop_rub_litter_01',
             'prop_rub_litter_02',
             'prop_rub_litter_03',
-            'prop_rub_binbag_01',
-            'prop_rub_binbag_03b',
-            'prop_cs_rub_binbag_01',
-            'prop_food_bs_bag_02',
-            'ng_proc_box_01a',
-            'prop_rub_cardpile_05',
         },
 
         -- Carried trash bag prop attachment settings
