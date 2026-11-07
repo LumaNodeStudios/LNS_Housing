@@ -88,12 +88,12 @@ dependencies {
 }
 
 data_file 'DLC_ITYP_REQUEST' 'stream/[Shells]/starter_shells_k4mb1.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/[Props]/[CleaningRobot]/mula_prop_cleandock.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/[Props]/[CleaningRobot]/mula_prop_cleandock_small_occupied.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/[Props]/[CleaningRobot]/mula_prop_cleandock_tall.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/[Props]/[CleaningRobot]/mula_prop_cleandock_tall_occupied.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/[Props]/[CleaningRobot]/mula_prop_cleanrobot.ytyp'
-data_file 'DLC_ITYP_REQUEST' 'stream/[Props]/[CleaningRobot]/mula_prop_cleanrobot_small.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Props]/[CleaningRobot]/prop_cleandock.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Props]/[CleaningRobot]/prop_cleandock_small_occupied.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Props]/[CleaningRobot]/prop_cleandock_tall.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Props]/[CleaningRobot]/prop_cleandock_tall_occupied.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Props]/[CleaningRobot]/prop_cleanrobot.ytyp'
+data_file 'DLC_ITYP_REQUEST' 'stream/[Props]/[CleaningRobot]/prop_cleanrobot_small.ytyp'
 data_file 'AUDIO_WAVEPACK'  'sound/audiodirectory'
 data_file 'AUDIO_SOUNDDATA' 'sound/data/lns_sounds.dat'
 data_file 'WEAPONINFO_FILE' 'data/weapons.meta'

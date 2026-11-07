@@ -3799,24 +3799,48 @@ return {
                 tempEffect = 0.1
             },
             {
-                id = 'mula_prop_cleandock_small_occupied',
+                id = 'prop_cleandock_small_occupied',
                 label = 'Small Cleaning Robot Dock',
-                model = 'mula_prop_cleandock_small_occupied',
+                model = 'prop_cleandock_small_occupied',
                 price = 500,
                 powerConsumption = 0.5,
                 tempEffect = 0.1,
                 isCleanRobot = true,
-                cleanRobotType = 'small'
+                cleanRobotType = 'small',
+                variants = {
+                    { id = 'tint_0', label = 'White', textureVariation = 0, color = '#DBDCDE' },
+                    { id = 'tint_1', label = 'Black', textureVariation = 1, color = '#262729' },
+                    { id = 'tint_2', label = 'Silver', textureVariation = 2, color = '#BABDC2' },
+                    { id = 'tint_3', label = 'Blue', textureVariation = 3, color = '#52AEDB' },
+                    { id = 'tint_4', label = 'Green', textureVariation = 4, color = '#29CF31' },
+                    { id = 'tint_5', label = 'Orange', textureVariation = 5, color = '#D69A29' },
+                    { id = 'tint_6', label = 'Pink', textureVariation = 6, color = '#DE82DB' },
+                    { id = 'tint_7', label = 'Purple', textureVariation = 7, color = '#BDA6C8' },
+                    { id = 'tint_8', label = 'Red', textureVariation = 8, color = '#B5413F' },
+                    { id = 'tint_9', label = 'Yellow', textureVariation = 9, color = '#EFC339' },
+                }
             },
             {
-                id = 'mula_prop_cleandock_tall_occupied',
+                id = 'prop_cleandock_tall_occupied',
                 label = 'Large Cleaning Robot Dock',
-                model = 'mula_prop_cleandock_tall_occupied',
+                model = 'prop_cleandock_tall_occupied',
                 price = 1000,
                 powerConsumption = 0.7,
                 tempEffect = 0.1,
                 isCleanRobot = true,
-                cleanRobotType = 'tall'
+                cleanRobotType = 'tall',
+                variants = {
+                    { id = 'tint_0', label = 'White', textureVariation = 0, color = '#DBDCDE' },
+                    { id = 'tint_1', label = 'Black', textureVariation = 1, color = '#262729' },
+                    { id = 'tint_2', label = 'Silver', textureVariation = 2, color = '#BABDC2' },
+                    { id = 'tint_3', label = 'Blue', textureVariation = 3, color = '#52AEDB' },
+                    { id = 'tint_4', label = 'Green', textureVariation = 4, color = '#29CF31' },
+                    { id = 'tint_5', label = 'Orange', textureVariation = 5, color = '#D69A29' },
+                    { id = 'tint_6', label = 'Pink', textureVariation = 6, color = '#DE82DB' },
+                    { id = 'tint_7', label = 'Purple', textureVariation = 7, color = '#BDA6C8' },
+                    { id = 'tint_8', label = 'Red', textureVariation = 8, color = '#B5413F' },
+                    { id = 'tint_9', label = 'Yellow', textureVariation = 9, color = '#EFC339' },
+                }
             },
             {
                 id = 'v_res_fh_speakerdock',
