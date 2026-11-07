@@ -133,6 +133,14 @@ end)
 
 lib.addCommand('checkfurniture', {
     help = 'Audit all furniture prop models to verify valid assets (Admin only)',
+    params = {
+        {
+            name = 'category',
+            type = 'string',
+            help = 'Specific category or model name to audit (optional, defaults to all)',
+            optional = true,
+        },
+    },
 }, function(source, args, raw)
     debugPrint('info', 'Command /checkfurniture executed', {source = source})
     if not CheckPermission(source, 'admin') then

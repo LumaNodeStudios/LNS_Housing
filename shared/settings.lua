@@ -174,7 +174,7 @@ return {
     ----------------------------------------------------------------------------
     Trash = {
         Enabled = true,                     -- Enable or disable property & apartment trash buildup over time
-        BuildupInterval = 50,             -- Time in seconds (e.g. 7200 = 2 hours) for each trash pile to accumulate
+        BuildupInterval = 7200,             -- Time in seconds (e.g. 7200 = 2 hours) for each trash pile to accumulate
         MaxTrash = 8,                       -- Maximum number of trash piles that can accumulate in a property/apartment
         CleanDuration = 4000,               -- Duration in milliseconds to clean/pickup a trash pile
         ThrowDuration = 2500,               -- Duration in milliseconds to toss a trash bag into a street dumpster
@@ -191,12 +191,21 @@ return {
             'prop_rub_litter_03',
         },
 
+        -- Trash bag inventory item integration (uses inventory bridge)
+        Item = {
+            Enabled = false,                -- If true, picking up trash gives an inventory item; disposing requires and removes the item
+            Name = 'trashbag',              -- Inventory item identifier (e.g. 'trashbag' or 'garbagebag')
+            MaxCarry = nil,                 -- Optional: max trash bags a player can hold in inventory at once (nil = limited only by inventory weight/slots)
+        },
+
         -- Carried trash bag prop attachment settings
         CarryProp = {
-            model = 'prop_cs_street_binbag_01',
+            model = 'prop_cs_rub_binbag_01',
             bone = 57005,                   -- SKEL_R_Hand
-            offset = vec3(0.12, 0.0, 0.0),
-            rotation = vec3(-80.0, 0.0, 0.0),
+            offset = vec3(0.12, 0.0, -0.05),
+            rotation = vec3(220.0, 120.0, 0.0),
+            animDict = 'missfbi4prepp1',
+            animClip = '_bag_walk_garbage_man',
         },
 
         -- Street Dumpster Models for ox_target:addModel
@@ -231,13 +240,37 @@ return {
         -- Optional Cash/Money reward for properly disposing of trash in a street dumpster
         Reward = {
             Enabled = true,
-            Min = 15,
-            Max = 50,
-            Account = 'money',             -- 'money' or 'cash'
+            Min = 1500,
+            Max = 5000,
+            Account = 'cash',             -- 'money' or 'cash'
         },
 
         -- Visual flies swarm particle effect inside properties when trash is at maximum level
         FliesEffect = true,
+
+        -- Autonomous Cleaning Robot settings
+        Robot = {
+            Enabled = true,                     -- Enable autonomous robot cleaners (mula_prop_cleandock props)
+            DefaultTimer = 3600,                -- Default timer in seconds (3600s = 1 hour, 0 = disabled/manual only)
+            Speed = 1.0,                        -- Robot drive speed (meters per second)
+            CleanDuration = 3000,               -- Duration in milliseconds the robot pauses at each trash pile to clean it
+            Sound = true,                       -- Play vacuum audio/effects when operating
+            MaxWaypoints = 60,                  -- Maximum path waypoints per route
+            AutoCheckInterval = 30,             -- How often in seconds the server checks cleaning timers (30s)
+            DockHeadingOffset = 180.0,          -- Angle offset for dock opening exit direction (180.0: Mula dock opening faces local -Y)
+            RobotHeadingOffset = 0.0,           -- Angle offset for robot prop front orientation (0.0: standard +Y forward facing)
+            AvailableTimers = {
+                { label = 'Disabled (Manual Clean Only)', value = 0 },
+                { label = 'Every 15 Minutes', value = 900 },
+                { label = 'Every 30 Minutes', value = 1800 },
+                { label = 'Every 1 Hour', value = 3600 },
+                { label = 'Every 2 Hours', value = 7200 },
+                { label = 'Every 4 Hours', value = 14400 },
+                { label = 'Every 8 Hours', value = 28800 },
+                { label = 'Every 12 Hours', value = 43200 },
+                { label = 'Every 24 Hours', value = 86400 },
+            }
+        },
 
         -- Curated floor offsets for standard shells (relative to shell origin)
         ShellOffsets = {
@@ -247,6 +280,9 @@ return {
                 vec3(1.4, -1.2, 0.0),
                 vec3(-0.8, -1.5, 0.0),
                 vec3(0.0, 1.5, 0.0),
+                vec3(1.1, 0.9, 0.0),
+                vec3(-1.4, -0.6, 0.0),
+                vec3(0.7, -1.8, 0.0),
             },
             ['Modern Hotel'] = {
                 vec3(2.5, 2.0, -0.75),
@@ -254,6 +290,9 @@ return {
                 vec3(1.8, -1.5, -0.75),
                 vec3(-1.5, -2.0, -0.75),
                 vec3(3.2, 0.0, -0.75),
+                vec3(-0.5, 2.2, -0.75),
+                vec3(0.5, -2.2, -0.75),
+                vec3(-2.5, -0.5, -0.75),
             },
             ['Apartment Furnished'] = {
                 vec3(0.5, -4.5, 0.0),
@@ -261,6 +300,9 @@ return {
                 vec3(2.2, -6.5, 0.0),
                 vec3(-1.2, -7.5, 0.0),
                 vec3(1.5, -2.0, 0.0),
+                vec3(-0.8, -5.5, 0.0),
+                vec3(1.8, -4.0, 0.0),
+                vec3(-1.5, -6.2, 0.0),
             },
             ['Apartment Unfurnished'] = {
                 vec3(0.8, -5.0, -0.5),
@@ -268,6 +310,9 @@ return {
                 vec3(2.5, -8.0, -0.5),
                 vec3(-1.5, -9.0, -0.5),
                 vec3(1.0, -11.0, -0.5),
+                vec3(-0.5, -6.5, -0.5),
+                vec3(1.8, -6.0, -0.5),
+                vec3(-1.0, -7.5, -0.5),
             },
             ['Apartment 2 Unfurnished'] = {
                 vec3(2.0, -3.0, -1.0),
@@ -275,6 +320,9 @@ return {
                 vec3(3.0, -4.5, -1.0),
                 vec3(-2.2, -4.0, -1.0),
                 vec3(0.5, -1.5, -1.0),
+                vec3(1.2, -4.8, -1.0),
+                vec3(-0.8, -3.8, -1.0),
+                vec3(2.5, -1.8, -1.0),
             },
             ['Trailer'] = {
                 vec3(0.4, 0.5, -0.48),
@@ -282,6 +330,9 @@ return {
                 vec3(0.5, -1.0, -0.48),
                 vec3(-0.5, -0.2, -0.48),
                 vec3(0.0, 2.5, -0.48),
+                vec3(0.3, -1.8, -0.48),
+                vec3(-0.4, 1.1, -0.48),
+                vec3(0.2, 3.2, -0.48),
             },
             ['House 1'] = {
                 vec3(1.5, -2.0, -0.57),
@@ -289,6 +340,9 @@ return {
                 vec3(2.0, -4.0, -0.57),
                 vec3(-1.2, -4.5, -0.57),
                 vec3(0.5, 0.5, -0.57),
+                vec3(-0.5, -2.8, -0.57),
+                vec3(1.0, -3.2, -0.57),
+                vec3(-1.5, -0.5, -0.57),
             },
             ['House 2'] = {
                 vec3(1.2, -1.5, -1.1),
@@ -296,6 +350,9 @@ return {
                 vec3(1.8, -3.5, -1.1),
                 vec3(-1.5, 0.5, -1.1),
                 vec3(0.2, -4.0, -1.1),
+                vec3(-0.8, -2.8, -1.1),
+                vec3(1.0, -0.5, -1.1),
+                vec3(-1.0, -4.5, -1.1),
             },
             ['House 3'] = {
                 vec3(1.5, -2.0, -0.37),
@@ -303,6 +360,9 @@ return {
                 vec3(2.2, -3.5, -0.37),
                 vec3(-1.8, -4.0, -0.37),
                 vec3(0.0, -0.5, -0.37),
+                vec3(-0.6, -2.8, -0.37),
+                vec3(1.2, -0.8, -0.37),
+                vec3(0.5, -4.2, -0.37),
             },
             ['House 4'] = {
                 vec3(1.0, -1.0, -0.41),
@@ -310,6 +370,9 @@ return {
                 vec3(1.8, -2.5, -0.41),
                 vec3(-1.0, -2.0, -0.41),
                 vec3(0.2, 1.0, -0.41),
+                vec3(-0.5, -3.0, -0.41),
+                vec3(1.2, 0.2, -0.41),
+                vec3(-1.2, 0.5, -0.41),
             },
             ['Garage'] = {
                 vec3(4.0, 0.0, -0.76),
@@ -317,6 +380,9 @@ return {
                 vec3(10.0, -1.0, -0.76),
                 vec3(2.0, -1.5, -0.76),
                 vec3(6.0, 2.0, -0.76),
+                vec3(5.0, -1.8, -0.76),
+                vec3(9.0, 0.5, -0.76),
+                vec3(3.0, 1.8, -0.76),
             },
             ['2 Floor House'] = {
                 vec3(-4.0, 2.0, -4.07),
@@ -324,6 +390,9 @@ return {
                 vec3(-2.0, 3.5, -4.07),
                 vec3(-5.0, 0.5, -4.07),
                 vec3(-1.5, 1.0, -4.07),
+                vec3(-3.5, 4.5, -4.07),
+                vec3(-5.5, 2.5, -4.07),
+                vec3(-2.8, 1.2, -4.07),
             },
             ['Container'] = {
                 vec3(0.0, -2.0, -0.22),
@@ -331,6 +400,9 @@ return {
                 vec3(0.5, -1.0, -0.22),
                 vec3(-0.4, -0.5, -0.22),
                 vec3(0.4, -4.5, -0.22),
+                vec3(-0.3, -1.5, -0.22),
+                vec3(0.3, -2.8, -0.22),
+                vec3(-0.2, -4.0, -0.22),
             },
             ['Office'] = {
                 vec3(0.5, 2.0, -0.73),
@@ -338,6 +410,9 @@ return {
                 vec3(1.8, 3.5, -0.73),
                 vec3(-1.2, 3.0, -0.73),
                 vec3(0.0, 4.0, -0.73),
+                vec3(-0.8, 2.2, -0.73),
+                vec3(1.2, 1.8, -0.73),
+                vec3(0.5, 3.2, -0.73),
             },
             ['Store'] = {
                 vec3(-1.0, -2.0, -0.62),
@@ -345,6 +420,9 @@ return {
                 vec3(-1.8, 0.5, -0.62),
                 vec3(1.2, 1.0, -0.62),
                 vec3(0.0, -3.0, -0.62),
+                vec3(-0.5, -0.5, -0.62),
+                vec3(1.0, -2.5, -0.62),
+                vec3(-1.2, -1.0, -0.62),
             },
             ['Warehouse'] = {
                 vec3(-3.0, 1.5, -0.95),
@@ -352,6 +430,9 @@ return {
                 vec3(1.0, 2.0, -0.95),
                 vec3(2.5, -1.5, -0.95),
                 vec3(-1.0, -0.5, -0.95),
+                vec3(-2.0, -1.8, -0.95),
+                vec3(2.0, 0.8, -0.95),
+                vec3(-4.0, 0.5, -0.95),
             },
         }
     },

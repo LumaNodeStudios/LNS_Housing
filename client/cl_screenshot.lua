@@ -187,7 +187,6 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
     Bridge.Client.Notify('Starting furniture screenshots. Capturing ' .. #itemsToCapture .. ' item(s)...', 'inform')
     Wait(1000)
 
-    -- Pin interior archetypes and set streaming focus so residential props stream properly
     for _, interiorId in ipairs(PinnedInteriors) do
         if IsValidInterior(interiorId) then
             PinInteriorInMemory(interiorId)
@@ -303,7 +302,6 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
         DestroyCam(cam, false)
     end
 
-    -- Clean up pinned interiors and focus
     for _, interiorId in ipairs(PinnedInteriors) do
         if IsValidInterior(interiorId) then
             UnpinInterior(interiorId)

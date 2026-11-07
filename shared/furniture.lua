@@ -3799,6 +3799,26 @@ return {
                 tempEffect = 0.1
             },
             {
+                id = 'mula_prop_cleandock_small_occupied',
+                label = 'Small Cleaning Robot Dock',
+                model = 'mula_prop_cleandock_small_occupied',
+                price = 500,
+                powerConsumption = 0.5,
+                tempEffect = 0.1,
+                isCleanRobot = true,
+                cleanRobotType = 'small'
+            },
+            {
+                id = 'mula_prop_cleandock_tall_occupied',
+                label = 'Large Cleaning Robot Dock',
+                model = 'mula_prop_cleandock_tall_occupied',
+                price = 1000,
+                powerConsumption = 0.7,
+                tempEffect = 0.1,
+                isCleanRobot = true,
+                cleanRobotType = 'tall'
+            },
+            {
                 id = 'v_res_fh_speakerdock',
                 label = 'Speaker Dock',
                 model = 'v_res_fh_speakerdock',

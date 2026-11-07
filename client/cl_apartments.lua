@@ -111,6 +111,12 @@ function EnterApartmentRoom(roomData)
     InsidePropertyId = roomData.id
     insideApartment = true
 
+    pcall(function()
+        LocalPlayer.state:set('inProperty', true, true)
+        LocalPlayer.state:set('insidePropertyId', roomData.id, true)
+        LocalPlayer.state:set('insideApartment', true, true)
+    end)
+
     local roomInfo = lib.callback.await('LNS_Housing:server:getApartmentInfo', false, roomData.id)
     roomInfo = roomInfo or {}
 
@@ -189,6 +195,11 @@ end
 function LeaveApartmentRoom(roomId)
     local targetId = roomId or CurrentApartmentId
     if targetId and (CurrentApartmentId == targetId or not roomId) then
+        pcall(function()
+            LocalPlayer.state:set('inProperty', false, true)
+            LocalPlayer.state:set('insidePropertyId', nil, true)
+            LocalPlayer.state:set('insideApartment', false, true)
+        end)
         UnloadFurnitures(targetId)
         if UnloadPropertyTrash then UnloadPropertyTrash(targetId) end
         CurrentApartmentId = nil

@@ -870,16 +870,26 @@ exports('MigrateNoLag', function(dryRun)
     return RunNoLagMigration(dryRun)
 end)
 
-RegisterCommand('migratenolag', function(source, args)
+lib.addCommand('migratenolag', {
+    help = 'Migrate properties from NoLag housing (Console only)',
+    params = {
+        {
+            name = 'mode',
+            type = 'string',
+            help = '"dryrun" to test or "execute" to migrate',
+            optional = true,
+        },
+    },
+}, function(source, args, raw)
     if source ~= 0 then
         Bridge.Server.Notify(source, 'This command can only be executed via the server console.', 'error')
         return
     end
 
-    local mode = args[1] and string.lower(args[1]) or 'dryrun'
+    local mode = args.mode and string.lower(args.mode) or (args[1] and string.lower(args[1])) or 'dryrun'
     if mode == 'execute' or mode == 'confirm' then
         RunNoLagMigration(false)
     else
         RunNoLagMigration(true)
     end
-end, true)
+end)

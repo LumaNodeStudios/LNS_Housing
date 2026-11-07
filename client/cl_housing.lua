@@ -922,6 +922,18 @@ function LoadFurnitures(propertyId)
                             })
                         end
 
+                        local isCleanDock = (itemData and (itemData.isCleanRobot or itemData.cleanRobotType ~= nil))
+                            or fHash == joaat('mula_prop_cleandock_small_occupied')
+                            or fHash == joaat('mula_prop_cleandock')
+                            or fHash == joaat('mula_prop_cleandock_tall_occupied')
+                            or fHash == joaat('mula_prop_cleandock_tall')
+
+                        if isCleanDock then
+                            if SetupCleanRobotDockTarget then
+                                SetupCleanRobotDockTarget(propertyId, f.id, obj, f, itemData, p.isApartment)
+                            end
+                        end
+
                         if LoadedFurniture[propertyId] then
                             LoadedFurniture[propertyId][f.id] = obj
                         else
@@ -936,6 +948,10 @@ function LoadFurnitures(propertyId)
 end
 
 function UnloadFurnitures(propertyId)
+    if OnUnloadPropertyRobot then
+        local p = Properties and Properties[propertyId]
+        OnUnloadPropertyRobot(propertyId, p and p.isApartment)
+    end
     if not LoadedFurniture[propertyId] then return end
     
     for _, obj in pairs(LoadedFurniture[propertyId]) do

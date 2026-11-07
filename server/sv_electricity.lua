@@ -313,9 +313,19 @@ local function GetPropertyEntrance(p)
     return nil
 end
 
-RegisterCommand('cutpower', function(source, args)
+lib.addCommand('cutpower', {
+    help = 'Manually cut electrical power to a property (Circuit breaker trip)',
+    params = {
+        {
+            name = 'propertyId',
+            type = 'number',
+            help = 'Property ID (optional, defaults to closest property)',
+            optional = true,
+        },
+    },
+}, function(source, args, raw)
     local src = source
-    local propertyId = tonumber(args[1])
+    local propertyId = tonumber(args.propertyId) or tonumber(args[1])
     
     if not propertyId and src > 0 then
         local playerPed = GetPlayerPed(src)
@@ -360,11 +370,21 @@ RegisterCommand('cutpower', function(source, args)
     if src > 0 then
         Bridge.Server.Notify(src, string.format("Power manually cut to Property #%d! Circuit breaker tripped.", propertyId), "warning")
     end
-end, false)
+end)
 
-RegisterCommand('restorepower', function(source, args)
+lib.addCommand('restorepower', {
+    help = 'Restore electrical power to a property (Circuit breaker reset)',
+    params = {
+        {
+            name = 'propertyId',
+            type = 'number',
+            help = 'Property ID (optional, defaults to closest property)',
+            optional = true,
+        },
+    },
+}, function(source, args, raw)
     local src = source
-    local propertyId = tonumber(args[1])
+    local propertyId = tonumber(args.propertyId) or tonumber(args[1])
 
     if not propertyId and src > 0 then
         local playerPed = GetPlayerPed(src)
@@ -404,4 +424,4 @@ RegisterCommand('restorepower', function(source, args)
     if src > 0 then
         Bridge.Server.Notify(src, string.format("Power restored to Property #%d!", propertyId), "success")
     end
-end, false)
+end)
