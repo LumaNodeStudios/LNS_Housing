@@ -112,12 +112,47 @@ Modeler = {
                         if item.variants then
                             for _, variant in ipairs(item.variants) do
                                 local vModel = variant.model or item.model
-                                if mappings[vModel] then
-                                    variant.imageUrl = mappings[vModel]
+                                local vKey = vModel
+                                if variant.textureVariation ~= nil then
+                                    vKey = vModel .. '_tint_' .. tostring(variant.textureVariation)
+                                end
+
+                                if mappings[vKey] then
+                                    variant.imageUrl = mappings[vKey]
                                 elseif baseUrl then
-                                    variant.imageUrl = baseUrl .. vModel .. '.webp'
+                                    variant.imageUrl = baseUrl .. vKey .. '.webp'
+                                elseif mappings[vModel] then
+                                    variant.imageUrl = mappings[vModel]
                                 else
                                     variant.imageUrl = nil
+                                end
+                            end
+                        end
+
+                        if item.textureVariations and type(item.textureVariations) == 'table' then
+                            for idx, tv in ipairs(item.textureVariations) do
+                                local texIdx = tv.index ~= nil and tv.index or (tv.textureVariation ~= nil and tv.textureVariation or (idx - 1))
+                                local tvKey = item.model .. '_tint_' .. tostring(texIdx)
+                                if mappings[tvKey] then
+                                    tv.imageUrl = mappings[tvKey]
+                                elseif baseUrl then
+                                    tv.imageUrl = baseUrl .. tvKey .. '.webp'
+                                elseif mappings[item.model] then
+                                    tv.imageUrl = mappings[item.model]
+                                end
+                            end
+                        end
+
+                        if item.colors and type(item.colors) == 'table' then
+                            for idx, c in ipairs(item.colors) do
+                                local colIdx = c.index ~= nil and c.index or (c.textureVariation ~= nil and c.textureVariation or (idx - 1))
+                                local cKey = item.model .. '_tint_' .. tostring(colIdx)
+                                if mappings[cKey] then
+                                    c.imageUrl = mappings[cKey]
+                                elseif baseUrl then
+                                    c.imageUrl = baseUrl .. cKey .. '.webp'
+                                elseif mappings[item.model] then
+                                    c.imageUrl = mappings[item.model]
                                 end
                             end
                         end

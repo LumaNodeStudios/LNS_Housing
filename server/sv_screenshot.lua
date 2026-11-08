@@ -1,10 +1,10 @@
 lib.addCommand('takeshots', {
-    help = 'Capture screenshots of furniture models for catalog UI',
+    help = 'Capture screenshots of furniture models and tints for catalog UI',
     params = {
         {
             name = 'model',
             type = 'string',
-            help = 'Specific model name to screenshot (optional, defaults to all)',
+            help = 'Specific model name or tint key (e.g. model_tint_0) to screenshot (optional, defaults to all)',
             optional = true,
         },
     },

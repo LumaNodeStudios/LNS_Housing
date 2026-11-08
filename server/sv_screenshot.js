@@ -36,10 +36,15 @@ async function ensureFurnitureTable() {
     try {
         await global.exports.oxmysql.execute_async(
             `CREATE TABLE IF NOT EXISTS \`${FURNITURE_TABLE}\` (
-                \`model\` VARCHAR(64) NOT NULL PRIMARY KEY,
+                \`model\` VARCHAR(128) NOT NULL PRIMARY KEY,
                 \`url\` VARCHAR(255) NOT NULL
             )`
         );
+                try {
+            await global.exports.oxmysql.execute_async(
+                `ALTER TABLE \`${FURNITURE_TABLE}\` MODIFY \`model\` VARCHAR(128) NOT NULL`
+            );
+        } catch (_) {}
         furnitureTableReady = true;
     } catch (e) {
         console.log('^1[LNS_Housing]^0 Failed to ensure furniture image table: ' + e.message);

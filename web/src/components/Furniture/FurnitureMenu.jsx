@@ -10,6 +10,16 @@ import Modeler3D from './Modeler3D';
 import './FurnitureMenu.css';
 import furnitureFallbackImg from '../../assets/furniture_fallback.png';
 
+export const getFurnitureItemUrl = (item) => {
+  if (!item) return null;
+  if (item.imageUrl) return item.imageUrl;
+  if (!item.model) return null;
+  if (item.textureVariation !== undefined && item.textureVariation !== null && item.textureVariation !== '') {
+    return `assets/furniture/${item.model}_tint_${item.textureVariation}.webp`;
+  }
+  return `assets/furniture/${item.model}.webp`;
+};
+
 export const getNormalizedVariants = (item) => {
   if (!item) return [];
   if (Array.isArray(item.variants) && item.variants.length > 0) {
@@ -25,15 +35,18 @@ export const getNormalizedVariants = (item) => {
     }));
   }
   if (Array.isArray(item.textureVariations) && item.textureVariations.length > 0) {
-    return item.textureVariations.map((tv, idx) => ({
-      id: tv.id || `${item.id || item.model}_tint_${idx}`,
-      label: tv.label || `Tint #${tv.index !== undefined ? tv.index : idx}`,
-      model: tv.model || item.model,
-      textureVariation: tv.index !== undefined ? tv.index : (tv.textureVariation !== undefined ? tv.textureVariation : idx),
-      price: tv.price !== undefined ? tv.price : item.price,
-      color: tv.color || null,
-      imageUrl: tv.imageUrl || null,
-    }));
+    return item.textureVariations.map((tv, idx) => {
+      const texVar = tv.index !== undefined ? tv.index : (tv.textureVariation !== undefined ? tv.textureVariation : idx);
+      return {
+        id: tv.id || `${item.id || item.model}_tint_${texVar}`,
+        label: tv.label || `Tint #${texVar}`,
+        model: tv.model || item.model,
+        textureVariation: texVar,
+        price: tv.price !== undefined ? tv.price : item.price,
+        color: tv.color || null,
+        imageUrl: tv.imageUrl || null,
+      };
+    });
   }
   if (typeof item.textureVariations === 'number' && item.textureVariations > 0) {
     return Array.from({ length: item.textureVariations }, (_, idx) => ({
@@ -43,19 +56,24 @@ export const getNormalizedVariants = (item) => {
       textureVariation: idx,
       price: item.price,
       color: null,
-      imageUrl: null,
+      imageUrl: item.imageUrl && item.imageUrl.includes(`${item.model}.webp`)
+        ? item.imageUrl.replace(`${item.model}.webp`, `${item.model}_tint_${idx}.webp`)
+        : null,
     }));
   }
   if (Array.isArray(item.colors) && item.colors.length > 0) {
-    return item.colors.map((c, idx) => ({
-      id: c.id || `${item.id || item.model}_col_${idx}`,
-      label: c.label || `Color ${idx + 1}`,
-      model: c.model || item.model,
-      textureVariation: c.index !== undefined ? c.index : (c.textureVariation !== undefined ? c.textureVariation : idx),
-      price: c.price !== undefined ? c.price : item.price,
-      color: c.color || null,
-      imageUrl: c.imageUrl || null,
-    }));
+    return item.colors.map((c, idx) => {
+      const texVar = c.index !== undefined ? c.index : (c.textureVariation !== undefined ? c.textureVariation : idx);
+      return {
+        id: c.id || `${item.id || item.model}_col_${idx}`,
+        label: c.label || `Color ${idx + 1}`,
+        model: c.model || item.model,
+        textureVariation: texVar,
+        price: c.price !== undefined ? c.price : item.price,
+        color: c.color || null,
+        imageUrl: c.imageUrl || null,
+      };
+    });
   }
   return [];
 };
@@ -187,7 +205,7 @@ const NudgeBtn = ({ onClick, children, title, className = '', disabled }) => {
 const imageStatusCache = new Map();
 
 const FurnitureImage = React.memo(function FurnitureImage({ item, ItemIcon }) {
-  const initialUrl = item?.imageUrl || (item?.model ? `assets/furniture/${item.model}.webp` : null);
+  const initialUrl = getFurnitureItemUrl(item);
   const [currentUrl, setCurrentUrl] = useState(initialUrl);
   const cachedStatus = currentUrl ? imageStatusCache.get(currentUrl) : 'error';
 
@@ -195,7 +213,7 @@ const FurnitureImage = React.memo(function FurnitureImage({ item, ItemIcon }) {
   const [error, setError] = useState(cachedStatus === 'error' || !currentUrl);
 
   useEffect(() => {
-    const url = item?.imageUrl || (item?.model ? `assets/furniture/${item.model}.webp` : null);
+    const url = getFurnitureItemUrl(item);
     setCurrentUrl(url);
     if (!url) {
       setError(true);
@@ -212,7 +230,7 @@ const FurnitureImage = React.memo(function FurnitureImage({ item, ItemIcon }) {
       setLoaded(false);
       setError(false);
     }
-  }, [item?.imageUrl, item?.model]);
+  }, [item?.imageUrl, item?.model, item?.textureVariation]);
 
   const handleLoad = React.useCallback(() => {
     if (currentUrl) imageStatusCache.set(currentUrl, 'loaded');
@@ -227,9 +245,17 @@ const FurnitureImage = React.memo(function FurnitureImage({ item, ItemIcon }) {
         return;
       }
     }
+    // If a tint image fails to load, gracefully fall back to the base model image
+    if (currentUrl && item?.model && currentUrl.includes('_tint_')) {
+      const baseFallback = item?.parentImageUrl || (item?.imageUrl && !item.imageUrl.includes('_tint_') ? item.imageUrl : `assets/furniture/${item.model}.webp`);
+      if (currentUrl !== baseFallback && !imageStatusCache.has(baseFallback)) {
+        setCurrentUrl(baseFallback);
+        return;
+      }
+    }
     if (currentUrl) imageStatusCache.set(currentUrl, 'error');
     setError(true);
-  }, [currentUrl]);
+  }, [currentUrl, item?.model, item?.imageUrl, item?.parentImageUrl]);
 
   return (
     <div className="icon-wrapper">
@@ -925,6 +951,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                             const variantItemForPreview = {
                               ...variantParentItem,
                               ...variant,
+                              parentImageUrl: variantParentItem.imageUrl,
                               categoryId: variantParentItem.categoryId || activeCategory,
                               parentModel: variantParentItem.model,
                               parentId: variantParentItem.id,

@@ -128,15 +128,84 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
     end
 
     local itemsToCapture = {}
-    local seenModels = {}
+    local seenKeys = {}
+
+    local function addCaptureEntry(model, texVar, label, price, isVariant, itemId, variantId)
+        if not model or model == "" then return end
+        local modelLower = string.lower(tostring(model):gsub("%s+", ""))
+        local key = modelLower
+        if texVar ~= nil then
+            key = modelLower .. "_tint_" .. tostring(texVar)
+        end
+
+        if seenKeys[key] then return end
+
+        local matches = false
+        if not targetModel then
+            matches = true
+        elseif modelLower == targetModel or key == targetModel then
+            matches = true
+        elseif itemId and string.lower(tostring(itemId)) == targetModel then
+            matches = true
+        elseif variantId and string.lower(tostring(variantId)) == targetModel then
+            matches = true
+        end
+
+        if matches then
+            seenKeys[key] = true
+            table.insert(itemsToCapture, {
+                model = model,
+                modelLower = modelLower,
+                textureVariation = texVar,
+                imageKey = key,
+                label = label or model,
+                price = price or 0,
+                isVariant = isVariant or false
+            })
+        end
+    end
+
     for _, category in ipairs(Furniture) do
-        for _, item in ipairs(category.items) do
-            if item.model and item.model ~= "" then
-                local itemModelLower = string.lower(item.model)
-                if not targetModel or itemModelLower == targetModel then
-                    if not seenModels[itemModelLower] then
-                        seenModels[itemModelLower] = true
-                        table.insert(itemsToCapture, item)
+        if category.items then
+            for _, item in ipairs(category.items) do
+                if item.model and item.model ~= "" then
+                    addCaptureEntry(item.model, nil, item.label, item.price, false, item.id)
+
+                    if item.variants and type(item.variants) == 'table' then
+                        for _, variant in ipairs(item.variants) do
+                            local vModel = variant.model or item.model
+                            local vTex = variant.textureVariation ~= nil and tonumber(variant.textureVariation) or nil
+                            local vLabel = (item.label or vModel) .. ' (' .. (variant.label or (vTex ~= nil and ('Tint #' .. tostring(vTex)) or 'Variant')) .. ')'
+
+                            if vTex ~= nil then
+                                addCaptureEntry(vModel, vTex, vLabel, variant.price or item.price, true, item.id, variant.id)
+                            elseif variant.model and variant.model ~= "" and string.lower(variant.model) ~= string.lower(item.model) then
+                                addCaptureEntry(variant.model, nil, vLabel, variant.price or item.price, true, item.id, variant.id)
+                            end
+                        end
+                    end
+
+                    if item.textureVariations then
+                        if type(item.textureVariations) == 'number' and item.textureVariations > 0 then
+                            for i = 0, item.textureVariations - 1 do
+                                local vLabel = (item.label or item.model) .. ' (Tint #' .. tostring(i) .. ')'
+                                addCaptureEntry(item.model, i, vLabel, item.price, true, item.id)
+                            end
+                        elseif type(item.textureVariations) == 'table' then
+                            for idx, tv in ipairs(item.textureVariations) do
+                                local texIdx = tv.index ~= nil and tv.index or (tv.textureVariation ~= nil and tv.textureVariation or (idx - 1))
+                                local vLabel = (item.label or item.model) .. ' (' .. (tv.label or ('Tint #' .. tostring(texIdx))) .. ')'
+                                addCaptureEntry(item.model, tonumber(texIdx), vLabel, item.price, true, item.id, tv.id)
+                            end
+                        end
+                    end
+
+                    if item.colors and type(item.colors) == 'table' then
+                        for idx, c in ipairs(item.colors) do
+                            local colIdx = c.index ~= nil and c.index or (c.textureVariation ~= nil and c.textureVariation or (idx - 1))
+                            local vLabel = (item.label or item.model) .. ' (' .. (c.label or ('Color #' .. tostring(idx))) .. ')'
+                            addCaptureEntry(item.model, tonumber(colIdx), vLabel, item.price, true, item.id, c.id)
+                        end
                     end
                 end
             end
@@ -144,12 +213,38 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
     end
 
     if #itemsToCapture == 0 and targetModel then
-        table.insert(itemsToCapture, {
-            model = targetModel,
-            label = targetModel,
-            price = 0
-        })
+        local baseModel, tintStr = targetModel:match("^(.-)_tint_(%d+)$")
+        if baseModel and tintStr then
+            table.insert(itemsToCapture, {
+                model = baseModel,
+                modelLower = string.lower(baseModel),
+                textureVariation = tonumber(tintStr),
+                imageKey = targetModel,
+                label = baseModel .. ' (Tint #' .. tintStr .. ')',
+                price = 0,
+                isVariant = true
+            })
+        else
+            table.insert(itemsToCapture, {
+                model = targetModel,
+                modelLower = targetModel,
+                textureVariation = nil,
+                imageKey = targetModel,
+                label = targetModel,
+                price = 0,
+                isVariant = false
+            })
+        end
     end
+
+    table.sort(itemsToCapture, function(a, b)
+        if a.modelLower ~= b.modelLower then
+            return a.modelLower < b.modelLower
+        end
+        local aTex = a.textureVariation or -1
+        local bTex = b.textureVariation or -1
+        return aTex < bTex
+    end)
 
     if #itemsToCapture == 0 then
         Bridge.Client.Notify('No matching furniture models found to capture.', 'error')
@@ -211,6 +306,9 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
     local cam = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
     RenderScriptCams(true, false, 0, true, true)
 
+    local currentObj = nil
+    local currentObjHash = nil
+
     for index, item in ipairs(itemsToCapture) do
         if not isCapturing then break end
         SendNUIMessage({
@@ -218,36 +316,61 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
             data = {
                 current = index,
                 total = #itemsToCapture,
-                model = item.model
+                model = item.label or item.imageKey
             }
         })
         local hash = tonumber(item.model) or GetHashKey(item.model)
-        if LoadModel(hash) then
-            local min, max = GetModelDimensions(hash)
-            local size = max - min
-            local center = min + (size * 0.5)
-            local diagonal = math.sqrt(size.x * size.x + size.y * size.y + size.z * size.z)
-            local centerPoint = vector3(0.0, 0.0, -150.0)
-            local spawnPos = centerPoint - center
-            local obj = CreateObjectNoOffset(hash, spawnPos.x, spawnPos.y, spawnPos.z, false, false, false)
+        local obj = nil
 
-            SetEntityAsMissionEntity(obj, true, true)
-            SetModelAsNoLongerNeeded(hash)
-            SetEntityCollision(obj, false, false)
-            SetEntityRotation(obj, 0.0, 0.0, 0.0, 2, true)
-            FreezeEntityPosition(obj, true)
+        if currentObj and DoesEntityExist(currentObj) and currentObjHash == hash then
+            obj = currentObj
+        else
+            if currentObj and DoesEntityExist(currentObj) then
+                DeleteEntity(currentObj)
+                currentObj = nil
+                currentObjHash = nil
+            end
 
-            local dist = math.max(2.0, diagonal * 2.4)
-            local lookAt = centerPoint
-            local angleH = math.rad(40.0)
-            local angleV = math.rad(20.0)
-            local camX = lookAt.x + dist * math.cos(angleV) * math.sin(angleH)
-            local camY = lookAt.y - dist * math.cos(angleV) * math.cos(angleH)
-            local camZ = lookAt.z + dist * math.sin(angleV)
+            if LoadModel(hash) then
+                local min, max = GetModelDimensions(hash)
+                local size = max - min
+                local center = min + (size * 0.5)
+                local diagonal = math.sqrt(size.x * size.x + size.y * size.y + size.z * size.z)
+                local centerPoint = vector3(0.0, 0.0, -150.0)
+                local spawnPos = centerPoint - center
+                obj = CreateObjectNoOffset(hash, spawnPos.x, spawnPos.y, spawnPos.z, false, false, false)
 
-            SetCamCoord(cam, camX, camY, camZ)
-            PointCamAtCoord(cam, lookAt.x, lookAt.y, lookAt.z)
-            SetCamFov(cam, 35.0)
+                SetEntityAsMissionEntity(obj, true, true)
+                SetModelAsNoLongerNeeded(hash)
+                SetEntityCollision(obj, false, false)
+                SetEntityRotation(obj, 0.0, 0.0, 0.0, 2, true)
+                FreezeEntityPosition(obj, true)
+
+                local dist = math.max(2.0, diagonal * 2.4)
+                local lookAt = centerPoint
+                local angleH = math.rad(40.0)
+                local angleV = math.rad(20.0)
+                local camX = lookAt.x + dist * math.cos(angleV) * math.sin(angleH)
+                local camY = lookAt.y - dist * math.cos(angleV) * math.cos(angleH)
+                local camZ = lookAt.z + dist * math.sin(angleV)
+
+                SetCamCoord(cam, camX, camY, camZ)
+                PointCamAtCoord(cam, lookAt.x, lookAt.y, lookAt.z)
+                SetCamFov(cam, 35.0)
+
+                currentObj = obj
+                currentObjHash = hash
+            else
+                lib.print.error(string.format('Model load invalid: %s (in CdImage: %s, isValid: %s)', tostring(item.model), tostring(IsModelInCdimage(hash)), tostring(IsModelValid(hash))))
+            end
+        end
+
+        if obj and DoesEntityExist(obj) then
+            if item.textureVariation ~= nil then
+                SetObjectTextureVariation(obj, tonumber(item.textureVariation))
+            else
+                SetObjectTextureVariation(obj, 0)
+            end
 
             Wait(250)
 
@@ -264,11 +387,12 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
             end
 
             if base64 and base64 ~= '' then
-                activeUploads[item.model] = true
+                local uploadKey = item.imageKey or item.model
+                activeUploads[uploadKey] = true
                 activeUploadCount = activeUploadCount + 1
 
                 TriggerLatentServerEvent('LNS_Housing:server:processScreenshot', 800000, {
-                    model = item.model,
+                    model = uploadKey,
                     imageData = base64
                 })
 
@@ -278,15 +402,17 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
                     Wait(50)
                 end
             else
-                debugPrint('error', 'Failed to screenshot model: ' .. tostring(item.model))
-                print('Failed to screenshot model: ' .. tostring(item.model))
+                debugPrint('error', 'Failed to screenshot model: ' .. tostring(item.imageKey or item.model))
+                print('Failed to screenshot model: ' .. tostring(item.imageKey or item.model))
             end
-
-            DeleteEntity(obj)
-        else
-            lib.print.error(string.format('Model load invalid: %s (in CdImage: %s, isValid: %s)', tostring(item.model), tostring(IsModelInCdimage(hash)), tostring(IsModelValid(hash))))
         end
         Wait(50)
+    end
+
+    if currentObj and DoesEntityExist(currentObj) then
+        DeleteEntity(currentObj)
+        currentObj = nil
+        currentObjHash = nil
     end
 
     drawingGreenScreen = false
@@ -317,6 +443,10 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
 
     activeUploads = {}
     activeUploadCount = 0
+
+    if Modeler then
+        Modeler.FurnitureDataReady = false
+    end
 
     if not wasCancelled then
         Bridge.Client.Notify('Finished screenshot session.', 'success')
