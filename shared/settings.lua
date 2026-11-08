@@ -239,7 +239,7 @@ return {
 
         -- Optional Cash/Money reward for properly disposing of trash in a street dumpster
         Reward = {
-            Enabled = true,
+            Enabled = false,
             Min = 1500,
             Max = 5000,
             Account = 'cash',             -- 'money' or 'cash'
@@ -254,7 +254,6 @@ return {
             DefaultTimer = 3600,                -- Default timer in seconds (3600s = 1 hour, 0 = disabled/manual only)
             Speed = 1.0,                        -- Robot drive speed (meters per second)
             CleanDuration = 3000,               -- Duration in milliseconds the robot pauses at each trash pile to clean it
-            Sound = true,                       -- Play vacuum audio/effects when operating
             MaxWaypoints = 60,                  -- Maximum path waypoints per route
             AutoCheckInterval = 30,             -- How often in seconds the server checks cleaning timers (30s)
             DockHeadingOffset = 180.0,          -- Angle offset for dock opening exit direction (180.0: Mula dock opening faces local -Y)
