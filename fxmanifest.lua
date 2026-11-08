@@ -6,7 +6,7 @@ this_is_a_map 'yes'
 
 author 'LumaNode Studios'
 description 'LumaNode Studios - Advanced Housing System'
-version '0.1.8'
+version '1.0.0'
 
 ui_page 'web/dist/index.html'
 
