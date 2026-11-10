@@ -1,4 +1,6 @@
-lib.require('@qbx_core.modules.lib')
+if Bridge.Framework == 'qbx' then
+    lib.require('@qbx_core.modules.lib')
+end
 local Settings = lib.load('shared.settings')
 local Furniture = lib.load('shared.furniture')
 local rawTheme = lib.load('shared.theme')
