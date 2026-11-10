@@ -181,7 +181,14 @@ end
 -- Dispatch Alerts
 function Bridge.Client.Dispatch(coords, title, message)
     debugPrint('info', 'Dispatch alert triggered', {coords = coords, title = title, message = message})
+    local policeJobs = Bridge.GetPoliceJobs()
+    if #policeJobs == 0 then return false end
+
     if GetResourceState('ps-dispatch') == 'started' then
+        local recipientList = {}
+        for _, jobName in ipairs(policeJobs) do
+            recipientList[jobName] = true
+        end
         exports['ps-dispatch']:CustomAlert({
             coords = coords,
             message = message,
@@ -190,13 +197,13 @@ function Bridge.Client.Dispatch(coords, title, message)
             gender = nil,
             playAlertSound = true,
             priority = 1,
-            recipientList = { police = true },
+            recipientList = recipientList,
             info = { { icon = "fas fa-house", label = title } }
         })
         return true
     elseif GetResourceState('qs-dispatch') == 'started' then
         exports['qs-dispatch']:GetDispatchAlert({
-            job = { 'police' },
+            job = policeJobs,
             callSign = '10-31',
             message = message,
             flashingBlip = true,
@@ -212,7 +219,8 @@ function Bridge.Client.Dispatch(coords, title, message)
         local data = {
             message = message,
             coords = coords,
-            job = 'police',
+            job = policeJobs[1],
+            job_table = policeJobs,
             title = title,
             code = '10-31',
             priority = 1,
@@ -230,7 +238,8 @@ function Bridge.Client.Dispatch(coords, title, message)
             coords = coords,
             message = message,
             priority = 1,
-            recipient = 'police'
+            recipient = policeJobs[1],
+            recipientList = policeJobs
         }
         TriggerEvent('linden_dispatch:addAlert', data)
         return true

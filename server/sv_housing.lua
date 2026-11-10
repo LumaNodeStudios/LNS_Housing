@@ -875,7 +875,7 @@ RegisterNetEvent('LNS_Housing:server:notifyPoliceFallback', function(message)
     for i = 1, #players do
         local pId = tonumber(players[i])
         local job = Bridge.Server.GetPlayerJob(pId)
-        if job and job.name == 'police' then
+        if Bridge.IsPoliceJob(job) then
             Bridge.Server.Notify(pId, message, 'warning')
         end
     end

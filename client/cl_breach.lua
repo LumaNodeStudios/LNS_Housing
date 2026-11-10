@@ -19,7 +19,7 @@ local latestRamConfig = { pitch = 12.0, roll = 0.0, yawOffset = 90.0, pos = vec3
 
 local function EnsureBreachingWeapon()
     local job = Bridge.Client.GetPlayerJob()
-    if not job or job.name ~= 'police' then
+    if not Bridge.IsPoliceJob(job) then
         Bridge.Client.Notify('Only police officers are authorized to breach doors!', 'error')
         return false
     end
@@ -727,7 +727,7 @@ end
 
 function StartPoliceStashRaid(propertyId, stashId)
     local job = Bridge.Client.GetPlayerJob()
-    if not job or job.name ~= 'police' then
+    if not Bridge.IsPoliceJob(job) then
         Bridge.Client.Notify('Only police officers are authorized to raid storage!', 'error')
         return
     end

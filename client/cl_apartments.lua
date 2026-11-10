@@ -881,7 +881,7 @@ local function RegisterApartmentDoors(delay)
                                 items = Settings.Security.RaidItem,
                                 canInteract = function()
                                     local job = Bridge.Client.GetPlayerJob()
-                                    if not job or job.name ~= 'police' then return false end
+                                    if not Bridge.IsPoliceJob(job) then return false end
                                     if IsPropertyBreached and IsPropertyBreached(room.id, nil) then
                                         return false
                                     end
@@ -896,7 +896,7 @@ local function RegisterApartmentDoors(delay)
                                 icon = 'fas fa-lock',
                                 canInteract = function()
                                     local job = Bridge.Client.GetPlayerJob()
-                                    if not job or job.name ~= 'police' then return false end
+                                    if not Bridge.IsPoliceJob(job) then return false end
                                     return IsPropertyBreached and IsPropertyBreached(room.id, nil)
                                 end,
                                 onSelect = function()

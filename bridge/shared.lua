@@ -44,6 +44,50 @@ end
 
 local Settings = lib.load('shared.settings')
 
+function Bridge.GetPoliceJobs()
+    local configured = Settings and Settings.Security and Settings.Security.PoliceJobs
+    if configured == nil then
+        return { 'police' }
+    end
+
+    local jobs = {}
+    local seen = {}
+
+    if type(configured) == 'string' then
+        if configured ~= '' then
+            jobs[1] = configured
+        end
+    elseif type(configured) == 'table' then
+        for _, jobName in ipairs(configured) do
+            if type(jobName) == 'string' and jobName ~= '' and not seen[jobName] then
+                seen[jobName] = true
+                jobs[#jobs + 1] = jobName
+            end
+        end
+        for key, value in pairs(configured) do
+            if type(key) == 'string' and value == true and key ~= '' and not seen[key] then
+                seen[key] = true
+                jobs[#jobs + 1] = key
+            end
+        end
+    end
+
+    return jobs
+end
+
+function Bridge.IsPoliceJob(job)
+    local jobName = type(job) == 'table' and job.name or job
+    if type(jobName) ~= 'string' or jobName == '' then return false end
+
+    for _, allowedJob in ipairs(Bridge.GetPoliceJobs()) do
+        if jobName == allowedJob then
+            return true
+        end
+    end
+
+    return false
+end
+
 -- Global Debug Print Utility using ox_lib print
 function debugPrint(level, ...)
     if Settings and Settings.Debug and Settings.Debug.Prints then

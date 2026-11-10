@@ -480,6 +480,7 @@ return {
     -- Security, Burglary & Key Settings (RAM IS EXPERIMENTAL!)
     ----------------------------------------------------------------------------
     Security = {
+        PoliceJobs = { 'police' },          -- Jobs authorized as police (door/stash breaching, securing doors, property access, dispatch alerts)
         LockpickItem = 'lockpick',          -- Item needed for ordinary house lockpicking
         RaidItem = 'WEAPON_BATTERINGRAM',   -- Item needed by police/authorized factions to raid door
         PoliceAccessTool = 'police_access_tool', -- Item needed by police to raid/breach storage/stashes

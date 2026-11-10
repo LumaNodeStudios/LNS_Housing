@@ -46,7 +46,7 @@ RegisterNetEvent('LNS_Housing:server:policeRaidDoor', function(propertyId, prope
     debugPrint('info', 'LNS_Housing:server:policeRaidDoor received', {src = src, propertyId = propertyId, propertyType = propertyType, doorId = doorId, doorCoords = doorCoords, breacherCoords = breacherCoords, swingAngle = swingAngle})
     
     local playerJob = Bridge.Server.GetPlayerJob(src)
-    if not playerJob or playerJob.name ~= 'police' then
+    if not Bridge.IsPoliceJob(playerJob) then
         Bridge.Server.Notify(src, 'Only police officers are authorized to breach doors!', 'error')
         return
     end
@@ -108,7 +108,7 @@ RegisterNetEvent('LNS_Housing:server:policeRaidStash', function(propertyId, stas
     debugPrint('info', 'LNS_Housing:server:policeRaidStash received', {src = src, propertyId = propertyId, stashId = stashId})
     
     local playerJob = Bridge.Server.GetPlayerJob(src)
-    if not playerJob or playerJob.name ~= 'police' then
+    if not Bridge.IsPoliceJob(playerJob) then
         Bridge.Server.Notify(src, 'Only police officers are authorized to breach storage!', 'error')
         return
     end
@@ -130,7 +130,7 @@ end)
 RegisterNetEvent('LNS_Housing:server:policeSecureDoor', function(propertyId, propertyType, doorId)
     local src = source
     local playerJob = Bridge.Server.GetPlayerJob(src)
-    if not playerJob or playerJob.name ~= 'police' then
+    if not Bridge.IsPoliceJob(playerJob) then
         Bridge.Server.Notify(src, 'Only police officers are authorized to secure doors!', 'error')
         return
     end

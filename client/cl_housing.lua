@@ -1202,7 +1202,7 @@ function HasPropertyAccessLocal(p, action)
         end
     end
 
-    if job and job.name == 'police' then
+    if Bridge.IsPoliceJob(job) then
         if action ~= 'storage' and action ~= 'stash' then
             return true
         end
@@ -1394,7 +1394,7 @@ function RegisterPropertyEntranceTargets(p)
         items = Settings.Security.RaidItem,
         canInteract = function()
             local job = Bridge.Client.GetPlayerJob()
-            if not job or job.name ~= 'police' then return false end
+            if not Bridge.IsPoliceJob(job) then return false end
             if IsPropertyBreached and IsPropertyBreached(id, doorId) then
                 return false
             end
@@ -1411,7 +1411,7 @@ function RegisterPropertyEntranceTargets(p)
         icon = 'fas fa-lock',
         canInteract = function()
             local job = Bridge.Client.GetPlayerJob()
-            if not job or job.name ~= 'police' then return false end
+            if not Bridge.IsPoliceJob(job) then return false end
             local isDoorBreached = IsPropertyBreached and IsPropertyBreached(id, doorId)
             local prop = Properties[id]
             local isUnlocked = prop and prop.metadata and prop.metadata.locked == false

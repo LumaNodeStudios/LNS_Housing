@@ -242,7 +242,7 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
 
         if not ignoreTemp then
             local playerJob = Bridge.Server.GetPlayerJob(source)
-            if playerJob and playerJob.name == 'police' then
+            if Bridge.IsPoliceJob(playerJob) then
                 if accessType ~= 'storage' and accessType ~= 'stash' then
                     return true
                 end
@@ -312,7 +312,7 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
 
         if not ignoreTemp then
             local playerJob = Bridge.Server.GetPlayerJob(source)
-            if playerJob and playerJob.name == 'police' then
+            if Bridge.IsPoliceJob(playerJob) then
                 if accessType ~= 'storage' and accessType ~= 'stash' then
                     return true
                 end
