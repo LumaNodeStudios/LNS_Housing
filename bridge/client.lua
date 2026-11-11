@@ -128,7 +128,9 @@ end
 -- Integrations & Utility Wrappers
 function Bridge.Client.OpenWardrobe(propertyId, furnitureId)
     debugPrint('info', 'Opening wardrobe', {propertyId = propertyId, furnitureId = furnitureId})
-    if GetResourceState('illenium-appearance') == 'started' then
+    if GetResourceState('LNS_Appearance') == 'started' then
+        TriggerEvent('LNS_Appearance:client:openOutfitMenu')
+    elseif GetResourceState('illenium-appearance') == 'started' then
         TriggerEvent('illenium-appearance:client:openOutfitMenu')
     else
         debugPrint('error', 'No clothing/appearance menu found!')
