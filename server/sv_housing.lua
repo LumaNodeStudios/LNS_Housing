@@ -125,6 +125,7 @@ end
 function SyncPropertyDoor(propertyId)
     local p = Properties[propertyId]
     if not p then return end
+    if GetResourceState('ox_doorlock') ~= 'started' then return end
 
     local doorsToSync = {}
     if p.doors and #p.doors > 0 then
@@ -135,18 +136,28 @@ function SyncPropertyDoor(propertyId)
 
     if #doorsToSync == 0 then return end
 
+    local isOwned = p.owner ~= nil and p.owner ~= ''
+    local groupsValue = ''
+    if not isOwned and Settings.RealEstate and Settings.RealEstate.AgentAccessUnowned ~= false then
+        local agencyGroups = Bridge.GetRealEstateAgencyJobs()
+        if next(agencyGroups) ~= nil then
+            groupsValue = agencyGroups
+        end
+    end
+
     local pk = Settings.Security.PhysicalKeys
 
     if pk and pk.Enabled then
         for _, doorId in ipairs(doorsToSync) do
             exports.ox_doorlock:editDoor(doorId, {
                 identifiers = {},
+                groups = groupsValue,
                 items = {
                     { name = pk.Item, metadata = { propertyId = propertyId, isApartment = false } }
                 },
                 passcode = false
             })
-            if not p.owner or IsRentOverdue(p) then
+            if not isOwned or IsRentOverdue(p) then
                 pcall(function() exports.ox_doorlock:setDoorState(doorId, 1) end)
             end
         end
@@ -156,7 +167,7 @@ function SyncPropertyDoor(propertyId)
     local identifiers = {}
 
     if not IsRentOverdue(p) then
-        if p.owner then
+        if isOwned then
             identifiers[p.owner] = 4
         end
 
@@ -174,10 +185,11 @@ function SyncPropertyDoor(propertyId)
     for _, doorId in ipairs(doorsToSync) do
         exports.ox_doorlock:editDoor(doorId, {
             identifiers = identifiers,
+            groups = groupsValue,
             items = {},
             passcode = false
         })
-        if not p.owner or IsRentOverdue(p) then
+        if not isOwned or IsRentOverdue(p) then
             pcall(function() exports.ox_doorlock:setDoorState(doorId, 1) end)
         end
     end

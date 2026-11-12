@@ -684,6 +684,9 @@ CreateThread(function()
     Wait(5000)
     for _, p in pairs(Properties) do
         EnrichPropertyDoorlockData(p)
+        if SyncPropertyDoor then
+            pcall(SyncPropertyDoor, p.id)
+        end
     end
     TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
 end)

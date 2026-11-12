@@ -25,6 +25,7 @@ return {
         },
         ContractDistance = 5.0,             -- Max distance to draft a contract (in meters)
         OnlyBuyViaContracts = false,        -- If true, players can only buy houses through a signed contract with an agent
+        AgentAccessUnowned = true,          -- If true, agents with any job in Agencies can unlock/lock doors and enter unowned properties (revoked once owned)
         Jobs = { 'realestate', 'luxuryestate' }, -- Jobs allowed to access the real estate agent actions
         Groups = { 'admin' },                        -- Admin groups that have full agent permissions (e.g. {'admin', 'god', 'superadmin'})
         Agencies = {

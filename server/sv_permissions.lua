@@ -249,6 +249,13 @@ function CheckPermission(source, permType, targetId, actionType, ignoreTemp)
             end
         end
 
+        if (accessType == 'entry' or accessType == 'doors') and (not p.owner or p.owner == '') then
+            local playerJob = Bridge.Server.GetPlayerJob(source)
+            if Bridge.IsRealEstateAgencyJob(playerJob) then
+                return true
+            end
+        end
+
         if accessType == 'entry' or accessType == 'doors' then
             local keyResult = HasPhysicalKey(source, propertyId, false)
             if keyResult ~= nil then

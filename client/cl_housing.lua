@@ -1166,18 +1166,13 @@ function HasPropertyAccessLocal(p, action)
     
     local identifier = Bridge.Client.GetIdentifier()
     local job = Bridge.Client.GetPlayerJob()
-    local isAgent = false
-
-    if job and Settings.RealEstate and Settings.RealEstate.Jobs then
-        for _, rJob in ipairs(Settings.RealEstate.Jobs) do
-            if job.name == rJob then
-                isAgent = true
-                break
-            end
-        end
-    end
+    local isAgencyAgent = Bridge.IsRealEstateAgencyJob(job)
+    local act = action or 'entry'
 
     if not p.owner or p.owner == "" then
+        if isAgencyAgent and (act == 'entry' or act == 'doors') then
+            return true
+        end
         return false
     end
 
@@ -1185,7 +1180,6 @@ function HasPropertyAccessLocal(p, action)
         return true
     end
 
-    local act = action or 'entry'
     if p.permissions and type(p.permissions) == 'table' then
         if p.permissions[act] and type(p.permissions[act]) == 'table' then
             for _, cid in ipairs(p.permissions[act]) do
@@ -1297,7 +1291,14 @@ function RegisterPropertyEntranceTargets(p)
         icon = 'fas fa-door-open',
         canInteract = function()
             if not isShell then return false end
-            return HasPropertyAccessLocal(Properties[id], 'entry')
+            local prop = Properties[id]
+            if HasPropertyAccessLocal(prop, 'entry') then
+                return true
+            end
+            if not (Settings.Security.PhysicalKeys and Settings.Security.PhysicalKeys.Enabled) then
+                return prop and prop.metadata and prop.metadata.locked == false
+            end
+            return false
         end,
         onSelect = function()
             if Settings.Security.PhysicalKeys and Settings.Security.PhysicalKeys.Enabled then

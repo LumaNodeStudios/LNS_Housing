@@ -221,6 +221,9 @@ lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
 
     local newHouse = CreateProperty(data)
     if newHouse then
+        if SyncPropertyDoor then
+            pcall(SyncPropertyDoor, newHouse.id)
+        end
         if newHouse.metadata and newHouse.metadata.garage_data then
             Bridge.Server.RegisterGarage(newHouse.id, newHouse.label, newHouse.metadata.garage_data)
         end

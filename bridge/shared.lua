@@ -88,6 +88,31 @@ function Bridge.IsPoliceJob(job)
     return false
 end
 
+function Bridge.GetRealEstateAgencyJobs()
+    local agencies = Settings and Settings.RealEstate and Settings.RealEstate.Agencies
+    if type(agencies) ~= 'table' then return {} end
+
+    local groups = {}
+    for jobName, _ in pairs(agencies) do
+        if type(jobName) == 'string' and jobName ~= '' then
+            groups[jobName] = 0
+        end
+    end
+    return groups
+end
+
+function Bridge.IsRealEstateAgencyJob(job)
+    if Settings and Settings.RealEstate and Settings.RealEstate.AgentAccessUnowned == false then
+        return false
+    end
+
+    local jobName = type(job) == 'table' and job.name or job
+    if type(jobName) ~= 'string' or jobName == '' then return false end
+
+    local agencies = Settings and Settings.RealEstate and Settings.RealEstate.Agencies
+    return type(agencies) == 'table' and agencies[jobName] ~= nil
+end
+
 -- Global Debug Print Utility using ox_lib print
 function debugPrint(level, ...)
     if Settings and Settings.Debug and Settings.Debug.Prints then
