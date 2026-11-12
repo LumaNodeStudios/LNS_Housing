@@ -532,10 +532,11 @@ return {
     -- NPC Locksmith Settings
     ----------------------------------------------------------------------------
     Locksmith = {
-        Enabled = false, -- Keep false if PhysicalKeys is disabled, set to true if PhysicalKeys is enabled
+        Enabled = false, -- Enables the built-in locksmith NPC/menu when PhysicalKeys is enabled (locksmith exports remain available whenever PhysicalKeys is enabled)
         BlankKeyItem = 'blank_house_key',   -- Item required and consumed to cut a new key
         Distance = 2.0,                     -- Interaction distance for the target option
         Ped = {
+            Enabled = true,                 -- Set to false to disable spawning the built-in NPC & blip while keeping locksmith exports active
             Model = 'a_m_m_business_01',
             Coords = vec4(170.06, -1799.52, 29.32, 321.68), -- Adjust to your locksmith location
             Scenario = 'WORLD_HUMAN_STAND_IMPATIENT',
