@@ -231,12 +231,72 @@ CreateThread(function()
     end
 end)
 
+local function IsStarterInstanceMode()
+    return Settings.Apartments and Settings.Apartments.Starter and Settings.Apartments.Starter.Mode == 'instance'
+end
+
+local function GetStarterApartmentRoomData(roomId)
+    local cfg = Settings.Apartments and Settings.Apartments.Starter
+    if not cfg then return nil end
+
+    local entrance = cfg.Entrance or (Settings.Apartments.Building and Settings.Apartments.Building.coords) or vec3(-826.53, -700.2, 27.06)
+    local interiorType = cfg.Type or 'shell'
+    local spawnCoords = cfg.SpawnCoords
+
+    if not spawnCoords then
+        if interiorType == 'ipl' then
+            local iplData = Settings.IPLs and Settings.IPLs[cfg.IPL]
+            if iplData and iplData.coords then
+                spawnCoords = iplData.coords
+            end
+        else
+            local shellData = Settings.Shells and Settings.Shells[cfg.Shell]
+            local shellOrigin = cfg.ShellCoords or vec3(entrance.x, entrance.y, Settings.ShellSpawningZ or -100.0)
+            if shellData and shellData.doorOffset then
+                spawnCoords = vec4(
+                    shellOrigin.x + shellData.doorOffset.x,
+                    shellOrigin.y + shellData.doorOffset.y,
+                    shellOrigin.z + shellData.doorOffset.z,
+                    shellData.doorOffset.h or 0.0
+                )
+            end
+        end
+    end
+
+    if not spawnCoords then
+        spawnCoords = vec4(entrance.x, entrance.y, entrance.z, 0.0)
+    end
+
+    local bucketOffset = cfg.BucketOffset or 20000
+    local numId = tonumber(roomId) or 1
+
+    return {
+        id = roomId,
+        isStarter = true,
+        isInstance = true,
+        interiorType = interiorType,
+        shell = interiorType == 'shell' and cfg.Shell or nil,
+        ipl = interiorType == 'ipl' and cfg.IPL or nil,
+        shellCoords = cfg.ShellCoords or vec3(entrance.x, entrance.y, Settings.ShellSpawningZ or -100.0),
+        doorCoords = entrance,
+        doorHeading = 0.0,
+        spawn = spawnCoords,
+        price = 0,
+        bucket = bucketOffset + numId,
+        wardrobe = cfg.Wardrobe,
+        stash = cfg.Stash
+    }
+end
+
 function GetRoomDataByIdServer(roomId)
     if not Settings.Rooms then return nil end
     for _, room in ipairs(Settings.Rooms) do
         if room.id == roomId or tostring(room.id) == tostring(roomId) or (tonumber(room.id) and tonumber(roomId) and tonumber(room.id) == tonumber(roomId)) then
             return room
         end
+    end
+    if IsStarterInstanceMode() then
+        return GetStarterApartmentRoomData(roomId)
     end
     return nil
 end
@@ -324,6 +384,36 @@ local function getPlayerRoom(src, citizenid, isNew)
         if lic2 then playerRooms[lic2] = result.room_id end
         assignedRoomIds[result.room_id] = true
         return result.room_id
+    end
+
+    if IsStarterInstanceMode() then
+        local maxRow = MySQL.single.await('SELECT COALESCE(MAX(room_id), 0) AS max_id FROM player_apartments')
+        local newRoomId = (maxRow and tonumber(maxRow.max_id) or 0) + 1
+        local isNewChar = not not isNew
+
+        local insertSuccess = pcall(function()
+            MySQL.insert.await('INSERT INTO player_apartments (license, room_id, is_new) VALUES (?, ?, ?)', {
+                lic1,
+                newRoomId,
+                isNewChar and 1 or 0
+            })
+        end)
+
+        if insertSuccess then
+            playerRooms[lic1] = newRoomId
+            if lic2 then playerRooms[lic2] = newRoomId end
+            assignedRoomIds[newRoomId] = true
+            return newRoomId
+        else
+            local r = MySQL.single.await('SELECT room_id FROM player_apartments WHERE license = ? OR license = ?', {lic1, lic2})
+            if r then
+                playerRooms[lic1] = r.room_id
+                if lic2 then playerRooms[lic2] = r.room_id end
+                assignedRoomIds[r.room_id] = true
+                return r.room_id
+            end
+        end
+        return nil
     end
 
     local room = getAvailableRoom()
@@ -507,12 +597,152 @@ lib.callback.register('LNS_Housing:server:claimNewCharacterSpawn', function(sour
             return {
                 shouldSpawn = true,
                 roomId = roomId,
-                spawnCoords = roomData.spawn
+                spawnCoords = roomData.spawn,
+                isInstance = roomData.isInstance,
+                roomData = roomData
             }
         end
     end
 
     return { shouldSpawn = false }
+end)
+
+local apartmentGuestAccess = {}
+
+RegisterNetEvent('LNS_Housing:server:enterApartmentBucket', function(roomId)
+    local src = source
+    debugPrint('info', 'LNS_Housing:server:enterApartmentBucket received', {src = src, roomId = roomId})
+    roomId = tonumber(roomId) or roomId
+    if not roomId then return end
+
+    local citizenid = Bridge.Server.GetIdentifier(src)
+    if not citizenid then return end
+
+    local hasAccess = false
+    local isOwner = false
+    local result = MySQL.single.await('SELECT citizenid, permissions, furniture FROM apartments WHERE room_id = ? OR room_id = ?', {roomId, tostring(roomId)})
+    if result then
+        if result.citizenid == citizenid then
+            hasAccess = true
+            isOwner = true
+        elseif result.permissions then
+            local perms = json.decode(result.permissions)
+            if perms and perms.entry then
+                for _, cid in ipairs(perms.entry) do
+                    if cid == citizenid then
+                        hasAccess = true
+                        break
+                    end
+                end
+            end
+        end
+    end
+
+    local pk = Settings.Security and Settings.Security.PhysicalKeys
+    if pk and pk.Enabled and not hasAccess then
+        local count = exports.ox_inventory:GetItemCount(src, pk.Item, { propertyId = roomId, isApartment = true })
+        if count and count > 0 then
+            hasAccess = true
+        end
+    end
+
+    local job = Bridge.Server.GetPlayerJob(src)
+    if job and Bridge.IsPoliceJob(job) and IsPropertyBreached and IsPropertyBreached(roomId, true) then
+        hasAccess = true
+    end
+
+    if apartmentGuestAccess[roomId] and apartmentGuestAccess[roomId][src] then
+        hasAccess = true
+    end
+
+    if not hasAccess and not isOwner then
+        local lic1, lic2 = GetPlayerLicense(src)
+        if (lic1 and playerRooms[lic1] and (playerRooms[lic1] == roomId or tostring(playerRooms[lic1]) == tostring(roomId))) or
+           (lic2 and playerRooms[lic2] and (playerRooms[lic2] == roomId or tostring(playerRooms[lic2]) == tostring(roomId))) then
+            hasAccess = true
+        end
+    end
+
+    if not hasAccess then
+        Bridge.Server.Notify(src, 'You do not have access to this apartment.', 'error')
+        return
+    end
+
+    local cfg = Settings.Apartments and Settings.Apartments.Starter
+    local bucketOffset = (cfg and cfg.BucketOffset) or 20000
+    local targetBucket = bucketOffset + (tonumber(roomId) or 1)
+
+    SetPlayerRoutingBucket(src, targetBucket)
+    Player(src).state:set('inProperty', true, true)
+    Player(src).state:set('insidePropertyId', roomId, true)
+    Player(src).state:set('insideApartment', true, true)
+    Player(src).state:set('apartmentBucket', targetBucket, true)
+    Bridge.Server.SetPlayerInside(src, roomId)
+
+    if cfg and cfg.Stash then
+        local stashSlots = (Settings.Stash and Settings.Stash.slots) or 50
+        local stashWeight = (Settings.Stash and Settings.Stash.weight) or 100000
+        local stashLabel = (Settings.Stash and Settings.Stash.label) or 'Apartment Storage'
+        Bridge.Server.RegisterStash(roomId, 'starter_stash', { slots = stashSlots, weight = stashWeight }, stashLabel)
+    end
+
+    if result and result.furniture then
+        local furnitureList = json.decode(result.furniture)
+        if furnitureList and Bridge.Server.RegisterPropertyStashes then
+            Bridge.Server.RegisterPropertyStashes(roomId, furnitureList)
+        end
+    end
+end)
+
+RegisterNetEvent('LNS_Housing:server:leaveApartmentBucket', function()
+    local src = source
+    debugPrint('info', 'LNS_Housing:server:leaveApartmentBucket received', {src = src})
+    SetPlayerRoutingBucket(src, 0)
+    Player(src).state:set('inProperty', false, true)
+    Player(src).state:set('insidePropertyId', nil, true)
+    Player(src).state:set('insideApartment', false, true)
+    Player(src).state:set('apartmentBucket', nil, true)
+    Bridge.Server.ClearPlayerInside(src)
+end)
+
+lib.callback.register('LNS_Housing:server:canEnterApartment', function(source, roomId)
+    roomId = tonumber(roomId) or roomId
+    if not roomId then return false end
+    local citizenid = Bridge.Server.GetIdentifier(source)
+    if not citizenid then return false end
+
+    local lic1, lic2 = GetPlayerLicense(source)
+    if (lic1 and playerRooms[lic1] and (playerRooms[lic1] == roomId or tostring(playerRooms[lic1]) == tostring(roomId))) or
+       (lic2 and playerRooms[lic2] and (playerRooms[lic2] == roomId or tostring(playerRooms[lic2]) == tostring(roomId))) then
+        return true
+    end
+
+    local result = MySQL.single.await('SELECT citizenid, permissions FROM apartments WHERE room_id = ? OR room_id = ?', {roomId, tostring(roomId)})
+    if result then
+        if result.citizenid == citizenid then return true end
+        if result.permissions then
+            local perms = json.decode(result.permissions)
+            if perms and perms.entry then
+                for _, cid in ipairs(perms.entry) do
+                    if cid == citizenid then return true end
+                end
+            end
+        end
+    end
+
+    local pk = Settings.Security and Settings.Security.PhysicalKeys
+    if pk and pk.Enabled then
+        local count = exports.ox_inventory:GetItemCount(source, pk.Item, { propertyId = roomId, isApartment = true })
+        if count and count > 0 then return true end
+    end
+
+    return false
+end)
+
+lib.callback.register('LNS_Housing:server:getApartmentRoomData', function(source, roomId)
+    roomId = tonumber(roomId) or roomId
+    if not roomId then return nil end
+    return getRoomDataById(roomId)
 end)
 
 local function FindManagedApartment(roomId, citizenid)
@@ -1454,9 +1684,39 @@ lib.callback.register('LNS_Housing:server:deleteApartmentRoom', function(source,
 end)
 
 RegisterNetEvent('LNS_Housing:server:ringApartmentDoorbell', function(roomId)
-    local roomData = getRoomDataById(roomId)
-    if not roomData or not roomData.doorCoords then return end
+    local src = source
+    roomId = tonumber(roomId) or roomId
+    if not roomId then return end
 
+    local roomData = getRoomDataById(roomId)
+    if not roomData then return end
+
+    if IsStarterInstanceMode() then
+        local cfg = Settings.Apartments and Settings.Apartments.Starter
+        local bucketOffset = (cfg and cfg.BucketOffset) or 20000
+        local targetBucket = bucketOffset + (tonumber(roomId) or 1)
+        local playersInside = {}
+        for _, pId in ipairs(GetPlayers()) do
+            local pSrc = tonumber(pId)
+            if pSrc and GetPlayerRoutingBucket(pSrc) == targetBucket then
+                table.insert(playersInside, pSrc)
+            end
+        end
+
+        local visitorName = Bridge.Server.GetPlayerName(src) or 'A Visitor'
+
+        if #playersInside > 0 then
+            for _, insideSrc in ipairs(playersInside) do
+                TriggerClientEvent('LNS_Housing:client:receiveApartmentDoorbell', insideSrc, roomId, src, visitorName)
+            end
+            Bridge.Server.Notify(src, 'You rang the doorbell. Waiting for an answer...', 'info')
+        else
+            Bridge.Server.Notify(src, 'No one is currently inside to answer the door.', 'error')
+        end
+        return
+    end
+
+    if not roomData.doorCoords then return end
     local coords = vec3(roomData.doorCoords.x, roomData.doorCoords.y, roomData.doorCoords.z)
 
     local isShell = roomData.shell and roomData.shell ~= 'mlo'
@@ -1466,6 +1726,26 @@ RegisterNetEvent('LNS_Housing:server:ringApartmentDoorbell', function(roomId)
     end
 
     TriggerClientEvent('LNS_Housing:client:triggerHouseDoorbell', -1, coords, insideCoords)
+end)
+
+RegisterNetEvent('LNS_Housing:server:answerApartmentDoorbell', function(roomId, guestSrc, allow)
+    local src = source
+    roomId = tonumber(roomId) or roomId
+    guestSrc = tonumber(guestSrc)
+    if not roomId or not guestSrc then return end
+
+    if allow then
+        if not apartmentGuestAccess[roomId] then
+            apartmentGuestAccess[roomId] = {}
+        end
+        apartmentGuestAccess[roomId][guestSrc] = true
+
+        local roomData = getRoomDataById(roomId)
+        TriggerClientEvent('LNS_Housing:client:enterGuestApartment', guestSrc, roomId, roomData)
+        Bridge.Server.Notify(src, 'You let the guest in.', 'success')
+    else
+        Bridge.Server.Notify(guestSrc, 'The resident did not let you in.', 'error')
+    end
 end)
 
 function GetApartmentDoorId(roomId)
@@ -1702,7 +1982,6 @@ end
 
 local function GetAllApartmentsServer()
     WaitForDb()
-    local rooms = Settings.Rooms or {}
     local results = {}
     
     local aptRows = MySQL.query.await('SELECT * FROM apartments')
@@ -1716,6 +1995,27 @@ local function GetAllApartmentsServer()
         end
     end
 
+    if IsStarterInstanceMode() then
+        local seenRooms = {}
+        local paRows = MySQL.query.await('SELECT room_id FROM player_apartments')
+        if paRows then
+            for _, pa in ipairs(paRows) do
+                local rId = tonumber(pa.room_id) or pa.room_id
+                if rId and not seenRooms[rId] then
+                    seenRooms[rId] = true
+                    local aptRow = aptByRoom[rId] or { room_id = rId }
+                    local roomData = getRoomDataById(rId)
+                    local formatted = FormatApartmentForMDT(aptRow, roomData)
+                    if formatted then
+                        table.insert(results, formatted)
+                    end
+                end
+            end
+        end
+        return results
+    end
+
+    local rooms = Settings.Rooms or {}
     for _, room in ipairs(rooms) do
         local aptRow = aptByRoom[room.id] or { room_id = room.id }
         local formatted = FormatApartmentForMDT(aptRow, room)

@@ -15,6 +15,119 @@ local MyRoomData = nil
 apartmentZones = {}
 CurrentApartmentId = nil
 
+local isInsideInstance = false
+local spawnedInstanceShell = nil
+local activeInstanceIpls = {}
+local instanceExitTarget = nil
+local instanceWardrobeZone = nil
+local instanceStashZone = nil
+local buildingEntranceTarget = nil
+
+local function IsStarterInstanceMode()
+    local cfg = Settings.Apartments and Settings.Apartments.Starter
+    return cfg and cfg.Mode == 'instance'
+end
+
+local function RegisterBuildingEntranceTarget()
+    if buildingEntranceTarget then
+        exports.ox_target:removeZone(buildingEntranceTarget)
+        buildingEntranceTarget = nil
+    end
+
+    if not IsStarterInstanceMode() then return end
+
+    local cfg = Settings.Apartments and Settings.Apartments.Starter
+    local entranceCoords = (cfg and cfg.Entrance) or (Settings.Apartments and Settings.Apartments.Building and Settings.Apartments.Building.coords)
+    if not entranceCoords then return end
+
+    buildingEntranceTarget = exports.ox_target:addSphereZone({
+        coords = vec3(entranceCoords.x, entranceCoords.y, entranceCoords.z),
+        radius = 2.0,
+        debug = Settings.Debug.Zones,
+        options = {
+            {
+                name = 'apt_enter_mine',
+                label = 'Enter My Apartment',
+                icon = 'fas fa-key',
+                onSelect = function()
+                    local assignedRoom = lib.callback.await('LNS_Housing:server:getMyApartment', false)
+                    if assignedRoom and assignedRoom.roomData then
+                        EnterApartmentRoom(assignedRoom.roomData)
+                    else
+                        Bridge.Client.Notify('You do not have an apartment assigned.', 'error')
+                    end
+                end
+            },
+            {
+                name = 'apt_visit_room',
+                label = 'Visit Apartment',
+                icon = 'fas fa-door-open',
+                onSelect = function()
+                    local input = lib.inputDialog('Visit Apartment', {
+                        { type = 'number', label = 'Room Number', placeholder = 'e.g. 1', required = true, min = 1 }
+                    })
+                    if not input or not input[1] then return end
+                    local targetRoomId = tonumber(input[1])
+                    if not targetRoomId then return end
+
+                    local canEnter = lib.callback.await('LNS_Housing:server:canEnterApartment', false, targetRoomId)
+                    if canEnter then
+                        local roomData = lib.callback.await('LNS_Housing:server:getApartmentRoomData', false, targetRoomId)
+                        if roomData then
+                            EnterApartmentRoom(roomData)
+                        else
+                            Bridge.Client.Notify('Could not load apartment data.', 'error')
+                        end
+                    else
+                        local alert = lib.alertDialog({
+                            header = 'Apartment #' .. targetRoomId,
+                            content = 'You do not have a key to Apartment #' .. targetRoomId .. '. Would you like to ring the doorbell?',
+                            centered = true,
+                            cancel = true,
+                            labels = {
+                                confirm = 'Ring Bell',
+                                cancel = 'Cancel'
+                            }
+                        })
+                        if alert == 'confirm' then
+                            TriggerServerEvent('LNS_Housing:server:ringApartmentDoorbell', targetRoomId)
+                        end
+                    end
+                end
+            },
+            {
+                name = 'apt_manage_keys',
+                label = 'Apartment Management',
+                icon = 'fas fa-id-card',
+                canInteract = function()
+                    return MyApartmentId ~= nil
+                end,
+                onSelect = function()
+                    openKeyManagementUI()
+                end
+            },
+            {
+                name = 'apt_police_breach',
+                label = 'Police Breach Apartment',
+                icon = 'fas fa-shield-halved',
+                canInteract = function()
+                    local job = Bridge.Client.GetPlayerJob()
+                    return Bridge.IsPoliceJob(job)
+                end,
+                onSelect = function()
+                    local input = lib.inputDialog('Police Breach Apartment', {
+                        { type = 'number', label = 'Room Number to Breach', placeholder = 'e.g. 1', required = true, min = 1 }
+                    })
+                    if not input or not input[1] then return end
+                    local targetRoomId = tonumber(input[1])
+                    if not targetRoomId then return end
+                    StartPoliceRaid(targetRoomId, 'apartment', nil)
+                end
+            }
+        }
+    })
+end
+
 local function CreateApartmentBlip()
     if apartmentBlip then
         RemoveBlip(apartmentBlip)
@@ -45,10 +158,10 @@ local function CreateApartmentPed()
     SetEntityInvincible(apartmentPed, true)
     SetBlockingOfNonTemporaryEvents(apartmentPed, true)
 
-    exports.ox_target:addLocalEntity(apartmentPed, {
+    local pedOptions = {
         {
             name = 'apartment_info',
-            icon = 'fa-solid fa-door-open',
+            icon = 'fa-solid fa-circle-info',
             label = 'Check Apartment Info',
             debug = Settings.Debug.Zones,
             onSelect = function()
@@ -59,7 +172,73 @@ local function CreateApartmentPed()
                 end
             end
         }
-    })
+    }
+
+    if IsStarterInstanceMode() then
+        table.insert(pedOptions, {
+            name = 'ped_enter_mine',
+            icon = 'fa-solid fa-key',
+            label = 'Enter My Apartment',
+            debug = Settings.Debug.Zones,
+            onSelect = function()
+                local assignedRoom = lib.callback.await('LNS_Housing:server:getMyApartment', false)
+                if assignedRoom and assignedRoom.roomData then
+                    EnterApartmentRoom(assignedRoom.roomData)
+                else
+                    Bridge.Client.Notify('You do not have an apartment assigned.', 'error')
+                end
+            end
+        })
+        table.insert(pedOptions, {
+            name = 'ped_visit_room',
+            icon = 'fa-solid fa-door-open',
+            label = 'Visit Apartment',
+            debug = Settings.Debug.Zones,
+            onSelect = function()
+                local input = lib.inputDialog('Visit Apartment', {
+                    { type = 'number', label = 'Room Number', placeholder = 'e.g. 1', required = true, min = 1 }
+                })
+                if not input or not input[1] then return end
+                local targetRoomId = tonumber(input[1])
+                if not targetRoomId then return end
+
+                local canEnter = lib.callback.await('LNS_Housing:server:canEnterApartment', false, targetRoomId)
+                if canEnter then
+                    local roomData = lib.callback.await('LNS_Housing:server:getApartmentRoomData', false, targetRoomId)
+                    if roomData then
+                        EnterApartmentRoom(roomData)
+                    else
+                        Bridge.Client.Notify('Could not load apartment data.', 'error')
+                    end
+                else
+                    local alert = lib.alertDialog({
+                        header = 'Apartment #' .. targetRoomId,
+                        content = 'You do not have a key to Apartment #' .. targetRoomId .. '. Would you like to ring the doorbell?',
+                        centered = true,
+                        cancel = true,
+                        labels = { confirm = 'Ring Bell', cancel = 'Cancel' }
+                    })
+                    if alert == 'confirm' then
+                        TriggerServerEvent('LNS_Housing:server:ringApartmentDoorbell', targetRoomId)
+                    end
+                end
+            end
+        })
+        table.insert(pedOptions, {
+            name = 'ped_manage_keys',
+            icon = 'fa-solid fa-id-card',
+            label = 'Apartment Management',
+            debug = Settings.Debug.Zones,
+            canInteract = function()
+                return MyApartmentId ~= nil
+            end,
+            onSelect = function()
+                openKeyManagementUI()
+            end
+        })
+    end
+
+    exports.ox_target:addLocalEntity(apartmentPed, pedOptions)
 
     if CreateApartmentBreakerTarget then CreateApartmentBreakerTarget() end
 end
@@ -107,6 +286,226 @@ end
 function EnterApartmentRoom(roomData)
     if not roomData or not roomData.id then return end
     if CurrentApartmentId == roomData.id and insideApartment then return end
+
+    local isInstance = roomData.isInstance or (IsStarterInstanceMode() and (roomData.isStarter or (MyApartmentId and (roomData.id == MyApartmentId or tostring(roomData.id) == tostring(MyApartmentId) or tonumber(roomData.id) == tonumber(MyApartmentId))) or (not roomData.buildingKey and (not roomData.corners or #roomData.corners == 0))))
+
+    if isInstance then
+        isInsideInstance = true
+        CurrentApartmentId = roomData.id
+        InsidePropertyId = roomData.id
+        insideApartment = true
+
+        pcall(function()
+            LocalPlayer.state:set('inProperty', true, true)
+            LocalPlayer.state:set('insidePropertyId', roomData.id, true)
+            LocalPlayer.state:set('insideApartment', true, true)
+        end)
+
+        TriggerServerEvent('LNS_Housing:server:enterApartmentBucket', roomData.id)
+
+        local roomInfo = lib.callback.await('LNS_Housing:server:getApartmentInfo', false, roomData.id) or {}
+        local starterCfg = Settings.Apartments and Settings.Apartments.Starter
+
+        local aptType = roomData.type or (starterCfg and starterCfg.Type) or 'shell'
+        local isIpl = (aptType == 'ipl') or (roomData.ipl ~= nil)
+
+        DoScreenFadeOut(500)
+        while not IsScreenFadedOut() do Wait(0) end
+
+        local spawnCoords = nil
+        local spawnHeading = 0.0
+        local exitCoords = nil
+
+        if isIpl then
+            local iplName = roomData.ipl or (starterCfg and starterCfg.IPL)
+            local shellData = Settings.IPLs and Settings.IPLs[iplName]
+            activeInstanceIpls = {}
+            if shellData and shellData.ipls then
+                if type(shellData.ipls) == 'table' then
+                    for _, name in ipairs(shellData.ipls) do
+                        if not IsIplActive(name) then RequestIpl(name) end
+                        table.insert(activeInstanceIpls, name)
+                    end
+                elseif type(shellData.ipls) == 'string' then
+                    if not IsIplActive(shellData.ipls) then RequestIpl(shellData.ipls) end
+                    table.insert(activeInstanceIpls, shellData.ipls)
+                end
+            elseif iplName then
+                if not IsIplActive(iplName) then RequestIpl(iplName) end
+                table.insert(activeInstanceIpls, iplName)
+            end
+
+            local rawSpawn = roomData.spawn or (shellData and shellData.coords) or (starterCfg and starterCfg.SpawnCoords)
+            spawnCoords = vec3(rawSpawn.x, rawSpawn.y, rawSpawn.z)
+            spawnHeading = rawSpawn.w or (shellData and shellData.coords and shellData.coords.w) or 0.0
+            if shellData and shellData.exitCoords then
+                exitCoords = vec3(shellData.exitCoords.x, shellData.exitCoords.y, shellData.exitCoords.z)
+            else
+                exitCoords = spawnCoords
+            end
+        else
+            local shellName = roomData.shell or (starterCfg and starterCfg.Shell) or 'Apartment Furnished'
+            local shellData = (Settings.Shells and Settings.Shells[shellName]) or (Settings.IPLs and Settings.IPLs[shellName])
+            local shellCoords = roomData.shellCoords or (starterCfg and starterCfg.ShellCoords) or vec3(-826.53, -700.2, -100.0)
+
+            if spawnedInstanceShell and DoesEntityExist(spawnedInstanceShell) then
+                DeleteEntity(spawnedInstanceShell)
+                spawnedInstanceShell = nil
+            end
+
+            if shellData and shellData.hash then
+                local shellHash = tonumber(shellData.hash) or GetHashKey(shellData.hash)
+                lib.requestModel(shellHash)
+                spawnedInstanceShell = CreateObjectNoOffset(shellHash, shellCoords.x, shellCoords.y, shellCoords.z, false, false, false)
+                FreezeEntityPosition(spawnedInstanceShell, true)
+                SetEntityRotation(spawnedInstanceShell, 0.0, 0.0, 0.0, 2, true)
+
+                local doorOffset = shellData.doorOffset or vec4(0.0, 0.0, 0.0, 0.0)
+                spawnCoords = GetOffsetFromEntityInWorldCoords(spawnedInstanceShell, doorOffset.x, doorOffset.y, doorOffset.z)
+                spawnHeading = doorOffset.h or 0.0
+                exitCoords = spawnCoords
+            else
+                local rawSpawn = roomData.spawn or (starterCfg and starterCfg.SpawnCoords) or shellCoords
+                spawnCoords = vec3(rawSpawn.x, rawSpawn.y, rawSpawn.z)
+                spawnHeading = rawSpawn.w or 0.0
+                exitCoords = spawnCoords
+            end
+        end
+
+        local ped = PlayerPedId()
+        FreezeEntityPosition(ped, true)
+        SetEntityCoords(ped, spawnCoords.x, spawnCoords.y, spawnCoords.z, false, false, false, false)
+        SetEntityHeading(ped, spawnHeading)
+
+        RequestCollisionAtCoord(spawnCoords.x, spawnCoords.y, spawnCoords.z)
+        local start = GetGameTimer()
+        while not HasCollisionLoadedAroundEntity(ped) and (GetGameTimer() - start) < 2500 do
+            Wait(50)
+            RequestCollisionAtCoord(spawnCoords.x, spawnCoords.y, spawnCoords.z)
+        end
+        Wait(150)
+
+        SetEntityCoords(ped, spawnCoords.x, spawnCoords.y, spawnCoords.z, false, false, false, false)
+        FreezeEntityPosition(ped, false)
+
+        -- Interior Exit Zone
+        if instanceExitTarget then
+            exports.ox_target:removeZone(instanceExitTarget)
+            instanceExitTarget = nil
+        end
+        instanceExitTarget = exports.ox_target:addBoxZone({
+            coords = exitCoords,
+            size = vec3(1.5, 1.5, 2.0),
+            rotation = spawnHeading,
+            debug = Settings.Debug.Zones,
+            options = {
+                {
+                    label = 'Exit Apartment',
+                    icon = 'fas fa-door-closed',
+                    onSelect = function()
+                        LeaveApartmentRoom(roomData.id)
+                    end
+                }
+            }
+        })
+
+        -- Optional: Configured Wardrobe Location (simple vec3, ox_target only, no prop)
+        if instanceWardrobeZone then
+            exports.ox_target:removeZone(instanceWardrobeZone)
+            instanceWardrobeZone = nil
+        end
+        local wardrobePos = roomData.wardrobe or (starterCfg and starterCfg.Wardrobe)
+        if wardrobePos and wardrobePos.x and wardrobePos.y and wardrobePos.z then
+            instanceWardrobeZone = exports.ox_target:addSphereZone({
+                coords = vec3(wardrobePos.x, wardrobePos.y, wardrobePos.z),
+                radius = 1.2,
+                debug = Settings.Debug.Zones,
+                options = {
+                    {
+                        label = 'Open Wardrobe',
+                        icon = 'fas fa-shirt',
+                        onSelect = function()
+                            if Bridge.Client.OpenWardrobe then
+                                Bridge.Client.OpenWardrobe(roomData.id, 'starter_wardrobe')
+                            end
+                        end
+                    }
+                }
+            })
+        end
+
+        -- Optional: Configured Stash Location (simple vec3, ox_target only, no prop)
+        if instanceStashZone then
+            exports.ox_target:removeZone(instanceStashZone)
+            instanceStashZone = nil
+        end
+        local stashPos = roomData.stash or (starterCfg and starterCfg.Stash)
+        if stashPos and stashPos.x and stashPos.y and stashPos.z then
+            instanceStashZone = exports.ox_target:addSphereZone({
+                coords = vec3(stashPos.x, stashPos.y, stashPos.z),
+                radius = 1.2,
+                debug = Settings.Debug.Zones,
+                options = {
+                    {
+                        label = 'Open Storage',
+                        icon = 'fas fa-box-open',
+                        onSelect = function()
+                            if OpenStorageHandler then
+                                OpenStorageHandler(roomData.id, 'starter_stash', string.format('housing_%s_starter_stash', roomData.id), (Settings.Stash and Settings.Stash.label) or 'Apartment Storage', false)
+                            else
+                                Bridge.Client.OpenStash(roomData.id, 'starter_stash')
+                            end
+                        end
+                    }
+                }
+            })
+        end
+
+        Properties[roomData.id] = {
+            id = roomData.id,
+            label = "Apartment Room #" .. roomData.id,
+            owner = roomInfo.owner,
+            ownerName = roomInfo.ownerName,
+            permissions = roomInfo.permissions or { entry = {}, storage = {}, wardrobe = {}, furniture = {}, manage = {} },
+            door_id = nil,
+            metadata = {
+                wall_color = roomInfo.wallColor or 0,
+                allow_wall_colors = false,
+                security_level = roomInfo.security_level or 0,
+                shell = roomData.shell or (starterCfg and starterCfg.Shell),
+                spawn = spawnCoords,
+                entrance = roomData.entrance or (starterCfg and starterCfg.Entrance) or (Settings.Apartments.Building and Settings.Apartments.Building.coords),
+                isInstance = true
+            },
+            furniture = roomInfo.furniture or {},
+            isApartment = true,
+            isInstance = true
+        }
+
+        LoadFurnitures(roomData.id)
+        if LoadPropertyTrash then LoadPropertyTrash(roomData.id, true) end
+
+        local isMyRoom = (MyApartmentId and (MyApartmentId == roomData.id or tostring(MyApartmentId) == tostring(roomData.id) or tonumber(MyApartmentId) == tonumber(roomData.id)))
+        local hasManageAccess = isMyRoom or lib.callback.await('LNS_Housing:server:checkPermission', false, 'apartment', roomData.id, 'furniture')
+        if hasManageAccess then
+            HasFurnitureManagePermission = true
+            if not Settings.FurnitureMenu or not Settings.FurnitureMenu.Radial or Settings.FurnitureMenu.Radial.Enabled then
+                lib.removeRadialItem('housing_furniture')
+                lib.addRadialItem({
+                    id = 'housing_furniture',
+                    icon = 'couch',
+                    label = 'Furniture Menu',
+                    onSelect = function()
+                        TriggerEvent('LNS_Housing:client:openFurnitureMenu', roomData.id)
+                    end
+                })
+            end
+        end
+
+        DoScreenFadeIn(1000)
+        return
+    end
+
     CurrentApartmentId = roomData.id
     InsidePropertyId = roomData.id
     insideApartment = true
@@ -194,6 +593,79 @@ end
 
 function LeaveApartmentRoom(roomId)
     local targetId = roomId or CurrentApartmentId
+    if not targetId then return end
+
+    if isInsideInstance then
+        isInsideInstance = false
+        DoScreenFadeOut(500)
+        while not IsScreenFadedOut() do Wait(0) end
+
+        if instanceExitTarget then
+            exports.ox_target:removeZone(instanceExitTarget)
+            instanceExitTarget = nil
+        end
+        if instanceWardrobeZone then
+            exports.ox_target:removeZone(instanceWardrobeZone)
+            instanceWardrobeZone = nil
+        end
+        if instanceStashZone then
+            exports.ox_target:removeZone(instanceStashZone)
+            instanceStashZone = nil
+        end
+
+        if spawnedInstanceShell and DoesEntityExist(spawnedInstanceShell) then
+            DeleteEntity(spawnedInstanceShell)
+            spawnedInstanceShell = nil
+        end
+
+        if activeInstanceIpls then
+            for _, name in ipairs(activeInstanceIpls) do
+                if IsIplActive(name) then
+                    RemoveIpl(name)
+                end
+            end
+            activeInstanceIpls = {}
+        end
+
+        TriggerServerEvent('LNS_Housing:server:leaveApartmentBucket')
+
+        local starterCfg = Settings.Apartments and Settings.Apartments.Starter
+        local exitCoords = (starterCfg and starterCfg.Entrance) or (Settings.Apartments and Settings.Apartments.Building and Settings.Apartments.Building.coords)
+        if exitCoords then
+            local ped = PlayerPedId()
+            FreezeEntityPosition(ped, true)
+            SetEntityCoords(ped, exitCoords.x, exitCoords.y, exitCoords.z, false, false, false, false)
+            RequestCollisionAtCoord(exitCoords.x, exitCoords.y, exitCoords.z)
+            local start = GetGameTimer()
+            while not HasCollisionLoadedAroundEntity(ped) and (GetGameTimer() - start) < 2000 do
+                Wait(50)
+                RequestCollisionAtCoord(exitCoords.x, exitCoords.y, exitCoords.z)
+            end
+            Wait(100)
+            SetEntityCoords(ped, exitCoords.x, exitCoords.y, exitCoords.z, false, false, false, false)
+            FreezeEntityPosition(ped, false)
+        end
+
+        UnloadFurnitures(targetId)
+        if UnloadPropertyTrash then UnloadPropertyTrash(targetId) end
+        CurrentApartmentId = nil
+        if InsidePropertyId == targetId then
+            InsidePropertyId = nil
+        end
+        insideApartment = false
+        HasFurnitureManagePermission = false
+        lib.removeRadialItem('housing_furniture')
+
+        pcall(function()
+            LocalPlayer.state:set('inProperty', false, true)
+            LocalPlayer.state:set('insidePropertyId', nil, true)
+            LocalPlayer.state:set('insideApartment', false, true)
+        end)
+
+        DoScreenFadeIn(1000)
+        return
+    end
+
     if targetId and (CurrentApartmentId == targetId or not roomId) then
         pcall(function()
             LocalPlayer.state:set('inProperty', false, true)
@@ -436,6 +908,7 @@ local function ResolveCustomApartmentRoom(interiorId)
 end
 
 local function leaveIfNoZone()
+    if isInsideInstance then return end
     if not insideApartment or not CurrentApartmentId then return end
     local ped = cache.ped or PlayerPedId()
     local coords = GetEntityCoords(ped)
@@ -498,65 +971,67 @@ local currentUnitKey = nil
 CreateThread(function()
     while true do
         Wait(750)
-        local ped = cache.ped or PlayerPedId()
-        local buildingKey, floor, room = ResolveCurrentUnit()
-        local unitKey = buildingKey and floor and room and string.format('%s:%d:%d', buildingKey, floor, room) or nil
+        if not isInsideInstance then
+            local ped = cache.ped or PlayerPedId()
+            local buildingKey, floor, room = ResolveCurrentUnit()
+            local unitKey = buildingKey and floor and room and string.format('%s:%d:%d', buildingKey, floor, room) or nil
 
-        if unitKey then
-            if unitKey ~= currentUnitKey then
-                currentUnitKey = unitKey
-                local targetRoomId = (floor * 100) + room
-                local matchedRoom = nil
-                for _, r in ipairs(Settings.Rooms or {}) do
-                    if r.id == targetRoomId or r.id == tostring(targetRoomId) then
-                        matchedRoom = r
-                        break
+            if unitKey then
+                if unitKey ~= currentUnitKey then
+                    currentUnitKey = unitKey
+                    local targetRoomId = (floor * 100) + room
+                    local matchedRoom = nil
+                    for _, r in ipairs(Settings.Rooms or {}) do
+                        if r.id == targetRoomId or r.id == tostring(targetRoomId) then
+                            matchedRoom = r
+                            break
+                        end
                     end
-                end
-                
-                if not matchedRoom then
-                    local anchor = GetRoomCoords(buildingKey, floor, room)
-                    matchedRoom = {
-                        id = targetRoomId,
-                        buildingKey = buildingKey,
-                        floor = floor,
-                        room = room,
-                        spawn = anchor or vec4(GetEntityCoords(ped).x, GetEntityCoords(ped).y, GetEntityCoords(ped).z, 0.0),
-                        interior_id = GetInteriorFromEntity(ped)
-                    }
-                end
-
-                if CurrentApartmentId ~= matchedRoom.id then
-                    if CurrentApartmentId then
-                        LeaveApartmentRoom(CurrentApartmentId)
+                    
+                    if not matchedRoom then
+                        local anchor = GetRoomCoords(buildingKey, floor, room)
+                        matchedRoom = {
+                            id = targetRoomId,
+                            buildingKey = buildingKey,
+                            floor = floor,
+                            room = room,
+                            spawn = anchor or vec4(GetEntityCoords(ped).x, GetEntityCoords(ped).y, GetEntityCoords(ped).z, 0.0),
+                            interior_id = GetInteriorFromEntity(ped)
+                        }
                     end
-                    EnterApartmentRoom(matchedRoom)
-                end
-            end
-        else
-            if currentUnitKey then
-                currentUnitKey = nil
-                if CurrentApartmentId then
-                    LeaveApartmentRoom(CurrentApartmentId)
-                end
-            end
 
-            local interiorId = GetInteriorFromEntity(ped)
-            if interiorId == 0 then
-                local coords = GetEntityCoords(ped)
-                interiorId = GetInteriorAtCoords(coords.x, coords.y, coords.z)
-            end
-
-            local customRoom = ResolveCustomApartmentRoom(interiorId)
-            if customRoom then
-                if CurrentApartmentId ~= customRoom.id then
-                    if CurrentApartmentId then
-                        LeaveApartmentRoom(CurrentApartmentId)
+                    if CurrentApartmentId ~= matchedRoom.id then
+                        if CurrentApartmentId then
+                            LeaveApartmentRoom(CurrentApartmentId)
+                        end
+                        EnterApartmentRoom(matchedRoom)
                     end
-                    EnterApartmentRoom(customRoom)
                 end
             else
-                leaveIfNoZone()
+                if currentUnitKey then
+                    currentUnitKey = nil
+                    if CurrentApartmentId then
+                        LeaveApartmentRoom(CurrentApartmentId)
+                    end
+                end
+
+                local interiorId = GetInteriorFromEntity(ped)
+                if interiorId == 0 then
+                    local coords = GetEntityCoords(ped)
+                    interiorId = GetInteriorAtCoords(coords.x, coords.y, coords.z)
+                end
+
+                local customRoom = ResolveCustomApartmentRoom(interiorId)
+                if customRoom then
+                    if CurrentApartmentId ~= customRoom.id then
+                        if CurrentApartmentId then
+                            LeaveApartmentRoom(CurrentApartmentId)
+                        end
+                        EnterApartmentRoom(customRoom)
+                    end
+                else
+                    leaveIfNoZone()
+                end
             end
         end
     end
@@ -609,6 +1084,14 @@ local function teleportToStarterApartment()
     end
 
     if assignedRoom and assignedRoom.roomData then
+        TriggerEvent('LNS_Housing:client:setApartmentData', assignedRoom.roomId, assignedRoom.roomData)
+
+        if IsStarterInstanceMode() or assignedRoom.roomData.isInstance then
+            EnterApartmentRoom(assignedRoom.roomData)
+            Bridge.Client.Notify('Welcome to your new starter apartment! You can customize it and store items here.', 'success')
+            return
+        end
+
         local coords = assignedRoom.roomData.spawn
         local ped = cache.ped
         
@@ -618,8 +1101,6 @@ local function teleportToStarterApartment()
         FreezeEntityPosition(PlayerPedId(), true)
         SetEntityCoords(PlayerPedId(), coords.x, coords.y, coords.z, false, false, false, false)
         SetEntityHeading(PlayerPedId(), coords.w)
-        
-        TriggerEvent('LNS_Housing:client:setApartmentData', assignedRoom.roomId, assignedRoom.roomData)
         
         -- Temp fix for 50/50 chance to fall thru
         RequestCollisionAtCoord(coords.x, coords.y, coords.z)
@@ -647,6 +1128,9 @@ RegisterNetEvent('LNS_Housing:client:setApartmentData', function(roomId, roomDat
     MyRoomData = roomData
 
     RegisterAllApartmentZones()
+    if IsStarterInstanceMode() then
+        RegisterBuildingEntranceTarget()
+    end
 end)
 
 RegisterNetEvent('LNS_Housing:client:updateApartmentFurniture', function(roomId, furniture)
@@ -792,15 +1276,28 @@ local function initApartmentForPlayer()
         end
         TriggerEvent('LNS_Housing:client:setApartmentData', assignedRoom.roomId, assignedRoom.roomData)
 
-        local ped = cache.ped or PlayerPedId()
-        local interiorId = GetInteriorFromEntity(ped)
-        if interiorId == 0 then
-            local coords = GetEntityCoords(ped)
-            interiorId = GetInteriorAtCoords(coords.x, coords.y, coords.z)
-        end
-        local matched = ResolveCustomApartmentRoom(interiorId)
-        if matched then
-            EnterApartmentRoom(matched)
+        if IsStarterInstanceMode() then
+            CreateThread(function()
+                Wait(2000)
+                local ped = cache.ped or PlayerPedId()
+                local coords = GetEntityCoords(ped)
+                local starterCfg = Settings.Apartments and Settings.Apartments.Starter
+                local shellCoords = starterCfg and (starterCfg.ShellCoords or starterCfg.SpawnCoords)
+                if shellCoords and #(coords - vec3(shellCoords.x, shellCoords.y, shellCoords.z)) < 50.0 and not insideApartment then
+                    EnterApartmentRoom(assignedRoom.roomData)
+                end
+            end)
+        else
+            local ped = cache.ped or PlayerPedId()
+            local interiorId = GetInteriorFromEntity(ped)
+            if interiorId == 0 then
+                local coords = GetEntityCoords(ped)
+                interiorId = GetInteriorAtCoords(coords.x, coords.y, coords.z)
+            end
+            local matched = ResolveCustomApartmentRoom(interiorId)
+            if matched then
+                EnterApartmentRoom(matched)
+            end
         end
     end
 end
@@ -822,6 +1319,7 @@ local function ClearApartmentDoors()
 end
 
 local function RegisterApartmentDoors(delay)
+    if IsStarterInstanceMode() then return end
     if not Settings.Rooms then return end
     registeringDoorsToken = registeringDoorsToken + 1
     local currentToken = registeringDoorsToken
@@ -950,12 +1448,17 @@ local function OnClientPlayerLoaded()
     debugPrint('info', 'Apartments playerLoaded received')
     LoadCustomApartments()
     initApartmentForPlayer()
+    RegisterBuildingEntranceTarget()
     RegisterApartmentDoors(true)
 end
 
 local function OnClientPlayerUnloaded()
     isApartmentLoaded = false
     ClearApartmentDoors()
+    if buildingEntranceTarget then
+        exports.ox_target:removeZone(buildingEntranceTarget)
+        buildingEntranceTarget = nil
+    end
     CleanUpApartmentSession()
 end
 
@@ -981,6 +1484,27 @@ RegisterNetEvent('QBCore:Client:OnPlayerUnload', OnClientPlayerUnloaded)
 RegisterNetEvent('LNS_Housing:client:spawnInStarterApartment', function()
     debugPrint('info', 'LNS_Housing:client:spawnInStarterApartment received')
     teleportToStarterApartment()
+end)
+
+RegisterNetEvent('LNS_Housing:client:receiveApartmentDoorbell', function(roomId, visitorSrc, visitorName)
+    PlaySoundFrontend(-1, "Door_Bell", "DLC_HEISTS_GENERAL_FRONTEND_SOUNDS", true)
+    local alert = lib.alertDialog({
+        header = 'Apartment Doorbell',
+        content = string.format('**%s** is ringing your apartment (#%s) doorbell.\n\nWould you like to let them in?', visitorName or 'A visitor', tostring(roomId)),
+        centered = true,
+        cancel = true,
+        labels = {
+            confirm = 'Let In',
+            cancel = 'Ignore'
+        }
+    })
+    TriggerServerEvent('LNS_Housing:server:answerApartmentDoorbell', roomId, visitorSrc, alert == 'confirm')
+end)
+
+RegisterNetEvent('LNS_Housing:client:enterGuestApartment', function(roomId, roomData)
+    if not roomData then return end
+    Bridge.Client.Notify('You were let in!', 'success')
+    EnterApartmentRoom(roomData)
 end)
 
 exports('SpawnInStarterApartment', function()
@@ -1025,6 +1549,7 @@ CreateThread(function()
     CreateApartmentBlip()
     CreateApartmentPed()
     CreateApartmentBreakerTarget()
+    RegisterBuildingEntranceTarget()
 
     initApartmentForPlayer()
 
@@ -1036,6 +1561,35 @@ end)
 AddEventHandler('onResourceStop', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end
     
+    if spawnedInstanceShell and DoesEntityExist(spawnedInstanceShell) then
+        DeleteEntity(spawnedInstanceShell)
+        spawnedInstanceShell = nil
+    end
+    if instanceExitTarget then
+        exports.ox_target:removeZone(instanceExitTarget)
+        instanceExitTarget = nil
+    end
+    if instanceWardrobeZone then
+        exports.ox_target:removeZone(instanceWardrobeZone)
+        instanceWardrobeZone = nil
+    end
+    if instanceStashZone then
+        exports.ox_target:removeZone(instanceStashZone)
+        instanceStashZone = nil
+    end
+    if buildingEntranceTarget then
+        exports.ox_target:removeZone(buildingEntranceTarget)
+        buildingEntranceTarget = nil
+    end
+    if activeInstanceIpls then
+        for _, name in ipairs(activeInstanceIpls) do
+            if IsIplActive(name) then
+                RemoveIpl(name)
+            end
+        end
+        activeInstanceIpls = {}
+    end
+
     if CurrentApartmentId then
         UnloadFurnitures(CurrentApartmentId)
     elseif MyApartmentId then
@@ -1061,6 +1615,33 @@ AddEventHandler('onResourceStop', function(resourceName)
 end)
 
 local function CleanUpApartmentSession()
+    if isInsideInstance then
+        if instanceExitTarget then
+            exports.ox_target:removeZone(instanceExitTarget)
+            instanceExitTarget = nil
+        end
+        if instanceWardrobeZone then
+            exports.ox_target:removeZone(instanceWardrobeZone)
+            instanceWardrobeZone = nil
+        end
+        if instanceStashZone then
+            exports.ox_target:removeZone(instanceStashZone)
+            instanceStashZone = nil
+        end
+        if spawnedInstanceShell and DoesEntityExist(spawnedInstanceShell) then
+            DeleteEntity(spawnedInstanceShell)
+            spawnedInstanceShell = nil
+        end
+        if activeInstanceIpls then
+            for _, name in ipairs(activeInstanceIpls) do
+                if IsIplActive(name) then
+                    RemoveIpl(name)
+                end
+            end
+            activeInstanceIpls = {}
+        end
+        isInsideInstance = false
+    end
     if UnloadPropertyTrash then
         UnloadPropertyTrash()
     end
@@ -1108,6 +1689,17 @@ end)
 
 exports('SpawnInProperty', function(type, id)
     if type == "apartment" then
+        if IsStarterInstanceMode() then
+            local roomData = lib.callback.await('LNS_Housing:server:getApartmentRoomData', false, id)
+            if not roomData and (MyApartmentId == id or tostring(MyApartmentId) == tostring(id) or (tonumber(MyApartmentId) and tonumber(id) and tonumber(MyApartmentId) == tonumber(id))) then
+                roomData = MyRoomData
+            end
+            if roomData then
+                EnterApartmentRoom(roomData)
+                return true
+            end
+        end
+
         local roomData = nil
         for _, room in ipairs(Settings.Rooms or {}) do
             if room.id == id or tostring(room.id) == tostring(id) or (tonumber(room.id) and tonumber(id) and tonumber(room.id) == tonumber(id)) then

@@ -107,6 +107,28 @@ return {
         Enabled = true,                     -- Toggle for enabling or disabling apartment system
         CanBreakIn = false,                  -- If true, apartments can be lockpicked/broken into
 
+        Starter = {
+            Mode = 'instance',                  -- 'instance' (uses 1 shell/ipl with routing buckets per player) or 'mlo' (legacy physical rooms)
+            Type = 'shell',                     -- 'shell' or 'ipl'
+            
+            -- If Type == 'shell':
+            Shell = 'Apartment Furnished',       -- Shell name from Settings.Shells (e.g. 'Apartment Furnished', 'Standard Motel', 'Modern Hotel', etc.)
+            ShellCoords = vec3(-826.53, -700.2, -100.0), -- Underground coordinates where the shell object spawns
+
+            -- If Type == 'ipl':
+            IPL = 'Eclipse Penthouse 1',         -- IPL name from Settings.IPLs
+
+            SpawnCoords = vec4(-825.09, -710.45, -100.0, 0.0), -- Interior spawn coordinates (optional override; if nil, auto-derived from Shell/IPL door offset)
+
+            Entrance = vec3(-826.53, -700.2, 27.06), -- Exterior building entrance & exit location (optional; defaults to Building.coords)
+
+            BucketOffset = 20000, -- Base routing bucket offset (player bucket = BucketOffset + roomId)
+
+            Wardrobe = vec3(-825.09, -706.5, -100.0), -- Optional: Manually set Wardrobe location (simple vec3, set to nil to disable)
+
+            Stash = vec3(-828.0, -708.5, -100.0), -- Optional: Manually set Stash location (simple vec3, set to nil to disable)
+        },
+
         Creator = {
             Command = 'createapartment',    -- Command to initiate apartment creation
             EditCommand = 'editapartment',  -- Command to edit existing apartments
