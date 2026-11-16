@@ -520,13 +520,11 @@ function EnterApartmentRoom(roomData)
     roomInfo = roomInfo or {}
 
     local doorId = nil
-    if Bridge.HasDoorlock() then
-        local ok, result = pcall(function()
-            return exports.ox_doorlock:getDoorFromName("Apartment Room #" .. roomData.id)
-        end)
-        if ok and result then
-            doorId = result.id
-        end
+    local ok, result = pcall(function()
+        return exports.ox_doorlock:getDoorFromName("Apartment Room #" .. roomData.id)
+    end)
+    if ok and result then
+        doorId = result.id
     end
 
     Properties[roomData.id] = {
@@ -1344,13 +1342,11 @@ local function RegisterApartmentDoors(delay)
                         end
 
                         local door = nil
-                        if Bridge.HasDoorlock() then
-                            local ok, result = pcall(function()
-                                return exports.ox_doorlock:getDoorFromName("Apartment Room #" .. room.id)
-                            end)
-                            if ok then
-                                door = result
-                            end
+                        local ok, result = pcall(function()
+                            return exports.ox_doorlock:getDoorFromName("Apartment Room #" .. room.id)
+                        end)
+                        if ok then
+                            door = result
                         end
 
                         local targetCoords, targetHeading = ResolveDoorTargetPlacement(
