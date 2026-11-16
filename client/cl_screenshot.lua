@@ -376,7 +376,11 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
 
             local done = false
             local base64 = nil
-            exports.screencapture:requestScreenshot({ encoding = 'png' }, function(data)
+            exports.screencapture:requestScreenshot({
+                encoding = 'png',
+                maxWidth = 512,
+                maxHeight = 512
+            }, function(data)
                 base64 = data
                 done = true
             end)
@@ -391,15 +395,20 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
                 activeUploads[uploadKey] = true
                 activeUploadCount = activeUploadCount + 1
 
-                TriggerLatentServerEvent('LNS_Housing:server:processScreenshot', 800000, {
+                TriggerLatentServerEvent('LNS_Housing:server:processScreenshot', 300000, {
                     model = uploadKey,
                     imageData = base64
                 })
 
-                local maxActiveUploads = 4
-                local uploadTimeout = GetGameTimer() + 20000
-                while activeUploadCount >= maxActiveUploads and isCapturing and GetGameTimer() < uploadTimeout do
+                local uploadTimeout = GetGameTimer() + 15000
+                while activeUploads[uploadKey] and isCapturing and GetGameTimer() < uploadTimeout do
                     Wait(50)
+                end
+
+                if activeUploads[uploadKey] then
+                    debugPrint('error', 'Upload timed out for model: ' .. tostring(uploadKey))
+                    activeUploads[uploadKey] = nil
+                    activeUploadCount = math.max(0, activeUploadCount - 1)
                 end
             else
                 debugPrint('error', 'Failed to screenshot model: ' .. tostring(item.imageKey or item.model))
@@ -440,6 +449,11 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
     SetEntityHeading(ped, originalHeading)
     FreezeEntityPosition(ped, false)
     SetEntityVisible(ped, true, false)
+
+    local lingeringTimeout = GetGameTimer() + 5000
+    while activeUploadCount > 0 and GetGameTimer() < lingeringTimeout do
+        Wait(50)
+    end
 
     activeUploads = {}
     activeUploadCount = 0
