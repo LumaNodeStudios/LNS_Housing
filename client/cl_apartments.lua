@@ -145,8 +145,8 @@ local function CreateApartmentBlip()
 end
 
 local function CreateApartmentPed()
-    local pedModel = `a_m_y_business_01`
-    local pedCoords = vector4(-823.55, -702.17, 28.06, 3.0)
+    local pedModel = Settings.Apartments.Building.pedmodel
+    local pedCoords = Settings.Apartments.Building.ped
     
     lib.requestModel(pedModel)
     while not HasModelLoaded(pedModel) do
@@ -520,7 +520,7 @@ function EnterApartmentRoom(roomData)
     roomInfo = roomInfo or {}
 
     local doorId = nil
-    if GetResourceState('ox_doorlock') == 'started' then
+    if Bridge.HasDoorlock() then
         local ok, result = pcall(function()
             return exports.ox_doorlock:getDoorFromName("Apartment Room #" .. roomData.id)
         end)
@@ -1344,7 +1344,7 @@ local function RegisterApartmentDoors(delay)
                         end
 
                         local door = nil
-                        if GetResourceState('ox_doorlock') == 'started' then
+                        if Bridge.HasDoorlock() then
                             local ok, result = pcall(function()
                                 return exports.ox_doorlock:getDoorFromName("Apartment Room #" .. room.id)
                             end)

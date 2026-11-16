@@ -142,6 +142,8 @@ return {
             scale = 0.8,
             label = "WIWANG Apartments",
             coords = vec3(-826.53, -700.2, 27.06), -- Entrance vector coordinate
+            ped = vector4(-823.55, -702.17, 28.06, 3.0), -- Ped vector coordinate (Check room number)
+            pedmodel = `a_m_y_business_01`, -- Ped model
             breakerCoords = vec3(-828.53, -702.2, 27.06) -- Shared breaker box interaction location
         }
     },
