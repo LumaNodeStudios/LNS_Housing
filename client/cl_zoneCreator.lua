@@ -22,7 +22,7 @@ local zoneCreator = {
     lowestPoint = nil
 }
 
-local polyText = '[C] - Add/Remove point  \n [H] Finish  \n [Scroll] Change height \n [K] Edit Point'
+local polyText = locale('textui.poly_controls')
 
 local function RotationToDirection(rotation)
 	local adjustedRotation =
@@ -169,9 +169,9 @@ function zoneCreator.editPoint()
         zoneCreator.editIndex = zoneCreator.deleteIndex
 
         lib.hideTextUI()
-        lib.showTextUI('[K] - Set Point \n [N] - Cancel Set')
+        lib.showTextUI(locale('textui.edit_poly_point'))
     else
-        Bridge.Client.Notify('Need to be close to a point', 'error')
+        Bridge.Client.Notify(locale('notify.need_close_to_point'), 'error')
     end
 end
 
@@ -284,7 +284,7 @@ local function mloDoor()
     local lastEntity = 0
 
     Wait(500)
-    lib.showTextUI('[E] - Pick Single | [G] - Pick Double (1/2) | [H] - Cancel')
+    lib.showTextUI(locale('textui.pick_doors'))
 
     while true do
         Wait(0)
@@ -354,7 +354,7 @@ local function mloDoor()
 
                     if #selectedDoors == 1 then
                         lib.hideTextUI()
-                        lib.showTextUI('[G] - Pick 2nd Door (2/2) | [H] - Cancel')
+                        lib.showTextUI(locale('textui.pick_door_second'))
                     elseif #selectedDoors == 2 then
                         if lastEntity and lastEntity > 0 then SetEntityDrawOutline(lastEntity, false) end
                         if door1Entity and door1Entity > 0 then SetEntityDrawOutline(door1Entity, false) end

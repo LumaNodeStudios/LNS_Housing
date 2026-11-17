@@ -201,12 +201,12 @@ local function CutPhysicalKeyForPlayer(src, propertyId, isApartment, options)
     end
 
     if not IsPhysicalKeysEnabled() then
-        notify('Physical keys are not enabled.', 'error')
+        notify(locale('notify.physical_keys_disabled'), 'error')
         return false, 'physical_keys_disabled'
     end
 
     if propertyId == nil then
-        notify('Invalid property.', 'error')
+        notify(locale('notify.invalid_property'), 'error')
         return false, 'invalid_property'
     end
 
@@ -214,19 +214,19 @@ local function CutPhysicalKeyForPlayer(src, propertyId, isApartment, options)
     local targetPropId = aptFlag and (tonumber(propertyId) or propertyId) or (Properties[propertyId] and propertyId or tonumber(propertyId) or propertyId)
 
     if not aptFlag and not Properties[targetPropId] then
-        notify('Property not found.', 'error')
+        notify(locale('notify.property_not_found'), 'error')
         return false, 'property_not_found'
     end
 
     if not IsKeyholder(numSrc, targetPropId, aptFlag) then
-        notify('You are not a keyholder for this property.', 'error')
+        notify(locale('notify.not_keyholder_property'), 'error')
         return false, 'not_keyholder'
     end
 
     local maxKeys = Settings.MaxKeys or 5
     local keyCount = GetPhysicalKeyCount(targetPropId, aptFlag)
     if keyCount >= maxKeys then
-        notify('You have reached the maximum number of keys (' .. maxKeys .. ') for this property!', 'error')
+        notify(locale('notify.max_property_keys_reached', maxKeys), 'error')
         return false, 'max_keys_reached'
     end
 
@@ -234,13 +234,13 @@ local function CutPhysicalKeyForPlayer(src, propertyId, isApartment, options)
     if requireBlankKey then
         local blankCount = Bridge.Server.Search(numSrc, 'count', blankKeyItem)
         if not blankCount or blankCount < 1 then
-            notify('You need a blank key to cut a new one.', 'error')
+            notify(locale('notify.need_blank_key'), 'error')
             return false, 'no_blank_key'
         end
 
         local removed = Bridge.Server.RemoveItem(numSrc, blankKeyItem, 1)
         if not removed then
-            notify('Could not use the blank key.', 'error')
+            notify(locale('notify.could_not_use_blank'), 'error')
             return false, 'blank_key_remove_failed'
         end
     end
@@ -251,18 +251,18 @@ local function CutPhysicalKeyForPlayer(src, propertyId, isApartment, options)
     local given = Bridge.Server.AddItem(numSrc, pk.Item, 1, {
         propertyId = targetPropId,
         isApartment = aptFlag,
-        description = 'Key to: ' .. label
+        description = locale('item.key_to', label)
     })
 
     if not given then
         if requireBlankKey then
             Bridge.Server.AddItem(numSrc, blankKeyItem, 1)
         end
-        notify('Could not cut the key (inventory full?).', 'error')
+        notify(locale('notify.inventory_full'), 'error')
         return false, 'inventory_full'
     end
 
-    notify('You cut a new key for ' .. label .. '.', 'success')
+    notify(locale('notify.cut_key_success', label), 'success')
     return true, {
         propertyId = targetPropId,
         isApartment = aptFlag,

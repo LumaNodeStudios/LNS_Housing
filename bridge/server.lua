@@ -568,10 +568,11 @@ function Bridge.Server.SetPlayerJob(identifier, jobName, grade)
 end
 
 -- Server-side Notifications
-function Bridge.Server.Notify(source, msg, type)
+function Bridge.Server.Notify(source, msg, type, ...)
     debugPrint('info', 'Bridge.Server.Notify', {source = source, msg = msg, type = type})
     lib.notify(source, {
-        description = msg,
+        title = locale('housing_title'),
+        description = locale(msg, ...),
         type = type or 'inform'
     })
 end
@@ -624,8 +625,8 @@ RegisterNetEvent('LNS_Housing:server:motionAlert', function(propertyLabel)
     if type(propertyLabel) ~= 'string' then return end
 
     Bridge.Server.PhoneNotification(src, {
-        title = 'Home Security',
-        body = ('Motion detected at the front door of %s!'):format(propertyLabel)
+        title = locale('notify.home_security_title'),
+        body = locale('notify.motion_detected', propertyLabel)
     })
 end)
 

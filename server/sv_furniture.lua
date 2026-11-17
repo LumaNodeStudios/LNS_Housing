@@ -12,19 +12,19 @@ local function ProcessBuyFurniture(src, propertyId, items, totalPrice, paymentMe
 
     if money < totalPrice then
         local targetAccountName = payType == 'cash' and 'cash' or 'bank account'
-        Bridge.Server.Notify(src, 'Not enough money in your ' .. targetAccountName .. '!', 'error')
+        Bridge.Server.Notify(src, locale('notify.not_enough_money_furniture', targetAccountName), 'error')
         return false, 'Not enough money'
     end
 
     local hasAccess = CheckPermission(src, 'house', propertyId, 'furniture')
     if not hasAccess then
-        Bridge.Server.Notify(src, 'You do not have permission to buy furniture here.', 'error')
+        Bridge.Server.Notify(src, locale('notify.no_perm_buy_furniture'), 'error')
         return false, 'No permission'
     end
 
     local removed = Bridge.Server.RemoveMoney(src, payType, totalPrice, "Bought furniture for house #" .. propertyId)
     if not removed and totalPrice > 0 then
-        Bridge.Server.Notify(src, 'Could not process payment.', 'error')
+        Bridge.Server.Notify(src, locale('notify.could_not_process_payment'), 'error')
         return false, 'Payment failed'
     end
 
@@ -39,7 +39,7 @@ local function ProcessBuyFurniture(src, propertyId, items, totalPrice, paymentMe
         Bridge.Server.RegisterPropertyStashes(propertyId, p.furniture)
     end
     TriggerClientEvent('LNS_Housing:client:updateFurniture', -1, propertyId, p.furniture)
-    Bridge.Server.Notify(src, 'Furniture purchased successfully!', 'success')
+    Bridge.Server.Notify(src, locale('notify.furniture_purchased'), 'success')
     return true
 end
 
@@ -144,7 +144,7 @@ lib.addCommand('checkfurniture', {
 }, function(source, args, raw)
     debugPrint('info', 'Command /checkfurniture executed', {source = source})
     if not CheckPermission(source, 'admin') then
-        Bridge.Server.Notify(source, 'You do not have permission to use this command.', 'error')
+        Bridge.Server.Notify(source, locale('notify.no_perm_command'), 'error')
         return
     end
 

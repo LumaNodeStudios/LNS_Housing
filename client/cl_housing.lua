@@ -50,6 +50,11 @@ Properties = {}
 EntranceTargets = {}
 LoadedFurniture = {}
 
+RegisterNUICallback('getLocales', function(_, cb)
+    local locales = (lib and lib.getLocales and lib.getLocales()) or {}
+    cb(locales)
+end)
+
 RegisterNUICallback('closeUI', function(_, cb)
     debugPrint('info', 'NUI callback: closeUI')
     if lib and lib.hideTextUI then pcall(lib.hideTextUI) end
@@ -75,7 +80,7 @@ RegisterNUICallback('submitStoragePasscode', function(data, cb)
         local res = lib.callback.await('LNS_Housing:server:setStoragePasscode', false, data.propertyId, data.stashId, data.passcode, data.mode == 'reset')
         if res and res.success then
             SetNuiFocus(false, false)
-            Bridge.Client.Notify(data.mode == 'reset' and 'Storage passcode updated successfully!' or 'Storage passcode registered successfully!', 'success')
+            Bridge.Client.Notify(data.mode == 'reset' and locale('notify.passcode_updated') or locale('notify.passcode_registered'), 'success')
             if data.mode == 'register' then
                 Wait(300)
                 Bridge.Client.OpenStash(data.propertyId, data.furnitureId)
@@ -129,7 +134,7 @@ RegisterNetEvent('LNS_Housing:client:startDoorbellCameraSetup', function(propert
     local p = Properties[propertyId]
     if not p then return end
     
-    Bridge.Client.Notify('Please place your doorbell camera. Look at a wall near the door.', 'inform')
+    Bridge.Client.Notify(locale('notify.place_doorbell'), 'inform')
     
     StartDoorbellCameraPlacement(propertyId, false, function(result)
         if result then
@@ -142,7 +147,7 @@ function OpenDoorbellCamera(propertyId)
     debugPrint('info', 'OpenDoorbellCamera called', {propertyId = propertyId})
     local p = Properties[propertyId]
     if not p or p.isApartment or not (p.metadata and p.metadata.doorbell_camera == true) then
-        Bridge.Client.Notify('This property does not have a doorbell camera installed.', 'error')
+        Bridge.Client.Notify(locale('notify.no_doorbell_installed'), 'error')
         return
     end
 
@@ -200,7 +205,7 @@ function OpenDoorbellCamera(propertyId)
     Wait(200)
     DoScreenFadeIn(500)
 
-    lib.showTextUI('[Mouse] Pan/Tilt  \n[Scroll] Zoom  \n[N] Night Vision  \n[G] Exit Feed', { position = 'top-center' })
+    lib.showTextUI(locale('textui.doorbell_cam_controls'), { position = 'top-center' })
 
     CreateThread(function()
         local startTime = GetGameTimer()
@@ -339,14 +344,14 @@ function ClearDoorbellMotionZone(propertyId)
 end
 
 RegisterNetEvent('LNS_Housing:client:motionAlert', function(propertyLabel, propertyId)
-    local message = ('Motion detected at the front door of %s!'):format(propertyLabel)
+    local message = locale('notify.motion_detected', propertyLabel)
     
     if Bridge.PhoneScript == 'yseries' then
         TriggerServerEvent('LNS_Housing:server:motionAlert', propertyLabel)
         return
     else
         local success = Bridge.Client.PhoneNotification({
-            title = 'Home Security',
+            title = locale('notify.home_security_title'),
             body = message
         })
 
@@ -375,12 +380,12 @@ function LockpickDoor(propertyId)
 
     if isApartment then
         if Settings.Apartments and not Settings.Apartments.CanBreakIn then
-            Bridge.Client.Notify('Apartment break-ins are disabled.', 'error')
+            Bridge.Client.Notify(locale('notify.apt_breakin_disabled'), 'error')
             return
         end
     else
         if Settings.Housing and not Settings.Housing.CanBreakIn then
-            Bridge.Client.Notify('House break-ins are disabled.', 'error')
+            Bridge.Client.Notify(locale('notify.house_breakin_disabled'), 'error')
             return
         end
     end
@@ -389,7 +394,7 @@ function LockpickDoor(propertyId)
 
     local permType = isApartment and 'apartment' or 'house'
     if not lib.callback.await('LNS_Housing:server:checkPermission', false, permType, propertyId, 'lockpick') then
-        Bridge.Client.Notify('You cannot lockpick this property (either you already have access or it is unowned).', 'error')
+        Bridge.Client.Notify(locale('notify.cannot_lockpick_prop'), 'error')
         return
     end
 
@@ -414,10 +419,10 @@ function LockpickDoor(propertyId)
 
     if success then
         TriggerServerEvent('LNS_Housing:server:lockpickSuccess', propertyId, 'door')
-        Bridge.Client.Notify('You successfully picked the lock!', 'success')
+        Bridge.Client.Notify(locale('notify.lockpick_success'), 'success')
     else
         TriggerServerEvent('LNS_Housing:server:lockpickFailed', propertyId)
-        Bridge.Client.Notify('You failed to pick the lock.', 'error')
+        Bridge.Client.Notify(locale('notify.lockpick_failed'), 'error')
     end
 end
 
@@ -456,13 +461,13 @@ function OpenBelongingsRetrieval(propertyId)
     end
 
     if #options == 0 then
-        Bridge.Client.Notify('No stashes found in this property.', 'error')
+        Bridge.Client.Notify(locale('notify.no_stashes_found'), 'error')
         return
     end
 
     lib.registerContext({
         id = 'housing_belongings_retrieval',
-        title = 'Retrieve Belongings - ' .. p.label,
+        title = locale('menu.retrieve_belongings_title', p.label),
         options = options
     })
     lib.showContext('housing_belongings_retrieval')
@@ -491,7 +496,7 @@ function OpenStorageHandler(propertyId, furnitureId, stashId, stashLabel, isFrid
                 }
             })
         else
-            Bridge.Client.Notify('This storage is not configured yet. The owner must set the passcode first.', 'error')
+            Bridge.Client.Notify(locale('notify.storage_not_configured'), 'error')
         end
         return
     end
@@ -519,7 +524,7 @@ end
 function ResetStoragePasscodeHandler(propertyId, furnitureId, stashId, stashLabel, isFridge)
     local storageInfo = lib.callback.await('LNS_Housing:server:getStorageInfo', false, propertyId, stashId)
     if not storageInfo or not storageInfo.canManage then
-        Bridge.Client.Notify('You do not have permission to reset this storage passcode.', 'error')
+        Bridge.Client.Notify(locale('notify.no_storage_reset_perm'), 'error')
         return
     end
 
@@ -557,12 +562,12 @@ function LockpickStash(propertyId, stashId)
 
     if isApartment then
         if Settings.Apartments and not Settings.Apartments.CanBreakIn then
-            Bridge.Client.Notify('Apartment break-ins are disabled.', 'error')
+            Bridge.Client.Notify(locale('notify.apt_breakin_disabled'), 'error')
             return
         end
     else
         if Settings.Housing and not Settings.Housing.CanBreakIn then
-            Bridge.Client.Notify('House break-ins are disabled.', 'error')
+            Bridge.Client.Notify(locale('notify.house_breakin_disabled'), 'error')
             return
         end
     end
@@ -571,14 +576,14 @@ function LockpickStash(propertyId, stashId)
 
     local permType = isApartment and 'apartment' or 'house'
     if not lib.callback.await('LNS_Housing:server:checkPermission', false, permType, propertyId, 'lockpickStash') then
-        Bridge.Client.Notify('You cannot lockpick this storage (either you already have access or it is unowned).', 'error')
+        Bridge.Client.Notify(locale('notify.cannot_lockpick_storage'), 'error')
         return
     end
 
     local lockpickItem = Settings.Security.LockpickItem or 'lockpick'
     local count = Bridge.Client.Search('count', lockpickItem)
     if not count or count < 1 then
-        Bridge.Client.Notify('You need a lockpick to pick this storage lock!', 'error')
+        Bridge.Client.Notify(locale('notify.need_lockpick'), 'error')
         return
     end
 
@@ -599,10 +604,10 @@ function LockpickStash(propertyId, stashId)
 
     if success then
         TriggerServerEvent('LNS_Housing:server:lockpickSuccess', propertyId, 'stash', stashId)
-        Bridge.Client.Notify('You successfully picked the stash lock!', 'success')
+        Bridge.Client.Notify(locale('notify.lockpick_stash_success'), 'success')
         Bridge.Client.OpenInventory('stash', stashId)
     else
-        Bridge.Client.Notify('You failed to pick the stash lock.', 'error')
+        Bridge.Client.Notify(locale('notify.lockpick_stash_failed'), 'error')
     end
 end
 
@@ -766,7 +771,7 @@ function LoadFurnitures(propertyId)
                             if isTrash then
                                 exports.ox_target:addLocalEntity(obj, {
                                     {
-                                        label = 'Open Waste Bin',
+                                        label = locale('target.open_waste_bin'),
                                         icon = 'fas fa-trash-can',
                                         debug = Settings.Debug.Zones,
                                         onSelect = function()
@@ -780,7 +785,7 @@ function LoadFurnitures(propertyId)
                             else
                                 exports.ox_target:addLocalEntity(obj, {
                                     {
-                                        label = isFridge and 'Open Refrigerator' or 'Open Storage',
+                                        label = isFridge and locale('target.open_refrigerator') or locale('target.open_storage'),
                                         icon = isFridge and 'fas fa-snowflake' or 'fas fa-box-open',
                                         debug = Settings.Debug.Zones,
                                         onSelect = function()
@@ -791,13 +796,13 @@ function LoadFurnitures(propertyId)
                                         end
                                     },
                                     {
-                                        label = isFridge and 'Lock/Unlock Refrigerator' or 'Lock/Unlock Storage',
+                                        label = isFridge and locale('target.lock_unlock_refrigerator') or locale('target.lock_unlock_storage'),
                                         icon = 'fas fa-key',
                                         debug = Settings.Debug.Zones,
                                         onSelect = function()
                                             local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'storage')
                                             if not hasAccess then
-                                                Bridge.Client.Notify('You do not have permission to lock/unlock this ' .. (isFridge and 'refrigerator.' or 'storage.'), 'error')
+                                                Bridge.Client.Notify(isFridge and locale('notify.no_fridge_lock_perm') or locale('notify.no_storage_lock_perm'), 'error')
                                                 return
                                             end
                                             TriggerServerEvent('LNS_Housing:server:toggleStashLock', propertyId, stashId)
@@ -807,7 +812,7 @@ function LoadFurnitures(propertyId)
                                         end
                                     },
                                     {
-                                        label = isFridge and 'Reset Refrigerator Passcode' or 'Reset Storage Passcode',
+                                        label = isFridge and locale('target.reset_refrigerator_passcode') or locale('target.reset_storage_passcode'),
                                         icon = 'fas fa-shield-alt',
                                         debug = Settings.Debug.Zones,
                                         onSelect = function()
@@ -818,7 +823,7 @@ function LoadFurnitures(propertyId)
                                         end
                                     },
                                     {
-                                        label = isFridge and 'Lockpick Refrigerator' or 'Lockpick Storage',
+                                        label = isFridge and locale('target.lockpick_refrigerator') or locale('target.lockpick_storage'),
                                         icon = 'fas fa-mask',
                                         items = Settings.Security.LockpickItem,
                                         onSelect = function()
@@ -835,7 +840,7 @@ function LoadFurnitures(propertyId)
                                         end
                                     },
                                     {
-                                        label = isFridge and 'Raid Refrigerator' or 'Raid Storage',
+                                        label = isFridge and locale('target.raid_refrigerator') or locale('target.raid_storage'),
                                         icon = 'fas fa-shield-halved',
                                         items = Settings.Security.PoliceAccessTool or 'police_access_tool',
                                         onSelect = function()
@@ -849,13 +854,13 @@ function LoadFurnitures(propertyId)
                         if itemData and itemData.isWardrobe then
                             exports.ox_target:addLocalEntity(obj, {
                                 {
-                                    label = 'Open Wardrobe',
+                                    label = locale('target.open_wardrobe'),
                                     icon = 'fas fa-shirt',
                                     debug = Settings.Debug.Zones,
                                     onSelect = function()
                                         local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'wardrobe')
                                         if not hasAccess then
-                                            Bridge.Client.Notify('You do not have access to this wardrobe.', 'error')
+                                            Bridge.Client.Notify(locale('notify.no_wardrobe_access'), 'error')
                                             return
                                         end
                                         Bridge.Client.OpenWardrobe(propertyId, f.id)
@@ -870,23 +875,23 @@ function LoadFurnitures(propertyId)
                         if itemData and itemData.isLogout then
                             exports.ox_target:addLocalEntity(obj, {
                                 {
-                                    label = 'Logout',
+                                    label = locale('target.logout'),
                                     icon = 'fas fa-right-from-bracket',
                                     debug = Settings.Debug.Zones,
                                     onSelect = function()
                                         local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'entry')
                                         if not hasAccess then
-                                            Bridge.Client.Notify('You do not have permission to log out here.', 'error')
+                                            Bridge.Client.Notify(locale('notify.no_logout_perm'), 'error')
                                             return
                                         end
                                         local alert = lib.alertDialog({
-                                            header = 'Confirm Logout',
-                                            content = 'Are you sure you want to log out of your character?',
+                                            header = locale('dialog.confirm_logout'),
+                                            content = locale('dialog.confirm_logout_msg'),
                                             centered = true,
                                             cancel = true,
                                             labels = {
-                                                confirm = 'Log out',
-                                                cancel = 'Cancel'
+                                                confirm = locale('dialog.logout_btn'),
+                                                cancel = locale('dialog.cancel')
                                             }
                                         })
                                         if alert == 'confirm' then
@@ -903,13 +908,13 @@ function LoadFurnitures(propertyId)
                         if (itemData and (itemData.isPanel or itemData.id == 'lns_housing_panel')) or f.isPanel then
                             exports.ox_target:addLocalEntity(obj, {
                                 {
-                                    label = p.isApartment and 'Open Apartment Panel' or 'Open House Panel',
+                                    label = p.isApartment and locale('target.open_apartment_panel') or locale('target.open_house_panel'),
                                     icon = p.isApartment and 'fas fa-building' or 'fas fa-house-user',
                                     debug = Settings.Debug.Zones,
                                     onSelect = function()
                                         local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, p.isApartment and 'apartment' or 'house', propertyId, 'manage')
                                         if not hasAccess then
-                                            Bridge.Client.Notify('You do not have permission to manage this property.', 'error')
+                                            Bridge.Client.Notify(locale('notify.no_manage_perm'), 'error')
                                             return
                                         end
                                         local propData = Properties[propertyId]
@@ -1059,7 +1064,7 @@ local function EnterWalkInProperty(propertyId)
             lib.addRadialItem({
                 id = 'housing_furniture',
                 icon = 'couch',
-                label = 'Furniture Menu',
+                label = locale('menu.furniture_menu'),
                 onSelect = function()
                     TriggerEvent('LNS_Housing:client:openFurnitureMenu', propertyId)
                 end
@@ -1140,7 +1145,7 @@ function RegisterPropertyZones(p, forceShell)
                         lib.addRadialItem({
                             id = 'housing_furniture',
                             icon = 'couch',
-                            label = 'Furniture Menu',
+                            label = locale('menu.furniture_menu'),
                             onSelect = function()
                                 TriggerEvent('LNS_Housing:client:openFurnitureMenu', p.id)
                             end
@@ -1287,7 +1292,7 @@ function RegisterPropertyEntranceTargets(p)
 
     table.insert(options, {
         name = 'lns_house_enter_' .. id,
-        label = 'Enter Property',
+        label = locale('target.enter_property'),
         icon = 'fas fa-door-open',
         canInteract = function()
             if not isShell then return false end
@@ -1304,7 +1309,7 @@ function RegisterPropertyEntranceTargets(p)
             if Settings.Security.PhysicalKeys and Settings.Security.PhysicalKeys.Enabled then
                 local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry')
                 if not hasAccess then
-                    Bridge.Client.Notify('You need a key to enter this property.', 'error')
+                    Bridge.Client.Notify(locale('notify.need_key'), 'error')
                     return
                 end
             else
@@ -1313,7 +1318,7 @@ function RegisterPropertyEntranceTargets(p)
                 if isLocked then
                     local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', id, 'entry')
                     if not hasAccess then
-                        Bridge.Client.Notify('This property is locked.', 'error')
+                        Bridge.Client.Notify(locale('notify.property_locked'), 'error')
                         return
                     end
                 end
@@ -1325,7 +1330,7 @@ function RegisterPropertyEntranceTargets(p)
 
     table.insert(options, {
         name = 'lns_house_rent_' .. id,
-        label = 'Pay Rent / Debt',
+        label = locale('target.pay_rent_debt'),
         icon = 'fas fa-dollar-sign',
         canInteract = function()
             local prop = Properties[id]
@@ -1342,7 +1347,7 @@ function RegisterPropertyEntranceTargets(p)
 
     table.insert(options, {
         name = 'lns_house_belongings_' .. id,
-        label = 'Retrieve Belongings',
+        label = locale('target.retrieve_belongings'),
         icon = 'fas fa-box-open',
         canInteract = function()
             local prop = Properties[id]
@@ -1358,7 +1363,7 @@ function RegisterPropertyEntranceTargets(p)
 
     table.insert(options, {
         name = 'lns_house_lock_' .. id,
-        label = 'Lock/Unlock ' .. p.label,
+        label = locale('target.lock_unlock_named', p.label),
         icon = 'fas fa-key',
         canInteract = function()
             if doorId and doorId ~= 0 then return false end
@@ -1372,7 +1377,7 @@ function RegisterPropertyEntranceTargets(p)
     if Settings.Housing and Settings.Housing.CanBreakIn then
         table.insert(options, {
             name = 'lns_house_lockpick_' .. id,
-            label = 'Lockpick ' .. p.label,
+            label = locale('target.lockpick_named', p.label),
             icon = 'fas fa-mask',
             items = Settings.Security.LockpickItem,
             canInteract = function()
@@ -1390,7 +1395,7 @@ function RegisterPropertyEntranceTargets(p)
 
     table.insert(options, {
         name = 'lns_house_breach_' .. id,
-        label = 'Breach Door',
+        label = locale('target.breach_door'),
         icon = 'fas fa-shield-halved',
         items = Settings.Security.RaidItem,
         canInteract = function()
@@ -1408,7 +1413,7 @@ function RegisterPropertyEntranceTargets(p)
 
     table.insert(options, {
         name = 'lns_house_secure_' .. id,
-        label = 'Secure Door',
+        label = locale('target.secure_door'),
         icon = 'fas fa-lock',
         canInteract = function()
             local job = Bridge.Client.GetPlayerJob()
@@ -1425,7 +1430,7 @@ function RegisterPropertyEntranceTargets(p)
 
     table.insert(options, {
         name = 'lns_house_doorbell_' .. id,
-        label = 'Ring Doorbell',
+        label = locale('target.ring_doorbell'),
         icon = 'fas fa-bell',
         onSelect = function()
             TriggerServerEvent('LNS_Housing:server:ringDoorbell', id)
@@ -1942,7 +1947,8 @@ function UpdatePropertyBlips()
                         
                         local blipLabel = p.label
                         if blipConfig.Label and blipConfig.Label ~= "" then
-                            blipLabel = string.format("%s - %s", blipConfig.Label, p.label)
+                            local localizedBlipText = (blipConfig.Label == "Property For Sale" and locale('menu.property_for_sale')) or (blipConfig.Label == "Owned Property" and locale('menu.owned_property')) or locale(blipConfig.Label)
+                            blipLabel = string.format("%s - %s", localizedBlipText, p.label)
                         end
 
                         BeginTextCommandSetBlipName("STRING")
@@ -1980,7 +1986,7 @@ function SpawnShellForProperty(propertyId, shellName, shellCoords)
         if not ExitTargets[propertyId] then
             local options = {
                 {
-                    label = 'Exit Property',
+                    label = locale('target.exit_property'),
                     icon = 'fas fa-door-closed',
                     onSelect = function()
                         LeaveShellProperty(propertyId)
@@ -1991,7 +1997,7 @@ function SpawnShellForProperty(propertyId, shellName, shellCoords)
             local p = Properties[propertyId]
             if p and p.metadata and p.metadata.entrance then
                 table.insert(options, {
-                    label = 'Lock/Unlock Property',
+                    label = locale('target.lock_unlock_property'),
                     icon = 'fas fa-key',
                     canInteract = function()
                         return true
@@ -2036,7 +2042,7 @@ function SpawnShellForProperty(propertyId, shellName, shellCoords)
     if not ExitTargets[propertyId] then
         local options = {
             {
-                label = 'Exit Property',
+                label = locale('target.exit_property'),
                 icon = 'fas fa-door-closed',
                 onSelect = function()
                     LeaveShellProperty(propertyId)
@@ -2047,7 +2053,7 @@ function SpawnShellForProperty(propertyId, shellName, shellCoords)
         local p = Properties[propertyId]
         if p and p.metadata and p.metadata.entrance then
             table.insert(options, {
-                label = 'Lock/Unlock Property',
+                label = locale('target.lock_unlock_property'),
                 icon = 'fas fa-key',
                 canInteract = function()
                     return true
@@ -2080,7 +2086,7 @@ function EnterShellProperty(propertyId)
 
     local doorCoords = GetEntranceCoords(p)
     if not doorCoords and not isIpl then
-        Bridge.Client.Notify('Entrance coordinates not found!', 'error')
+        Bridge.Client.Notify(locale('notify.entrance_coords_not_found'), 'error')
         return
     end
 
@@ -2125,7 +2131,7 @@ function EnterShellProperty(propertyId)
             lib.addRadialItem({
                 id = 'housing_furniture',
                 icon = 'couch',
-                label = 'Furniture Menu',
+                label = locale('menu.furniture_menu'),
                 onSelect = function()
                     TriggerEvent('LNS_Housing:client:openFurnitureMenu', propertyId)
                 end
@@ -2476,7 +2482,7 @@ function SpawnInHouse(id)
                     lib.addRadialItem({
                         id = 'housing_furniture',
                         icon = 'couch',
-                        label = 'Furniture Menu',
+                        label = locale('menu.furniture_menu'),
                         onSelect = function()
                             TriggerEvent('LNS_Housing:client:openFurnitureMenu', id)
                         end

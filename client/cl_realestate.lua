@@ -80,7 +80,7 @@ RegisterNUICallback('buyProperty', function(data, cb)
     debugPrint('info', 'RealEstate NUI: buyProperty', data)
     local success = lib.callback.await('LNS_Housing:server:buyHouse', false, data.id)
     if success then
-        Bridge.Client.Notify('You bought ' .. data.label .. '!', 'success')
+        Bridge.Client.Notify(locale('notify.bought_house', data.label), 'success')
         
         local properties = lib.callback.await('LNS_Housing:server:getProperties', false)
         SendNUIMessage({
@@ -88,7 +88,7 @@ RegisterNUICallback('buyProperty', function(data, cb)
             data = properties
         })
     else
-        Bridge.Client.Notify('Could not buy house. Check your bank balance.', 'error')
+        Bridge.Client.Notify(locale('notify.could_not_buy_house'), 'error')
     end
     cb('ok')
 end)
@@ -97,7 +97,7 @@ RegisterNUICallback('updateListingDetails', function(data, cb)
     debugPrint('info', 'RealEstate NUI: updateListingDetails', data)
     local success = lib.callback.await('LNS_Housing:server:updateListingDetails', false, data)
     if success then
-        Bridge.Client.Notify("Listing details updated!", "success")
+        Bridge.Client.Notify(locale('notify.listing_updated'), 'success')
     end
     cb(success)
 end)
@@ -106,7 +106,7 @@ RegisterNUICallback('deleteListing', function(data, cb)
     debugPrint('info', 'RealEstate NUI: deleteListing', data)
     local success = lib.callback.await('LNS_Housing:server:deleteListing', false, data.id)
     if success then
-        Bridge.Client.Notify("Listing deleted successfully!", "success")
+        Bridge.Client.Notify(locale('notify.listing_deleted'), 'success')
     end
     cb(success)
 end)
@@ -115,7 +115,7 @@ RegisterNUICallback('evictTenant', function(data, cb)
     debugPrint('info', 'RealEstate NUI: evictTenant', data)
     local success = lib.callback.await('LNS_Housing:server:evictTenant', false, data.id)
     if success then
-        Bridge.Client.Notify("Tenant evicted successfully!", "success")
+        Bridge.Client.Notify(locale('notify.tenant_evicted'), 'success')
     end
     cb(success)
 end)
@@ -124,7 +124,7 @@ RegisterNUICallback('terminateOwnLease', function(data, cb)
     debugPrint('info', 'RealEstate NUI: terminateOwnLease', data)
     local success = lib.callback.await('LNS_Housing:server:terminateOwnLease', false, data.id)
     if success then
-        Bridge.Client.Notify("You terminated your lease.", "success")
+        Bridge.Client.Notify(locale('notify.lease_terminated'), 'success')
     end
     cb(success)
 end)

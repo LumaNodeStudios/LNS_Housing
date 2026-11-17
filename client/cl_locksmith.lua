@@ -29,14 +29,14 @@ end
 
 local function OpenPropertySelectMenu()
     if not IsPhysicalKeysEnabled() then
-        Bridge.Client.Notify('Physical keys are not enabled.', 'error')
+        Bridge.Client.Notify(locale('notify.physical_keys_disabled'), 'error')
         return
     end
 
     debugPrint('info', 'Opening locksmith property select menu')
     local properties = GetKeyableProperties()
     if not properties or #properties == 0 then
-        Bridge.Client.Notify('You are not a keyholder of any property.', 'error')
+        Bridge.Client.Notify(locale('notify.not_keyholder'), 'error')
         return
     end
 
@@ -44,7 +44,7 @@ local function OpenPropertySelectMenu()
     for _, p in ipairs(properties) do
         table.insert(options, {
             title = p.label,
-            description = p.isApartment and 'Apartment' or 'House',
+            description = p.isApartment and locale('menu.apartment') or locale('menu.house'),
             icon = 'key',
             image = p.image,
             arrow = false,
@@ -56,7 +56,7 @@ local function OpenPropertySelectMenu()
 
     lib.registerContext({
         id = 'locksmith_property_select',
-        title = 'Cut a Key - Select Property',
+        title = locale('menu.cut_key_title'),
         options = options
     })
     lib.showContext('locksmith_property_select')
@@ -88,7 +88,7 @@ local function CreateLocksmithPed()
         {
             name = 'locksmith_cut_key',
             icon = 'fas fa-key',
-            label = 'Cut a Key',
+            label = locale('target.cut_a_key'),
             distance = Settings.Locksmith.Distance,
             onSelect = function()
                 OpenPropertySelectMenu()
@@ -104,7 +104,7 @@ local function CreateLocksmithPed()
         SetBlipColour(locksmithBlip, Settings.Locksmith.Blip.Color)
         SetBlipAsShortRange(locksmithBlip, true)
         BeginTextCommandSetBlipName("STRING")
-        AddTextComponentString(Settings.Locksmith.Blip.Label)
+        AddTextComponentString(locale('menu.locksmith'))
         EndTextCommandSetBlipName(locksmithBlip)
     end
 end

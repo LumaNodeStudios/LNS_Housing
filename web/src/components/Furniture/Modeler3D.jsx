@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { TransformControls } from '@react-three/drei';
 import * as THREE from 'three';
+import { useLocale } from '../../context/LocaleContext';
 
 const convertToThree = (pos) => ({ x: pos.x, y: pos.z, z: -pos.y });
 const convertToGTA = (pos) => ({ x: pos.x, y: -pos.z, z: pos.y });
@@ -125,6 +126,7 @@ const Scene = ({ cameraData, objectPos, objectRot, mode, onUpdate, onModeChange,
 };
 
 const Modeler3D = ({ active, onUpdate, onDragEnd, currentPosition, currentRotation }) => {
+  const { t } = useLocale();
   const [cameraData, setCameraData] = useState(null);
   const [position, setPosition] = useState({ x: 0, y: 0, z: 0 });
   const [rotation, setRotation] = useState({ x: 0, y: 0, z: 0 });
@@ -249,12 +251,12 @@ const Modeler3D = ({ active, onUpdate, onDragEnd, currentPosition, currentRotati
         <div className="placement-mode-controls">
           <div className={`mode-pill ${mode === 'translate' ? 'active' : ''}`} onClick={() => setMode('translate')}>
             <kbd>E</kbd>
-            <span>Position (Arrows)</span>
+            <span>{t('ui.position_arrows', 'Position (Arrows)')}</span>
           </div>
           <div className="mode-divider" />
           <div className={`mode-pill ${mode === 'rotate' ? 'active' : ''}`} onClick={() => setMode('rotate')}>
             <kbd>R</kbd>
-            <span>Rotate (Sphere)</span>
+            <span>{t('ui.rotate_sphere', 'Rotate (Sphere)')}</span>
           </div>
         </div>
       )}

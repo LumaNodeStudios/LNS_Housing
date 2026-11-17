@@ -34,12 +34,12 @@ function RegisterBreakerTarget(id)
         options = {
             {
                 name = 'lns_breaker_reset_' .. id,
-                label = 'Reset Breaker Box',
+                label = locale('target.reset_breaker_box'),
                 icon = 'fas fa-bolt',
                 onSelect = function()
                     local stats = lib.callback.await('LNS_Housing:server:getPropertyUsageStats', false, id)
                     if stats and not stats.breakerTripped then
-                        Bridge.Client.Notify('The breaker box is operating normally (Power Online).', 'inform')
+                        Bridge.Client.Notify(locale('notify.breaker_normal'), 'inform')
                         return
                     end
 
@@ -50,10 +50,10 @@ function RegisterBreakerTarget(id)
                         if res and res.success then
                             Bridge.Client.Notify(res.message, 'success')
                         else
-                            Bridge.Client.Notify(res and res.message or 'Failed to reset breaker.', 'error')
+                            Bridge.Client.Notify(res and res.message or locale('notify.breaker_reset_failed'), 'error')
                         end
                     else
-                        Bridge.Client.Notify('Failed to flip the breaker cleanly. Try again!', 'error')
+                        Bridge.Client.Notify(locale('notify.breaker_skill_failed'), 'error')
                     end
                 end,
                 canInteract = function()
@@ -82,19 +82,19 @@ function CreateApartmentBreakerTarget()
         options = {
             {
                 name = 'lns_apartment_breaker_reset',
-                label = 'Reset Apartment Room Breaker',
+                label = locale('target.reset_apt_breaker'),
                 icon = 'fas fa-bolt',
                 onSelect = function()
                     local myApt = lib.callback.await('LNS_Housing:server:getMyApartment', false)
                     local roomId = myApt and (myApt.roomId or myApt.room_id)
                     if not myApt or not roomId then
-                        Bridge.Client.Notify('You do not own or rent an apartment room in this building.', 'error')
+                        Bridge.Client.Notify(locale('notify.breaker_no_apt_room'), 'error')
                         return
                     end
 
                     local stats = lib.callback.await('LNS_Housing:server:getPropertyUsageStats', false, roomId)
                     if stats and not stats.breakerTripped then
-                        Bridge.Client.Notify('Your apartment room breaker is operating normally (Power Online).', 'inform')
+                        Bridge.Client.Notify(locale('notify.breaker_apt_normal'), 'inform')
                         return
                     end
 
@@ -105,10 +105,10 @@ function CreateApartmentBreakerTarget()
                         if res and res.success then
                             Bridge.Client.Notify(res.message, 'success')
                         else
-                            Bridge.Client.Notify(res and res.message or 'Failed to reset breaker.', 'error')
+                            Bridge.Client.Notify(res and res.message or locale('notify.breaker_reset_failed'), 'error')
                         end
                     else
-                        Bridge.Client.Notify('Failed to flip the room breaker cleanly. Try again!', 'error')
+                        Bridge.Client.Notify(locale('notify.breaker_apt_skill_failed'), 'error')
                     end
                 end,
                 canInteract = function()
@@ -134,25 +134,25 @@ function CheckPropertyTemperatureNotify(propertyId)
         local maxComfort = isCelsius and (((Settings.Temperature.MaxComfortableTemp or 78.0) - 32) * (5 / 9)) or (Settings.Temperature.MaxComfortableTemp or 78.0)
 
         if displayTemp < minComfort then
-            Bridge.Client.Notify(string.format("Temperature Warning: It feels cold inside (%.0f%s). Place heaters to warm up.", displayTemp, unitSym), 'warning')
+            Bridge.Client.Notify(locale('notify.temp_cold', displayTemp, unitSym), 'warning')
         elseif displayTemp > maxComfort then
-            Bridge.Client.Notify(string.format("Temperature Warning: It feels hot inside (%.0f%s). Place air conditioning to cool down.", displayTemp, unitSym), 'warning')
+            Bridge.Client.Notify(locale('notify.temp_hot', displayTemp, unitSym), 'warning')
         else
-            Bridge.Client.Notify(string.format("Interior Climate: Comfortable (%.0f%s).", displayTemp, unitSym), 'inform')
+            Bridge.Client.Notify(locale('notify.temp_comfortable', displayTemp, unitSym), 'inform')
         end
 
         if stats.breakerTripped then
             Wait(1200)
-            Bridge.Client.Notify(string.format("Power Overload! Circuit breaker tripped (%.1f / %.1f kWh). Reset breaker at Breaker Box.", stats.totalPower, stats.maxPower), 'error')
+            Bridge.Client.Notify(locale('notify.power_overload', stats.totalPower, stats.maxPower), 'error')
         end
     end)
 end
 
 RegisterNetEvent('LNS_Housing:client:breakerTrippedNotify', function(propertyId, totalPower, maxPower)
     if not Settings.Electricity or Settings.Electricity.Enabled == false then return end
-    Bridge.Client.Notify(string.format("Breaker Tripped! Usage (%.1f kWh) exceeded max capacity (%.1f kWh). Reset breaker at Breaker Box.", totalPower, maxPower), 'error')
+    Bridge.Client.Notify(locale('notify.power_tripped_capacity', totalPower, maxPower), 'error')
 end)
 
 RegisterNetEvent('LNS_Housing:client:breakerReset', function(propertyId)
-    Bridge.Client.Notify("Power grid restored! Circuit breaker is now active.", "success")
+    Bridge.Client.Notify(locale('notify.power_restored'), 'success')
 end)

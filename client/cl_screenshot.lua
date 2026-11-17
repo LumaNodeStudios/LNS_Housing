@@ -247,7 +247,7 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
     end)
 
     if #itemsToCapture == 0 then
-        Bridge.Client.Notify('No matching furniture models found to capture.', 'error')
+        Bridge.Client.Notify(locale('notify.no_matching_furniture'), 'error')
         TriggerServerEvent('LNS_Housing:server:resetScreenshotBucket')
         SetEntityCoords(ped, originalCoords.x, originalCoords.y, originalCoords.z, false, false, false, false)
         SetEntityHeading(ped, originalHeading)
@@ -273,13 +273,13 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
             DisableControlAction(0, 177, true)
             if IsDisabledControlJustReleased(0, 177) then
                 isCapturing = false
-                Bridge.Client.Notify('Screenshot session cancelled.', 'error')
+                Bridge.Client.Notify(locale('notify.screenshot_cancelled'), 'error')
             end
             Wait(0)
         end
     end)
 
-    Bridge.Client.Notify('Starting furniture screenshots. Capturing ' .. #itemsToCapture .. ' item(s)...', 'inform')
+    Bridge.Client.Notify(locale('notify.screenshot_started', #itemsToCapture), 'inform')
     Wait(1000)
 
     for _, interiorId in ipairs(PinnedInteriors) do
@@ -463,6 +463,6 @@ RegisterNetEvent('LNS_Housing:client:startScreenshots', function(targetModel)
     end
 
     if not wasCancelled then
-        Bridge.Client.Notify('Finished screenshot session.', 'success')
+        Bridge.Client.Notify(locale('notify.screenshot_finished'), 'success')
     end
 end)

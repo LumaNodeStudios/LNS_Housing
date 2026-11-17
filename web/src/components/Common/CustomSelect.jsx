@@ -2,8 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import './CustomSelect.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Check, Home } from 'lucide-react';
+import { useLocale } from '../../context/LocaleContext';
 
-const CustomSelect = ({ label, icon: Icon, value, options = [], onChange, name, placeholder = "Select option...", className = '' }) => {
+const CustomSelect = ({ label, icon: Icon, value, options = [], onChange, name, placeholder, className = '' }) => {
+    const { t } = useLocale();
+    const effectivePlaceholder = placeholder || t('select_option', 'Select option...');
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef(null);
 
@@ -52,7 +55,7 @@ const CustomSelect = ({ label, icon: Icon, value, options = [], onChange, name, 
                         />
                     ) : null}
                     <span className="re-custom-select-value">
-                        {selectedOption ? selectedOption.label : placeholder}
+                        {selectedOption ? selectedOption.label : effectivePlaceholder}
                     </span>
                     {selectedOption?.type && (
                         <span className={`re-custom-select-type-tag ${selectedOption.type}`}>
@@ -74,7 +77,7 @@ const CustomSelect = ({ label, icon: Icon, value, options = [], onChange, name, 
                     >
                         {options.length === 0 ? (
                             <div className="re-custom-select-option empty">
-                                <span className="option-text" style={{ opacity: 0.5 }}>No options available</span>
+                                <span className="option-text" style={{ opacity: 0.5 }}>{t('no_options_available', 'No options available')}</span>
                             </div>
                         ) : (
                             options.map((option) => (

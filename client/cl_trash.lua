@@ -885,7 +885,7 @@ function RefreshPropertyTrash(propertyId, isApartment)
                                     {
                                         name = 'lns_trash_pickup_' .. idx,
                                         icon = 'fas fa-broom',
-                                        label = 'Clean Up Trash',
+                                        label = locale('target.clean_up_trash'),
                                         distance = 2.0,
                                         canInteract = function()
                                             if IsTrashItem then
@@ -1003,7 +1003,7 @@ end
 function CleanTrashPile(propertyId, index, isApartment)
     if not IsTrashItem then
         if IsCarryingTrash then
-            Bridge.Client.Notify('You are already carrying a bag of trash! Dispose of it in a dumpster first.', 'error')
+            Bridge.Client.Notify(locale('notify.already_carrying_trash'), 'error')
             return
         end
     end
@@ -1014,7 +1014,7 @@ function CleanTrashPile(propertyId, index, isApartment)
         local targetType = isApartment and 'apartment' or 'house'
         local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, targetType, propertyId, 'entry')
         if not hasAccess then
-            Bridge.Client.Notify('You do not have permission to clean trash in this property.', 'error')
+            Bridge.Client.Notify(locale('notify.no_clean_trash_perm'), 'error')
             return
         end
     end
@@ -1024,7 +1024,7 @@ function CleanTrashPile(propertyId, index, isApartment)
     lib.requestAnimDict('anim@mp_snowball')
     local success = lib.progressBar({
         duration = Settings.Trash.CleanDuration or 4000,
-        label = 'Cleaning up trash...',
+        label = locale('progressbar.cleaning_trash'),
         useWhileDead = false,
         canCancel = true,
         disable = {
@@ -1064,15 +1064,15 @@ function CleanTrashPile(propertyId, index, isApartment)
 
             AttachCarriedTrashBag(propertyId, isApartment)
             if IsTrashItem then
-                Bridge.Client.Notify('You cleaned the trash and placed a trash bag in your inventory.', 'inform')
+                Bridge.Client.Notify(locale('notify.cleaned_trash_item'), 'inform')
             else
-                Bridge.Client.Notify('You picked up a bag of trash. Take it outside to a street dumpster!', 'inform')
+                Bridge.Client.Notify(locale('notify.cleaned_trash_carry'), 'inform')
             end
         else
-            Bridge.Client.Notify(res and res.message or 'Failed to pick up trash.', 'error')
+            Bridge.Client.Notify(res and res.message or locale('notify.clean_trash_failed'), 'error')
         end
     else
-        Bridge.Client.Notify('Cleaning cancelled.', 'inform')
+        Bridge.Client.Notify(locale('notify.clean_trash_cancelled'), 'inform')
     end
 end
 
@@ -1101,7 +1101,7 @@ function SpawnDroppedBagObject(bagData)
             {
                 name = targetName,
                 icon = 'fas fa-hand-holding',
-                label = 'Pick Up Trash Bag',
+                label = locale('target.pick_up_trash_bag'),
                 distance = 2.0,
                 canInteract = function()
                     if IsTrashItem then
@@ -1134,7 +1134,7 @@ end
 
 function PickupDroppedTrashBag(bagId)
     if not IsTrashItem and IsCarryingTrash then
-        Bridge.Client.Notify('You are already carrying a trash bag! Dispose of it first.', 'error')
+        Bridge.Client.Notify(locale('notify.already_carrying_trash'), 'error')
         return
     end
 
@@ -1153,12 +1153,12 @@ function PickupDroppedTrashBag(bagId)
     if res and res.success then
         AttachCarriedTrashBag(res.propertyId, res.isApartment)
         if IsTrashItem then
-            Bridge.Client.Notify('You picked up the trash bag and put it in your inventory.', 'inform')
+            Bridge.Client.Notify(locale('notify.picked_trash_bag_item'), 'inform')
         else
-            Bridge.Client.Notify('You picked up the trash bag. Take it outside to a street dumpster!', 'inform')
+            Bridge.Client.Notify(locale('notify.picked_trash_bag_carry'), 'inform')
         end
     else
-        Bridge.Client.Notify(res and res.message or 'Failed to pick up trash bag.', 'error')
+        Bridge.Client.Notify(res and res.message or locale('notify.pick_trash_bag_failed'), 'error')
     end
 end
 
@@ -1255,7 +1255,7 @@ function DropTrashBag(notify)
     TriggerServerEvent('LNS_Housing:server:dropTrashBag', propId, isApt, dropPos)
 
     if notify ~= false then
-        Bridge.Client.Notify('You dropped the trash bag on the ground.', 'inform')
+        Bridge.Client.Notify(locale('notify.dropped_trash_bag'), 'inform')
     end
 end
 
@@ -1263,12 +1263,12 @@ function ThrowTrashInDumpster(dumpsterEntity)
     if IsTrashItem then
         local count = Bridge.Client.Search('count', TrashItemName) or 0
         if count <= 0 and not IsCarryingTrash then
-            Bridge.Client.Notify('You do not have any trash bags in your inventory!', 'error')
+            Bridge.Client.Notify(locale('notify.no_trash_in_inv'), 'error')
             return
         end
     else
         if not IsCarryingTrash then
-            Bridge.Client.Notify('You are not carrying any trash to throw away!', 'error')
+            Bridge.Client.Notify(locale('notify.not_carrying_trash'), 'error')
             return
         end
     end
@@ -1287,7 +1287,7 @@ function ThrowTrashInDumpster(dumpsterEntity)
     lib.requestAnimDict('anim@heists@narcotics@trash')
     local success = lib.progressBar({
         duration = Settings.Trash.ThrowDuration or 2500,
-        label = 'Tossing trash into dumpster...',
+        label = locale('progressbar.throwing_trash'),
         useWhileDead = false,
         canCancel = false,
         disable = {
@@ -1319,7 +1319,7 @@ local function RegisterDumpsterModels()
         {
             name = 'lns_dumpster_throw_trash',
             icon = 'fas fa-dumpster',
-            label = 'Throw Away Trash',
+            label = locale('target.throw_away_trash'),
             distance = 2.5,
             canInteract = function(entity, distance, coords, name)
                 if isThrowingTrash then return false end
@@ -1381,10 +1381,10 @@ RegisterNetEvent('LNS_Housing:client:toggleCarryTrashItem', function()
 
     if IsCarryingTrash then
         DetachCarriedTrashBag()
-        Bridge.Client.Notify('You put the trash bag away.', 'inform')
+        Bridge.Client.Notify(locale('notify.put_trash_away'), 'inform')
     else
         AttachCarriedTrashBag(nil, false)
-        Bridge.Client.Notify('You are now holding a trash bag.', 'inform')
+        Bridge.Client.Notify(locale('notify.holding_trash_bag'), 'inform')
     end
 end)
 
@@ -1394,7 +1394,7 @@ RegisterCommand('droptrash', function()
     if IsCarryingTrash or itemCount > 0 then
         DropTrashBag(true)
     else
-        Bridge.Client.Notify('You are not carrying any trash bag.', 'inform')
+        Bridge.Client.Notify(locale('notify.not_carrying_trash'), 'inform')
     end
 end, false)
 
@@ -1409,7 +1409,7 @@ local DockModels = {
         occupied = 'mula_prop_cleandock_small_occupied',
         empty = 'mula_prop_cleandock',
         robot = 'mula_prop_cleanrobot_small',
-        label = 'Small Cleaning Robot',
+        label = locale('target.small_cleaning_robot'),
         forwardOffset = 0.70,
     },
     [joaat('mula_prop_cleandock')] = {
@@ -1417,7 +1417,7 @@ local DockModels = {
         occupied = 'mula_prop_cleandock_small_occupied',
         empty = 'mula_prop_cleandock',
         robot = 'mula_prop_cleanrobot_small',
-        label = 'Small Cleaning Robot',
+        label = locale('target.small_cleaning_robot'),
         forwardOffset = 0.70,
     },
     [joaat('mula_prop_cleandock_tall_occupied')] = {
@@ -1425,7 +1425,7 @@ local DockModels = {
         occupied = 'mula_prop_cleandock_tall_occupied',
         empty = 'mula_prop_cleandock_tall',
         robot = 'mula_prop_cleanrobot',
-        label = 'Large Cleaning Robot',
+        label = locale('target.large_cleaning_robot'),
         forwardOffset = 0.80,
     },
     [joaat('mula_prop_cleandock_tall')] = {
@@ -1433,7 +1433,7 @@ local DockModels = {
         occupied = 'mula_prop_cleandock_tall_occupied',
         empty = 'mula_prop_cleandock_tall',
         robot = 'mula_prop_cleanrobot',
-        label = 'Large Cleaning Robot',
+        label = locale('target.large_cleaning_robot'),
         forwardOffset = 0.80,
     },
 }
@@ -1448,14 +1448,14 @@ local function FormatTimerText(seconds)
     seconds = tonumber(seconds) or 0
     if seconds >= 86400 then
         local days = math.floor(seconds / 86400)
-        return days == 1 and 'Every 1 Day' or ('Every %d Days'):format(days)
+        return days == 1 and locale('menu.every_1_day') or locale('menu.every_x_days', days)
     elseif seconds >= 3600 then
         local hrs = seconds / 3600
-        return hrs == 1 and 'Every 1 Hour' or ('Every %g Hours'):format(hrs)
+        return hrs == 1 and locale('menu.every_1_hour') or locale('menu.every_x_hours', hrs)
     elseif seconds >= 60 then
-        return ('Every %d Minutes'):format(math.floor(seconds / 60))
+        return locale('menu.every_x_minutes', math.floor(seconds / 60))
     else
-        return ('Every %d Seconds'):format(seconds)
+        return locale('menu.every_x_seconds', seconds)
     end
 end
 
@@ -1519,7 +1519,7 @@ function SetupCleanRobotDockTarget(propertyId, furnitureId, entity, furnData, it
         {
             name = targetPrefix .. '_clean',
             icon = 'fas fa-broom',
-            label = 'Start Cleaning Cycle',
+            label = locale('target.start_cleaning_cycle'),
             distance = 2.0,
             canInteract = function()
                 return not IsRobotCleaning(propertyId, isApartment) and not IsRecordingPath
@@ -1531,7 +1531,7 @@ function SetupCleanRobotDockTarget(propertyId, furnitureId, entity, furnData, it
         {
             name = targetPrefix .. '_stop',
             icon = 'fas fa-circle-stop',
-            label = 'Return to Dock',
+            label = locale('target.return_to_dock'),
             distance = 2.0,
             canInteract = function()
                 return IsRobotCleaning(propertyId, isApartment)
@@ -1543,7 +1543,7 @@ function SetupCleanRobotDockTarget(propertyId, furnitureId, entity, furnData, it
         {
             name = targetPrefix .. '_timer',
             icon = 'fas fa-clock',
-            label = 'Cleaning Schedule Timer',
+            label = locale('target.cleaning_schedule_timer'),
             distance = 2.0,
             canInteract = function()
                 return not IsRecordingPath
@@ -1555,7 +1555,7 @@ function SetupCleanRobotDockTarget(propertyId, furnitureId, entity, furnData, it
         {
             name = targetPrefix .. '_path',
             icon = 'fas fa-route',
-            label = 'Manage Cleaning Path',
+            label = locale('target.manage_cleaning_path'),
             distance = 2.0,
             canInteract = function()
                 return not IsRobotCleaning(propertyId, isApartment) and not IsRecordingPath
@@ -1569,7 +1569,7 @@ end
 
 function RequestStartRobotCleaning(propertyId, isApartment, furnitureId)
     if IsRobotCleaning(propertyId, isApartment) then
-        Bridge.Client.Notify('Cleaning robot is already in progress!', 'inform')
+        Bridge.Client.Notify(locale('notify.robot_already_running'), 'inform')
         return
     end
 
@@ -1577,7 +1577,7 @@ function RequestStartRobotCleaning(propertyId, isApartment, furnitureId)
         local targetType = isApartment and 'apartment' or 'house'
         local hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, targetType, propertyId, 'entry')
         if not hasAccess then
-            Bridge.Client.Notify('You do not have permission to operate the cleaning robot.', 'error')
+            Bridge.Client.Notify(locale('notify.no_robot_perm'), 'error')
             return
         end
     end
@@ -1591,16 +1591,16 @@ function StopRobotCleaning(propertyId, isApartment)
         if ActiveCleaningRobots[key].cancelRef then
             ActiveCleaningRobots[key].cancelRef.cancelRequested = true
         end
-        Bridge.Client.Notify('Recalling cleaning robot back to dock...', 'inform')
+        Bridge.Client.Notify(locale('notify.robot_recalled'), 'inform')
     end
 end
 
 local function SetRobotTimerChoice(propertyId, isApartment, seconds, label)
     local res = lib.callback.await('LNS_Housing:server:setRobotTimer', false, propertyId, isApartment, seconds)
     if res and res.success then
-        Bridge.Client.Notify(('Cleaning timer set to: %s'):format(label), 'success')
+        Bridge.Client.Notify(locale('notify.cleaning_timer_set', label), 'success')
     else
-        Bridge.Client.Notify((res and res.message) or 'Failed to set timer.', 'error')
+        Bridge.Client.Notify((res and res.message) or locale('notify.failed_set_timer'), 'error')
     end
 end
 
@@ -1608,17 +1608,17 @@ function OpenRobotTimerMenu(propertyId, isApartment, furnitureId)
     local data = lib.callback.await('LNS_Housing:server:getRobotData', false, propertyId, isApartment)
     local currentTimer = (data and data.timerInterval) or 3600
 
-    local timerDesc = 'Current: ' .. (currentTimer == 0 and 'Disabled (Manual Clean Only)' or FormatTimerText(currentTimer))
+    local timerDesc = locale('menu.current_timer_prefix') .. ': ' .. (currentTimer == 0 and locale('menu.timer_disabled') or FormatTimerText(currentTimer))
     if data and data.lastClean and data.lastClean > 0 then
         local diff = (data.serverTime or os.time()) - data.lastClean
         if diff > 0 then
-            timerDesc = timerDesc .. ' | Last clean: ' .. FormatDurationAgo(diff) .. ' ago'
+            timerDesc = timerDesc .. ' | ' .. locale('menu.last_clean_ago', FormatDurationAgo(diff))
         end
     end
 
     local timerOptions = {
         {
-            title = 'Current Schedule Status',
+            title = locale('menu.schedule_status'),
             description = timerDesc,
             icon = 'fas fa-circle-info',
             readOnly = true,
@@ -1636,7 +1636,7 @@ function OpenRobotTimerMenu(propertyId, isApartment, furnitureId)
             elseif opt.value >= 86400 then
                 icon = 'fas fa-calendar-day'
             end
-            local desc = opt.value == 0 and 'Robot stays in dock until you click Start.' or ('Cleans automatically %s.'):format(opt.label:lower())
+            local desc = opt.value == 0 and locale('menu.timer_disabled_desc') or locale('menu.cleans_automatically', opt.label:lower())
 
             timerOptions[#timerOptions + 1] = {
                 title = opt.label,
@@ -1650,14 +1650,14 @@ function OpenRobotTimerMenu(propertyId, isApartment, furnitureId)
         end
     else
         local defaultPresets = {
-            { label = 'Disabled (Manual Clean Only)', value = 0, icon = 'fas fa-ban', desc = 'Robot stays in dock until you click Start.' },
-            { label = 'Every 15 Minutes', value = 900, icon = 'fas fa-stopwatch', desc = 'Cleans automatically every 15 minutes.' },
-            { label = 'Every 30 Minutes', value = 1800, icon = 'fas fa-stopwatch', desc = 'Cleans automatically every 30 minutes.' },
-            { label = 'Every 1 Hour', value = 3600, icon = 'fas fa-clock', desc = 'Cleans automatically every hour.' },
-            { label = 'Every 2 Hours', value = 7200, icon = 'fas fa-clock', desc = 'Cleans automatically every 2 hours.' },
-            { label = 'Every 4 Hours', value = 14400, icon = 'fas fa-clock', desc = 'Cleans automatically every 4 hours.' },
-            { label = 'Every 8 Hours', value = 28800, icon = 'fas fa-clock', desc = 'Cleans automatically every 8 hours.' },
-            { label = 'Every 24 Hours', value = 86400, icon = 'fas fa-calendar-day', desc = 'Cleans automatically once per day.' },
+            { label = locale('menu.timer_disabled'), value = 0, icon = 'fas fa-ban', desc = locale('menu.timer_disabled_desc') },
+            { label = locale('menu.timer_15min'), value = 900, icon = 'fas fa-stopwatch', desc = locale('menu.timer_15min_desc') },
+            { label = locale('menu.timer_30min'), value = 1800, icon = 'fas fa-stopwatch', desc = locale('menu.timer_30min_desc') },
+            { label = locale('menu.timer_1h'), value = 3600, icon = 'fas fa-clock', desc = locale('menu.timer_1h_desc') },
+            { label = locale('menu.timer_2h'), value = 7200, icon = 'fas fa-clock', desc = locale('menu.timer_2h_desc') },
+            { label = locale('menu.timer_4h'), value = 14400, icon = 'fas fa-clock', desc = locale('menu.timer_4h_desc') },
+            { label = locale('menu.timer_8h'), value = 28800, icon = 'fas fa-clock', desc = locale('menu.timer_8h_desc') },
+            { label = locale('menu.timer_24h'), value = 86400, icon = 'fas fa-calendar-day', desc = locale('menu.timer_24h_desc') },
         }
         for _, opt in ipairs(defaultPresets) do
             timerOptions[#timerOptions + 1] = {
@@ -1673,16 +1673,16 @@ function OpenRobotTimerMenu(propertyId, isApartment, furnitureId)
     end
 
     timerOptions[#timerOptions + 1] = {
-        title = 'Custom Minutes...',
-        description = 'Set a custom minute interval for cleaning.',
+        title = locale('menu.custom_minutes'),
+        description = locale('menu.custom_minutes_desc'),
         icon = 'fas fa-pen-to-square',
         arrow = true,
         onSelect = function()
-            local input = lib.inputDialog('Custom Robot Cleaning Schedule', {
+            local input = lib.inputDialog(locale('dialog.custom_schedule_title'), {
                 {
                     type = 'number',
-                    label = 'Timer Interval (Minutes)',
-                    description = 'e.g. 45 for every 45 minutes',
+                    label = locale('dialog.timer_interval_label'),
+                    description = locale('dialog.timer_interval_desc'),
                     min = 5,
                     max = 1440,
                     default = math.max(5, math.floor(currentTimer / 60))
@@ -1691,7 +1691,7 @@ function OpenRobotTimerMenu(propertyId, isApartment, furnitureId)
             if input and input[1] then
                 local mins = tonumber(input[1])
                 if mins and mins >= 5 then
-                    SetRobotTimerChoice(propertyId, isApartment, mins * 60, ('Every %d Minutes'):format(mins))
+                    SetRobotTimerChoice(propertyId, isApartment, mins * 60, locale('menu.every_x_minutes', mins))
                 end
             end
         end
@@ -1699,7 +1699,7 @@ function OpenRobotTimerMenu(propertyId, isApartment, furnitureId)
 
     lib.registerContext({
         id = 'lns_robot_timer_menu',
-        title = 'Cleaning Schedule Timer',
+        title = locale('menu.robot_timer_title'),
         options = timerOptions
     })
     lib.showContext('lns_robot_timer_menu')
@@ -1712,14 +1712,14 @@ function OpenRobotPathMenu(propertyId, isApartment, furnitureId)
 
     local pathOptions = {
         {
-            title = 'Path Configuration',
+            title = locale('menu.path_config'),
             description = hasPath and ('Custom Path Active (%d waypoints)'):format(pathCount) or 'No custom route set (Robot dynamically cleans trash piles)',
             icon = 'fas fa-circle-info',
             readOnly = true,
         },
         {
-            title = 'Record New Route (Walk Mode)',
-            description = 'Walk around your room to drop waypoints for the robot to follow.',
+            title = locale('menu.record_new_route'),
+            description = locale('menu.record_new_route_desc'),
             icon = 'fas fa-person-walking',
             arrow = true,
             onSelect = function()
@@ -1727,8 +1727,8 @@ function OpenRobotPathMenu(propertyId, isApartment, furnitureId)
             end
         },
         {
-            title = 'Preview Current Route',
-            description = 'Displays glowing ground markers showing the robot route for 15s.',
+            title = locale('menu.preview_route'),
+            description = locale('menu.preview_route_desc'),
             icon = 'fas fa-eye',
             disabled = not hasPath,
             arrow = true,
@@ -1737,22 +1737,22 @@ function OpenRobotPathMenu(propertyId, isApartment, furnitureId)
             end
         },
         {
-            title = 'Delete Saved Route',
-            description = 'Clear custom path. Robot will auto-navigate directly between trash piles.',
+            title = locale('menu.delete_route'),
+            description = locale('menu.delete_route_desc'),
             icon = 'fas fa-trash-can',
             disabled = not hasPath,
             arrow = true,
             onSelect = function()
                 local confirm = lib.alertDialog({
-                    header = 'Delete Cleaning Route?',
-                    content = 'Are you sure you want to delete the custom route? The robot will revert to navigating directly to trash piles.',
+                    header = locale('dialog.delete_route_title'),
+                    content = locale('dialog.delete_route_msg'),
                     centered = true,
                     cancel = true
                 })
                 if confirm == 'confirm' then
                     local res = lib.callback.await('LNS_Housing:server:clearRobotPath', false, propertyId, isApartment)
                     if res and res.success then
-                        Bridge.Client.Notify('Cleaning route deleted.', 'success')
+                        Bridge.Client.Notify(locale('notify.route_deleted'), 'success')
                     end
                 end
             end
@@ -1761,7 +1761,7 @@ function OpenRobotPathMenu(propertyId, isApartment, furnitureId)
 
     lib.registerContext({
         id = 'lns_robot_path_menu',
-        title = 'Manage Cleaning Path',
+        title = locale('menu.robot_path_title'),
         options = pathOptions
     })
     lib.showContext('lns_robot_path_menu')
@@ -1775,7 +1775,7 @@ function StartRecordingRobotPath(propertyId, isApartment, furnitureId)
         or (RegisteredDocks[key] and RegisteredDocks[key][tostring(furnitureId)] and RegisteredDocks[key][tostring(furnitureId)].entity)
 
     if not dockObj or not DoesEntityExist(dockObj) then
-        Bridge.Client.Notify('Dock entity not found.', 'error')
+        Bridge.Client.Notify(locale('notify.dock_not_found'), 'error')
         return
     end
 
@@ -1791,19 +1791,18 @@ function StartRecordingRobotPath(propertyId, isApartment, furnitureId)
     local pedCoords = GetEntityCoords(ped)
 
     if #(pedCoords - dockCoords) > 10.0 then
-        Bridge.Client.Notify('Please stand near the cleaning robot dock before starting to record.', 'error')
+        Bridge.Client.Notify(locale('notify.stand_near_dock'), 'error')
         return
     end
 
     IsRecordingPath = true
     RecordedWaypoints = {}
 
-    Bridge.Client.Notify('Route recording active! Walk around to place waypoints.', 'inform')
-    lib.showTextUI('[E] Add Point  |  [BACKSPACE] Undo  |  [ENTER] Save Route  |  [ESC] Cancel\nRoute Waypoints: 0 / 60', { position = 'top-center' })
+    local maxWaypoints = (Settings.Trash and Settings.Trash.Robot and Settings.Trash.Robot.MaxWaypoints) or 60
+    Bridge.Client.Notify(locale('notify.route_recording_active'), 'inform')
+    lib.showTextUI(locale('textui.route_recording_controls', 0, maxWaypoints), { position = 'top-center' })
 
     CreateThread(function()
-        local maxWaypoints = (Settings.Trash and Settings.Trash.Robot and Settings.Trash.Robot.MaxWaypoints) or 60
-
         while IsRecordingPath do
             local currentPed = cache.ped or PlayerPedId()
             local pos = GetEntityCoords(currentPed)
@@ -1814,7 +1813,7 @@ function StartRecordingRobotPath(propertyId, isApartment, furnitureId)
                 local foundGround, groundZ = GetGroundZFor_3dCoord(pos.x, pos.y, pos.z, false)
                 local wpZ = foundGround and groundZ + 0.05 or pos.z - 0.95
                 RecordedWaypoints[#RecordedWaypoints + 1] = vec3(pos.x, pos.y, wpZ)
-                lib.showTextUI(('[E] Add Point  |  [BACKSPACE] Undo  |  [ENTER] Save Route  |  [ESC] Cancel\nRoute Waypoints: %d / %d'):format(#RecordedWaypoints, maxWaypoints), { position = 'top-center' })
+                lib.showTextUI(locale('textui.route_recording_controls', #RecordedWaypoints, maxWaypoints), { position = 'top-center' })
             end
 
             if IsControlJustPressed(0, 38) then
@@ -1822,22 +1821,22 @@ function StartRecordingRobotPath(propertyId, isApartment, furnitureId)
                     local foundGround, groundZ = GetGroundZFor_3dCoord(pos.x, pos.y, pos.z, false)
                     local wpZ = foundGround and groundZ + 0.05 or pos.z - 0.95
                     RecordedWaypoints[#RecordedWaypoints + 1] = vec3(pos.x, pos.y, wpZ)
-                    lib.showTextUI(('[E] Add Point  |  [BACKSPACE] Undo  |  [ENTER] Save Route  |  [ESC] Cancel\nRoute Waypoints: %d / %d'):format(#RecordedWaypoints, maxWaypoints), { position = 'top-center' })
+                    lib.showTextUI(locale('textui.route_recording_controls', #RecordedWaypoints, maxWaypoints), { position = 'top-center' })
                 else
-                    Bridge.Client.Notify('Maximum waypoint limit reached (60)!', 'error')
+                    Bridge.Client.Notify(locale('notify.max_waypoints_reached'), 'error')
                 end
             end
 
             if IsControlJustPressed(0, 177) or IsControlJustPressed(0, 194) then
                 if #RecordedWaypoints > 0 then
                     table.remove(RecordedWaypoints)
-                    lib.showTextUI(('[E] Add Point  |  [BACKSPACE] Undo  |  [ENTER] Save Route  |  [ESC] Cancel\nRoute Waypoints: %d / %d'):format(#RecordedWaypoints, maxWaypoints), { position = 'top-center' })
+                    lib.showTextUI(locale('textui.route_recording_controls', #RecordedWaypoints, maxWaypoints), { position = 'top-center' })
                 end
             end
 
             if IsControlJustPressed(0, 18) or IsControlJustPressed(0, 201) then
                 if #RecordedWaypoints < 2 then
-                    Bridge.Client.Notify('Please record at least 2 waypoints before saving!', 'error')
+                    Bridge.Client.Notify(locale('notify.record_min_waypoints'), 'error')
                 else
                     IsRecordingPath = false
                     lib.hideTextUI()
@@ -1849,9 +1848,9 @@ function StartRecordingRobotPath(propertyId, isApartment, furnitureId)
 
                     local res = lib.callback.await('LNS_Housing:server:saveRobotPath', false, propertyId, isApartment, pointsToSave)
                     if res and res.success then
-                        Bridge.Client.Notify(('Cleaning path saved with %d waypoints!'):format(res.count), 'success')
+                        Bridge.Client.Notify(locale('notify.route_saved_waypoints', res.count), 'success')
                     else
-                        Bridge.Client.Notify((res and res.message) or 'Failed to save cleaning path.', 'error')
+                        Bridge.Client.Notify((res and res.message) or locale('notify.failed_save_path'), 'error')
                     end
                     break
                 end
@@ -1860,7 +1859,7 @@ function StartRecordingRobotPath(propertyId, isApartment, furnitureId)
             if IsControlJustPressed(0, 200) or IsControlJustPressed(0, 322) then
                 IsRecordingPath = false
                 lib.hideTextUI()
-                Bridge.Client.Notify('Path recording cancelled.', 'inform')
+                Bridge.Client.Notify(locale('notify.path_recording_cancelled'), 'inform')
                 break
             end
 
@@ -1891,8 +1890,8 @@ function PreviewRobotPath(customPath)
     if IsPreviewingPath then return end
     IsPreviewingPath = true
 
-    Bridge.Client.Notify('Showing saved cleaning route for 15 seconds (Press [ESC] to hide)...', 'inform')
-    lib.showTextUI('[ESC] Hide Cleaning Route Preview', { position = 'top-center' })
+    Bridge.Client.Notify(locale('notify.route_preview'), 'inform')
+    lib.showTextUI(locale('textui.hide_route_preview'), { position = 'top-center' })
 
     CreateThread(function()
         local endTimer = GetGameTimer() + 15000
@@ -2079,7 +2078,7 @@ function StartRobotCleanSimulation(propertyId, isApartment, dockFurnitureId)
         {
             name = targetPrefix .. '_stop',
             icon = 'fas fa-circle-stop',
-            label = 'Recall to Dock',
+            label = locale('target.recall_to_dock'),
             distance = 2.0,
             onSelect = function()
                 StopRobotCleaning(propertyId, isApartment)
@@ -2098,7 +2097,7 @@ function StartRobotCleanSimulation(propertyId, isApartment, dockFurnitureId)
         {
             name = robotTargetName,
             icon = 'fas fa-house-chimney',
-            label = 'Recall to Dock',
+            label = locale('target.recall_to_dock'),
             distance = 2.0,
             onSelect = function()
                 StopRobotCleaning(propertyId, isApartment)
@@ -2120,7 +2119,7 @@ function StartRobotCleanSimulation(propertyId, isApartment, dockFurnitureId)
         cancelRef = cancelRef
     }
 
-    Bridge.Client.Notify('Cleaning robot deployed! Starting cleaning cycle...', 'inform')
+    Bridge.Client.Notify(locale('notify.robot_deployed'), 'inform')
 
     CreateThread(function()
         local moveSpeed = (Settings.Trash and Settings.Trash.Robot and Settings.Trash.Robot.Speed) or 1.0
@@ -2258,7 +2257,7 @@ function StartRobotCleanSimulation(propertyId, isApartment, dockFurnitureId)
         ActiveCleaningRobots[key] = nil
         TriggerServerEvent('LNS_Housing:server:finishRobotClean', propertyId, isApartment)
 
-        Bridge.Client.Notify('Cleaning robot has docked and completed its cleaning cycle.', 'success')
+        Bridge.Client.Notify(locale('notify.robot_docked'), 'success')
     end)
 end
 

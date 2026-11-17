@@ -3,8 +3,10 @@ import { Plus, X, Home, MapPin, DollarSign, Database, Save, Trash2, Camera, Tag,
 import { motion, AnimatePresence } from 'framer-motion';
 import CustomSelect from '../Common/CustomSelect';
 import './Creator.css';
+import { useLocale } from '../../context/LocaleContext';
 
 const Creator = ({ electricityEnabled = true, shells = [] }) => {
+  const { t } = useLocale();
   const shellOptions = (shells && shells.length > 0) ? shells : [
     { value: 'Standard Motel', label: 'Standard Motel', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/standardmotel_shell.png', type: 'shell' },
     { value: 'Modern Hotel', label: 'Modern Hotel', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/modernhotel_shell.png', type: 'shell' },
@@ -227,15 +229,15 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
         <div className="header-title-group">
           <Database className="header-icon" size={24} />
           <div className="title-texts">
-            <h1>Property Creator</h1>
-            <span>System Administrator Panel</span>
+            <h1>{t('ui.property_creator', 'Property Creator')}</h1>
+            <span>{t('ui.admin_panel', 'System Administrator Panel')}</span>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
             className="walk-btn"
             onClick={() => toggleWalkMode()}
-            title="Toggle Walk Mode - Lowers UI opacity so you can walk into properties. Press G to resume UI"
+            title={t('ui.toggle_walk_mode_desc', 'Toggle Walk Mode - Lowers UI opacity so you can walk into properties. Press G to resume UI')}
             type="button"
             style={{
               display: 'flex',
@@ -253,7 +255,7 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
             }}
           >
             <EyeOff size={13} />
-            <span>Walk Mode <small style={{ opacity: 0.7 }}>(G to resume)</small></span>
+            <span>{t('ui.walk_mode', 'Walk Mode')} <small style={{ opacity: 0.7 }}>({t('ui.g_to_resume', 'G to resume')})</small></span>
           </button>
           <button className="close-btn" onClick={handleClose}><X size={20} /></button>
         </div>
@@ -261,30 +263,30 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
 
       <div className="creator-content">
         <div className="creator-section">
-          <h3 className="section-subtitle">Basic Information</h3>
+          <h3 className="section-subtitle">{t('ui.basic_info', 'Basic Information')}</h3>
           <div className="input-group">
             <div className="input-field">
-              <label><Home size={14} /> Property Name</label>
+              <label><Home size={14} /> {t('ui.property_name', 'Property Name')}</label>
               <input
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                placeholder="e.g. 124 Vinewood Hills"
+                placeholder={t('ui.property_name_placeholder', 'e.g. 124 Vinewood Hills')}
               />
             </div>
             <div className="input-field">
-              <label><Database size={14} /> Property Type</label>
+              <label><Database size={14} /> {t('ui.property_type', 'Property Type')}</label>
               <select name="type" value={formData.type === 'Commerce' ? 'Commercial' : (formData.type || 'Residential')} onChange={handleInputChange}>
-                <option value="Residential">Residential</option>
-                <option value="Commercial">Commercial</option>
-                <option value="Industrial">Industrial</option>
-                <option value="Apartment">Apartment</option>
+                <option value="Residential">{t('ui.residential', 'Residential')}</option>
+                <option value="Commercial">{t('ui.commercial', 'Commercial')}</option>
+                <option value="Industrial">{t('ui.industrial', 'Industrial')}</option>
+                <option value="Apartment">{t('ui.apartment', 'Apartment')}</option>
               </select>
             </div>
           </div>
 
           <div className="input-field" style={{ marginTop: '15px' }}>
-            <label><Camera size={14} /> Property Image</label>
+            <label><Camera size={14} /> {t('ui.property_image', 'Property Image')}</label>
             <div className="photo-capture-container glass-heavy">
               {formData.image ? (
                 <div className="photo-preview">
@@ -296,21 +298,21 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
               ) : (
                 <div className="photo-placeholder">
                   <Camera size={32} opacity={0.3} />
-                  <span>No photo taken yet</span>
+                  <span>{t('ui.no_photo_taken', 'No photo taken yet')}</span>
                 </div>
               )}
               <button className="pick-btn full-width" style={{ marginTop: '10px' }} onClick={handleTakePhoto}>
-                <Camera size={14} /> {formData.image ? 'Retake Photo' : 'Take Property Photo'}
+                <Camera size={14} /> {formData.image ? t('ui.retake_photo', 'Retake Photo') : t('ui.take_photo', 'Take Property Photo')}
               </button>
             </div>
           </div>
         </div>
 
         <div className="creator-section">
-          <h3 className="section-subtitle">Financials & Logistics</h3>
+          <h3 className="section-subtitle">{t('ui.financials_logistics', 'Financials & Logistics')}</h3>
           <div className="input-group">
             <div className="input-field">
-              <label><DollarSign size={14} /> Purchase Price</label>
+              <label><DollarSign size={14} /> {t('ui.purchase_price', 'Purchase Price')}</label>
               <input
                 name="price"
                 type="number"
@@ -319,15 +321,15 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
               />
             </div>
             <div className="input-field">
-              <label><Tag size={14} /> Sale Type</label>
+              <label><Tag size={14} /> {t('ui.sale_type', 'Sale Type')}</label>
               <select name="saleType" value={formData.saleType} onChange={handleInputChange}>
-                <option value="direct">Direct Sale (Bank)</option>
-                <option value="auction">Auction (Bidding)</option>
+                <option value="direct">{t('ui.direct_sale', 'Direct Sale (Bank)')}</option>
+                <option value="auction">{t('ui.auction_sale', 'Auction (Bidding)')}</option>
               </select>
             </div>
           </div>
           <div className="input-field" style={{ marginTop: '15px' }}>
-            <label><MapPin size={14} /> Parking Slots</label>
+            <label><MapPin size={14} /> {t('ui.parking_slots', 'Parking Slots')}</label>
             <input
               name="slots"
               type="number"
@@ -338,10 +340,10 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
         </div>
 
         <div className="creator-section">
-          <h3 className="section-subtitle">Technical Details</h3>
+          <h3 className="section-subtitle">{t('ui.technical_details', 'Technical Details')}</h3>
 
           <div className="input-field" style={{ marginTop: '10px', marginBottom: '15px' }}>
-            <label><Database size={14} /> Interior Type</label>
+            <label><Database size={14} /> {t('ui.interior_type', 'Interior Type')}</label>
             <select
               name="mlo"
               value={formData.mlo ? 'true' : 'false'}
@@ -354,8 +356,8 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
                 }));
               }}
             >
-              <option value="true">MLO (Physical Map Interior)</option>
-              <option value="false">Shell (Instanced Interior)</option>
+              <option value="true">{t('ui.mlo_interior', 'MLO (Physical Map Interior)')}</option>
+              <option value="false">{t('ui.shell_interior', 'Shell (Instanced Interior)')}</option>
             </select>
           </div>
 
@@ -364,7 +366,7 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
               <div style={{ marginTop: '10px', marginBottom: '15px' }}>
                 <CustomSelect
                   icon={Database}
-                  label="Shell Model"
+                  label={t('ui.shell_model', 'Shell Model')}
                   name="shell"
                   value={formData.shell || 'Standard Motel'}
                   options={shellOptions}
@@ -386,7 +388,7 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
                       />
                       <div className="re-shell-preview-fallback" style={{ display: 'none' }}>
                         <ImageOff size={24} />
-                        <span>Failed to load preview image</span>
+                        <span>{t('ui.failed_load_preview', 'Failed to load preview image')}</span>
                         <small className="re-shell-preview-url-text">{currentShellOption.previewUrl}</small>
                       </div>
 
@@ -398,7 +400,7 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
                           <button
                             type="button"
                             className="re-shell-zoom-btn"
-                            title="View Full Resolution"
+                            title={t('ui.view_full_res', 'View Full Resolution')}
                             onClick={() => setPreviewModalImage({ url: currentShellOption.previewUrl, title: currentShellOption.label, type: currentShellOption.type })}
                           >
                             <Maximize2 size={13} />
@@ -406,10 +408,10 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
                         </div>
 
                         <div className="re-shell-nav-controls">
-                          <button type="button" className="re-shell-nav-btn left" onClick={handlePrevShell} title="Previous Interior">
+                          <button type="button" className="re-shell-nav-btn left" onClick={handlePrevShell} title={t('ui.prev_interior', 'Previous Interior')}>
                             <ChevronLeft size={16} />
                           </button>
-                          <button type="button" className="re-shell-nav-btn right" onClick={handleNextShell} title="Next Interior">
+                          <button type="button" className="re-shell-nav-btn right" onClick={handleNextShell} title={t('ui.next_interior', 'Next Interior')}>
                             <ChevronRight size={16} />
                           </button>
                         </div>
@@ -428,18 +430,18 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
                         <Home size={24} className="re-shell-empty-icon" />
                       </div>
                       <div className="re-shell-empty-texts">
-                        <span className="re-shell-empty-title">{currentShellOption?.label || 'Selected Interior'}</span>
+                        <span className="re-shell-empty-title">{currentShellOption?.label || t('ui.selected_interior', 'Selected Interior')}</span>
                         <span className="re-shell-empty-desc">
-                          No preview image configured. Add <code>previewUrl = "..."</code> in <code>shared/settings.lua</code>
+                          {t('ui.no_preview_configured', 'No preview image configured.')}
                         </span>
                       </div>
                       <div className="re-shell-empty-nav">
                         <button type="button" className="re-shell-mini-nav-btn" onClick={handlePrevShell}>
-                          <ChevronLeft size={12} /> Previous
+                          <ChevronLeft size={12} /> {t('ui.previous', 'Previous')}
                         </button>
                         <span className="re-shell-counter">{Math.max(1, currentShellIndex + 1)} / {shellOptions.length}</span>
                         <button type="button" className="re-shell-mini-nav-btn" onClick={handleNextShell}>
-                          Next <ChevronRight size={12} />
+                          {t('ui.next', 'Next')} <ChevronRight size={12} />
                         </button>
                       </div>
                     </div>
@@ -448,14 +450,14 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
               </div>
 
               <div className="input-field" style={{ marginTop: '10px', marginBottom: '15px' }}>
-                <label><Database size={14} /> Entrance Type</label>
+                <label><Database size={14} /> {t('ui.entrance_type', 'Entrance Type')}</label>
                 <select
                   name="entranceType"
                   value={formData.entranceType || 'door'}
                   onChange={(e) => setFormData(prev => ({ ...prev, entranceType: e.target.value }))}
                 >
-                  <option value="door">Physical Door (ox_doorlock)</option>
-                  <option value="coords">Standing Coordinates</option>
+                  <option value="door">{t('ui.physical_door', 'Physical Door (ox_doorlock)')}</option>
+                  <option value="coords">{t('ui.standing_coords', 'Standing Coordinates')}</option>
                 </select>
               </div>
             </>
@@ -463,8 +465,8 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
 
           <div className="checkbox-field glass-heavy" style={{ marginTop: '10px' }}>
             <div className="checkbox-info">
-              <span className="checkbox-label">Allow Wall Colors</span>
-              <span className="checkbox-desc">Enables the interior tinting system for this property.</span>
+              <span className="checkbox-label">{t('ui.allow_wall_colors', 'Allow Wall Colors')}</span>
+              <span className="checkbox-desc">{t('ui.allow_wall_colors_desc', 'Enables the interior tinting system for this property.')}</span>
             </div>
             <input
               type="checkbox"
@@ -477,19 +479,19 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
           {(formData.mlo || formData.entranceType === 'door') ? (
             <div className="input-group" style={{ marginTop: '15px' }}>
               <div className="input-field" style={{ width: '100%' }}>
-                <label><Database size={14} /> Property Doors (ox_doorlock)</label>
+                <label><Database size={14} /> {t('ui.property_doors', 'Property Doors (ox_doorlock)')}</label>
                 <div className="doors-list-container glass-heavy">
                   {formData.doors.length === 0 ? (
-                    <span className="no-doors">No doors added yet. Use "Pick Nearby" to add doors.</span>
+                    <span className="no-doors">{t('ui.no_doors_added', 'No doors added yet. Use "Pick Nearby" to add doors.')}</span>
                   ) : (
                     <div className="doors-tags">
                       {formData.doors.map((door, index) => (
                         <div key={index} className="door-tag">
                           <span>
                             {door?.isDouble
-                              ? `New Double Door (${Math.floor(door.doors?.[0]?.coords?.x ?? 0)}, ${Math.floor(door.doors?.[0]?.coords?.y ?? 0)})`
+                              ? `${t('ui.new_double_door', 'New Double Door')} (${Math.floor(door.doors?.[0]?.coords?.x ?? 0)}, ${Math.floor(door.doors?.[0]?.coords?.y ?? 0)})`
                               : typeof door === 'object' && door?.coords
-                                ? `New Door (${Math.floor(door.coords.x)}, ${Math.floor(door.coords.y)})`
+                                ? `${t('ui.new_door', 'New Door')} (${Math.floor(door.coords.x)}, ${Math.floor(door.coords.y)})`
                                 : `ID: ${door}`}
                           </span>
                           <button
@@ -508,19 +510,19 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
                   style={{ marginTop: '10px' }}
                   onClick={() => fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/pickDoor`)}
                 >
-                  <Plus size={14} /> Pick Nearby Door
+                  <Plus size={14} /> {t('ui.pick_nearby_door', 'Pick Nearby Door')}
                 </button>
               </div>
             </div>
           ) : (
             <div className="input-field" style={{ marginTop: '15px' }}>
-              <label><MapPin size={14} /> Entrance Location (Standing)</label>
+              <label><MapPin size={14} /> {t('ui.entrance_location_standing', 'Entrance Location (Standing)')}</label>
               <div className="input-with-btn">
                 <div className={`zone-status ${formData.entranceCoords ? 'defined' : ''}`}>
-                  {formData.entranceCoords ? `Coords Defined (${Math.floor(formData.entranceCoords.x)}, ${Math.floor(formData.entranceCoords.y)}, ${Math.floor(formData.entranceCoords.z)})` : 'Not Defined'}
+                  {formData.entranceCoords ? `${t('ui.coords_defined', 'Coords Defined')} (${Math.floor(formData.entranceCoords.x)}, ${Math.floor(formData.entranceCoords.y)}, ${Math.floor(formData.entranceCoords.z)})` : t('ui.not_defined', 'Not Defined')}
                 </div>
                 <button className="pick-btn" onClick={handlePickEntranceCoords}>
-                  {formData.entranceCoords ? 'Redefine Location' : 'Set Standing Location'}
+                  {formData.entranceCoords ? t('ui.redefine_location', 'Redefine Location') : t('ui.set_standing_location', 'Set Standing Location')}
                 </button>
               </div>
             </div>
@@ -528,13 +530,13 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
 
           {electricityEnabled !== false && (
             <div className="input-field" style={{ marginTop: '15px' }}>
-              <label><Zap size={14} /> Breaker Box Location</label>
+              <label><Zap size={14} /> {t('ui.breaker_box_location', 'Breaker Box Location')}</label>
               <div className="input-with-btn">
                 <div className={`zone-status ${formData.breakerCoords ? 'defined' : ''}`}>
-                  {formData.breakerCoords ? `Coords Defined (${Math.floor(formData.breakerCoords.x)}, ${Math.floor(formData.breakerCoords.y)}, ${Math.floor(formData.breakerCoords.z)})` : 'Default (Entrance)'}
+                  {formData.breakerCoords ? `${t('ui.coords_defined', 'Coords Defined')} (${Math.floor(formData.breakerCoords.x)}, ${Math.floor(formData.breakerCoords.y)}, ${Math.floor(formData.breakerCoords.z)})` : t('ui.default_entrance', 'Default (Entrance)')}
                 </div>
                 <button className="pick-btn" onClick={handlePickBreakerCoords}>
-                  {formData.breakerCoords ? 'Redefine Breaker' : 'Set Breaker Location'}
+                  {formData.breakerCoords ? t('ui.redefine_breaker', 'Redefine Breaker') : t('ui.set_breaker_location', 'Set Breaker Location')}
                 </button>
               </div>
             </div>
@@ -543,21 +545,21 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
           {formData.mlo && (
             <>
               <div className="input-field" style={{ marginTop: '15px' }}>
-                <label><MapPin size={14} /> Interior Detection</label>
+                <label><MapPin size={14} /> {t('ui.interior_detection', 'Interior Detection')}</label>
                 <div className="input-with-btn">
                   <div className={`zone-status ${formData.interiorId ? 'defined' : ''}`}>
-                    {formData.interiorId ? `Interior ID: #${formData.interiorId} (${formData.roomCount || 1} Rooms)` : 'Stand inside MLO & Capture'}
+                    {formData.interiorId ? `${t('ui.interior_id', 'Interior ID')}: #${formData.interiorId} (${formData.roomCount || 1} ${t('ui.rooms', 'Rooms')})` : t('ui.stand_inside_mlo_capture', 'Stand inside MLO & Capture')}
                   </div>
                   <button className="pick-btn" onClick={handleCaptureInterior}>
-                    {formData.interiorId ? 'Recapture Interior' : 'Capture Interior'}
+                    {formData.interiorId ? t('ui.recapture_interior', 'Recapture Interior') : t('ui.capture_interior', 'Capture Interior')}
                   </button>
                 </div>
               </div>
 
               <div className="checkbox-field glass-heavy" style={{ marginTop: '15px' }}>
                 <div className="checkbox-info">
-                  <span className="checkbox-label">Has Outside Yard</span>
-                  <span className="checkbox-desc">Enables an interactive lawn/yard area that grows grass.</span>
+                  <span className="checkbox-label">{t('ui.has_outside_yard', 'Has Outside Yard')}</span>
+                  <span className="checkbox-desc">{t('ui.has_outside_yard_desc', 'Enables an interactive lawn/yard area that grows grass.')}</span>
                 </div>
                 <input
                   type="checkbox"
@@ -569,13 +571,13 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
 
               {formData.hasYard && (
                 <div className="input-field" style={{ marginTop: '15px' }}>
-                  <label><MapPin size={14} /> Outside Yard Zone</label>
+                  <label><MapPin size={14} /> {t('ui.outside_yard_zone', 'Outside Yard Zone')}</label>
                   <div className="input-with-btn">
                     <div className={`zone-status ${formData.yard_zone_data ? 'defined' : ''}`}>
-                      {formData.yard_zone_data ? 'Yard Zone Defined' : 'Not Defined'}
+                      {formData.yard_zone_data ? t('ui.yard_zone_defined', 'Yard Zone Defined') : t('ui.not_defined', 'Not Defined')}
                     </div>
                     <button className="pick-btn" onClick={handleCreateYardZone}>
-                      {formData.yard_zone_data ? 'Redefine Yard' : 'Define Yard'}
+                      {formData.yard_zone_data ? t('ui.redefine_yard', 'Redefine Yard') : t('ui.define_yard', 'Define Yard')}
                     </button>
                   </div>
                 </div>
@@ -587,8 +589,8 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
       </div>
 
       <div className="creator-footer">
-        <button className="btn btn-secondary" onClick={handleClose}><Trash2 size={16} /> Discard</button>
-        <button className="btn btn-primary" onClick={() => fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/createHouse`, { method: 'POST', body: JSON.stringify(formData) })}><Save size={16} /> Create Property</button>
+        <button className="btn btn-secondary" onClick={handleClose}><Trash2 size={16} /> {t('ui.discard', 'Discard')}</button>
+        <button className="btn btn-primary" onClick={() => fetch(`https://${window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing'}/createHouse`, { method: 'POST', body: JSON.stringify(formData) })}><Save size={16} /> {t('ui.create_property', 'Create Property')}</button>
       </div>
 
       <AnimatePresence>
@@ -619,7 +621,7 @@ const Creator = ({ electricityEnabled = true, shells = [] }) => {
                   className="re-shell-lightbox-close"
                   onClick={() => setPreviewModalImage(null)}
                 >
-                  <X size={14} /> Close Preview
+                  <X size={14} /> {t('ui.close_preview', 'Close Preview')}
                 </button>
               </div>
             </motion.div>

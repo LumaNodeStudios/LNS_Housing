@@ -3,8 +3,10 @@ import './ApartmentCreator.css';
 import { motion } from 'framer-motion';
 import { Building, MapPin, Key, Compass, Save, X, Check, Search, Info, Tablet, Move, Layers, Footprints, UserMinus, Trash2, AlertTriangle } from 'lucide-react';
 import Modeler3D from '../Furniture/Modeler3D';
+import { useLocale } from '../../context/LocaleContext';
 
 const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
+    const { t } = useLocale();
     const [rooms, setRooms] = useState(initialRooms || []);
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -435,12 +437,12 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                     <div className="apt-editor-layout">
                         <div className="apt-list-pane">
                             <div className="apt-sidebar-header">
-                                <h3>Apartment Rooms</h3>
+                                <h3>{t('ui.apt_rooms', 'Apartment Rooms')}</h3>
                                 <div className="apt-search-wrapper">
                                     <Search size={16} className="search-icon" />
                                     <input
                                         type="text"
-                                        placeholder="Search Room ID..."
+                                        placeholder={t('ui.search_room_id', 'Search Room ID...')}
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         className="apt-search-input"
@@ -460,7 +462,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                         <Building size={16} className="room-icon" />
                                         <div className="room-info">
                                             <span className="room-name">Room #{room.id}</span>
-                                            {room.isStarter && <span className="room-badge">Starter</span>}
+                                            {room.isStarter && <span className="room-badge">{t('ui.starter_room', 'Starter')}</span>}
                                             {room.interiorId && <span className="room-badge interior-badge">MLO</span>}
                                         </div>
                                     </div>
@@ -471,24 +473,24 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                         <div className="apt-form-pane">
                             <div className="apt-editor-header">
                                 <div>
-                                    <h3>Edit Room #{selectedRoom?.id}</h3>
-                                    <p className="subtitle">Configure native interior, doors, spawn, and tablet</p>
+                                    <h3>{t('ui.edit_room', `Edit Room #${selectedRoom?.id}`, selectedRoom?.id)}</h3>
+                                    <p className="subtitle">{t('ui.edit_room_sub', 'Configure native interior, doors, spawn, and tablet')}</p>
                                 </div>
                                 <div className="apt-header-actions">
                                     {confirmAction === 'vacate' && (
                                         <div className="apt-confirm-inline">
                                             <AlertTriangle size={13} />
-                                            <span>Vacate room?</span>
-                                            <button className="apt-confirm-yes vacate" onClick={handleVacate} disabled={isProcessing}>Yes</button>
-                                            <button className="apt-confirm-no" onClick={() => setConfirmAction(null)}>No</button>
+                                            <span>{t('ui.vacate_room_q', 'Vacate room?')}</span>
+                                            <button className="apt-confirm-yes vacate" onClick={handleVacate} disabled={isProcessing}>{t('yes', 'Yes')}</button>
+                                            <button className="apt-confirm-no" onClick={() => setConfirmAction(null)}>{t('no', 'No')}</button>
                                         </div>
                                     )}
                                     {confirmAction === 'delete' && (
                                         <div className="apt-confirm-inline danger">
                                             <AlertTriangle size={13} />
-                                            <span>Delete forever?</span>
-                                            <button className="apt-confirm-yes delete" onClick={handleDelete} disabled={isProcessing}>Yes</button>
-                                            <button className="apt-confirm-no" onClick={() => setConfirmAction(null)}>No</button>
+                                            <span>{t('ui.delete_forever_q', 'Delete forever?')}</span>
+                                            <button className="apt-confirm-yes delete" onClick={handleDelete} disabled={isProcessing}>{t('yes', 'Yes')}</button>
+                                            <button className="apt-confirm-no" onClick={() => setConfirmAction(null)}>{t('no', 'No')}</button>
                                         </div>
                                     )}
                                     {selectedRoom && confirmAction === null && (
@@ -497,7 +499,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                                 type="button"
                                                 className="apt-danger-btn vacate"
                                                 onClick={() => setConfirmAction('vacate')}
-                                                title="Vacate — evict tenant & clear furniture"
+                                                title={t('ui.vacate_tooltip', 'Vacate — evict tenant & clear furniture')}
                                                 disabled={isProcessing}
                                             >
                                                 <UserMinus size={14} />
@@ -506,7 +508,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                                 type="button"
                                                 className="apt-danger-btn delete"
                                                 onClick={() => setConfirmAction('delete')}
-                                                title="Delete room permanently (removes doorlock)"
+                                                title={t('ui.delete_room_tooltip', 'Delete room permanently (removes doorlock)')}
                                                 disabled={isProcessing}
                                             >
                                                 <Trash2 size={14} />
@@ -517,10 +519,10 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                         type="button"
                                         className={`apt-walk-mode-btn ${walkMode ? 'active' : ''}`}
                                         onClick={() => toggleWalkMode()}
-                                        title="Toggle Walk Mode / Ghost UI"
+                                        title={t('ui.toggle_walk_mode', 'Toggle Walk Mode / Ghost UI')}
                                     >
                                         <Footprints size={14} />
-                                        <span>{walkMode ? 'Walking...' : 'Walk Mode'}</span>
+                                        <span>{walkMode ? t('ui.walking', 'Walking...') : t('ui.walk_mode', 'Walk Mode')}</span>
                                     </button>
                                     <button className="apt-close-btn" onClick={onClose}>
                                         <X size={18} />
@@ -538,9 +540,9 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                                     <Layers size={18} />
                                                 </div>
                                                 <div className="setup-card-text">
-                                                    <span className="setup-title">Interior Detection</span>
+                                                    <span className="setup-title">{t('ui.interior_detection', 'Interior Detection')}</span>
                                                     <span className={`setup-status ${interiorData ? 'defined' : ''}`}>
-                                                        {interiorData ? `Captured (${interiorData.roomName ? `Room: ${interiorData.roomName} | ` : ''}ID: #${interiorData.interiorId})` : 'Stand inside & capture'}
+                                                        {interiorData ? `${t('ui.captured', 'Captured')} (${interiorData.roomName ? `Room: ${interiorData.roomName} | ` : ''}ID: #${interiorData.interiorId})` : t('ui.stand_inside_capture', 'Stand inside & capture')}
                                                     </span>
                                                 </div>
                                             </div>
@@ -550,7 +552,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                                 onClick={handleCaptureInterior}
                                                 disabled={isCapturingInterior}
                                             >
-                                                {isCapturingInterior ? 'Capturing...' : (interiorData ? <Check size={16} /> : 'Capture')}
+                                                {isCapturingInterior ? t('ui.capturing', 'Capturing...') : (interiorData ? <Check size={16} /> : t('ui.capture', 'Capture'))}
                                             </button>
                                         </div>
 
@@ -561,9 +563,9 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                                     <Key size={18} />
                                                 </div>
                                                 <div className="setup-card-text">
-                                                    <span className="setup-title">Front Entrance Door</span>
+                                                    <span className="setup-title">{t('ui.front_entrance_door', 'Front Entrance Door')}</span>
                                                     <span className={`setup-status ${doorData ? 'defined' : ''}`}>
-                                                        {doorData ? 'Door selected' : 'Not selected'}
+                                                        {doorData ? t('ui.door_selected', 'Door selected') : t('ui.not_selected', 'Not selected')}
                                                     </span>
                                                 </div>
                                             </div>
@@ -572,7 +574,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                                 className={`setup-btn ${doorData ? 'defined' : ''}`}
                                                 onClick={handlePickDoor}
                                             >
-                                                {doorData ? <Check size={16} /> : 'Select'}
+                                                {doorData ? <Check size={16} /> : t('ui.select', 'Select')}
                                             </button>
                                         </div>
 
@@ -583,9 +585,9 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                                     <Compass size={18} />
                                                 </div>
                                                 <div className="setup-card-text">
-                                                    <span className="setup-title">Spawn / Interior Location</span>
+                                                    <span className="setup-title">{t('ui.spawn_location', 'Spawn / Interior Location')}</span>
                                                     <span className={`setup-status ${spawnData ? 'defined' : ''}`}>
-                                                        {spawnData ? 'Spawn set successfully' : 'Not set'}
+                                                        {spawnData ? t('ui.spawn_set', 'Spawn set successfully') : t('ui.not_set', 'Not set')}
                                                     </span>
                                                 </div>
                                             </div>
@@ -594,7 +596,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                                 className={`setup-btn ${spawnData ? 'defined' : ''}`}
                                                 onClick={handleDefineSpawn}
                                             >
-                                                {spawnData ? <Check size={16} /> : 'Capture'}
+                                                {spawnData ? <Check size={16} /> : t('ui.capture', 'Capture')}
                                             </button>
                                         </div>
 
@@ -605,9 +607,9 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                                     <MapPin size={18} />
                                                 </div>
                                                 <div className="setup-card-text">
-                                                    <span className="setup-title">Custom Poly Zone (Optional)</span>
+                                                    <span className="setup-title">{t('ui.poly_zone_opt', 'Custom Poly Zone (Optional)')}</span>
                                                     <span className={`setup-status ${zoneData ? 'defined' : ''}`}>
-                                                        {zoneData ? `Defined (${zoneData.points.length} points)` : 'Not defined (Native Interior Used)'}
+                                                        {zoneData ? t('ui.defined_points', `Defined (${zoneData.points.length} points)`, zoneData.points.length) : t('ui.not_defined_native', 'Not defined (Native Interior Used)')}
                                                     </span>
                                                 </div>
                                             </div>
@@ -616,7 +618,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                                 className={`setup-btn ${zoneData ? 'defined' : ''}`}
                                                 onClick={handleDefineZone}
                                             >
-                                                {zoneData ? <Check size={16} /> : 'Define'}
+                                                {zoneData ? <Check size={16} /> : t('ui.define', 'Define')}
                                             </button>
                                         </div>
 
@@ -627,9 +629,9 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                                     <Tablet size={18} />
                                                 </div>
                                                 <div className="setup-card-text">
-                                                    <span className="setup-title">Default Tablet (Optional)</span>
+                                                    <span className="setup-title">{t('ui.tablet_opt', 'Default Tablet (Optional)')}</span>
                                                     <span className={`setup-status ${tabletData ? 'defined' : ''}`}>
-                                                        {tabletData ? 'Tablet position set' : 'Not set'}
+                                                        {tabletData ? t('ui.tablet_pos_set', 'Tablet position set') : t('ui.not_set', 'Not set')}
                                                     </span>
                                                 </div>
                                             </div>
@@ -649,7 +651,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                                     className={`setup-btn ${tabletData ? 'defined' : ''}`}
                                                     onClick={handlePickTablet}
                                                 >
-                                                    {tabletData ? <Check size={16} /> : 'Set Position'}
+                                                    {tabletData ? <Check size={16} /> : t('ui.set_position', 'Set Position')}
                                                 </button>
                                             </div>
                                         </div>
@@ -667,14 +669,14 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                         disabled={!canSubmit}
                                     >
                                         <Save size={16} />
-                                        <span>Save Changes</span>
+                                        <span>{t('save', 'Save Changes')}</span>
                                     </button>
                                 </form>
                             ) : (
                                 <div className="apt-empty-state">
                                     <Info size={48} className="empty-icon" />
-                                    <h3>No Apartment Selected</h3>
-                                    <p>Choose an apartment from the list on the left to start editing its settings and native interior.</p>
+                                    <h3>{t('ui.no_apt_selected', 'No Apartment Selected')}</h3>
+                                    <p>{t('ui.no_apt_selected_desc', 'Choose an apartment from the list on the left to start editing its settings and native interior.')}</p>
                                 </div>
                             )}
                         </div>
@@ -684,17 +686,17 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                         <div className="apt-creator-header">
                             <div className="apt-header-title">
                                 <Building size={20} className="header-icon" />
-                                <span>Apartment Creator</span>
+                                <span>{t('ui.apartment_creator', 'Apartment Creator')}</span>
                             </div>
                             <div className="apt-header-actions">
                                 <button
                                     type="button"
                                     className={`apt-walk-mode-btn ${walkMode ? 'active' : ''}`}
                                     onClick={() => toggleWalkMode()}
-                                    title="Toggle Walk Mode / Ghost UI"
+                                    title={t('ui.toggle_walk_mode', 'Toggle Walk Mode / Ghost UI')}
                                 >
                                     <Footprints size={14} />
-                                    <span>{walkMode ? 'Walking...' : 'Walk Mode'}</span>
+                                    <span>{walkMode ? t('ui.walking', 'Walking...') : t('ui.walk_mode', 'Walk Mode')}</span>
                                 </button>
                                 <button className="apt-close-btn" onClick={onClose}>
                                     <X size={18} />
@@ -705,11 +707,11 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                         <form className="apt-creator-form" onSubmit={handleSubmit}>
                             <div className="apt-input-group">
                                 <label className="apt-input-label">
-                                    <Building size={14} /> Room Number / ID
+                                    <Building size={14} /> {t('ui.room_number', 'Room Number / ID')}
                                 </label>
                                 <input
                                     type="number"
-                                    placeholder="e.g. 105"
+                                    placeholder={t('ui.placeholder_room_example', 'e.g. 105')}
                                     value={roomId}
                                     onChange={(e) => setRoomId(e.target.value)}
                                     required
@@ -725,9 +727,9 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                             <Layers size={18} />
                                         </div>
                                         <div className="setup-card-text">
-                                            <span className="setup-title">Interior Detection</span>
+                                            <span className="setup-title">{t('ui.interior_detection', 'Interior Detection')}</span>
                                             <span className={`setup-status ${interiorData ? 'defined' : ''}`}>
-                                                {interiorData ? `Captured (${interiorData.roomName ? `Room: ${interiorData.roomName} | ` : ''}ID: #${interiorData.interiorId})` : 'Stand inside & capture'}
+                                                {interiorData ? `${t('ui.captured', 'Captured')} (${interiorData.roomName ? `Room: ${interiorData.roomName} | ` : ''}ID: #${interiorData.interiorId})` : t('ui.stand_inside_capture', 'Stand inside & capture')}
                                             </span>
                                         </div>
                                     </div>
@@ -737,7 +739,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                         onClick={handleCaptureInterior}
                                         disabled={isCapturingInterior}
                                     >
-                                        {isCapturingInterior ? 'Capturing...' : (interiorData ? <Check size={16} /> : 'Capture')}
+                                        {isCapturingInterior ? t('ui.capturing', 'Capturing...') : (interiorData ? <Check size={16} /> : t('ui.capture', 'Capture'))}
                                     </button>
                                 </div>
 
@@ -748,9 +750,9 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                             <Key size={18} />
                                         </div>
                                         <div className="setup-card-text">
-                                            <span className="setup-title">Front Entrance Door</span>
+                                            <span className="setup-title">{t('ui.front_entrance_door', 'Front Entrance Door')}</span>
                                             <span className={`setup-status ${doorData ? 'defined' : ''}`}>
-                                                {doorData ? 'Door selected' : 'Not selected'}
+                                                {doorData ? t('ui.door_selected', 'Door selected') : t('ui.not_selected', 'Not selected')}
                                             </span>
                                         </div>
                                     </div>
@@ -759,7 +761,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                         className={`setup-btn ${doorData ? 'defined' : ''}`}
                                         onClick={handlePickDoor}
                                     >
-                                        {doorData ? <Check size={16} /> : 'Select'}
+                                        {doorData ? <Check size={16} /> : t('ui.select', 'Select')}
                                     </button>
                                 </div>
 
@@ -770,9 +772,9 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                             <Compass size={18} />
                                         </div>
                                         <div className="setup-card-text">
-                                            <span className="setup-title">Spawn / Interior Location</span>
+                                            <span className="setup-title">{t('ui.spawn_location', 'Spawn / Interior Location')}</span>
                                             <span className={`setup-status ${spawnData ? 'defined' : ''}`}>
-                                                {spawnData ? 'Spawn set successfully' : 'Not set'}
+                                                {spawnData ? t('ui.spawn_set', 'Spawn set successfully') : t('ui.not_set', 'Not set')}
                                             </span>
                                         </div>
                                     </div>
@@ -781,32 +783,9 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                         className={`setup-btn ${spawnData ? 'defined' : ''}`}
                                         onClick={handleDefineSpawn}
                                     >
-                                        {spawnData ? <Check size={16} /> : 'Capture'}
+                                        {spawnData ? <Check size={16} /> : t('ui.capture', 'Capture')}
                                     </button>
                                 </div>
-
-                                {/* Custom Poly Zone
-                                <div className={`apt-setup-card ${zoneData ? 'defined' : ''}`}>
-                                    <div className="setup-card-info">
-                                        <div className="setup-card-icon-wrapper">
-                                            <MapPin size={18} />
-                                        </div>
-                                        <div className="setup-card-text">
-                                            <span className="setup-title">Custom Poly Zone (Optional)</span>
-                                            <span className={`setup-status ${zoneData ? 'defined' : ''}`}>
-                                                {zoneData ? `Defined (${zoneData.points.length} points)` : 'Not defined (Native Interior Used)'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        className={`setup-btn ${zoneData ? 'defined' : ''}`}
-                                        onClick={handleDefineZone}
-                                    >
-                                        {zoneData ? <Check size={16} /> : 'Define'}
-                                    </button>
-                                </div>
-                                */}
 
                                 {/* Tablet */}
                                 <div className={`apt-setup-card ${tabletData ? 'defined' : ''}`}>
@@ -815,9 +794,9 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                             <Tablet size={18} />
                                         </div>
                                         <div className="setup-card-text">
-                                            <span className="setup-title">Default Tablet (Optional)</span>
+                                            <span className="setup-title">{t('ui.tablet_opt', 'Default Tablet (Optional)')}</span>
                                             <span className={`setup-status ${tabletData ? 'defined' : ''}`}>
-                                                {tabletData ? 'Tablet position set' : 'Not set'}
+                                                {tabletData ? t('ui.tablet_pos_set', 'Tablet position set') : t('ui.not_set', 'Not set')}
                                             </span>
                                         </div>
                                     </div>
@@ -837,7 +816,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                             className={`setup-btn ${tabletData ? 'defined' : ''}`}
                                             onClick={handlePickTablet}
                                         >
-                                            {tabletData ? <Check size={16} /> : 'Set Position'}
+                                            {tabletData ? <Check size={16} /> : t('ui.set_position', 'Set Position')}
                                         </button>
                                     </div>
                                 </div>
@@ -855,7 +834,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                 disabled={!canSubmit}
                             >
                                 <Save size={16} />
-                                <span>Create Starter Apartment</span>
+                                <span>{t('ui.create_starter_apt', 'Create Starter Apartment')}</span>
                             </button>
                         </form>
                     </>
@@ -864,7 +843,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
 
             {freecamMode && isPlacingTablet && (
                 <div className="freecam-hint with-placement apt-creator-placement">
-                    <span>[LEFT ALT] Exit Cam | [BACKSPACE] Exit Cam</span>
+                    <span>{t('ui.exit_cam_hint', '[LEFT ALT] Exit Cam | [BACKSPACE] Exit Cam')}</span>
                 </div>
             )}
 
@@ -887,10 +866,10 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
             {isPlacingTablet && (
                 <div className="placement-controls apt-creator-placement">
                     <div className="controls-header">
-                        <span className="controls-title">Default Tablet Position</span>
+                        <span className="controls-title">{t('ui.default_tablet_pos', 'Default Tablet Position')}</span>
                         <div className="controls-actions">
                             <div className="controls-hint">
-                                <Move size={14} /> <span>Drag | [LALT] Cam | [G] Ground</span>
+                                <Move size={14} /> <span>{t('ui.tablet_controls_hint', 'Drag | [LALT] Cam | [G] Ground')}</span>
                             </div>
                         </div>
                     </div>
@@ -904,7 +883,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                                 });
                             }
                         }}>
-                            <span>Place on Ground</span>
+                            <span>{t('ui.place_on_ground', 'Place on Ground')}</span>
                         </button>
                     </div>
 
@@ -918,7 +897,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                             } else {
                                 setIsPlacingTablet(false);
                             }
-                        }}>Confirm</button>
+                        }}>{t('ui.confirm', 'Confirm')}</button>
                         <button className="stop-btn" onClick={() => {
                             if (window.GetParentResourceName) {
                                 fetch(`https://${window.GetParentResourceName()}/stopPlacementTablet`, {
@@ -928,7 +907,7 @@ const ApartmentCreator = ({ onClose, isEdit = false, initialRooms = [] }) => {
                             } else {
                                 setIsPlacingTablet(false);
                             }
-                        }}>Cancel</button>
+                        }}>{t('ui.cancel', 'Cancel')}</button>
                     </div>
                 </div>
             )}

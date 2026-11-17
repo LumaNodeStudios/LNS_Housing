@@ -11,7 +11,7 @@ RegisterNetEvent('LNS_Housing:client:openPanel', function(propertyData)
     if not isOwnerRentAccess then
         local hasManage = lib.callback.await('LNS_Housing:server:checkPermission', false, targetType, propertyData.id, 'manage')
         if not hasManage then
-            Bridge.Client.Notify('You do not have management access for this panel.', 'error')
+            Bridge.Client.Notify(locale('notify.no_panel_access'), 'error')
             return
         end
     end
@@ -103,7 +103,7 @@ RegisterNUICallback('setWaypoint', function(data, cb)
         local coords = GetEntranceCoords(p)
         if coords then
             SetNewWaypoint(coords.x, coords.y)
-            Bridge.Client.Notify('GPS waypoint set to ' .. p.label, 'success')
+            Bridge.Client.Notify(locale('notify.gps_waypoint_set', p.label), 'success')
         end
     end
     cb('ok')

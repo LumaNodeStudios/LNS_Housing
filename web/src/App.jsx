@@ -9,6 +9,7 @@ import ScreenshotProgress from './components/ScreenshotProgress/ScreenshotProgre
 import BreachMinigame from './components/BreachMinigame/BreachMinigame';
 import StorageKeypad from './components/StorageKeypad/StorageKeypad';
 import { AnimatePresence } from 'framer-motion';
+import { LocaleProvider } from './context/LocaleContext';
 
 const isLocalDev = typeof window !== 'undefined' && !window.GetParentResourceName;
 
@@ -694,7 +695,8 @@ function App() {
   }, [showBreachMinigame]);
 
   return (
-    <div
+    <LocaleProvider>
+      <div
       className="app-container"
       style={{
         visibility: isVisible ? 'visible' : 'hidden',
@@ -810,6 +812,7 @@ function App() {
         <BreachMinigame active={showBreachMinigame} onClose={() => setShowBreachMinigame(false)} />
       </div>
     </div>
+    </LocaleProvider>
   );
 }
 

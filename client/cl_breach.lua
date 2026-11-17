@@ -20,7 +20,7 @@ local latestRamConfig = { pitch = 12.0, roll = 0.0, yawOffset = 90.0, pos = vec3
 local function EnsureBreachingWeapon()
     local job = Bridge.Client.GetPlayerJob()
     if not Bridge.IsPoliceJob(job) then
-        Bridge.Client.Notify('Only police officers are authorized to breach doors!', 'error')
+        Bridge.Client.Notify(locale('notify.only_police_breach'), 'error')
         return false
     end
 
@@ -37,7 +37,7 @@ local function EnsureBreachingWeapon()
     end
 
     if GetSelectedPedWeapon(ped) ~= weaponHash then
-        Bridge.Client.Notify('You must have the Battering Ram equipped in your hands to breach!', 'error')
+        Bridge.Client.Notify(locale('notify.ram_required'), 'error')
         return false
     end
 
@@ -645,7 +645,7 @@ end)
 
 RegisterNUICallback('breachCancel', function(data, cb)
     StopBreachingMode()
-    Bridge.Client.Notify('Breaching cancelled.', 'error')
+    Bridge.Client.Notify(locale('notify.breach_cancelled'), 'error')
     if cb then cb('ok') end
 end)
 
@@ -689,7 +689,7 @@ function StartPoliceRaid(propertyId, propertyType, doorId)
     local modelHash = LoadRamPropModel(ramModel)
 
     if not modelHash then
-        Bridge.Client.Notify('Failed to load battering ram model.', 'error')
+        Bridge.Client.Notify(locale('notify.ram_model_failed'), 'error')
         StopBreachingMode()
         return
     end
@@ -716,7 +716,7 @@ function StartPoliceRaid(propertyId, propertyType, doorId)
                or IsControlJustPressed(0, 177) or IsDisabledControlJustPressed(0, 177)
                or IsControlJustPressed(0, 202) or IsDisabledControlJustPressed(0, 202) then
                 StopBreachingMode()
-                Bridge.Client.Notify('Breaching cancelled.', 'error')
+                Bridge.Client.Notify(locale('notify.breach_cancelled'), 'error')
                 break
             end
 
@@ -728,20 +728,20 @@ end
 function StartPoliceStashRaid(propertyId, stashId)
     local job = Bridge.Client.GetPlayerJob()
     if not Bridge.IsPoliceJob(job) then
-        Bridge.Client.Notify('Only police officers are authorized to raid storage!', 'error')
+        Bridge.Client.Notify(locale('notify.only_police_storage'), 'error')
         return
     end
 
     local accessTool = Settings.Security.PoliceAccessTool or 'police_access_tool'
     local count = Bridge.Client.Search('count', accessTool)
     if not count or count < 1 then
-        Bridge.Client.Notify('You need a Police Access Tool to raid this storage!', 'error')
+        Bridge.Client.Notify(locale('notify.police_tool_required'), 'error')
         return
     end
 
     local isDoorBreached = IsPropertyBreached(propertyId) or lib.callback.await('LNS_Housing:server:isDoorBreached', false, propertyId)
     if not isDoorBreached then
-        Bridge.Client.Notify('You must breach the property door first before raiding storage!', 'error')
+        Bridge.Client.Notify(locale('notify.breach_door_first'), 'error')
         return
     end
 
@@ -754,7 +754,7 @@ function StartPoliceStashRaid(propertyId, stashId)
 
     local success = lib.progressBar({
         duration = duration,
-        label = 'Breaching Storage...',
+        label = locale('progressbar.breaching_storage'),
         useWhileDead = false,
         canCancel = true,
         disable = {
@@ -766,12 +766,12 @@ function StartPoliceStashRaid(propertyId, stashId)
 
     if success then
         TriggerServerEvent('LNS_Housing:server:policeRaidStash', propertyId, fullStashId)
-        Bridge.Client.Notify('Storage breached successfully!', 'success')
+        Bridge.Client.Notify(locale('notify.storage_breach_success'), 'success')
         if fullStashId then
             Bridge.Client.OpenInventory('stash', fullStashId)
         end
     else
-        Bridge.Client.Notify('Storage raid cancelled.', 'error')
+        Bridge.Client.Notify(locale('notify.storage_raid_cancelled'), 'error')
     end
 end
 

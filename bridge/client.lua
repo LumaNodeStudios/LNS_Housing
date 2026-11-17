@@ -165,13 +165,25 @@ function Bridge.Client.Search(searchType, item, metadata)
     return searchType == 'count' and 0 or {}
 end
 
-function Bridge.Client.Notify(msg, type)
+function Bridge.Client.Notify(msg, type, ...)
     debugPrint('info', 'Client notification', {msg = msg, type = type})
     lib.notify({
-        description = msg,
+        title = locale('housing_title'),
+        description = locale(msg, ...),
         type = type or 'inform'
     })
 end
+
+RegisterNUICallback('getLocales', function(_, cb)
+    cb(lib.getLocales())
+end)
+
+AddEventHandler('ox_lib:setLocale', function()
+    SendNUIMessage({
+        action = 'setLocales',
+        locales = lib.getLocales()
+    })
+end)
 
 --- Skill Check / Minigame
 function Bridge.Client.SkillCheck(difficulty, inputs)
@@ -278,9 +290,9 @@ function Bridge.Client.RegisterGarage(propertyId, label, garageData)
                 if not hasAccess then return end
                 
                 if cache.ped and IsPedInAnyVehicle(cache.ped, true) then
-                    lib.showTextUI('Press [E] to store vehicle')
+                    lib.showTextUI(locale('textui.store_vehicle'))
                 else
-                    lib.showTextUI('Press [E] to open garage')
+                    lib.showTextUI(locale('textui.open_garage'))
                 end
             end,
             inside = function()

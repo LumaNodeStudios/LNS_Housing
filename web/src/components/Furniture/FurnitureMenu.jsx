@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Modeler3D from './Modeler3D';
 import './FurnitureMenu.css';
 import furnitureFallbackImg from '../../assets/furniture_fallback.png';
+import { useLocale } from '../../context/LocaleContext';
 
 export const getFurnitureItemUrl = (item) => {
   if (!item) return null;
@@ -78,33 +79,33 @@ export const getNormalizedVariants = (item) => {
   return [];
 };
 
-const CONTROLS = [
+const getControls = (t) => [
   {
-    section: 'Selecting', rows: [
-      { keys: ['Left Click'], desc: 'Click any placed prop (bought or in basket) to move it' },
+    section: t('ui.controls_selecting', 'Selecting'), rows: [
+      { keys: [t('ui.key_left_click', 'Left Click')], desc: t('ui.desc_left_click', 'Click any placed prop (bought or in basket) to move it') },
     ]
   },
   {
-    section: 'Placement', rows: [
-      { keys: ['Drag'], desc: 'Drag the gizmo arrows or sphere' },
-      { keys: ['Right Click'], desc: 'Switch between move and rotate' },
-      { keys: ['E'], desc: 'Position mode' },
-      { keys: ['R'], desc: 'Rotate mode' },
-      { keys: ['G'], desc: 'Place on ground' },
-      { keys: ['Manual Pos'], desc: 'Click the adjustment button on top right to fine-tune exact coordinates' },
-      { keys: ['Del'], desc: 'Delete the selected item (bought or in basket)' },
+    section: t('ui.controls_placement', 'Placement'), rows: [
+      { keys: [t('ui.key_drag', 'Drag')], desc: t('ui.desc_drag', 'Drag the gizmo arrows or sphere') },
+      { keys: [t('ui.key_right_click', 'Right Click')], desc: t('ui.desc_right_click', 'Switch between move and rotate') },
+      { keys: ['E'], desc: t('ui.desc_pos_mode', 'Position mode') },
+      { keys: ['R'], desc: t('ui.desc_rot_mode', 'Rotate mode') },
+      { keys: ['G'], desc: t('ui.desc_ground_mode', 'Place on ground') },
+      { keys: [t('ui.key_manual_pos', 'Manual Pos')], desc: t('ui.desc_manual_pos', 'Click the adjustment button on top right to fine-tune exact coordinates') },
+      { keys: ['Del'], desc: t('ui.desc_del_item', 'Delete the selected item (bought or in basket)') },
     ]
   },
   {
-    section: 'Copy and Paste', rows: [
-      { keys: ['Ctrl', 'C'], desc: 'Copy the selected item' },
-      { keys: ['Ctrl', 'V'], desc: 'Paste a copy in that spot, then drag it away. Paste again to chain copies' },
+    section: t('ui.controls_copy_paste', 'Copy and Paste'), rows: [
+      { keys: ['Ctrl', 'C'], desc: t('ui.desc_copy_item', 'Copy the selected item') },
+      { keys: ['Ctrl', 'V'], desc: t('ui.desc_paste_item', 'Paste a copy in that spot, then drag it away. Paste again to chain copies') },
     ]
   },
   {
-    section: 'Camera', rows: [
-      { keys: ['Left Alt'], desc: 'Toggle free camera' },
-      { keys: ['Backspace'], desc: 'Toggle free camera' },
+    section: t('ui.controls_camera', 'Camera'), rows: [
+      { keys: ['Left Alt'], desc: t('ui.desc_toggle_camera', 'Toggle free camera') },
+      { keys: ['Backspace'], desc: t('ui.desc_toggle_camera', 'Toggle free camera') },
     ]
   },
 ];
@@ -332,6 +333,7 @@ const ItemCard = React.memo(function ItemCard({
 });
 
 const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
+  const { t } = useLocale();
   const [activeCategory, setActiveCategory] = useState('all');
   const [activeTab, setActiveTab] = useState('shopping');
   const [cart, setCart] = useState([]);
@@ -351,6 +353,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
   const [copiedTransform, setCopiedTransform] = useState(null);
   const [toast, setToast] = useState(null);
   const [variantParentItem, setVariantParentItem] = useState(null);
+  const controlsList = useMemo(() => getControls(t), [t]);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -794,7 +797,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
     const zeroRot = { x: 0, y: 0, z: 0 };
     setObjectRotation(zeroRot);
     post('rotateObject', zeroRot);
-    showToast('Rotation Reset');
+    showToast(t('ui.rotation_reset', 'Rotation Reset'));
   };
 
   const handleSnapHeading = (angle) => {
@@ -814,7 +817,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
       position: { ...objectCoords },
       rotation: { ...objectRotation }
     });
-    showToast('Transform Copied');
+    showToast(t('ui.transform_copied', 'Transform Copied'));
   };
 
   const handlePasteTransform = () => {
@@ -825,7 +828,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
     setObjectRotation(nextRot);
     post('moveObject', nextPos);
     post('rotateObject', nextRot);
-    showToast('Transform Pasted');
+    showToast(t('ui.transform_pasted', 'Transform Pasted'));
   };
 
   const handleClose = () => {
@@ -849,7 +852,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
             disabled={isPlacing}
           >
             <ShoppingBag size={18} />
-            <span>SHOPPING</span>
+            <span>{t('ui.shopping', 'SHOPPING')}</span>
           </button>
           <button
             className={`main-tab ${activeTab === 'editor' ? 'active' : ''} ${isPlacing ? 'disabled' : ''}`}
@@ -857,7 +860,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
             disabled={isPlacing}
           >
             <Hammer size={18} />
-            <span>EDITOR</span>
+            <span>{t('ui.editor', 'EDITOR')}</span>
           </button>
         </div>
 
@@ -882,7 +885,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                         setActiveTab('shopping');
                       }}
                       disabled={isPlacing}
-                      title="All Categories"
+                      title={t('ui.all_categories', 'All Categories')}
                     >
                       <Grid size={18} />
                     </button>
@@ -905,7 +908,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                       className={`cat-icon-btn cart-btn ${activeTab === 'cart' ? 'active' : ''} ${isPlacing ? 'disabled' : ''}`}
                       onClick={() => !isPlacing && setActiveTab('cart')}
                       disabled={isPlacing}
-                      title="View Cart"
+                      title={t('ui.view_cart', 'View Cart')}
                     >
                       <ShoppingCart size={18} />
                       {cart.length > 0 && <span className="cart-badge">{cart.length}</span>}
@@ -921,21 +924,21 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                           type="button"
                           className="variants-back-btn"
                           onClick={() => setVariantParentItem(null)}
-                          title="Back to Catalog"
+                          title={t('ui.back_to_catalog', 'Back to Catalog')}
                         >
                           <ArrowLeft size={15} />
-                          <span>CATALOG</span>
+                          <span>{t('ui.catalog', 'CATALOG')}</span>
                         </button>
                         <div className="variants-header-info">
                           <h2 className="variants-title">{variantParentItem.label}</h2>
                           <span className="variants-badge">
-                            {activeItemVariants.length} {activeItemVariants.length === 1 ? 'Variant' : 'Variants / Styles'}
+                            {activeItemVariants.length} {activeItemVariants.length === 1 ? t('ui.variant', 'Variant') : t('ui.variants_styles', 'Variants / Styles')}
                           </span>
                         </div>
                       </div>
 
                       <div className="variants-subtext">
-                        Select a style or color variation below to preview or place
+                        {t('ui.select_style_variation', 'Select a style or color variation below to preview or place')}
                       </div>
 
                       <div className="variants-grid-scroll">
@@ -991,7 +994,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                                 {isCurrentActiveVariant && (
                                   <div className="variant-active-badge">
                                     <Check size={11} />
-                                    <span>ACTIVE</span>
+                                    <span>{t('ui.active', 'ACTIVE')}</span>
                                   </div>
                                 )}
                               </div>
@@ -1005,7 +1008,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                       <div className={`search-bar ${isPlacing ? 'disabled' : ''}`} style={{ opacity: isPlacing ? 0.5 : 1, pointerEvents: isPlacing ? 'none' : 'auto' }}>
                         <Search size={16} className="search-icon" />
                         <input
-                          placeholder="Search furniture..."
+                          placeholder={t('ui.search_furniture', 'Search furniture...')}
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           disabled={isPlacing}
@@ -1013,7 +1016,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                       </div>
 
                       <div className="category-title">
-                        {activeCategory === 'all' ? 'ALL FURNITURE' : (activeCategoryData?.label?.toUpperCase() || 'ITEMS')}
+                        {activeCategory === 'all' ? t('ui.all_furniture', 'ALL FURNITURE') : (activeCategoryData?.label?.toUpperCase() || 'ITEMS')}
                       </div>
 
                       <div
@@ -1046,13 +1049,13 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                 ) : (
                   <div className="cart-view">
                     <div className="cart-header">
-                      <button className="cart-back-btn" onClick={() => setActiveTab('shopping')} title="Back to Shopping">
+                      <button className="cart-back-btn" onClick={() => setActiveTab('shopping')} title={t('ui.back_to_shopping', 'Back to Shopping')}>
                         <ArrowLeft size={16} />
                       </button>
                       <div className="cart-title-info">
-                        <h2>SHOPPING CART</h2>
+                        <h2>{t('ui.shopping_cart', 'SHOPPING CART')}</h2>
                         <span className="cart-count-badge">
-                          {cart.length} {cart.length === 1 ? 'item' : 'items'}
+                          {cart.length} {cart.length === 1 ? t('ui.item', 'item') : t('ui.items', 'items')}
                         </span>
                       </div>
                       {cart.length > 0 && (
@@ -1062,10 +1065,10 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                             setCart([]);
                             post('clearCart');
                           }}
-                          title="Clear all items in basket"
+                          title={t('ui.clear_basket', 'Clear Basket')}
                         >
                           <Trash2 size={13} />
-                          <span>Clear Basket</span>
+                          <span>{t('ui.clear_basket', 'Clear Basket')}</span>
                         </button>
                       )}
                     </div>
@@ -1080,10 +1083,10 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                         >
                           <ShoppingCart size={40} className="cart-empty-icon" />
                         </motion.div>
-                        <h3 className="cart-empty-title">Your cart is empty</h3>
-                        <p className="cart-empty-subtitle">Choose from our catalog to decorate your home</p>
+                        <h3 className="cart-empty-title">{t('ui.cart_empty', 'Your cart is empty')}</h3>
+                        <p className="cart-empty-subtitle">{t('ui.cart_empty_sub', 'Choose from our catalog to decorate your home')}</p>
                         <button className="cart-empty-shop-btn" onClick={() => setActiveTab('shopping')}>
-                          Browse Catalog
+                          {t('ui.browse_catalog', 'Browse Catalog')}
                         </button>
                       </div>
                     ) : (
@@ -1121,7 +1124,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                                         setCart(newCart);
                                         post('removeCartItem', { cartId: item.cartId, entity: item.entity, model: item.model, position: item.position });
                                       }}
-                                      title="Remove item"
+                                      title={t('ui.remove_item', 'Remove item')}
                                     >
                                       <Trash2 size={14} />
                                     </button>
@@ -1134,15 +1137,15 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                         <div className="cart-footer">
                           <div className="cart-summary-details">
                             <div className="summary-row">
-                              <span>Subtotal ({cart.length} {cart.length === 1 ? 'item' : 'items'})</span>
+                              <span>{t('ui.subtotal', `Subtotal (${cart.length} items)`, cart.length)}</span>
                               <span>${cart.reduce((acc, item) => acc + item.price, 0).toLocaleString()}</span>
                             </div>
                           </div>
                           <div className="cart-total-section">
-                            <span className="total-label">Total Amount</span>
+                            <span className="total-label">{t('ui.total_amount', 'Total Amount')}</span>
                             <span className="total-price">${cart.reduce((acc, item) => acc + item.price, 0).toLocaleString()}</span>
                           </div>
-                          <button className="checkout-btn" onClick={() => setShowPaymentModal(true)}>CONFIRM PURCHASE</button>
+                          <button className="checkout-btn" onClick={() => setShowPaymentModal(true)}>{t('ui.confirm_purchase_btn', 'CONFIRM PURCHASE')}</button>
                         </div>
                       </>
                     )}
@@ -1153,7 +1156,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
 
             {activeTab === 'editor' && (
               <div className="editor-view">
-                <div className="category-title">OWNED FURNITURE</div>
+                <div className="category-title">{t('ui.owned_furniture', 'OWNED FURNITURE')}</div>
 
                 {ownedItems.length === 0 ? (
                   <div className="editor-empty-container">
@@ -1165,15 +1168,15 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                     >
                       <Hammer size={40} className="editor-empty-icon" />
                     </motion.div>
-                    <h3 className="editor-empty-title">No Furniture Placed</h3>
-                    <p className="editor-empty-subtitle">Purchase furniture from the shop and place it in your home to see it here</p>
+                    <h3 className="editor-empty-title">{t('ui.no_furniture_placed', 'No Furniture Placed')}</h3>
+                    <p className="editor-empty-subtitle">{t('ui.no_furniture_sub', 'Purchase furniture from the shop and place it in your home to see it here')}</p>
                   </div>
                 ) : (
                   <>
                     <div className={`search-bar ${isPlacing ? 'disabled' : ''}`} style={{ opacity: isPlacing ? 0.5 : 1, pointerEvents: isPlacing ? 'none' : 'auto' }}>
                       <Search size={16} className="search-icon" />
                       <input
-                        placeholder="Search placed furniture..."
+                        placeholder={t('ui.search_placed_furniture', 'Search placed furniture...')}
                         value={searchQueryOwned}
                         onChange={(e) => setSearchQueryOwned(e.target.value)}
                         disabled={isPlacing}
@@ -1227,10 +1230,10 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                                       className="editor-move-btn"
                                       disabled={isPlacing}
                                       onClick={() => handlePreview(item)}
-                                      title="Move / Reposition"
+                                      title={t('ui.move_reposition', 'Move / Reposition')}
                                     >
                                       <Move size={12} />
-                                      <span>MOVE</span>
+                                      <span>{t('ui.move', 'MOVE')}</span>
                                     </button>
                                     {editorVariants.length > 0 && (
                                       <button
@@ -1245,10 +1248,10 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                                             handlePreview(item);
                                           }
                                         }}
-                                        title="Change Style or Color Variant"
+                                        title={t('ui.change_style_variant', 'Change Style or Color Variant')}
                                       >
                                         <Palette size={12} />
-                                        <span>STYLES ({editorVariants.length})</span>
+                                        <span>{t('ui.styles', `STYLES (${editorVariants.length})`, editorVariants.length)}</span>
                                       </button>
                                     )}
                                     <button
@@ -1260,10 +1263,10 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                                         post('unhoverOwnedItem');
                                         post('removeOwnedItem', item);
                                       }}
-                                      title="Pack Up"
+                                      title={t('ui.pack_up', 'Pack Up')}
                                     >
                                       <Trash2 size={12} />
-                                      <span>PACK UP</span>
+                                      <span>{t('ui.pack_up', 'PACK UP')}</span>
                                     </button>
                                   </div>
                                 </div>
@@ -1298,16 +1301,16 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                 transition={{ type: "spring", damping: 25, stiffness: 350 }}
               >
                 <div className="payment-modal-header">
-                  <h3>SELECT PAYMENT</h3>
+                  <h3>{t('ui.select_payment', 'SELECT PAYMENT')}</h3>
                   <button className="payment-modal-close" onClick={() => setShowPaymentModal(false)}>
                     <X size={16} />
                   </button>
                 </div>
 
                 <div className="payment-modal-body">
-                  <p className="payment-modal-subtitle">Choose a payment method to complete purchase</p>
+                  <p className="payment-modal-subtitle">{t('ui.payment_sub', 'Choose a payment method to complete purchase')}</p>
                   <div className="payment-modal-total">
-                    <span>Total Amount</span>
+                    <span>{t('ui.total_amount', 'Total Amount')}</span>
                     <span className="price">${cart.reduce((acc, item) => acc + item.price, 0).toLocaleString()}</span>
                   </div>
 
@@ -1317,8 +1320,8 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                         <Banknote size={20} />
                       </div>
                       <div className="opt-info">
-                        <span className="opt-title">Pay with Cash</span>
-                        <span className="opt-desc">Deduct from pocket cash</span>
+                        <span className="opt-title">{t('ui.pay_cash', 'Pay with Cash')}</span>
+                        <span className="opt-desc">{t('ui.pay_cash_sub', 'Deduct from pocket cash')}</span>
                       </div>
                     </button>
 
@@ -1327,15 +1330,15 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                         <CreditCard size={20} />
                       </div>
                       <div className="opt-info">
-                        <span className="opt-title">Pay with Card</span>
-                        <span className="opt-desc">Deduct from bank account</span>
+                        <span className="opt-title">{t('ui.pay_card', 'Pay with Card')}</span>
+                        <span className="opt-desc">{t('ui.pay_card_sub', 'Deduct from bank account')}</span>
                       </div>
                     </button>
                   </div>
                 </div>
 
                 <button className="payment-modal-cancel" onClick={() => setShowPaymentModal(false)}>
-                  Cancel
+                  {t('cancel', 'Cancel')}
                 </button>
               </motion.div>
             </motion.div>
@@ -1360,7 +1363,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
           if (!showControls) setShowManualPos(false);
         }}
         tabIndex={-1}
-        title="Controls"
+        title={t('ui.controls', 'Controls')}
       >
         <Keyboard size={18} />
       </button>
@@ -1373,7 +1376,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
           if (!showManualPos) setShowControls(false);
         }}
         tabIndex={-1}
-        title="Manual Transform (Position & Rotation)"
+        title={t('ui.manual_transform_title', 'Manual Transform (Position & Rotation)')}
       >
         <SlidersHorizontal size={18} />
       </button>
@@ -1389,12 +1392,12 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
             transition={{ duration: 0.15 }}
           >
             <div className="controls-popup-header">
-              <span>CONTROLS</span>
+              <span>{t('ui.controls', 'CONTROLS')}</span>
               <button className="payment-modal-close" onClick={() => setShowControls(false)}>
                 <X size={16} />
               </button>
             </div>
-            {CONTROLS.map((group) => (
+            {controlsList.map((group) => (
               <div key={group.section} className="controls-group">
                 <div className="controls-section-title">{group.section}</div>
                 {group.rows.map((row, i) => (
@@ -1423,7 +1426,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
           >
             <div className="controls-popup-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>MANUAL ROTATION</span>
+                <span>{t('ui.manual_rotation', 'MANUAL ROTATION')}</span>
               </div>
               <button className="payment-modal-close" onClick={() => setShowManualPos(false)}>
                 <X size={16} />
@@ -1433,14 +1436,14 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
             {isPlacing ? (
               <>
                 <div className="manual-pos-item-info">
-                  <span className="manual-pos-item-label">{placingItem?.label || 'Selected Object'}</span>
-                  <span className="manual-pos-item-meta">{placingItem?.model || 'Position & Rotation'}</span>
+                  <span className="manual-pos-item-label">{placingItem?.label || t('ui.selected_object', 'Selected Object')}</span>
+                  <span className="manual-pos-item-meta">{placingItem?.model || t('ui.pos_and_rot', 'Position & Rotation')}</span>
                 </div>
 
                 {/* Position Step Selector */}
                 <div className="manual-pos-step-section">
                   <div className="manual-pos-section-label">
-                    <span>Position Step</span>
+                    <span>{t('ui.position_step', 'Position Step')}</span>
                     <span className="badge">{posStep}m</span>
                   </div>
                   <div className="manual-pos-step-pills">
@@ -1460,12 +1463,12 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                 {/* Position (Coordinates) */}
                 <div className="manual-pos-step-section">
                   <div className="manual-pos-section-label">
-                    <span>Coordinates (X, Y, Z)</span>
+                    <span>{t('ui.coordinates_xyz', 'Coordinates (X, Y, Z)')}</span>
                   </div>
                   <div className="manual-pos-axis-grid">
                     <div className="manual-pos-axis-row">
-                      <div className="manual-pos-axis-badge axis-x" title="X Axis (East / West)">X</div>
-                      <NudgeBtn title={`Subtract ${posStep}m`} onClick={() => nudgeCoord('x', -posStep)}>
+                      <div className="manual-pos-axis-badge axis-x" title={t('ui.x_axis_title', 'X Axis (East / West)')}>X</div>
+                      <NudgeBtn title={t('ui.subtract_meters', `Subtract ${posStep}m`, posStep)} onClick={() => nudgeCoord('x', -posStep)}>
                         <Minus size={12} />
                       </NudgeBtn>
                       <CoordInput
@@ -1473,14 +1476,14 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                         onChange={(val) => updateCoord('x', val)}
                         precision={4}
                       />
-                      <NudgeBtn title={`Add ${posStep}m`} onClick={() => nudgeCoord('x', posStep)}>
+                      <NudgeBtn title={t('ui.add_meters', `Add ${posStep}m`, posStep)} onClick={() => nudgeCoord('x', posStep)}>
                         <Plus size={12} />
                       </NudgeBtn>
                     </div>
 
                     <div className="manual-pos-axis-row">
-                      <div className="manual-pos-axis-badge axis-y" title="Y Axis (North / South)">Y</div>
-                      <NudgeBtn title={`Subtract ${posStep}m`} onClick={() => nudgeCoord('y', -posStep)}>
+                      <div className="manual-pos-axis-badge axis-y" title={t('ui.y_axis_title', 'Y Axis (North / South)')}>Y</div>
+                      <NudgeBtn title={t('ui.subtract_meters', `Subtract ${posStep}m`, posStep)} onClick={() => nudgeCoord('y', -posStep)}>
                         <Minus size={12} />
                       </NudgeBtn>
                       <CoordInput
@@ -1488,14 +1491,14 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                         onChange={(val) => updateCoord('y', val)}
                         precision={4}
                       />
-                      <NudgeBtn title={`Add ${posStep}m`} onClick={() => nudgeCoord('y', posStep)}>
+                      <NudgeBtn title={t('ui.add_meters', `Add ${posStep}m`, posStep)} onClick={() => nudgeCoord('y', posStep)}>
                         <Plus size={12} />
                       </NudgeBtn>
                     </div>
 
                     <div className="manual-pos-axis-row">
-                      <div className="manual-pos-axis-badge axis-z" title="Z Axis (Height / Elevation)">Z</div>
-                      <NudgeBtn title={`Subtract ${posStep}m`} onClick={() => nudgeCoord('z', -posStep)}>
+                      <div className="manual-pos-axis-badge axis-z" title={t('ui.z_axis_title', 'Z Axis (Height / Elevation)')}>Z</div>
+                      <NudgeBtn title={t('ui.subtract_meters', `Subtract ${posStep}m`, posStep)} onClick={() => nudgeCoord('z', -posStep)}>
                         <Minus size={12} />
                       </NudgeBtn>
                       <CoordInput
@@ -1503,7 +1506,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                         onChange={(val) => updateCoord('z', val)}
                         precision={4}
                       />
-                      <NudgeBtn title={`Add ${posStep}m`} onClick={() => nudgeCoord('z', posStep)}>
+                      <NudgeBtn title={t('ui.add_meters', `Add ${posStep}m`, posStep)} onClick={() => nudgeCoord('z', posStep)}>
                         <Plus size={12} />
                       </NudgeBtn>
                     </div>
@@ -1513,7 +1516,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                 {/* Rotation Step Selector */}
                 <div className="manual-pos-step-section">
                   <div className="manual-pos-section-label">
-                    <span>Rotation Step</span>
+                    <span>{t('ui.rotation_step', 'Rotation Step')}</span>
                     <span className="badge">{rotStep}°</span>
                   </div>
                   <div className="manual-pos-step-pills">
@@ -1533,12 +1536,12 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                 {/* Rotation (Angles) */}
                 <div className="manual-pos-step-section">
                   <div className="manual-pos-section-label">
-                    <span>Orientation (Degrees)</span>
+                    <span>{t('ui.orientation_degrees', 'Orientation (Degrees)')}</span>
                   </div>
                   <div className="manual-pos-axis-grid">
                     <div className="manual-pos-axis-row">
-                      <div className="manual-pos-axis-badge axis-yaw" title="Heading / Yaw (Rotation around vertical axis)">Yaw</div>
-                      <NudgeBtn title={`Rotate -${rotStep}°`} onClick={() => nudgeRotation('z', -rotStep)}>
+                      <div className="manual-pos-axis-badge axis-yaw" title={t('ui.yaw_title', 'Heading / Yaw (Rotation around vertical axis)')}>{t('ui.yaw', 'Yaw')}</div>
+                      <NudgeBtn title={t('ui.rotate_neg_deg', `Rotate -${rotStep}°`, rotStep)} onClick={() => nudgeRotation('z', -rotStep)}>
                         <Minus size={12} />
                       </NudgeBtn>
                       <CoordInput
@@ -1546,14 +1549,14 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                         onChange={(val) => updateRotation('z', val)}
                         precision={2}
                       />
-                      <NudgeBtn title={`Rotate +${rotStep}°`} onClick={() => nudgeRotation('z', rotStep)}>
+                      <NudgeBtn title={t('ui.rotate_pos_deg', `Rotate +${rotStep}°`, rotStep)} onClick={() => nudgeRotation('z', rotStep)}>
                         <Plus size={12} />
                       </NudgeBtn>
                     </div>
 
                     <div className="manual-pos-axis-row">
-                      <div className="manual-pos-axis-badge axis-pitch" title="Pitch (Tilt forward/back)">Pitch</div>
-                      <NudgeBtn title={`Tilt -${rotStep}°`} onClick={() => nudgeRotation('x', -rotStep)}>
+                      <div className="manual-pos-axis-badge axis-pitch" title={t('ui.pitch_title', 'Pitch (Tilt forward/back)')}>{t('ui.pitch', 'Pitch')}</div>
+                      <NudgeBtn title={t('ui.tilt_neg_deg', `Tilt -${rotStep}°`, rotStep)} onClick={() => nudgeRotation('x', -rotStep)}>
                         <Minus size={12} />
                       </NudgeBtn>
                       <CoordInput
@@ -1561,14 +1564,14 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                         onChange={(val) => updateRotation('x', val)}
                         precision={2}
                       />
-                      <NudgeBtn title={`Tilt +${rotStep}°`} onClick={() => nudgeRotation('x', rotStep)}>
+                      <NudgeBtn title={t('ui.tilt_pos_deg', `Tilt +${rotStep}°`, rotStep)} onClick={() => nudgeRotation('x', rotStep)}>
                         <Plus size={12} />
                       </NudgeBtn>
                     </div>
 
                     <div className="manual-pos-axis-row">
-                      <div className="manual-pos-axis-badge axis-roll" title="Roll (Tilt left/right)">Roll</div>
-                      <NudgeBtn title={`Roll -${rotStep}°`} onClick={() => nudgeRotation('y', -rotStep)}>
+                      <div className="manual-pos-axis-badge axis-roll" title={t('ui.roll_title', 'Roll (Tilt left/right)')}>{t('ui.roll', 'Roll')}</div>
+                      <NudgeBtn title={t('ui.roll_neg_deg', `Roll -${rotStep}°`, rotStep)} onClick={() => nudgeRotation('y', -rotStep)}>
                         <Minus size={12} />
                       </NudgeBtn>
                       <CoordInput
@@ -1576,7 +1579,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                         onChange={(val) => updateRotation('y', val)}
                         precision={2}
                       />
-                      <NudgeBtn title={`Roll +${rotStep}°`} onClick={() => nudgeRotation('y', rotStep)}>
+                      <NudgeBtn title={t('ui.roll_pos_deg', `Roll +${rotStep}°`, rotStep)} onClick={() => nudgeRotation('y', rotStep)}>
                         <Plus size={12} />
                       </NudgeBtn>
                     </div>
@@ -1589,47 +1592,47 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                     type="button"
                     className="manual-pos-action-btn"
                     onClick={() => post('placeOnGround')}
-                    title="Snap to floor/surface"
+                    title={t('ui.snap_floor_title', 'Snap to floor/surface')}
                   >
                     <ArrowDown size={13} />
-                    <span>On Ground</span>
+                    <span>{t('ui.on_ground', 'On Ground')}</span>
                   </button>
                   <button
                     type="button"
                     className="manual-pos-action-btn"
                     onClick={handleResetRotation}
-                    title="Reset rotation to 0,0,0"
+                    title={t('ui.reset_rot_title', 'Reset rotation to 0,0,0')}
                   >
                     <RotateCcw size={13} />
-                    <span>Reset Rot</span>
+                    <span>{t('ui.reset_rot', 'Reset Rot')}</span>
                   </button>
                   <button
                     type="button"
                     className="manual-pos-action-btn"
                     onClick={() => handleSnapHeading(90)}
-                    title="Turn 90 degrees clockwise"
+                    title={t('ui.turn_90_title', 'Turn 90 degrees clockwise')}
                   >
                     <RotateCw size={13} />
-                    <span>Yaw +90°</span>
+                    <span>{t('ui.yaw_plus_90', 'Yaw +90°')}</span>
                   </button>
                   <button
                     type="button"
                     className="manual-pos-action-btn"
                     onClick={handleCopyTransform}
-                    title="Copy current position and rotation"
+                    title={t('ui.copy_pos_title', 'Copy current position and rotation')}
                   >
                     <Copy size={13} />
-                    <span>Copy Pos</span>
+                    <span>{t('ui.copy_pos', 'Copy Pos')}</span>
                   </button>
                   {copiedTransform && (
                     <button
                       type="button"
                       className="manual-pos-action-btn full-width"
                       onClick={handlePasteTransform}
-                      title="Paste copied position and rotation"
+                      title={t('ui.paste_pos_title', 'Paste copied position and rotation')}
                     >
                       <CheckCheck size={13} />
-                      <span>Paste Copied Transform</span>
+                      <span>{t('ui.paste_copied_transform', 'Paste Copied Transform')}</span>
                     </button>
                   )}
                 </div>
@@ -1637,9 +1640,9 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
             ) : (
               <div className="manual-pos-empty">
                 <Move size={32} className="manual-pos-empty-icon" />
-                <span className="manual-pos-empty-title">No Furniture Selected</span>
+                <span className="manual-pos-empty-title">{t('ui.no_furniture_selected', 'No Furniture Selected')}</span>
                 <p className="manual-pos-empty-desc">
-                  Click any placed prop in your room or select an item from the catalog to adjust its exact coordinates and rotation.
+                  {t('ui.no_furniture_selected_desc', 'Click any placed prop in your room or select an item from the catalog to adjust its exact coordinates and rotation.')}
                 </p>
               </div>
             )}
@@ -1651,7 +1654,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
 
       {freecamMode && (
         <div className={`freecam-hint ${isPlacing ? 'with-placement' : ''}`}>
-          <span>[LEFT ALT] Exit Cam | [BACKSPACE] Exit Cam</span>
+          <span>{t('ui.exit_cam_hint', '[LEFT ALT] Exit Cam | [BACKSPACE] Exit Cam')}</span>
         </div>
       )}
 
@@ -1688,17 +1691,17 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
       {isPlacing && (
         <div className="placement-controls">
           <div className="controls-header">
-            <span className="controls-title">3D Placement</span>
+            <span className="controls-title">{t('ui.3d_placement', '3D Placement')}</span>
             <div className="controls-actions">
               <div className="controls-hint">
-                <Move size={14} /> <span>Drag | [LALT] Cam | [G] Ground</span>
+                <Move size={14} /> <span>{t('ui.tablet_controls_hint', 'Drag | [LALT] Cam | [G] Ground')}</span>
               </div>
             </div>
           </div>
 
           <div className="controls-footer">
             <button className="placeonground-btn" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} onClick={() => post('placeOnGround')}>
-              <span>Place on Ground</span>
+              <span>{t('ui.place_on_ground', 'Place on Ground')}</span>
             </button>
             {placingItemVariants.length > 0 && (
               <button
@@ -1709,10 +1712,10 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                   setActiveTab('shopping');
                   setVariantParentItem(parentForPlacing);
                 }}
-                title="View & select styles or color variants"
+                title={t('ui.styles_variants_title', 'View & select styles or color variants')}
               >
                 <Palette size={13} />
-                <span>Styles ({placingItemVariants.length})</span>
+                <span>{t('ui.styles_count', `Styles (${placingItemVariants.length})`, placingItemVariants.length)}</span>
               </button>
             )}
           </div>
@@ -1725,11 +1728,11 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                 clearPlacing();
                 post('stopPlacement', { save: true });
               }
-            }}>Confirm</button>
+            }}>{t('ui.confirm', 'Confirm')}</button>
             <button className="stop-btn" onClick={() => {
               clearPlacing();
               post('stopPlacement');
-            }}>Cancel</button>
+            }}>{t('ui.cancel', 'Cancel')}</button>
           </div>
         </div>
       )}

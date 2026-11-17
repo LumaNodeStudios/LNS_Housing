@@ -76,7 +76,7 @@ local function GetDefaultPanelFurniture()
     end
     return {
         model = 'reh_prop_reh_tablet_01a',
-        label = 'Property Panel'
+        label = locale('target.property_panel')
     }, 'prerequisites'
 end
 
@@ -882,7 +882,7 @@ lib.addCommand('migratenolag', {
     },
 }, function(source, args, raw)
     if source ~= 0 then
-        Bridge.Server.Notify(source, 'This command can only be executed via the server console.', 'error')
+        Bridge.Server.Notify(source, locale('notify.no_perm_command'), 'error')
         return
     end
 

@@ -1567,7 +1567,7 @@ CreateThread(function()
         if Settings.FurnitureMenu.Keybind and Settings.FurnitureMenu.Keybind.Enabled then
             lib.addKeybind({
                 name = 'open_furniture_menu',
-                description = 'Open Furniture Menu',
+                description = locale('keybind.open_furniture_menu'),
                 defaultKey = Settings.FurnitureMenu.Keybind.DefaultKey or 'F6',
                 onPressed = function()
                     TryOpenFurnitureMenu()

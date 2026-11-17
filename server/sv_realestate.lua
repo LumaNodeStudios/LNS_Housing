@@ -33,7 +33,7 @@ RegisterNetEvent('LNS_Housing:server:payRent', function(propertyId, payAmount)
 
     local money = Bridge.Server.GetBankMoney(src)
     if money < payAmount then
-        Bridge.Server.Notify(src, "Not enough money in bank to pay rent!", "error")
+        Bridge.Server.Notify(src, locale('notify.not_enough_bank_rent'), 'error')
         return
     end
 
@@ -48,7 +48,7 @@ RegisterNetEvent('LNS_Housing:server:payRent', function(propertyId, payAmount)
             local agent = Bridge.Server.IsPlayerOnline(p.agent_cid)
             if agent then
                 Bridge.Server.AddBankMoney(agent.PlayerData.source, commission, "Property Rent Commission: " .. p.label)
-                Bridge.Server.Notify(agent.PlayerData.source, string.format("You received $%s rent commission for %s!", commission, p.label), "success")
+                Bridge.Server.Notify(agent.PlayerData.source, locale('notify.rent_commission_received', commission, p.label), 'success')
             else
                 Bridge.Server.AddOfflineBankMoney(p.agent_cid, commission)
             end
@@ -92,7 +92,7 @@ RegisterNetEvent('LNS_Housing:server:payRent', function(propertyId, payAmount)
 
         SaveProperty(id)
         TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
-        Bridge.Server.Notify(src, string.format("Successfully paid $%s for %s.", originalPayAmount, p.label), "success")
+        Bridge.Server.Notify(src, locale('notify.rent_paid_success', originalPayAmount, p.label), 'success')
     end
 end)
 
@@ -107,7 +107,7 @@ RegisterNetEvent('LNS_Housing:server:toggleAutoPay', function(propertyId, enable
     SaveProperty(id)
     TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
     local stateText = enabled and "enabled" or "disabled"
-    Bridge.Server.Notify(src, "Rent auto-pay " .. stateText .. ".", "success")
+    Bridge.Server.Notify(src, locale('notify.rent_autopay_toggle', stateText == 'enabled' and locale('notify.enabled') or locale('notify.disabled')), 'success')
 end)
 
 lib.callback.register('LNS_Housing:server:getPendingContracts', function(source)
@@ -155,7 +155,7 @@ RegisterNetEvent('LNS_Housing:server:createContract', function(data)
 
     local permConfig = (Settings.RealEstate and Settings.RealEstate.Permissions) or { DraftContract = 1 }
     if playerJob.grade < (permConfig.DraftContract or 1) then
-        Bridge.Server.Notify(src, "You do not have permission to draft contracts.", "error")
+        Bridge.Server.Notify(src, locale('notify.no_draft_contract_perm'), 'error')
         return
     end
 
@@ -163,7 +163,7 @@ RegisterNetEvent('LNS_Housing:server:createContract', function(data)
     local targetId = tonumber(data.targetId)
     local p = Properties[propertyId]
     if not p or p.owner then
-        Bridge.Server.Notify(src, "Property is not available or already owned.", "error")
+        Bridge.Server.Notify(src, locale('notify.prop_not_available'), 'error')
         return
     end
 
@@ -173,7 +173,7 @@ RegisterNetEvent('LNS_Housing:server:createContract', function(data)
 
     local targetPed = GetPlayerPed(targetId)
     if not targetPed or targetPed == 0 then
-        Bridge.Server.Notify(src, "Invalid or offline target player.", "error")
+        Bridge.Server.Notify(src, locale('notify.invalid_offline_player'), 'error')
         return
     end
 
@@ -183,20 +183,20 @@ RegisterNetEvent('LNS_Housing:server:createContract', function(data)
     local maxDistance = (Settings.RealEstate and Settings.RealEstate.ContractDistance) or 5.0
 
     if #(srcCoords - targetCoords) > maxDistance then
-        Bridge.Server.Notify(src, "That player is too far away to draft a contract with.", "error")
+        Bridge.Server.Notify(src, locale('notify.player_too_far'), 'error')
         return
     end
 
     local clientCid = Bridge.Server.GetIdentifier(targetId)
     if not clientCid then
-        Bridge.Server.Notify(src, "Invalid target player.", "error")
+        Bridge.Server.Notify(src, locale('notify.invalid_target_player'), 'error')
         return
     end
 
     if contractType == 'rent' then
         local isBlacklisted = MySQL.query.await('SELECT 1 FROM housing_blacklist WHERE citizenid = ?', {clientCid})
         if isBlacklisted and isBlacklisted[1] then
-            Bridge.Server.Notify(src, "This player is blacklisted from renting properties!", "error")
+            Bridge.Server.Notify(src, locale('notify.player_blacklisted_rent'), 'error')
             return
         end
     end
@@ -219,12 +219,12 @@ RegisterNetEvent('LNS_Housing:server:createContract', function(data)
         p.commission_rate = commissionRate
         SaveProperty(propertyId)
 
-        Bridge.Server.Notify(src, "Contract sent to " .. clientName .. "!", "success")
-        Bridge.Server.Notify(targetId, "You received a new real estate contract!", "inform")
+        Bridge.Server.Notify(src, locale('notify.contract_sent', clientName), 'success')
+        Bridge.Server.Notify(targetId, locale('notify.contract_received'), 'inform')
 
         TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
     else
-        Bridge.Server.Notify(src, "Failed to create contract.", "error")
+        Bridge.Server.Notify(src, locale('notify.failed_create_contract'), 'error')
     end
 end)
 
@@ -244,14 +244,14 @@ lib.callback.register('LNS_Housing:server:respondToContract', function(source, c
         MySQL.update.await('UPDATE housing_contracts SET status = ? WHERE id = ?', {'declined', contractId})
         local agent = Bridge.Server.IsPlayerOnline(contract.agent_cid)
         if agent then
-            Bridge.Server.Notify(agent.PlayerData.source, contract.client_name .. " declined your contract for " .. p.label .. ".", "error")
+            Bridge.Server.Notify(agent.PlayerData.source, locale('notify.contract_declined', contract.client_name, p.label), 'error')
         end
         return true
     elseif action == 'accept' then
         if contract.type == 'rent' then
             local isBlacklisted = MySQL.query.await('SELECT 1 FROM housing_blacklist WHERE citizenid = ?', {clientCid})
             if isBlacklisted and isBlacklisted[1] then
-                Bridge.Server.Notify(src, "You are blacklisted from renting properties!", "error")
+                Bridge.Server.Notify(src, locale('notify.you_blacklisted_rent'), 'error')
                 return false
             end
         end
@@ -260,7 +260,7 @@ lib.callback.register('LNS_Housing:server:respondToContract', function(source, c
         local bankMoney = Bridge.Server.GetBankMoney(src)
 
         if bankMoney < price then
-            Bridge.Server.Notify(src, "You do not have enough money in your bank account.", "error")
+            Bridge.Server.Notify(src, locale('notify.not_enough_money_bank'), 'error')
             return false
         end
 
@@ -274,7 +274,7 @@ lib.callback.register('LNS_Housing:server:respondToContract', function(source, c
         if agent then
             local agentSrc = agent.PlayerData.source
             Bridge.Server.AddBankMoney(agentSrc, commission, "Property Payout Commission: " .. p.label)
-            Bridge.Server.Notify(agentSrc, string.format("You received $%s commission for the sale of %s!", commission, p.label), "success")
+            Bridge.Server.Notify(agentSrc, locale('notify.contract_sale_commission', commission, p.label), 'success')
         else
             Bridge.Server.AddOfflineBankMoney(contract.agent_cid, commission)
         end
@@ -323,7 +323,7 @@ lib.callback.register('LNS_Housing:server:respondToContract', function(source, c
 
         TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
         exports.LNS_Housing:GivePhysicalKey(propertyId, src)
-        Bridge.Server.Notify(src, "Congratulations! You accepted the contract and now have access to " .. p.label .. ".", "success")
+        Bridge.Server.Notify(src, locale('notify.contract_accepted', p.label), 'success')
         return true
     end
 
@@ -476,7 +476,7 @@ lib.callback.register('LNS_Housing:server:deleteListing', function(source, prope
         Bridge.Server.AddOfflineBankMoney(p.auction_data.highest_bidder, p.auction_data.current_bid)
         local onlineBidder = Bridge.Server.IsPlayerOnline(p.auction_data.highest_bidder)
         if onlineBidder then
-            Bridge.Server.Notify(onlineBidder.PlayerData.source, "The auction for " .. p.label .. " was deleted. Your bid of $" .. p.auction_data.current_bid .. " has been refunded.", "warning")
+            Bridge.Server.Notify(onlineBidder.PlayerData.source, locale('notify.auction_refunded', p.label, p.auction_data.current_bid), 'warning')
         end
     end
 
@@ -500,7 +500,7 @@ lib.callback.register('LNS_Housing:server:evictTenant', function(source, propert
     local tenant = Bridge.Server.IsPlayerOnline(oldOwner)
     if tenant then
         tenantName = tenant.PlayerData.charinfo and (tenant.PlayerData.charinfo.firstname .. ' ' .. tenant.PlayerData.charinfo.lastname) or tenantName
-        Bridge.Server.Notify(tenant.PlayerData.source, "You have been evicted from " .. p.label .. " by an agent!", "error")
+        Bridge.Server.Notify(tenant.PlayerData.source, locale('notify.evicted_by_agent', p.label), 'error')
     end
 
     ResetPropertyOwnershipData(id)
@@ -586,9 +586,9 @@ RegisterNetEvent('LNS_Housing:server:addBlacklist', function(targetIdentifier, n
     ]], { citizenid, targetName, reason, agentName, targetName, reason, agentName })
 
     if success then
-        Bridge.Server.Notify(src, "Successfully blacklisted " .. targetName .. " (" .. citizenid .. ")", "success")
+        Bridge.Server.Notify(src, locale('notify.blacklisted_success', targetName, citizenid), 'success')
     else
-        Bridge.Server.Notify(src, "Failed to blacklist player.", "error")
+        Bridge.Server.Notify(src, locale('notify.blacklisted_failed'), 'error')
     end
 end)
 
@@ -600,9 +600,9 @@ RegisterNetEvent('LNS_Housing:server:removeBlacklist', function(citizenid)
 
     local affectedRows = MySQL.update.await('DELETE FROM housing_blacklist WHERE citizenid = ?', { citizenid })
     if affectedRows > 0 then
-        Bridge.Server.Notify(src, "Removed " .. citizenid .. " from blacklist.", "success")
+        Bridge.Server.Notify(src, locale('notify.unblacklisted_success', citizenid), 'success')
     else
-        Bridge.Server.Notify(src, "Failed to remove player from blacklist.", "error")
+        Bridge.Server.Notify(src, locale('notify.unblacklisted_failed'), 'error')
     end
 end)
 
@@ -615,24 +615,24 @@ RegisterNetEvent('LNS_Housing:server:placeBid', function(data)
 
     if not p or p.sale_type ~= 'auction' then return end
     if not p.auction_data or p.auction_data.status ~= 'live' then
-        Bridge.Server.Notify(src, 'Auction is not live!', 'error')
+        Bridge.Server.Notify(src, locale('notify.auction_not_live'), 'error')
         return
     end
 
     if amount <= p.auction_data.current_bid then
-        Bridge.Server.Notify(src, 'Bid must be higher than current!', 'error')
+        Bridge.Server.Notify(src, locale('notify.bid_must_be_higher'), 'error')
         return
     end
 
     local bankMoney = Bridge.Server.GetMoney(src, 'bank')
     if bankMoney < amount then
-        Bridge.Server.Notify(src, 'Not enough money in bank to place this bid!', 'error')
+        Bridge.Server.Notify(src, locale('notify.not_enough_bank_bid'), 'error')
         return
     end
 
     local removed = Bridge.Server.RemoveBankMoney(src, amount, "Auction Bid: " .. p.label)
     if not removed then
-        Bridge.Server.Notify(src, 'Failed to process bid transaction.', 'error')
+        Bridge.Server.Notify(src, locale('notify.bid_failed'), 'error')
         return
     end
 
@@ -642,7 +642,7 @@ RegisterNetEvent('LNS_Housing:server:placeBid', function(data)
         Bridge.Server.AddOfflineBankMoney(prevBidder, prevAmount)
         local onlinePrev = Bridge.Server.IsPlayerOnline(prevBidder)
         if onlinePrev then
-            Bridge.Server.Notify(onlinePrev.PlayerData.source, "You have been outbid on " .. p.label .. "! $" .. prevAmount .. " has been refunded to your bank.", "warning")
+            Bridge.Server.Notify(onlinePrev.PlayerData.source, locale('notify.outbid', p.label, prevAmount), 'warning')
         end
     end
 
@@ -651,7 +651,7 @@ RegisterNetEvent('LNS_Housing:server:placeBid', function(data)
 
     SaveProperty(propertyId)
     TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
-    Bridge.Server.Notify(src, 'You placed a bid of $' .. amount, 'success')
+    Bridge.Server.Notify(src, locale('notify.bid_placed', amount), 'success')
 end)
 
 RegisterNetEvent('LNS_Housing:server:controlAuction', function(data)
@@ -670,7 +670,7 @@ RegisterNetEvent('LNS_Housing:server:controlAuction', function(data)
     elseif action == 'end' then
         if p.auction_data.highest_bidder then
             p.auction_data.status = 'pending'
-            Bridge.Server.Notify(src, 'Auction ended. Waiting for confirmation of bid: $' .. p.auction_data.current_bid, 'inform')
+            Bridge.Server.Notify(src, locale('notify.auction_ended_waiting', p.auction_data.current_bid), 'inform')
         else
             p.auction_data.status = 'ended'
         end
@@ -685,14 +685,14 @@ RegisterNetEvent('LNS_Housing:server:controlAuction', function(data)
             p.owner = bidderId
             p.auction_data.status = 'ended'
             if bidder then
-                Bridge.Server.Notify(bidder.PlayerData.source, 'Congratulations! Your bid for ' .. p.label .. ' was confirmed!', 'success')
+                Bridge.Server.Notify(bidder.PlayerData.source, locale('notify.bid_confirmed', p.label), 'success')
                 exports.LNS_Housing:GivePhysicalKey(propertyId, bidder.PlayerData.source)
             end
             SyncPropertyDoor(propertyId)
 
             MySQL.update.await('UPDATE housing_contracts SET status = ? WHERE property_id = ? AND status = ?', {'declined', propertyId, 'pending'})
 
-            Bridge.Server.Notify(src, 'Sale confirmed for ' .. p.label, 'success')
+            Bridge.Server.Notify(src, locale('notify.sale_confirmed', p.label), 'success')
         end
     end
 

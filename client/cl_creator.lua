@@ -32,9 +32,9 @@ RegisterNUICallback('createHouse', function(data, cb)
 
     local success = lib.callback.await('LNS_Housing:server:createHouse', false, data)
     if success then
-        Bridge.Client.Notify('House created successfully!', 'success')
+        Bridge.Client.Notify(locale('notify.house_created_success'), 'success')
     else
-        Bridge.Client.Notify('Failed to create house.', 'error')
+        Bridge.Client.Notify(locale('notify.house_create_failed'), 'error')
     end
     SendNUIMessage({ action = 'closeUI' })
     cb('ok')
@@ -46,7 +46,7 @@ RegisterNUICallback('setWalkMode', function(data, cb)
 
     if isWalkModeActive then
         SetNuiFocus(false, false)
-        lib.showTextUI('[G] - Resume Setup UI', { position = 'right-center' })
+        lib.showTextUI(locale('textui.resume_setup_ui'), { position = 'right-center' })
         
         CreateThread(function()
             while isWalkModeActive do
@@ -115,7 +115,7 @@ RegisterNUICallback('captureInterior', function(_, cb)
     end
 
     if interiorId == 0 then
-        Bridge.Client.Notify('Stand inside the MLO interior first.', 'error')
+        Bridge.Client.Notify(locale('notify.stand_mlo_interior'), 'error')
         cb(nil)
         return
     end
@@ -143,10 +143,10 @@ RegisterNUICallback('captureInterior', function(_, cb)
         roomCount = count or roomCount,
         pattern = pattern,
         names = names,
-        currentRoom = currentRoom or 'Main Room'
+        currentRoom = currentRoom or locale('menu.main_room')
     }
 
-    Bridge.Client.Notify(string.format('MLO interior captured (ID: %d, %d rooms%s)', interiorId, count or roomCount, pattern and (', ' .. pattern) or ''), 'success')
+    Bridge.Client.Notify(locale('notify.mlo_interior_captured', interiorId, count or roomCount, pattern and (', ' .. pattern) or ''), 'success')
     cb(data)
 end)
 
@@ -168,14 +168,14 @@ RegisterNUICallback('pickDoor', function(_, cb)
         if type(doorId) == 'table' and doorId.isDouble then
             local c = doorId.doors and doorId.doors[1] and doorId.doors[1].coords
             if c then
-                Bridge.Client.Notify('New Double Door selected at ' .. math.floor(c.x) .. ', ' .. math.floor(c.y), 'success')
+                Bridge.Client.Notify(locale('notify.new_double_door_selected', math.floor(c.x), math.floor(c.y)), 'success')
             else
-                Bridge.Client.Notify('New Double Door added to list.', 'success')
+                Bridge.Client.Notify(locale('notify.new_double_door_added'), 'success')
             end
         elseif type(doorId) == 'table' and doorId.coords then
-            Bridge.Client.Notify('New Door selected at ' .. math.floor(doorId.coords.x) .. ', ' .. math.floor(doorId.coords.y), 'success')
+            Bridge.Client.Notify(locale('notify.new_door_selected', math.floor(doorId.coords.x), math.floor(doorId.coords.y)), 'success')
         else
-            Bridge.Client.Notify('Door ID ' .. tostring(doorId) .. ' added to list.', 'success')
+            Bridge.Client.Notify(locale('notify.door_id_added', tostring(doorId)), 'success')
         end
     end
     cb('ok')
@@ -187,7 +187,7 @@ RegisterNUICallback('pickEntranceCoords', function(_, cb)
     SetNuiFocus(false, false) 
     
     Wait(500)
-    lib.showTextUI('[E] - Confirm standing location | [H] Cancel')
+    lib.showTextUI(locale('textui.confirm_location'))
     
     local pickedCoords = nil
     while true do
@@ -222,7 +222,7 @@ RegisterNUICallback('pickEntranceCoords', function(_, cb)
     SetNuiFocus(true, true) 
     
     if pickedCoords then
-        Bridge.Client.Notify('Entrance coordinates registered at standing location.', 'success')
+        Bridge.Client.Notify(locale('notify.entrance_registered'), 'success')
         cb(pickedCoords)
     else
         cb(nil)
@@ -242,7 +242,7 @@ RegisterNUICallback('pickBreakerCoords', function(_, cb)
     SetNuiFocus(false, false) 
     
     Wait(500)
-    lib.showTextUI('[E] - Confirm Breaker Box location on targeted wall | [H] Cancel')
+    lib.showTextUI(locale('textui.confirm_breaker_location'))
     
     local pickedCoords = nil
     while true do
@@ -289,7 +289,7 @@ RegisterNUICallback('pickBreakerCoords', function(_, cb)
     SetNuiFocus(true, true) 
     
     if pickedCoords then
-        Bridge.Client.Notify('Breaker Box wall location registered!', 'success')
+        Bridge.Client.Notify(locale('notify.breaker_wall_registered'), 'success')
         cb(pickedCoords)
     else
         cb(nil)
@@ -311,7 +311,7 @@ end)
 function StartDoorbellCameraPlacement(propertyId, isRealEstate, cb)
     debugPrint('info', 'StartDoorbellCameraPlacement called', {propertyId = propertyId, isRealEstate = isRealEstate})
     if not CAMERA_PROPS or #CAMERA_PROPS == 0 then
-        Bridge.Client.Notify('No camera props configured, contact an admin.', 'error')
+        Bridge.Client.Notify(locale('notify.no_cam_props'), 'error')
         if cb then cb(nil) end
         return
     end
@@ -327,7 +327,7 @@ function StartDoorbellCameraPlacement(propertyId, isRealEstate, cb)
     end
 
     if not foundValid then
-        Bridge.Client.Notify('Camera prop models are invalid, contact an admin.', 'error')
+        Bridge.Client.Notify(locale('notify.invalid_cam_props'), 'error')
         if cb then cb(nil) end
         return
     end
@@ -345,7 +345,7 @@ function StartDoorbellCameraPlacement(propertyId, isRealEstate, cb)
     local wallHeading = 0.0
     local rotationOffset = 0.0
 
-    lib.showTextUI('[E] Confirm Position  \n[Scroll] Rotate Prop  \n[BACKSPACE] Cancel', { position = 'top-center' })
+    lib.showTextUI(locale('textui.confirm_cam_position'), { position = 'top-center' })
 
     while true do
         Wait(0)
@@ -379,7 +379,7 @@ function StartDoorbellCameraPlacement(propertyId, isRealEstate, cb)
                 wallHeading = finalHeading
                 break
             else
-                Bridge.Client.Notify('Please aim at a valid wall surface.', 'error')
+                Bridge.Client.Notify(locale('notify.aim_valid_wall'), 'error')
             end
         elseif IsControlJustPressed(0, 194) then -- Backspace
             DeleteEntity(previewProp)
@@ -421,7 +421,7 @@ function StartDoorbellCameraPlacement(propertyId, isRealEstate, cb)
     Wait(200)
     DoScreenFadeIn(500)
 
-    lib.showTextUI('[Mouse] Aim Camera  \n[Scroll] Zoom (FOV)  \n[E] Confirm View  \n[BACKSPACE] Cancel/Back', { position = 'top-center' })
+    lib.showTextUI(locale('textui.aim_camera'), { position = 'top-center' })
 
     local startTime = GetGameTimer()
 
@@ -650,9 +650,9 @@ RegisterNUICallback('takePhoto', function(_, cb)
             Wait(0)
 
             if uploading then
-                lib.showTextUI('Uploading photo, please wait...')
+                lib.showTextUI(locale('textui.uploading_photo'))
             else
-                lib.showTextUI('[ENTER] Take Photo | [BACKSPACE] Cancel')
+                lib.showTextUI(locale('textui.take_photo'))
             end
 
             DisableControlAction(0, 191, true)
@@ -669,10 +669,10 @@ RegisterNUICallback('takePhoto', function(_, cb)
 
                     if url then
                         cb(url)
-                        Bridge.Client.Notify('Photo uploaded successfully!', 'success')
+                        Bridge.Client.Notify(locale('notify.photo_uploaded'), 'success')
                     else
                         cb(nil)
-                        Bridge.Client.Notify('Failed to upload photo. Check console for errors.', 'error')
+                        Bridge.Client.Notify(locale('notify.photo_upload_failed'), 'error')
                     end
                 end)
 
@@ -693,7 +693,7 @@ RegisterNUICallback('pickGarageCoords', function(_, cb)
     SetNuiFocus(false, false) 
     
     Wait(500)
-    lib.showTextUI('[E] - Confirm standing location for Garage Menu | [H] Cancel')
+    lib.showTextUI(locale('textui.confirm_garage_menu'))
     
     local pickedCoords = nil
     while true do
@@ -727,7 +727,7 @@ RegisterNUICallback('pickGarageCoords', function(_, cb)
     SetNuiFocus(true, true) 
     
     if pickedCoords then
-        Bridge.Client.Notify('Garage menu location registered.', 'success')
+        Bridge.Client.Notify(locale('notify.garage_registered'), 'success')
         cb(pickedCoords)
     else
         cb(nil)
@@ -739,7 +739,7 @@ RegisterNUICallback('pickGarageSpawnCoords', function(_, cb)
     SetNuiFocus(false, false)
     
     Wait(500)
-    lib.showTextUI('[E] - Confirm standing location for Vehicle Spawn | [H] Cancel')
+    lib.showTextUI(locale('textui.confirm_vehicle_spawn'))
     
     local pickedCoords = nil
     while true do
@@ -773,7 +773,7 @@ RegisterNUICallback('pickGarageSpawnCoords', function(_, cb)
     SetNuiFocus(true, true)
     
     if pickedCoords then
-        Bridge.Client.Notify('Vehicle spawn location registered.', 'success')
+        Bridge.Client.Notify(locale('notify.vehicle_spawn_registered'), 'success')
         cb(pickedCoords)
     else
         cb(nil)
@@ -785,7 +785,7 @@ if Settings.Housing and Settings.Housing.Creator and Settings.Housing.Creator.Co
         debugPrint('info', 'Creator command run', {args = args})
         local hasPermission = lib.callback.await('LNS_Housing:server:checkPermission', false, 'realestate')
         if not hasPermission then
-            Bridge.Client.Notify('You do not have permission to use this command.', 'error')
+            Bridge.Client.Notify(locale('notify.no_perm_command'), 'error')
             return
         end
 

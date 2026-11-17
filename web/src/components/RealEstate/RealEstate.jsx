@@ -10,8 +10,10 @@ import {
     Briefcase, UserCheck, History, UserPlus, UserX, ChevronLeft, ChevronRight, Check, ChevronDown, ChevronUp,
     EyeOff, Maximize2, ImageOff
 } from 'lucide-react';
+import { useLocale } from '../../context/LocaleContext';
 
 const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts, shells, onOpenPaperContract, electricityEnabled = true }) => {
+    const { t } = useLocale();
     const handleOpenPaperContract = (contract) => {
         if (onOpenPaperContract) {
             onOpenPaperContract(contract);
@@ -1016,30 +1018,30 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
 
                         <div className="re-card-details">
                             <div className="detail-item">
-                                <div className="detail-label"><MapPin size={12} /> Zone</div>
+                                <div className="detail-label"><MapPin size={12} /> {t('ui.zone', 'Zone')}</div>
                                 <div className="detail-value">{p.region || 'Unknown'}</div>
                             </div>
                             <div className="detail-item">
-                                <div className="detail-label"><Tag size={12} /> Type</div>
+                                <div className="detail-label"><Tag size={12} /> {t('ui.type', 'Type')}</div>
                                 <div className="detail-value">{(p.type === 'Commerce' ? 'Commercial' : p.type) || (p.metadata && (p.metadata.property_type === 'Commerce' ? 'Commercial' : p.metadata.property_type)) || 'Residential'}</div>
                             </div>
                             <div className="detail-item">
-                                <div className="detail-label"><Warehouse size={12} /> Garage Slots</div>
+                                <div className="detail-label"><Warehouse size={12} /> {t('ui.garage_slots', 'Garage Slots')}</div>
                                 <div className="detail-value">{p.garage || 0}</div>
                             </div>
                             <div className="detail-item">
-                                <div className="detail-label"><DollarSign size={12} /> Market Price</div>
+                                <div className="detail-label"><DollarSign size={12} /> {t('ui.market_price', 'Market Price')}</div>
                                 <div className="detail-value">${(p.price || 0).toLocaleString()}</div>
                             </div>
                             {p.sale_type === 'auction' && (
                                 <div className="detail-item auction-highlight">
-                                    <div className="detail-label"><Gavel size={12} /> Current Bid</div>
+                                    <div className="detail-label"><Gavel size={12} /> {t('ui.current_bid', 'Current Bid')}</div>
                                     <div className="detail-value price-green">${(p.auction_data?.current_bid || p.price).toLocaleString()}</div>
                                 </div>
                             )}
                             {p.sale_type === 'rent' && (
                                 <div className="detail-item rent-highlight">
-                                    <div className="detail-label"><Clock size={12} /> Lease Term</div>
+                                    <div className="detail-label"><Clock size={12} /> {t('ui.lease_term', 'Lease Term')}</div>
                                     <div className="detail-value price-blue">${(p.price || 0).toLocaleString()} / period</div>
                                 </div>
                             )}
@@ -1047,16 +1049,16 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
 
                         <div className="re-card-footer-v2">
                             <div className="stat-box">
-                                <span className="stat-label">Size</span>
-                                <span className="stat-value">{p.size || 0} sq ft</span>
+                                <span className="stat-label">{t('ui.size', 'Size')}</span>
+                                <span className="stat-value">{p.size || 0} {t('ui.sq_ft', 'sq ft')}</span>
                             </div>
                             {!p.owner ? (
                                 <button className="view-auction-btn" onClick={() => handleAction(p)}>
-                                    {p.sale_type === 'auction' ? 'VIEW AUCTION' : 'VIEW DETAILS'}
+                                    {p.sale_type === 'auction' ? t('ui.view_auction', 'VIEW AUCTION') : t('ui.view_details', 'VIEW DETAILS')}
                                 </button>
                             ) : (
                                 <div className="sold-badge-v2">
-                                    <CheckCircle2 size={12} /> {p.sale_type === 'rent' ? 'LEASED' : 'SOLD'}
+                                    <CheckCircle2 size={12} /> {p.sale_type === 'rent' ? t('ui.leased', 'LEASED') : t('ui.sold', 'SOLD')}
                                 </div>
                             )}
                         </div>
@@ -1064,7 +1066,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 )) : (
                     <div className="re-empty-state">
                         <Search size={40} opacity={0.3} />
-                        <p>No properties match your criteria</p>
+                        <p>{t('ui.no_properties_match', 'No properties match your criteria')}</p>
                     </div>
                 );
 
@@ -1074,13 +1076,13 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                         <table className="management-table">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
-                                    <th>Label</th>
-                                    <th>Sale Type</th>
-                                    <th>Status</th>
-                                    <th>Tenant Info</th>
-                                    <th>Price/Bid</th>
-                                    <th>Actions</th>
+                                    <th>{t('ui.th_id', 'ID')}</th>
+                                    <th>{t('ui.th_label', 'Label')}</th>
+                                    <th>{t('ui.th_sale_type', 'Sale Type')}</th>
+                                    <th>{t('ui.th_status', 'Status')}</th>
+                                    <th>{t('ui.th_tenant_info', 'Tenant Info')}</th>
+                                    <th>{t('ui.th_price_bid', 'Price/Bid')}</th>
+                                    <th>{t('ui.th_actions', 'Actions')}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1091,22 +1093,22 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                         <td>{(p.sale_type || 'direct').toUpperCase()}</td>
                                         <td>
                                             <span className={`status-pill ${p.owner ? 'owned' : (p.auction_data?.status || 'none')}`}>
-                                                {p.owner ? (p.sale_type === 'rent' ? 'LEASED' : 'SOLD') : (p.auction_data?.status || 'AVAILABLE').toUpperCase()}
+                                                {p.owner ? (p.sale_type === 'rent' ? t('ui.leased', 'LEASED') : t('ui.sold', 'SOLD')) : (p.auction_data?.status ? p.auction_data.status.toUpperCase() : t('ui.available', 'AVAILABLE'))}
                                             </span>
                                         </td>
                                         <td>
                                             {p.owner ? (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '11px' }}>
-                                                    <span>CID: <strong>{p.owner}</strong></span>
+                                                    <span>{t('ui.cid_prefix', 'CID:')} <strong>{p.owner}</strong></span>
                                                     {p.sale_type === 'rent' && p.metadata?.rent_debt > 0 && (
-                                                        <span style={{ color: 'var(--danger)', fontWeight: '600' }}>Debt: ${p.metadata.rent_debt.toLocaleString()}</span>
+                                                        <span style={{ color: 'var(--danger)', fontWeight: '600' }}>{t('ui.debt_prefix', 'Debt:')} ${p.metadata.rent_debt.toLocaleString()}</span>
                                                     )}
                                                     {p.sale_type === 'rent' && p.metadata?.missed_payments > 0 && (
-                                                        <span style={{ color: 'var(--warning)', fontWeight: '600' }}>Missed: {p.metadata.missed_payments}</span>
+                                                        <span style={{ color: 'var(--warning)', fontWeight: '600' }}>{t('ui.missed_prefix', 'Missed:')} {p.metadata.missed_payments}</span>
                                                     )}
                                                 </div>
                                             ) : (
-                                                <span style={{ opacity: 0.4 }}>None</span>
+                                                <span style={{ opacity: 0.4 }}>{t('ui.none', 'None')}</span>
                                             )}
                                         </td>
                                         <td>${(p.auction_data?.current_bid || p.price || 0).toLocaleString()}</td>
@@ -1114,22 +1116,22 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                                                 {p.sale_type === 'auction' && !p.owner && canManageListings && (
                                                     <>
-                                                        <button className="manage-action-btn" onClick={() => handleAuctionControl(p.id, 'start')} title="Start"><Play size={12} /></button>
-                                                        <button className="manage-action-btn" onClick={() => handleAuctionControl(p.id, 'pause')} title="Pause"><Pause size={12} /></button>
-                                                        <button className="manage-action-btn" onClick={() => handleAuctionControl(p.id, 'end')} title="End/Sell"><Square size={12} /></button>
+                                                        <button className="manage-action-btn" onClick={() => handleAuctionControl(p.id, 'start')} title={t('ui.start', 'Start')}><Play size={12} /></button>
+                                                        <button className="manage-action-btn" onClick={() => handleAuctionControl(p.id, 'pause')} title={t('ui.pause', 'Pause')}><Pause size={12} /></button>
+                                                        <button className="manage-action-btn" onClick={() => handleAuctionControl(p.id, 'end')} title={t('ui.end_sell', 'End/Sell')}><Square size={12} /></button>
                                                         {p.auction_data?.status === 'pending' && (
-                                                            <button className="manage-action-btn confirm-btn" onClick={() => handleAuctionControl(p.id, 'confirm')} title="Confirm Sale"><CheckCircle2 size={12} /></button>
+                                                            <button className="manage-action-btn confirm-btn" onClick={() => handleAuctionControl(p.id, 'confirm')} title={t('ui.confirm_sale', 'Confirm Sale')}><CheckCircle2 size={12} /></button>
                                                         )}
                                                     </>
                                                 )}
                                                 {canManageListings && (
                                                     <>
-                                                        <button className="manage-action-btn edit-btn" onClick={() => handleStartEdit(p)} title="Edit Listing"><Settings size={12} /></button>
-                                                        <button className="manage-action-btn" onClick={() => setHistoryProperty(p)} title="View History" style={{ background: 'rgba(var(--primary-rgb), 0.08)', color: 'var(--primary)' }}><History size={12} /></button>
+                                                        <button className="manage-action-btn edit-btn" onClick={() => handleStartEdit(p)} title={t('ui.edit_listing', 'Edit Listing')}><Settings size={12} /></button>
+                                                        <button className="manage-action-btn" onClick={() => setHistoryProperty(p)} title={t('ui.view_history', 'View History')} style={{ background: 'rgba(var(--primary-rgb), 0.08)', color: 'var(--primary)' }}><History size={12} /></button>
                                                         {p.owner && (
-                                                            <button className="manage-action-btn evict-btn" onClick={() => handleEvictTenant(p.id)} title="Evict Tenant"><X size={12} /></button>
+                                                            <button className="manage-action-btn evict-btn" onClick={() => handleEvictTenant(p.id)} title={t('ui.evict_tenant', 'Evict Tenant')}><X size={12} /></button>
                                                         )}
-                                                        <button className="manage-action-btn delete-btn" onClick={() => handleDeleteListing(p.id)} title="Delete Listing"><Trash2 size={12} /></button>
+                                                        <button className="manage-action-btn delete-btn" onClick={() => handleDeleteListing(p.id)} title={t('ui.delete_listing', 'Delete Listing')}><Trash2 size={12} /></button>
                                                     </>
                                                 )}
                                             </div>
@@ -1206,23 +1208,23 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                                         </span>
                                                                     </div>
                                                                     <p className="contract-meta">
-                                                                        Property ID: <strong>#{p.id}</strong> | Cycle: <strong>7 Days</strong>
+                                                                        {t('ui.property_id_prefix', 'Property ID:')} <strong>#{p.id}</strong> | {t('ui.cycle_prefix', 'Cycle:')} <strong>7 {t('ui.days', 'Days')}</strong>
                                                                     </p>
                                                                     <div style={{ display: 'flex', gap: '16px', marginTop: '6px' }}>
                                                                         <div className="financial-box">
-                                                                            <span className="fin-label">Rent Amount</span>
+                                                                            <span className="fin-label">{t('ui.rent_amount', 'Rent Amount')}</span>
                                                                             <span className="fin-val" style={{ fontSize: '13.5px' }}>${(p.price || 0).toLocaleString()}</span>
                                                                         </div>
                                                                         <div className="financial-box">
-                                                                            <span className="fin-label">Time Remaining</span>
+                                                                            <span className="fin-label">{t('ui.time_remaining', 'Time Remaining')}</span>
                                                                             <span className="fin-val" style={{ fontSize: '13.5px', color: isDelinquent ? 'var(--danger)' : (daysRemaining <= 1 ? 'var(--warning)' : 'var(--primary)') }}>
-                                                                                {isDelinquent ? 'Overdue lockout' : (lastPaid > 0 ? (daysRemaining > 1 ? `${daysRemaining} days` : `${hoursRemaining} hours`) : 'Pending')}
+                                                                                {isDelinquent ? t('ui.overdue_lockout', 'Overdue lockout') : (lastPaid > 0 ? (daysRemaining > 1 ? `${daysRemaining} ${t('ui.days', 'days')}` : `${hoursRemaining} ${t('ui.hours', 'hours')}`) : t('ui.pending', 'Pending'))}
                                                                             </span>
                                                                         </div>
                                                                     </div>
                                                                     <div className="contract-actions">
                                                                         <button className="decline-btn" onClick={() => handleTerminateOwnLease(p.id)}>
-                                                                            TERMINATE LEASE
+                                                                            {t('ui.terminate_lease', 'TERMINATE LEASE')}
                                                                         </button>
                                                                         <button className="accept-btn" onClick={() => {
                                                                             if (!window.GetParentResourceName) {
@@ -1234,7 +1236,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                                                 body: JSON.stringify({ propertyId: p.id })
                                                                             });
                                                                         }}>
-                                                                            PAY RENT
+                                                                            {t('ui.pay_rent', 'PAY RENT')}
                                                                         </button>
                                                                     </div>
                                                                 </div>
@@ -1247,7 +1249,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                     })()}
 
                                     <div className="section-title">
-                                        <FileText size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} /> PENDING LEASES & OFFERS
+                                        <FileText size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} /> {t('ui.pending_leases_offers', 'PENDING LEASES & OFFERS')}
                                     </div>
                                     <div className="contracts-list">
                                         {pendingContracts.map(c => (
@@ -1270,21 +1272,21 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                     <div className="contract-title-row">
                                                         <h3>{c.property_label}</h3>
                                                         <span className={`contract-badge ${c.type}`}>
-                                                            {c.type === 'rent' ? 'LEASE OFFER' : 'DIRECT PURCHASE'}
+                                                            {c.type === 'rent' ? t('ui.lease_offer', 'LEASE OFFER') : t('ui.direct_purchase', 'DIRECT PURCHASE')}
                                                         </span>
                                                     </div>
                                                     <p className="contract-meta">
-                                                        Drafted by agent <strong>{c.agent_name}</strong>
+                                                        {t('ui.drafted_by_agent', `Drafted by agent ${c.agent_name}`, c.agent_name)}
                                                     </p>
                                                     <div className="contract-financials">
                                                         <div className="financial-box">
-                                                            <span className="fin-label">Agreed Cost</span>
+                                                            <span className="fin-label">{t('ui.agreed_cost', 'Agreed Cost')}</span>
                                                             <span className="fin-val">${(c.price || 0).toLocaleString()}{c.type === 'rent' && '/period'}</span>
                                                         </div>
                                                     </div>
                                                     <div className="contract-actions">
                                                         <button className="accept-btn paper-view-btn" type="button" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', fontWeight: 'bold' }} onClick={() => handleOpenPaperContract(c)}>
-                                                            <FileCheck size={14} /> VIEW CONTRACT
+                                                            <FileCheck size={14} /> {t('ui.view_contract', 'VIEW CONTRACT')}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -1293,8 +1295,8 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                         {pendingContracts.length === 0 && (
                                             <div className="re-empty-state">
                                                 <FileText size={32} opacity={0.25} />
-                                                <p>No pending contract offers</p>
-                                                <span style={{ fontSize: '11px', opacity: 0.5 }}>Ask a realtor to draft a property offer for you.</span>
+                                                <p>{t('ui.no_pending_offers', 'No pending contract offers')}</p>
+                                                <span style={{ fontSize: '11px', opacity: 0.5 }}>{t('ui.ask_realtor_draft', 'Ask a realtor to draft a property offer for you.')}</span>
                                             </div>
                                         )}
                                     </div>
@@ -1304,14 +1306,14 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                     <div className="re-creator-col">
                                         <form className="re-creator-card" onSubmit={handleDraftContract}>
                                             <div className="re-creator-card-title">
-                                                <Briefcase size={14} /> Draft New Contract
+                                                <Briefcase size={14} /> {t('ui.draft_new_contract', 'Draft New Contract')}
                                             </div>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                                 <CustomSelect
                                                     icon={Home}
-                                                    label="Select Property"
+                                                    label={t('ui.select_property', 'Select Property')}
                                                     value={draftData.propertyId}
-                                                    placeholder="-- Choose Available Property --"
+                                                    placeholder={t('ui.choose_available_property', '-- Choose Available Property --')}
                                                     options={propertyList.filter(p => !p.owner).map(p => ({
                                                         value: p.id,
                                                         label: `#${p.id} ${p.label} ($${(p.price || 0).toLocaleString()})`
@@ -1329,20 +1331,20 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
 
                                                 <CustomSelect
                                                     icon={Tag}
-                                                    label="Contract Type"
+                                                    label={t('ui.contract_type', 'Contract Type')}
                                                     value={draftData.type}
                                                     options={[
-                                                        { value: 'buy', label: 'Outright Sale' },
-                                                        { value: 'rent', label: 'Rental Lease' }
+                                                        { value: 'buy', label: t('ui.outright_sale', 'Outright Sale') },
+                                                        { value: 'rent', label: t('ui.rental_lease', 'Rental Lease') }
                                                     ]}
                                                     onChange={(e) => setDraftData(prev => ({ ...prev, type: e.target.value }))}
                                                 />
 
                                                 <CustomSelect
                                                     icon={UserCheck}
-                                                    label="Select Client (Nearby)"
+                                                    label={t('ui.select_client_nearby', 'Select Client (Nearby)')}
                                                     value={selectedNearbyPlayer}
-                                                    placeholder="-- Select Online Player --"
+                                                    placeholder={t('ui.select_online_player', '-- Select Online Player --')}
                                                     options={nearbyPlayers.map(p => ({
                                                         value: p.id,
                                                         label: `${p.name} (ID: ${p.id})`
@@ -1351,20 +1353,20 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                 />
 
                                                 <div className="re-creator-input-field">
-                                                    <label><UserCheck size={12} /> Or Enter Client Server ID (Source)</label>
+                                                    <label><UserCheck size={12} /> {t('ui.or_enter_server_id', 'Or Enter Client Server ID (Source)')}</label>
                                                     <input
                                                         type="number"
-                                                        placeholder="e.g. 1"
+                                                        placeholder={t('ui.server_id_placeholder', 'e.g. 1')}
                                                         value={selectedNearbyPlayer}
                                                         onChange={(e) => setSelectedNearbyPlayer(e.target.value)}
                                                     />
                                                 </div>
 
                                                 <div className="re-creator-input-field">
-                                                    <label><DollarSign size={12} /> Contract Value ($)</label>
+                                                    <label><DollarSign size={12} /> {t('ui.contract_value', 'Contract Value ($)')}</label>
                                                     <input
                                                         type="number"
-                                                        placeholder="Price"
+                                                        placeholder={t('ui.price', 'Price')}
                                                         value={draftData.price}
                                                         onChange={(e) => setDraftData(prev => ({ ...prev, price: e.target.value }))}
                                                     />
@@ -1372,10 +1374,10 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
 
                                                 {draftData.type === 'buy' && (
                                                     <div className="re-creator-input-field">
-                                                        <label><Percent size={12} /> Commission Rate (%)</label>
+                                                        <label><Percent size={12} /> {t('ui.commission_rate', 'Commission Rate (%)')}</label>
                                                         <input
                                                             type="number"
-                                                            placeholder="Commission %"
+                                                            placeholder={t('ui.commission_pct', 'Commission %')}
                                                             value={draftData.commissionRate}
                                                             onChange={(e) => setDraftData(prev => ({ ...prev, commissionRate: parseInt(e.target.value) || 0 }))}
                                                         />
@@ -1385,11 +1387,11 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                 {draftData.price && draftData.commissionRate > 0 && draftData.type === 'buy' && (
                                                     <div style={{ padding: '10px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                                            <span>Commission Earned:</span>
+                                                            <span>{t('ui.commission_earned', 'Commission Earned:')}</span>
                                                             <span style={{ color: 'var(--primary)', fontWeight: '700' }}>${(Math.floor(parseInt(draftData.price) * (draftData.commissionRate / 100))).toLocaleString()}</span>
                                                         </div>
                                                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                            <span>Agency Deposit:</span>
+                                                            <span>{t('ui.agency_deposit', 'Agency Deposit:')}</span>
                                                             <span style={{ fontWeight: '700' }}>${(parseInt(draftData.price) - Math.floor(parseInt(draftData.price) * (draftData.commissionRate / 100))).toLocaleString()}</span>
                                                         </div>
                                                     </div>
@@ -1441,16 +1443,16 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                     <div className="re-creator-col">
                                         <div className="re-creator-card" style={{ maxHeight: '520px', overflowY: 'auto' }}>
                                             <div className="re-creator-card-title">
-                                                <History size={14} /> Agency Contract History
+                                                <History size={14} /> {t('ui.agency_contract_history', 'Agency Contract History')}
                                             </div>
                                             <table className="management-table" style={{ fontSize: '11px' }}>
                                                 <thead>
                                                     <tr>
-                                                        <th>Property</th>
-                                                        <th>Client</th>
-                                                        <th>Type</th>
-                                                        <th>Price</th>
-                                                        <th>Status</th>
+                                                        <th>{t('ui.th_property', 'Property')}</th>
+                                                        <th>{t('ui.th_client', 'Client')}</th>
+                                                        <th>{t('ui.th_type', 'Type')}</th>
+                                                        <th>{t('ui.th_price', 'Price')}</th>
+                                                        <th>{t('ui.th_status', 'Status')}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -1470,7 +1472,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                     {agencyContracts.length === 0 && (
                                                         <tr>
                                                             <td colSpan="5" style={{ textAlign: 'center', padding: '16px', opacity: 0.4 }}>
-                                                                No contract history
+                                                                {t('ui.no_contract_history', 'No contract history')}
                                                             </td>
                                                         </tr>
                                                     )}
@@ -1490,41 +1492,41 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                         <div className="re-creator-col">
                             <form className="re-creator-card" onSubmit={handleAddBlacklist}>
                                 <div className="re-creator-card-title">
-                                    <UserX size={14} /> Blacklist Renter
+                                    <UserX size={14} /> {t('ui.blacklist_renter', 'Blacklist Renter')}
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     <div className="re-creator-input-field">
-                                        <label>Server ID (Source)</label>
+                                        <label>{t('ui.server_id_source', 'Server ID (Source)')}</label>
                                         <input
                                             required
                                             type="text"
-                                            placeholder="e.g. 1"
+                                            placeholder={t('ui.server_id_placeholder', 'e.g. 1')}
                                             value={newBlacklistCid}
                                             onChange={(e) => setNewBlacklistCid(e.target.value)}
                                         />
                                     </div>
                                     <div className="re-creator-input-field">
-                                        <label>Resident Full Name (Optional if Online)</label>
+                                        <label>{t('ui.resident_full_name_optional', 'Resident Full Name (Optional if Online)')}</label>
                                         <input
                                             type="text"
-                                            placeholder="e.g. James Doe"
+                                            placeholder={t('ui.resident_name_placeholder', 'e.g. James Doe')}
                                             value={newBlacklistName}
                                             onChange={(e) => setNewBlacklistName(e.target.value)}
                                         />
                                     </div>
                                     <div className="re-creator-input-field">
-                                        <label>Reason for Blacklist</label>
+                                        <label>{t('ui.reason_for_blacklist', 'Reason for Blacklist')}</label>
                                         <input
                                             required
                                             type="text"
-                                            placeholder="e.g. Failure to pay weekly lease rent"
+                                            placeholder={t('ui.blacklist_reason_placeholder', 'e.g. Failure to pay weekly lease rent')}
                                             value={newBlacklistReason}
                                             onChange={(e) => setNewBlacklistReason(e.target.value)}
                                         />
                                     </div>
                                 </div>
                                 <button type="submit" className="re-btn-primary" style={{ marginTop: '16px', width: '100%' }}>
-                                    <UserPlus size={14} /> Add to Blacklist
+                                    <UserPlus size={14} /> {t('ui.add_to_blacklist', 'Add to Blacklist')}
                                 </button>
                             </form>
                         </div>
@@ -1532,15 +1534,15 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                         <div className="re-creator-col" style={{ flex: 1.4 }}>
                             <div className="re-creator-card" style={{ maxHeight: '520px', overflowY: 'auto' }}>
                                 <div className="re-creator-card-title">
-                                    <UserX size={14} /> Blacklisted Renters
+                                    <UserX size={14} /> {t('ui.blacklisted_renters', 'Blacklisted Renters')}
                                 </div>
                                 <table className="management-table" style={{ fontSize: '11.5px' }}>
                                     <thead>
                                         <tr>
-                                            <th>Citizen ID</th>
-                                            <th>Name</th>
-                                            <th>Reason</th>
-                                            <th>Action</th>
+                                            <th>{t('ui.th_citizen_id', 'Citizen ID')}</th>
+                                            <th>{t('ui.th_name', 'Name')}</th>
+                                            <th>{t('ui.th_reason', 'Reason')}</th>
+                                            <th>{t('ui.th_action', 'Action')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1553,7 +1555,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                     <button
                                                         type="button"
                                                         className="manage-action-btn delete-btn"
-                                                        title="Remove Blacklist"
+                                                        title={t('ui.remove_blacklist', 'Remove Blacklist')}
                                                         onClick={() => handleRemoveBlacklist(item.citizenid)}
                                                     >
                                                         <Trash2 size={12} />
@@ -1581,9 +1583,9 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                     <div className="re-creator-wrapper">
                         {editingPropertyId && (
                             <div className="re-edit-mode-banner">
-                                <span>Editing Listing: <strong>#{editingPropertyId}</strong></span>
+                                <span>{t('ui.editing_listing_prefix', 'Editing Listing:')} <strong>#{editingPropertyId}</strong></span>
                                 <button className="re-edit-cancel-btn" onClick={resetCreatorForm}>
-                                    <X size={12} /> Cancel Edit
+                                    <X size={12} /> {t('ui.cancel_edit', 'Cancel Edit')}
                                 </button>
                             </div>
                         )}
@@ -1592,17 +1594,17 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                         <div className="re-wizard-steps">
                             <div className={`re-wizard-step ${currentStep === 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`} onClick={() => currentStep > 1 && setCurrentStep(1)}>
                                 <div className="step-circle">{currentStep > 1 ? <Check size={12} /> : '1'}</div>
-                                <span className="step-label">Basic Info</span>
+                                <span className="step-label">{t('ui.basic_info', 'Basic Info')}</span>
                             </div>
                             <div className={`re-wizard-line ${currentStep > 1 ? 'active' : ''}`}></div>
                             <div className={`re-wizard-step ${currentStep === 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`} onClick={() => currentStep > 2 && isStepValid(1) && setCurrentStep(2)}>
                                 <div className="step-circle">{currentStep > 2 ? <Check size={12} /> : '2'}</div>
-                                <span className="step-label">Interior Setup</span>
+                                <span className="step-label">{t('ui.interior_setup', 'Interior Setup')}</span>
                             </div>
                             <div className={`re-wizard-line ${currentStep > 2 ? 'active' : ''}`}></div>
                             <div className={`re-wizard-step ${currentStep === 3 ? 'active' : ''}`} onClick={() => isStepValid(1) && isStepValid(2) && setCurrentStep(3)}>
                                 <div className="step-circle">3</div>
-                                <span className="step-label">Pricing & Photo</span>
+                                <span className="step-label">{t('ui.pricing_photo', 'Pricing & Photo')}</span>
                             </div>
                         </div>
 
@@ -1611,34 +1613,34 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                             {currentStep === 1 && (
                                 <div className="re-wizard-panel">
                                     <div className="re-creator-card-title">
-                                        <Building size={14} /> Basic Information
+                                        <Building size={14} /> {t('ui.basic_info', 'Basic Information')}
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                         <div className="re-creator-input-field">
-                                            <label><Building size={12} /> Property Label / Name</label>
+                                            <label><Building size={12} /> {t('ui.property_label_name', 'Property Label / Name')}</label>
                                             <input
                                                 name="name"
                                                 value={formData.name}
                                                 onChange={handleInputChange}
-                                                placeholder="e.g. 124 Vinewood Hills"
+                                                placeholder={t('ui.property_name_placeholder', 'e.g. 124 Vinewood Hills')}
                                                 autoFocus
                                             />
                                         </div>
                                         <CustomSelect
                                             icon={Database}
-                                            label="Property Category"
+                                            label={t('ui.property_category', 'Property Category')}
                                             name="type"
                                             value={formData.type === 'Commerce' ? 'Commercial' : (formData.type || 'Residential')}
                                             options={[
-                                                { value: 'Residential', label: 'Residential' },
-                                                { value: 'Commercial', label: 'Commercial' },
-                                                { value: 'Industrial', label: 'Industrial' },
-                                                { value: 'Apartment', label: 'Apartment' }
+                                                { value: 'Residential', label: t('ui.residential', 'Residential') },
+                                                { value: 'Commercial', label: t('ui.commercial', 'Commercial') },
+                                                { value: 'Industrial', label: t('ui.industrial', 'Industrial') },
+                                                { value: 'Apartment', label: t('ui.apartment', 'Apartment') }
                                             ]}
                                             onChange={handleInputChange}
                                         />
                                         <div className="re-creator-input-field">
-                                            <label><Warehouse size={12} /> Outside Parking Slots</label>
+                                            <label><Warehouse size={12} /> {t('ui.outside_parking_slots', 'Outside Parking Slots')}</label>
                                             <div className="re-number-input-wrapper">
                                                 <input
                                                     name="slots"
@@ -1679,12 +1681,12 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                         <CustomSelect
                                             icon={Database}
-                                            label="Interior Type"
+                                            label={t('ui.interior_type', 'Interior Type')}
                                             name="mlo"
                                             value={formData.mlo ? 'true' : 'false'}
                                             options={[
-                                                { value: 'true', label: 'Physical Map (MLO)' },
-                                                { value: 'false', label: 'Instanced Shell' }
+                                                { value: 'true', label: t('ui.physical_mlo', 'Physical Map (MLO)') },
+                                                { value: 'false', label: t('ui.instanced_shell', 'Instanced Shell') }
                                             ]}
                                             onChange={(e) => {
                                                 const isMlo = e.target.value === 'true';
@@ -1705,20 +1707,20 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                                     <div className="re-interactive-row">
                                                         <div className="re-interactive-info">
-                                                            <span className="re-interactive-label">Interior Detection</span>
+                                                            <span className="re-interactive-label">{t('ui.interior_detection', 'Interior Detection')}</span>
                                                             <span className={`re-interactive-status ${formData.interiorId ? 'active' : ''}`}>
-                                                                {formData.interiorId ? `Interior ID: #${formData.interiorId} (${formData.roomCount || 1} Rooms)` : 'Stand inside MLO & Capture'}
+                                                                {formData.interiorId ? `${t('ui.interior_id', 'Interior ID')}: #${formData.interiorId} (${formData.roomCount || 1} ${t('ui.rooms', 'Rooms')})` : t('ui.stand_inside_mlo_capture', 'Stand inside MLO & Capture')}
                                                             </span>
                                                         </div>
                                                         <button type="button" className="re-btn-action" onClick={handleCaptureInterior}>
-                                                            {formData.interiorId ? 'Recapture' : 'Capture Interior'}
+                                                            {formData.interiorId ? t('ui.recapture', 'Recapture') : t('ui.capture_interior', 'Capture Interior')}
                                                         </button>
                                                     </div>
 
                                                     <div className="re-creator-checkbox-field">
                                                         <div className="re-creator-checkbox-info">
-                                                            <span className="re-creator-checkbox-label">Has Outdoor Yard Area</span>
-                                                            <span className="re-creator-checkbox-desc">Adds interactive lawn & grass cutting zone.</span>
+                                                            <span className="re-creator-checkbox-label">{t('ui.has_outside_yard', 'Has Outdoor Yard Area')}</span>
+                                                            <span className="re-creator-checkbox-desc">{t('ui.has_outside_yard_desc', 'Adds interactive lawn & grass cutting zone.')}</span>
                                                         </div>
                                                         <input
                                                             type="checkbox"
@@ -1731,31 +1733,31 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                     {formData.hasYard && (
                                                         <div className="re-interactive-row">
                                                             <div className="re-interactive-info">
-                                                                <span className="re-interactive-label">Outside Yard Zone</span>
+                                                                <span className="re-interactive-label">{t('ui.outside_yard_zone', 'Outside Yard Zone')}</span>
                                                                 <span className={`re-interactive-status ${formData.yard_zone_data ? 'active' : ''}`}>
-                                                                    {formData.yard_zone_data ? 'Yard Defined' : 'Not Defined'}
+                                                                    {formData.yard_zone_data ? t('ui.yard_defined', 'Yard Defined') : t('ui.not_defined', 'Not Defined')}
                                                                 </span>
                                                             </div>
                                                             <button type="button" className="re-btn-action" onClick={handleCreateYardZone}>
-                                                                {formData.yard_zone_data ? 'Redefine' : 'Define'}
+                                                                {formData.yard_zone_data ? t('ui.redefine', 'Redefine') : t('ui.define', 'Define')}
                                                             </button>
                                                         </div>
                                                     )}
                                                 </div>
 
                                                 <div className="re-creator-input-field">
-                                                    <label><Database size={12} /> Door References (ox_doorlock)</label>
+                                                    <label><Database size={12} /> {t('ui.door_references', 'Door References (ox_doorlock)')}</label>
                                                     <div className="re-doors-list">
                                                         {formData.doors.length === 0 ? (
-                                                            <span style={{ fontSize: '10px', opacity: 0.4, margin: 'auto' }}>No doors added.</span>
+                                                            <span style={{ fontSize: '10px', opacity: 0.4, margin: 'auto' }}>{t('ui.no_doors_added_short', 'No doors added.')}</span>
                                                         ) : (
                                                             formData.doors.map((door, index) => (
                                                                 <div key={index} className="door-tag">
                                                                     <span>
                                                                         {door?.isDouble
-                                                                            ? `New Double Door (${Math.floor(door.doors?.[0]?.coords?.x ?? 0)}, ${Math.floor(door.doors?.[0]?.coords?.y ?? 0)})`
+                                                                            ? `${t('ui.new_double_door', 'New Double Door')} (${Math.floor(door.doors?.[0]?.coords?.x ?? 0)}, ${Math.floor(door.doors?.[0]?.coords?.y ?? 0)})`
                                                                             : typeof door === 'object' && door?.coords
-                                                                                ? `New Door (${Math.floor(door.coords.x)}, ${Math.floor(door.coords.y)})`
+                                                                                ? `${t('ui.new_door', 'New Door')} (${Math.floor(door.coords.x)}, ${Math.floor(door.coords.y)})`
                                                                                 : `ID: ${door}`}
                                                                     </span>
                                                                     <button
@@ -1775,7 +1777,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                         type="button"
                                                         onClick={handlePickDoor}
                                                     >
-                                                        <Plus size={12} /> Pick Nearby Door
+                                                        <Plus size={12} /> {t('ui.pick_nearby_door', 'Pick Nearby Door')}
                                                     </button>
                                                 </div>
                                             </>
@@ -1784,7 +1786,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                             <>
                                                 <CustomSelect
                                                     icon={Database}
-                                                    label="Instanced Shell Model"
+                                                    label={t('ui.instanced_shell_model', 'Instanced Shell Model')}
                                                     name="shell"
                                                     value={formData.shell || 'Standard Motel'}
                                                     options={shellOptions}
@@ -1807,7 +1809,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                             />
                                                             <div className="re-shell-preview-fallback" style={{ display: 'none' }}>
                                                                 <ImageOff size={24} />
-                                                                <span>Failed to load preview image</span>
+                                                                <span>{t('ui.failed_load_preview', 'Failed to load preview image')}</span>
                                                                 <small className="re-shell-preview-url-text">{currentShellOption.previewUrl}</small>
                                                             </div>
 
@@ -1819,7 +1821,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                                     <button
                                                                         type="button"
                                                                         className="re-shell-zoom-btn"
-                                                                        title="View Full Resolution"
+                                                                        title={t('ui.view_full_res', 'View Full Resolution')}
                                                                         onClick={() => setPreviewModalImage({ url: currentShellOption.previewUrl, title: currentShellOption.label, type: currentShellOption.type })}
                                                                     >
                                                                         <Maximize2 size={13} />
@@ -1827,10 +1829,10 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                                 </div>
 
                                                                 <div className="re-shell-nav-controls">
-                                                                    <button type="button" className="re-shell-nav-btn left" onClick={handlePrevShell} title="Previous Interior">
+                                                                    <button type="button" className="re-shell-nav-btn left" onClick={handlePrevShell} title={t('ui.prev_interior', 'Previous Interior')}>
                                                                         <ChevronLeft size={16} />
                                                                     </button>
-                                                                    <button type="button" className="re-shell-nav-btn right" onClick={handleNextShell} title="Next Interior">
+                                                                    <button type="button" className="re-shell-nav-btn right" onClick={handleNextShell} title={t('ui.next_interior', 'Next Interior')}>
                                                                         <ChevronRight size={16} />
                                                                     </button>
                                                                 </div>
@@ -1849,18 +1851,18 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                                 <Home size={24} className="re-shell-empty-icon" />
                                                             </div>
                                                             <div className="re-shell-empty-texts">
-                                                                <span className="re-shell-empty-title">{currentShellOption?.label || 'Selected Interior'}</span>
+                                                                <span className="re-shell-empty-title">{currentShellOption?.label || t('ui.selected_interior', 'Selected Interior')}</span>
                                                                 <span className="re-shell-empty-desc">
-                                                                    No preview image configured. Add <code>previewUrl = "..."</code> in <code>shared/settings.lua</code>
+                                                                    {t('ui.no_preview_configured', 'No preview image configured.')}
                                                                 </span>
                                                             </div>
                                                             <div className="re-shell-empty-nav">
                                                                 <button type="button" className="re-shell-mini-nav-btn" onClick={handlePrevShell}>
-                                                                    <ChevronLeft size={12} /> Previous
+                                                                    <ChevronLeft size={12} /> {t('ui.previous', 'Previous')}
                                                                 </button>
                                                                 <span className="re-shell-counter">{Math.max(1, currentShellIndex + 1)} / {shellOptions.length}</span>
                                                                 <button type="button" className="re-shell-mini-nav-btn" onClick={handleNextShell}>
-                                                                    Next <ChevronRight size={12} />
+                                                                    {t('ui.next', 'Next')} <ChevronRight size={12} />
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -1869,20 +1871,20 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
 
                                                 <div className="re-interactive-row">
                                                     <div className="re-interactive-info">
-                                                        <span className="re-interactive-label">Entrance Position (Teleport Target)</span>
+                                                        <span className="re-interactive-label">{t('ui.entrance_position_teleport', 'Entrance Position (Teleport Target)')}</span>
                                                         <span className={`re-interactive-status ${formData.entranceCoords ? 'active' : ''}`}>
-                                                            {formData.entranceCoords ? 'Coordinates Configured' : 'Not Configured (Required)'}
+                                                            {formData.entranceCoords ? t('ui.coords_configured', 'Coordinates Configured') : t('ui.not_configured_required', 'Not Configured (Required)')}
                                                         </span>
                                                     </div>
                                                     <button className="re-btn-action" type="button" onClick={handlePickEntranceCoords}>
-                                                        {formData.entranceCoords ? 'Reselect' : 'Set Current Position'}
+                                                        {formData.entranceCoords ? t('ui.reselect', 'Reselect') : t('ui.set_current_position', 'Set Current Position')}
                                                     </button>
                                                 </div>
 
                                                 <div className="re-creator-checkbox-field">
                                                     <div className="re-creator-checkbox-info">
-                                                        <span className="re-creator-checkbox-label">Allow Wall Tint Colors</span>
-                                                        <span className="re-creator-checkbox-desc">Allows tinting inside custom shells.</span>
+                                                        <span className="re-creator-checkbox-label">{t('ui.allow_wall_tint', 'Allow Wall Tint Colors')}</span>
+                                                        <span className="re-creator-checkbox-desc">{t('ui.allow_wall_tint_desc', 'Allows tinting inside custom shells.')}</span>
                                                     </div>
                                                     <input
                                                         type="checkbox"
@@ -1898,25 +1900,25 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                             <>
                                                 <div className="re-interactive-row" style={{ marginTop: '10px', borderTop: '1px solid var(--border-dim)', paddingTop: '10px' }}>
                                                     <div className="re-interactive-info">
-                                                        <span className="re-interactive-label">Garage Menu Location</span>
+                                                        <span className="re-interactive-label">{t('ui.garage_menu_location', 'Garage Menu Location')}</span>
                                                         <span className={`re-interactive-status ${formData.garageCoords ? 'active' : ''}`}>
-                                                            {formData.garageCoords ? 'Coordinates Configured' : 'Not Configured (Optional)'}
+                                                            {formData.garageCoords ? t('ui.coords_configured', 'Coordinates Configured') : t('ui.not_configured_optional', 'Not Configured (Optional)')}
                                                         </span>
                                                     </div>
                                                     <button className="re-btn-action" type="button" onClick={handlePickGarageCoords}>
-                                                        {formData.garageCoords ? 'Reselect' : 'Set Current Position'}
+                                                        {formData.garageCoords ? t('ui.reselect', 'Reselect') : t('ui.set_current_position', 'Set Current Position')}
                                                     </button>
                                                 </div>
 
                                                 <div className="re-interactive-row">
                                                     <div className="re-interactive-info">
-                                                        <span className="re-interactive-label">Vehicle Spawn Location</span>
+                                                        <span className="re-interactive-label">{t('ui.vehicle_spawn_location', 'Vehicle Spawn Location')}</span>
                                                         <span className={`re-interactive-status ${formData.garageSpawnCoords ? 'active' : ''}`}>
-                                                            {formData.garageSpawnCoords ? 'Coordinates Configured' : 'Not Configured (Optional)'}
+                                                            {formData.garageSpawnCoords ? t('ui.coords_configured', 'Coordinates Configured') : t('ui.not_configured_optional', 'Not Configured (Optional)')}
                                                         </span>
                                                     </div>
                                                     <button className="re-btn-action" type="button" onClick={handlePickGarageSpawnCoords}>
-                                                        {formData.garageSpawnCoords ? 'Reselect' : 'Set Current Position'}
+                                                        {formData.garageSpawnCoords ? t('ui.reselect', 'Reselect') : t('ui.set_current_position', 'Set Current Position')}
                                                     </button>
                                                 </div>
                                             </>
@@ -1925,26 +1927,26 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                         {electricityEnabled !== false && (
                                             <div className="re-interactive-row">
                                                 <div className="re-interactive-info">
-                                                    <span className="re-interactive-label">Circuit Breaker Box Location</span>
+                                                    <span className="re-interactive-label">{t('ui.circuit_breaker_location', 'Circuit Breaker Box Location')}</span>
                                                     <span className={`re-interactive-status ${formData.breakerCoords ? 'active' : ''}`}>
-                                                        {formData.breakerCoords ? 'Coordinates Configured' : 'Default (Entrance / Shared)'}
+                                                        {formData.breakerCoords ? t('ui.coords_configured', 'Coordinates Configured') : t('ui.default_entrance_shared', 'Default (Entrance / Shared)')}
                                                     </span>
                                                 </div>
                                                 <button className="re-btn-action" type="button" onClick={handlePickBreakerCoords}>
-                                                    {formData.breakerCoords ? 'Reselect Breaker' : 'Set Current Position'}
+                                                    {formData.breakerCoords ? t('ui.reselect_breaker', 'Reselect Breaker') : t('ui.set_current_position', 'Set Current Position')}
                                                 </button>
                                             </div>
                                         )}
 
                                         <div className="re-interactive-row">
                                             <div className="re-interactive-info">
-                                                <span className="re-interactive-label">Doorbell Camera Placement</span>
+                                                <span className="re-interactive-label">{t('ui.doorbell_camera_placement', 'Doorbell Camera Placement')}</span>
                                                 <span className={`re-interactive-status ${formData.cameraPosition ? 'active' : ''}`}>
-                                                    {formData.cameraPosition ? 'Camera Position Set' : 'Using Default (Front Door)'}
+                                                    {formData.cameraPosition ? t('ui.camera_pos_set', 'Camera Position Set') : t('ui.using_default_front_door', 'Using Default (Front Door)')}
                                                 </span>
                                             </div>
                                             <button className="re-btn-action" type="button" onClick={handlePickCameraPlacement}>
-                                                {formData.cameraPosition ? 'Reposition Camera' : 'Place Camera'}
+                                                {formData.cameraPosition ? t('ui.reposition_camera', 'Reposition Camera') : t('ui.place_camera', 'Place Camera')}
                                             </button>
                                         </div>
                                     </div>
@@ -1954,20 +1956,20 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                             {currentStep === 3 && (
                                 <div className="re-wizard-panel">
                                     <div className="re-creator-card-title">
-                                        <Tag size={14} /> Pricing & Media Details
+                                        <Tag size={14} /> {t('ui.pricing_media_details', 'Pricing & Media Details')}
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                         <div className="re-creator-inputs">
                                             <div className="re-creator-input-field">
                                                 <CustomSelect
                                                     icon={Tag}
-                                                    label="Sale Type"
+                                                    label={t('ui.sale_type', 'Sale Type')}
                                                     name="saleType"
                                                     value={formData.saleType}
                                                     options={[
-                                                        { value: 'direct', label: 'Direct Sale (Bank)' },
-                                                        { value: 'auction', label: 'Auction (Bidding)' },
-                                                        { value: 'rent', label: 'Rental Lease (Contracts)' }
+                                                        { value: 'direct', label: t('ui.direct_sale', 'Direct Sale (Bank)') },
+                                                        { value: 'auction', label: t('ui.auction_sale', 'Auction (Bidding)') },
+                                                        { value: 'rent', label: t('ui.rental_lease_contracts', 'Rental Lease (Contracts)') }
                                                     ]}
                                                     onChange={handleInputChange}
                                                 />
@@ -1976,10 +1978,10 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                 <label>
                                                     <DollarSign size={12} />{' '}
                                                     {formData.saleType === 'rent'
-                                                        ? 'Weekly Rent ($)'
+                                                        ? t('ui.weekly_rent', 'Weekly Rent ($)')
                                                         : formData.saleType === 'auction'
-                                                            ? 'Starting Bid ($)'
-                                                            : 'Purchase Price ($)'}
+                                                            ? t('ui.starting_bid', 'Starting Bid ($)')
+                                                            : t('ui.purchase_price', 'Purchase Price ($)')}
                                                 </label>
                                                 <input
                                                     name="price"
@@ -1992,7 +1994,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                         </div>
 
                                         <div className="re-creator-input-field">
-                                            <label><Camera size={12} /> Property Photo</label>
+                                            <label><Camera size={12} /> {t('ui.property_photo', 'Property Photo')}</label>
                                             <div className="re-photo-card">
                                                 <div className="re-photo-preview-box">
                                                     {formData.image ? (
@@ -2000,12 +2002,12 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                     ) : (
                                                         <div className="re-photo-placeholder">
                                                             <Camera size={24} opacity={0.4} />
-                                                            <span>No photo taken yet</span>
+                                                            <span>{t('ui.no_photo_taken', 'No photo taken yet')}</span>
                                                         </div>
                                                     )}
                                                 </div>
                                                 <button type="button" className="re-btn-primary" style={{ width: '100%' }} onClick={handleTakePhoto}>
-                                                    <Camera size={12} /> {formData.image ? 'Retake Photo' : 'Take Property Photo'}
+                                                    <Camera size={12} /> {formData.image ? t('ui.retake_photo', 'Retake Photo') : t('ui.take_property_photo', 'Take Property Photo')}
                                                 </button>
                                             </div>
                                         </div>
@@ -2016,12 +2018,12 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                             {/* Wizard Navigation Footer */}
                             <div className="re-creator-footer wizard-footer">
                                 <button className="re-btn-secondary" type="button" onClick={resetCreatorForm}>
-                                    <Trash2 size={12} /> {editingPropertyId ? 'Cancel' : 'Discard'}
+                                    <Trash2 size={12} /> {editingPropertyId ? t('ui.cancel', 'Cancel') : t('ui.discard', 'Discard')}
                                 </button>
 
                                 {currentStep > 1 && (
                                     <button className="re-btn-secondary" type="button" onClick={() => setCurrentStep(prev => prev - 1)}>
-                                        <ChevronLeft size={14} /> Back
+                                        <ChevronLeft size={14} /> {t('ui.back', 'Back')}
                                     </button>
                                 )}
 
@@ -2032,7 +2034,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                         onClick={() => setCurrentStep(prev => prev + 1)}
                                         disabled={!isStepValid(currentStep)}
                                     >
-                                        Next <ChevronRight size={14} />
+                                        {t('ui.next', 'Next')} <ChevronRight size={14} />
                                     </button>
                                 ) : (
                                     <button
@@ -2041,7 +2043,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                         onClick={editingPropertyId ? handleUpdateProperty : handleCreateProperty}
                                         disabled={!isStepValid(3)}
                                     >
-                                        <Save size={12} /> {editingPropertyId ? 'Save Changes' : 'Create Listing'}
+                                        <Save size={12} /> {editingPropertyId ? t('ui.save_changes', 'Save Changes') : t('ui.create_listing', 'Create Listing')}
                                     </button>
                                 )}
                             </div>
@@ -2062,8 +2064,8 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         >
             <div className="re-header-v3">
                 <div className="re-title-group">
-                    <h1>REAL ESTATE</h1>
-                    <span className="re-subtitle">{isAgent && hasPermission.agencyLabel ? hasPermission.agencyLabel : 'EXPLORE PROPERTIES'}</span>
+                    <h1>{t('ui.real_estate', 'REAL ESTATE')}</h1>
+                    <span className="re-subtitle">{isAgent && hasPermission.agencyLabel ? hasPermission.agencyLabel : t('ui.explore_properties', 'EXPLORE PROPERTIES')}</span>
                 </div>
 
                 <div className="re-header-actions">
@@ -2071,7 +2073,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                         <button
                             className="re-walk-btn"
                             onClick={() => toggleWalkMode()}
-                            title="Toggle Walk Mode - Lowers UI opacity so you can walk into properties. Press G to resume UI"
+                            title={t('ui.toggle_walk_mode_desc', 'Toggle Walk Mode - Lowers UI opacity so you can walk into properties. Press G to resume UI')}
                             type="button"
                             style={{
                                 display: 'flex',
@@ -2090,21 +2092,21 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                             }}
                         >
                             <EyeOff size={13} />
-                            <span>Walk Mode</span>
+                            <span>{t('ui.walk_mode', 'Walk Mode')}</span>
                         </button>
                     )}
 
                     {isAgent && hasPermission.societyBalance > 0 && (
                         <div className="society-balance">
                             <Database size={12} className="price-green" />
-                            <span>Agency Funds: <strong className="price-green">${hasPermission.societyBalance.toLocaleString()}</strong></span>
+                            <span>{t('ui.agency_funds', 'Agency Funds')}: <strong className="price-green">${hasPermission.societyBalance.toLocaleString()}</strong></span>
                         </div>
                     )}
                     <div className="re-search-v3">
                         <Search size={14} opacity={0.4} />
                         <input
                             type="text"
-                            placeholder="Search properties..."
+                            placeholder={t('ui.search_properties', 'Search properties...')}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
@@ -2118,43 +2120,43 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             <div className="re-sub-header">
                 <div className="re-tabs-v4">
                     <button className={`tab-v4 ${activeTab === 'browse' ? 'active' : ''}`} onClick={() => setActiveTab('browse')}>
-                        <Home size={12} /> Listings
+                        <Home size={12} /> {t('ui.listings', 'Listings')}
                     </button>
                     {isAgent && canManageListings && (
                         <button className={`tab-v4 ${activeTab === 'management' ? 'active' : ''}`} onClick={() => setActiveTab('management')}>
-                            <Settings size={12} /> Management
+                            <Settings size={12} /> {t('ui.management', 'Management')}
                         </button>
                     )}
                     {isAgent && canCreate && (
                         <button className={`tab-v4 ${activeTab === 'creator' ? 'active' : ''}`} onClick={() => setActiveTab('creator')}>
-                            <Plus size={12} /> Creator
+                            <Plus size={12} /> {t('ui.creator', 'Creator')}
                         </button>
                     )}
                     {isAgent && (
                         <button className={`tab-v4 ${activeTab === 'blacklist' ? 'active' : ''}`} onClick={() => setActiveTab('blacklist')}>
-                            <UserX size={12} /> Blacklist
+                            <UserX size={12} /> {t('ui.blacklist', 'Blacklist')}
                         </button>
                     )}
                     <button className={`tab-v4 ${activeTab === 'contracts' ? 'active' : ''}`} onClick={() => setActiveTab('contracts')}>
-                        <FileText size={12} /> Contracts
+                        <FileText size={12} /> {t('ui.contracts', 'Contracts')}
                     </button>
                 </div>
 
                 {activeTab === 'browse' && (
                     <div className="re-sort-v2">
-                        <span className="sort-label">Sort By</span>
+                        <span className="sort-label">{t('ui.sort_by', 'Sort By')}</span>
                         <div className="sort-buttons-v2">
                             <button className={`sort-btn-v2 ${sortBy === 'none' ? 'active' : ''}`} onClick={() => setSortBy('none')}>
-                                <Filter size={10} /> None
+                                <Filter size={10} /> {t('ui.sort_none', 'None')}
                             </button>
                             <button className={`sort-btn-v2 ${sortBy === 'price' ? 'active' : ''}`} onClick={() => setSortBy('price')}>
-                                <Tag size={10} /> Price
+                                <Tag size={10} /> {t('ui.price', 'Price')}
                             </button>
                             <button className={`sort-btn-v2 ${sortBy === 'garage' ? 'active' : ''}`} onClick={() => setSortBy('garage')}>
-                                <Warehouse size={10} /> Garage
+                                <Warehouse size={10} /> {t('ui.garage', 'Garage')}
                             </button>
                             <button className={`sort-btn-v2 ${sortBy === 'size' ? 'active' : ''}`} onClick={() => setSortBy('size')}>
-                                <Maximize size={10} /> Size
+                                <Maximize size={10} /> {t('ui.property_size', 'Size')}
                             </button>
                         </div>
                     </div>
@@ -2197,16 +2199,16 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
 
                                 <div className="modal-info-grid">
                                     <div className="info-box">
-                                        <span className="info-label">{selectedProperty.sale_type === 'rent' ? 'Rent Term' : 'Purchase Price'}</span>
+                                        <span className="info-label">{selectedProperty.sale_type === 'rent' ? t('ui.rent_term', 'Rent Term') : t('ui.purchase_price', 'Purchase Price')}</span>
                                         <span className="info-value">${selectedProperty.price.toLocaleString()}</span>
                                     </div>
                                     <div className="info-box">
-                                        <span className="info-label">Parking Slots</span>
-                                        <span className="info-value">{selectedProperty.garage} slots</span>
+                                        <span className="info-label">{t('ui.parking_slots', 'Parking Slots')}</span>
+                                        <span className="info-value">{selectedProperty.garage} {t('ui.slots', 'slots')}</span>
                                     </div>
                                     {selectedProperty.sale_type === 'auction' && (
                                         <div className="info-box highlight">
-                                            <span className="info-label">Current Bid</span>
+                                            <span className="info-label">{t('ui.current_bid', 'Current Bid')}</span>
                                             <span className="info-value">${(selectedProperty.auction_data?.current_bid || selectedProperty.price).toLocaleString()}</span>
                                         </div>
                                     )}
@@ -2225,20 +2227,20 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                 />
                                             </div>
                                             <button className="primary-btn-v2" onClick={handleBid}>
-                                                PLACE BID
+                                                {t('ui.place_bid', 'PLACE BID')}
                                             </button>
                                         </div>
                                     ) : selectedProperty.sale_type === 'rent' ? (
                                         <div style={{ textAlign: 'center', width: '100%', opacity: 0.7, fontSize: '11px', padding: '10px', border: '1px dashed var(--border-dim)', borderRadius: '6px' }}>
-                                            Lease properties must be drafted via an active agent contract.
+                                            {t('ui.lease_draft_required', 'Lease properties must be drafted via an active agent contract.')}
                                         </div>
                                     ) : onlyBuyViaContracts ? (
                                         <div style={{ textAlign: 'center', width: '100%', opacity: 0.7, fontSize: '11px', padding: '10px', color: 'var(--danger)', border: '1px dashed var(--danger)', borderRadius: '6px', background: 'rgba(244, 63, 94, 0.02)' }}>
-                                            This property must be purchased via a real estate agent contract.
+                                            {t('ui.purchase_via_agent_required', 'This property must be purchased via a real estate agent contract.')}
                                         </div>
                                     ) : (
                                         <button className="primary-btn-v2 full-width" onClick={handleDirectBuy}>
-                                            PURCHASE PROPERTY
+                                            {t('ui.purchase_property', 'PURCHASE PROPERTY')}
                                         </button>
                                     )}
                                 </div>
@@ -2274,7 +2276,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                         onClick={() => setConfirmModal(null)}
                                         style={{ padding: '10px' }}
                                     >
-                                        Cancel
+                                        {t('ui.cancel', 'Cancel')}
                                     </button>
                                     <button
                                         className="modal-action-btn modal-confirm-btn"
@@ -2285,7 +2287,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                         }}
                                         onClick={confirmModal.onConfirm}
                                     >
-                                        {confirmModal.confirmLabel || 'Confirm'}
+                                        {confirmModal.confirmLabel || t('ui.confirm', 'Confirm')}
                                     </button>
                                 </div>
                             </div>
@@ -2308,21 +2310,21 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                         >
                             <div className="modal-header">
                                 <div className="header-text">
-                                    <h2>Property History</h2>
+                                    <h2>{t('ui.property_history', 'Property History')}</h2>
                                     <span>#{historyProperty.id} - {historyProperty.label}</span>
                                 </div>
                                 <button className="modal-close" onClick={() => setHistoryProperty(null)}><X size={16} /></button>
                             </div>
                             <div className="modal-content" style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', maxHeight: 'calc(85vh - 80px)' }}>
                                 <div>
-                                    <h3 style={{ fontSize: '11px', fontWeight: '800', color: 'var(--primary)', marginBottom: '8px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}><History size={12} /> Lease Activity History</h3>
+                                    <h3 style={{ fontSize: '11px', fontWeight: '800', color: 'var(--primary)', marginBottom: '8px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}><History size={12} /> {t('ui.lease_activity_history', 'Lease Activity History')}</h3>
                                     <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-dim)', borderRadius: '8px', padding: '10px', maxHeight: '200px', overflowY: 'auto' }}>
                                         <table className="management-table" style={{ fontSize: '11px' }}>
                                             <thead>
                                                 <tr>
-                                                    <th>Date</th>
-                                                    <th>Action</th>
-                                                    <th>Details</th>
+                                                    <th>{t('ui.th_date', 'Date')}</th>
+                                                    <th>{t('ui.th_action', 'Action')}</th>
+                                                    <th>{t('ui.th_details', 'Details')}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -2346,7 +2348,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                 })}
                                                 {(!historyProperty.metadata?.tenant_history || historyProperty.metadata.tenant_history.length === 0) && (
                                                     <tr>
-                                                        <td colSpan="3" style={{ textAlign: 'center', padding: '12px', opacity: 0.4 }}>No lease activities recorded.</td>
+                                                        <td colSpan="3" style={{ textAlign: 'center', padding: '12px', opacity: 0.4 }}>{t('ui.no_lease_activities', 'No lease activities recorded.')}</td>
                                                     </tr>
                                                 )}
                                             </tbody>
@@ -2355,15 +2357,15 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                 </div>
 
                                 <div>
-                                    <h3 style={{ fontSize: '11px', fontWeight: '800', color: 'var(--primary)', marginBottom: '8px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}><DollarSign size={12} /> Rent Payment History</h3>
+                                    <h3 style={{ fontSize: '11px', fontWeight: '800', color: 'var(--primary)', marginBottom: '8px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}><DollarSign size={12} /> {t('ui.rent_payment_history', 'Rent Payment History')}</h3>
                                     <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-dim)', borderRadius: '8px', padding: '10px', maxHeight: '200px', overflowY: 'auto' }}>
                                         <table className="management-table" style={{ fontSize: '11px' }}>
                                             <thead>
                                                 <tr>
-                                                    <th>Date</th>
-                                                    <th>Amount</th>
-                                                    <th>Type</th>
-                                                    <th>Status</th>
+                                                    <th>{t('ui.th_date', 'Date')}</th>
+                                                    <th>{t('ui.th_amount', 'Amount')}</th>
+                                                    <th>{t('ui.th_type', 'Type')}</th>
+                                                    <th>{t('ui.th_status', 'Status')}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -2388,7 +2390,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                 })}
                                                 {(!historyProperty.metadata?.rent_history || historyProperty.metadata.rent_history.length === 0) && (
                                                     <tr>
-                                                        <td colSpan="4" style={{ textAlign: 'center', padding: '12px', opacity: 0.4 }}>No financial transactions recorded.</td>
+                                                        <td colSpan="4" style={{ textAlign: 'center', padding: '12px', opacity: 0.4 }}>{t('ui.no_transactions_recorded', 'No financial transactions recorded.')}</td>
                                                     </tr>
                                                 )}
                                             </tbody>
@@ -2427,7 +2429,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                     className="re-shell-lightbox-close"
                                     onClick={() => setPreviewModalImage(null)}
                                 >
-                                    <X size={14} /> Close Preview
+                                    <X size={14} /> {t('ui.close_preview', 'Close Preview')}
                                 </button>
                             </div>
                         </motion.div>

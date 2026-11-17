@@ -350,7 +350,7 @@ lib.addCommand('cutpower', {
 
     if not propertyId or not Properties[propertyId] then
         if src > 0 then
-            Bridge.Server.Notify(src, "Usage: /cutpower [propertyId] (or stand near your property)", "error")
+            Bridge.Server.Notify(src, locale('notify.cutpower_usage'), "error")
         end
         return
     end
@@ -368,7 +368,7 @@ lib.addCommand('cutpower', {
     TriggerClientEvent('LNS_Housing:client:breakerTrippedNotify', -1, propertyId, totalPower, maxPower)
     
     if src > 0 then
-        Bridge.Server.Notify(src, string.format("Power manually cut to Property #%d! Circuit breaker tripped.", propertyId), "warning")
+        Bridge.Server.Notify(src, locale('notify.power_manually_cut', propertyId), 'warning')
     end
 end)
 
@@ -409,7 +409,7 @@ lib.addCommand('restorepower', {
 
     if not propertyId or not Properties[propertyId] then
         if src > 0 then
-            Bridge.Server.Notify(src, "Usage: /restorepower [propertyId] (or stand near your property)", "error")
+            Bridge.Server.Notify(src, locale('notify.restorepower_usage'), "error")
         end
         return
     end
@@ -422,6 +422,6 @@ lib.addCommand('restorepower', {
     TriggerClientEvent('LNS_Housing:client:breakerReset', -1, propertyId)
 
     if src > 0 then
-        Bridge.Server.Notify(src, string.format("Power restored to Property #%d!", propertyId), "success")
+        Bridge.Server.Notify(src, locale('notify.power_manual_restored', propertyId), 'success')
     end
 end)

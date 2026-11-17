@@ -243,7 +243,7 @@ end
 function StartMowing(propertyId, isAuto)
     if MowingActive then
         if not isAuto then
-            Bridge.Client.Notify('You are already mowing!', 'error')
+            Bridge.Client.Notify(locale('notify.already_mowing'), 'error')
         end
         return
     end
@@ -251,7 +251,7 @@ function StartMowing(propertyId, isAuto)
     local p = Properties[propertyId]
     if not p then
         if not isAuto then
-            Bridge.Client.Notify('No property found here.', 'error')
+            Bridge.Client.Notify(locale('notify.no_property_here'), 'error')
         end
         return
     end
@@ -273,7 +273,7 @@ function StartMowing(propertyId, isAuto)
 
     if not hasGrowth then
         if not isAuto then
-            Bridge.Client.Notify('The lawn is already clean and short!', 'inform')
+            Bridge.Client.Notify(locale('notify.lawn_already_clean'), 'inform')
         end
         return
     end
@@ -299,7 +299,7 @@ function StartMowing(propertyId, isAuto)
     end
 
     if isVehicleMower then
-        lib.showTextUI('Mowing Lawn - Drive over long grass', { position = 'right-center' })
+        lib.showTextUI(locale('textui.mowing_lawn'), { position = 'right-center' })
     else
         local modelHash = GetHashKey(Settings.Housing.Lawn.MowerProp)
         lib.requestModel(modelHash)
@@ -310,7 +310,7 @@ function StartMowing(propertyId, isAuto)
         AttachEntityToEntity(mowerProp, ped, 0, 0.0, 1.0, -0.9, 0.0, 0.0, 180.0, false, false, false, false, 2, true)
         MowerPropHandle = mowerProp
 
-        lib.showTextUI('[E] Put Away Mower', { position = 'right-center' })
+        lib.showTextUI(locale('textui.put_away_mower'), { position = 'right-center' })
 
         local animDict = 'anim@heists@box_carry@'
         lib.requestAnimDict(animDict)
@@ -364,7 +364,7 @@ function StartMowing(propertyId, isAuto)
                     if #newlyMowedIndices > 0 then
                         TriggerServerEvent('LNS_Housing:server:saveMowedBlades', propertyId, newlyMowedIndices, true)
                     end
-                    Bridge.Client.Notify('You put away the mower.', 'inform')
+                    Bridge.Client.Notify(locale('notify.put_away_mower'), 'inform')
                     break
                 end
             end
@@ -443,7 +443,7 @@ function StartMowing(propertyId, isAuto)
                         
                         TriggerServerEvent('LNS_Housing:server:finishMowing', propertyId, newlyMowedIndices, true)
                         newlyMowedIndices = {}
-                        Bridge.Client.Notify('Lawn successfully mowed! It will grow back over time.', 'success')
+                        Bridge.Client.Notify(locale('notify.lawn_mowed_success'), 'success')
                         StopMowing()
                     end
                 end
@@ -456,12 +456,12 @@ RegisterNetEvent('LNS_Housing:client:useMower', function()
     debugPrint('info', 'LNS_Housing:client:useMower received')
     if MowingActive then
         StopMowing()
-        Bridge.Client.Notify('You put away the mower.', 'inform')
+        Bridge.Client.Notify(locale('notify.put_away_mower'), 'inform')
         return
     end
 
     if not ActiveYardPropertyId then
-        Bridge.Client.Notify('You must be in a yard to use the mower!', 'error')
+        Bridge.Client.Notify(locale('notify.must_be_in_yard'), 'error')
         return
     end
 
@@ -488,8 +488,8 @@ function OpenYardMenu(propertyId)
 
     local options = {
         {
-            title = 'Grass Growth',
-            description = 'Current growth: ' .. growth .. '%',
+            title = locale('menu.grass_growth'),
+            description = locale('menu.current_growth', growth),
             progress = growth,
             colorScheme = 'green',
             readOnly = true
@@ -498,7 +498,7 @@ function OpenYardMenu(propertyId)
 
     lib.registerContext({
         id = 'housing_yard_menu',
-        title = 'Yard Management - ' .. p.label,
+        title = locale('menu.yard_management_title', p.label),
         options = options
     })
     lib.showContext('housing_yard_menu')

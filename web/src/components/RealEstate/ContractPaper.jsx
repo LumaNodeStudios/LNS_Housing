@@ -10,6 +10,7 @@ import {
     Check,
     PenTool
 } from 'lucide-react';
+import { useLocale } from '../../context/LocaleContext';
 
 const resolveAgencyName = (contract) => {
     if (!contract) return 'REAL ESTATE';
@@ -28,6 +29,7 @@ const resolveAgencyName = (contract) => {
 };
 
 const ContractPaper = ({ contract, onClose, onRespond }) => {
+    const { t } = useLocale();
     const [isSigning, setIsSigning] = useState(false);
     const [isSigned, setIsSigned] = useState(!!contract?.signed);
 
@@ -122,86 +124,90 @@ const ContractPaper = ({ contract, onClose, onRespond }) => {
                         <Building2 size={24} />
                     </div>
                     <div className="doc-crest-title">{agencyName.toUpperCase()}</div>
-                    <div className="doc-crest-sub">LICENSED REAL ESTATE INSTRUMENT</div>
+                    <div className="doc-crest-sub">{t('ui.licensed_instrument', 'LICENSED REAL ESTATE INSTRUMENT')}</div>
                     <div className="doc-header-divider">
                         <span className="divider-line" />
-                        <span className="divider-badge">OFFICIAL INSTRUMENT</span>
+                        <span className="divider-badge">{t('ui.official_instrument', 'OFFICIAL INSTRUMENT')}</span>
                         <span className="divider-line" />
                     </div>
                 </div>
 
                 <div className="doc-meta-row">
                     <div className="doc-meta-item">
-                        <span className="meta-lbl">DOCUMENT ID</span>
+                        <span className="meta-lbl">{t('ui.document_id', 'DOCUMENT ID')}</span>
                         <span className="meta-val">{contractRef}</span>
                     </div>
                     <div className="doc-meta-item right">
-                        <span className="meta-lbl">EXECUTION DATE</span>
+                        <span className="meta-lbl">{t('ui.execution_date', 'EXECUTION DATE')}</span>
                         <span className="meta-val"><Calendar size={13} /> {dateFormatted}</span>
                     </div>
                 </div>
 
                 <div className="doc-title-row">
                     <h1 className="doc-main-heading">
-                        {isRent ? 'RESIDENTIAL LEASE AGREEMENT' : 'PROPERTY PURCHASE DEED'}
+                        {isRent ? t('ui.lease_agreement', 'RESIDENTIAL LEASE AGREEMENT') : t('ui.purchase_deed', 'PROPERTY PURCHASE DEED')}
                     </h1>
                     <div className={`doc-status-pill ${isSigned ? 'signed' : 'pending'}`}>
                         {isSigned ? <CheckCircle2 size={14} /> : <ShieldCheck size={14} />}
-                        <span>{isSigned ? 'SIGNED — READY TO ACCEPT' : 'AWAITING SIGNATURE'}</span>
+                        <span>{isSigned ? t('ui.signed_ready', 'SIGNED — READY TO ACCEPT') : t('ui.awaiting_signature', 'AWAITING SIGNATURE')}</span>
                     </div>
                 </div>
 
                 <p className="doc-paragraph preamble">
-                    This Agreement is entered into on <strong>{dateFormatted}</strong> by and between <strong>{agencyName}</strong> (Realtor <strong>{agentName}</strong>), hereinafter the <em>{isRent ? 'Lessor' : 'Seller'}</em>, and <strong>{clientName}</strong>, hereinafter the <em>{isRent ? 'Lessee' : 'Buyer'}</em>.
+                    {t('contract.entered_into', 'This Agreement is entered into on')} <strong>{dateFormatted}</strong> {t('contract.between', 'by and between')} <strong>{agencyName}</strong> ({t('contract.realtor', 'Realtor')} <strong>{agentName}</strong>), {t('contract.hereinafter', 'hereinafter the')} <em>{isRent ? t('contract.lessor', 'Lessor') : t('contract.seller', 'Seller')}</em>, {t('contract.and', 'and')} <strong>{clientName}</strong>, {t('contract.hereinafter', 'hereinafter the')} <em>{isRent ? t('contract.lessee', 'Lessee') : t('contract.buyer', 'Buyer')}</em>.
                 </p>
 
                 <div className="doc-summary-table">
                     <div className="table-row">
-                        <span className="cell-lbl">Issuing Agency</span>
+                        <span className="cell-lbl">{t('ui.issuing_agency', 'Issuing Agency')}</span>
                         <span className="cell-val">{agencyName}</span>
                     </div>
                     <div className="table-row">
-                        <span className="cell-lbl">Property Address</span>
+                        <span className="cell-lbl">{t('ui.property_address', 'Property Address')}</span>
                         <span className="cell-val">{propertyLabel}</span>
                     </div>
                     <div className="table-row">
-                        <span className="cell-lbl">Garage Parking</span>
-                        <span className="cell-val">{garageSlots > 0 ? `${garageSlots} Slot${garageSlots > 1 ? 's' : ''}` : 'No'}</span>
+                        <span className="cell-lbl">{t('ui.garage_parking', 'Garage Parking')}</span>
+                        <span className="cell-val">{garageSlots > 0 ? `${garageSlots} ${garageSlots > 1 ? t('ui.slots', 'Slots') : t('ui.slot', 'Slot')}` : t('no', 'No')}</span>
                     </div>
                     {isRent && (
                         <>
                             <div className="table-row">
-                                <span className="cell-lbl">Weekly Lease Rate</span>
-                                <span className="cell-val">${priceAmount.toLocaleString()} / week</span>
+                                <span className="cell-lbl">{t('ui.weekly_lease_rate', 'Weekly Lease Rate')}</span>
+                                <span className="cell-val">${priceAmount.toLocaleString()} / {t('ui.week', 'week')}</span>
                             </div>
                             <div className="table-row">
-                                <span className="cell-lbl">Security Deposit</span>
+                                <span className="cell-lbl">{t('ui.security_deposit', 'Security Deposit')}</span>
                                 <span className="cell-val">${depositAmount.toLocaleString()}</span>
                             </div>
                         </>
                     )}
                     <div className="table-row total">
-                        <span className="cell-lbl">{isRent ? 'Total Upfront Due' : 'Total Purchase Price'}</span>
+                        <span className="cell-lbl">{isRent ? t('ui.total_upfront_due', 'Total Upfront Due') : t('ui.total_purchase_price', 'Total Purchase Price')}</span>
                         <span className="cell-val">${totalUpfront.toLocaleString()}</span>
                     </div>
                 </div>
 
                 <p className="doc-paragraph terms-note">
-                    <strong>COVENANTS & GOVERNING LAW:</strong> Occupancy and title conveyance for <strong>{propertyLabel}</strong> are subject to San Andreas real estate regulations. {isRent ? `Lessee (${clientName}) agrees to maintain weekly lease obligations of $${priceAmount.toLocaleString()} to ${agencyName}. Failure to satisfy dues may result in automated repossession or legal eviction.` : `Buyer (${clientName}) acquires full, unencumbered property title to ${propertyLabel} upon transaction execution and full payment of $${priceAmount.toLocaleString()}.`}
+                    <strong>{t('contract.covenants_title', 'COVENANTS & GOVERNING LAW:')}</strong> {t('contract.covenants_intro', 'Occupancy and title conveyance for')} <strong>{propertyLabel}</strong> {t('contract.covenants_subject', 'are subject to San Andreas real estate regulations.')}{' '}
+                    {isRent
+                        ? `${t('contract.lessee', 'Lessee')} (${clientName}) ${t('contract.rent_obligation', 'agrees to maintain weekly lease obligations of')} $${priceAmount.toLocaleString()} ${t('contract.to', 'to')} ${agencyName}. ${t('contract.rent_failure', 'Failure to satisfy dues may result in automated repossession or legal eviction.')}`
+                        : `${t('contract.buyer', 'Buyer')} (${clientName}) ${t('contract.buy_obligation', 'acquires full, unencumbered property title to')} ${propertyLabel} ${t('contract.buy_execution', 'upon transaction execution and full payment of')} $${priceAmount.toLocaleString()}.`
+                    }
                 </p>
 
                 <div className="doc-signatures-wrapper">
                     <div className="sig-column">
-                        <span className="sig-header">AUTHORIZED REALTOR SIGNATURE</span>
+                        <span className="sig-header">{t('ui.realtor_signature', 'AUTHORIZED REALTOR SIGNATURE')}</span>
                         <div className="sig-cursive-area">
                             <span className="sig-handwritten agent">{agentName}</span>
                         </div>
                         <div className="sig-underline" />
-                        <span className="sig-caption">{agencyName} Agent</span>
+                        <span className="sig-caption">{agencyName} {t('contract.agent', 'Agent')}</span>
                     </div>
 
                     <div className="sig-column">
-                        <span className="sig-header">{isRent ? 'LESSEE SIGNATURE' : 'BUYER SIGNATURE'}</span>
+                        <span className="sig-header">{isRent ? t('ui.lessee_signature', 'LESSEE SIGNATURE') : t('ui.buyer_signature', 'BUYER SIGNATURE')}</span>
                         <div className="sig-cursive-area">
                             {isSigned ? (
                                 <motion.span
@@ -220,24 +226,24 @@ const ContractPaper = ({ contract, onClose, onRespond }) => {
                                     disabled={isSigning}
                                 >
                                     <PenTool size={13} />
-                                    <span>{isSigning ? 'Signing...' : 'Click to Sign'}</span>
+                                    <span>{isSigning ? t('ui.signing', 'Signing...') : t('ui.click_to_sign', 'Click to Sign')}</span>
                                 </button>
                             )}
                         </div>
                         <div className="sig-underline" />
-                        <span className="sig-caption">{isRent ? 'Lessee' : 'Buyer'}: {clientName}</span>
+                        <span className="sig-caption">{isRent ? t('contract.lessee', 'Lessee') : t('contract.buyer', 'Buyer')}: {clientName}</span>
                     </div>
                 </div>
 
                 <div className="doc-footer-actions">
                     <button type="button" className="doc-btn decline" onClick={handleDeclineContract}>
-                        <span>Decline Contract</span>
+                        <span>{t('ui.decline_contract', 'Decline Contract')}</span>
                     </button>
 
                     <div className="footer-right">
                         {contract.id === 'draft_preview' ? (
                             <button type="button" className="doc-btn close" onClick={handleCloseNui}>
-                                <span>Close Preview</span>
+                                <span>{t('ui.close_preview', 'Close Preview')}</span>
                             </button>
                         ) : (
                             <button
@@ -245,9 +251,9 @@ const ContractPaper = ({ contract, onClose, onRespond }) => {
                                 className={`doc-btn sign ${!isSigned ? 'disabled' : ''}`}
                                 onClick={handleAcceptContract}
                                 disabled={!isSigned}
-                                title={!isSigned ? 'Sign the document above first' : 'Accept and finalize contract'}
+                                title={!isSigned ? t('ui.sign_first_tooltip', 'Sign the document above first') : t('ui.accept_finalize_tooltip', 'Accept and finalize contract')}
                             >
-                                <span>Accept</span>
+                                <span>{t('ui.accept', 'Accept')}</span>
                             </button>
                         )}
                     </div>

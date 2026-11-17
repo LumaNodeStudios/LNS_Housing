@@ -209,7 +209,7 @@ function ProcessPropertySalePayout(propertyId, amount)
             if agent then
                 local agentSource = agent.PlayerData.source
                 Bridge.Server.AddBankMoney(agentSource, commission, "Property Sale Commission: " .. p.label)
-                Bridge.Server.Notify(agentSource, string.format("You received $%s commission for selling %s!", commission, p.label), "success")
+                Bridge.Server.Notify(agentSource, locale('notify.commission_received', commission, p.label), 'success')
             else
                 Bridge.Server.AddOfflineBankMoney(p.agent_cid, commission)
             end
@@ -425,7 +425,7 @@ CreateThread(function()
 
                                     local tenant = Bridge.Server.IsPlayerOnline(p.owner)
                                     if tenant then
-                                        Bridge.Server.Notify(tenant.PlayerData.source, string.format("Auto-pay processed successfully. Paid $%s rent for %s.", rentAmount, p.label), "success")
+                                        Bridge.Server.Notify(tenant.PlayerData.source, locale('notify.autopay_processed', rentAmount, p.label), 'success')
                                     end
                                 end
                             end
@@ -460,7 +460,7 @@ CreateThread(function()
 
                             local tenant = Bridge.Server.IsPlayerOnline(p.owner)
                             if tenant then
-                                Bridge.Server.Notify(tenant.PlayerData.source, string.format("Rent auto-pay failed or was disabled for %s! Late fee of $%s applied. Total debt: $%s.", p.label, lateFee, p.metadata.rent_debt), "error")
+                                Bridge.Server.Notify(tenant.PlayerData.source, locale('notify.autopay_failed', p.label, lateFee, p.metadata.rent_debt), 'error')
                             end
                         end
 
@@ -484,7 +484,7 @@ CreateThread(function()
                                 local tenant = Bridge.Server.IsPlayerOnline(oldOwner)
                                 if tenant then
                                     tenantName = tenant.PlayerData.charinfo and (tenant.PlayerData.charinfo.firstname .. ' ' .. tenant.PlayerData.charinfo.lastname) or tenantName
-                                    Bridge.Server.Notify(tenant.PlayerData.source, "You have been evicted from " .. p.label .. " due to unpaid rent debt!", "error")
+                                    Bridge.Server.Notify(tenant.PlayerData.source, locale('notify.evicted_debt', p.label), 'error')
                                 end
 
                                 ResetPropertyOwnershipData(id)
@@ -506,7 +506,7 @@ CreateThread(function()
                                 if tenant then
                                     local timeLeft = math.max(0, math.ceil(((p.metadata.due_by + retrievalPeriod) - now) / 3600))
                                     local hoursOrDays = timeLeft > 24 and string.format("%d days", math.ceil(timeLeft/24)) or string.format("%d hours", timeLeft)
-                                    Bridge.Server.Notify(tenant.PlayerData.source, string.format("Your access to %s is suspended! Settle outstanding debt of $%s. You have %s left to retrieve your items.", p.label, p.metadata.rent_debt, hoursOrDays), "error")
+                                    Bridge.Server.Notify(tenant.PlayerData.source, locale('notify.access_suspended', p.label, p.metadata.rent_debt, hoursOrDays), 'error')
                                 end
                             end
                         else
@@ -514,7 +514,7 @@ CreateThread(function()
                             if tenant then
                                 local timeLeft = math.max(0, math.ceil((p.metadata.due_by - now) / 3600))
                                 local hoursOrDays = timeLeft > 24 and string.format("%d days", math.ceil(timeLeft/24)) or string.format("%d hours", timeLeft)
-                                Bridge.Server.Notify(tenant.PlayerData.source, string.format("Your rent for %s is overdue! You have %s left to pay $%s before lockout.", p.label, hoursOrDays, p.metadata.rent_debt), "warning")
+                                Bridge.Server.Notify(tenant.PlayerData.source, locale('notify.rent_overdue', p.label, hoursOrDays, p.metadata.rent_debt), 'warning')
                             end
                         end
                     end
@@ -540,7 +540,7 @@ RegisterNetEvent('LNS_Housing:server:toggleLock', function(propertyId)
     end
 
     if not hasAccess then
-        Bridge.Server.Notify(src, 'You do not have key access to lock/unlock this property.', 'error')
+        Bridge.Server.Notify(src, locale('notify.no_key_access'), 'error')
         return
     end
 
@@ -577,7 +577,7 @@ RegisterNetEvent('LNS_Housing:server:toggleLock', function(propertyId)
     TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
 
     local state = newLockedState and 'locked' or 'unlocked'
-    Bridge.Server.Notify(src, 'Property is now ' .. state .. '.', 'success')
+    Bridge.Server.Notify(src, locale('notify.door_status_changed', state == 'locked' and locale('notify.locked') or locale('notify.unlocked')), 'success')
 end)
 
 RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgradeId)
@@ -591,7 +591,7 @@ RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgr
         if not citizenid then return end
 
         if not CheckPermission(src, 'apartment', propertyId, 'manage') then
-            Bridge.Server.Notify(src, 'You do not have permission to upgrade this apartment.', 'error')
+            Bridge.Server.Notify(src, locale('notify.no_apt_upgrade_perm'), 'error')
             return
         end
 
@@ -601,14 +601,14 @@ RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgr
                 row = MySQL.single.await('SELECT * FROM apartments WHERE room_id = ? OR room_id = ? ORDER BY id ASC LIMIT 1', {propertyId, tostring(propertyId)})
             end
             if not row then
-                Bridge.Server.Notify(src, 'Apartment data not found.', 'error')
+                Bridge.Server.Notify(src, locale('notify.apt_data_not_found'), 'error')
                 return
             end
 
             local currentLevel = tonumber(row.security_level) or 0
             local maxLevel = Settings.Security.MaxLevel or 5
             if currentLevel >= maxLevel then
-                Bridge.Server.Notify(src, 'Security is already at maximum level!', 'error')
+                Bridge.Server.Notify(src, locale('notify.security_max_level'), 'error')
                 return
             end
 
@@ -624,7 +624,7 @@ RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgr
 
             local money = Bridge.Server.GetBankMoney(src)
             if money < price then
-                Bridge.Server.Notify(src, 'Not enough money in bank!', 'error')
+                Bridge.Server.Notify(src, locale('notify.not_enough_money_bank'), 'error')
                 return
             end
 
@@ -640,13 +640,13 @@ RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgr
             end
 
             TriggerClientEvent('LNS_Housing:client:updateApartmentSecurityLevel', -1, propertyId, nextLevel)
-            Bridge.Server.Notify(src, 'Security upgraded to level ' .. nextLevel, 'success')
+            Bridge.Server.Notify(src, locale('notify.security_upgraded', nextLevel), 'success')
         end
         return
     end
 
     if not HasPermissionAccess(src, propertyId, 'manage') then
-        Bridge.Server.Notify(src, 'You do not have permission to upgrade this property.', 'error')
+        Bridge.Server.Notify(src, locale('notify.no_upgrade_perm'), 'error')
         return
     end
 
@@ -656,7 +656,7 @@ RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgr
         local currentLevel = p.metadata.security_level or 0
         local maxLevel = Settings.Security.MaxLevel or 5
         if currentLevel >= maxLevel then
-            Bridge.Server.Notify(src, 'Security is already at maximum level!', 'error')
+            Bridge.Server.Notify(src, locale('notify.security_max_level'), 'error')
             return
         end
 
@@ -672,7 +672,7 @@ RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgr
 
         local money = Bridge.Server.GetBankMoney(src)
         if money < price then
-            Bridge.Server.Notify(src, 'Not enough money in bank!', 'error')
+            Bridge.Server.Notify(src, locale('notify.not_enough_money_bank'), 'error')
             return
         end
 
@@ -683,18 +683,18 @@ RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgr
         AddSecurityLog(propertyId, 'Security Upgraded', 'Security system upgraded to level ' .. nextLevel .. '.', '#22c55e')
 
         TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
-        Bridge.Server.Notify(src, 'Security upgraded to level ' .. nextLevel, 'success')
+        Bridge.Server.Notify(src, locale('notify.security_upgraded', nextLevel), 'success')
 
     elseif upgradeId == 'doorbell_camera' then
         if p.metadata.doorbell_camera then
-            Bridge.Server.Notify(src, 'This property already has a doorbell camera installed.', 'error')
+            Bridge.Server.Notify(src, locale('notify.already_has_doorbell'), 'error')
             return
         end
 
         local price = Settings.Security.doorbellCameraPrice or 15000
         local money = Bridge.Server.GetBankMoney(src)
         if money < price then
-            Bridge.Server.Notify(src, 'You cannot afford this upgrade.', 'error')
+            Bridge.Server.Notify(src, locale('notify.cannot_afford_upgrade'), 'error')
             return
         end
 
@@ -705,7 +705,7 @@ RegisterNetEvent('LNS_Housing:server:upgradeSecurity', function(propertyId, upgr
         AddSecurityLog(propertyId, 'Doorbell Camera Installed', 'The doorbell camera system was activated.', '#22c55e')
 
         TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
-        Bridge.Server.Notify(src, 'Doorbell camera installed successfully!', 'success')
+        Bridge.Server.Notify(src, locale('notify.doorbell_cam_installed'), 'success')
     end
 end)
 
@@ -818,7 +818,7 @@ function TriggerHouseAlarm(propertyId)
     if p.owner then
         local onlineOwner = Bridge.Server.IsPlayerOnline(p.owner)
         if onlineOwner then
-            Bridge.Server.Notify(onlineOwner.PlayerData.source, 'Your property alarm at ' .. p.label .. ' has been triggered!', 'error')
+            Bridge.Server.Notify(onlineOwner.PlayerData.source, locale('notify.prop_alarm_triggered', p.label), 'error')
         end
     end
 
@@ -1013,13 +1013,13 @@ RegisterNetEvent('LNS_Housing:server:toggleStashLock', function(propertyId, stas
     local hasAccess = CheckPermission(src, isApartment and 'apartment' or 'house', propertyId, 'storage')
 
     if not hasAccess then
-        Bridge.Server.Notify(src, 'You do not have permission to lock/unlock this storage.', 'error')
+        Bridge.Server.Notify(src, locale('notify.no_storage_lock_perm'), 'error')
         return
     end
 
     LockedStashes[stashId] = not LockedStashes[stashId]
     local state = LockedStashes[stashId] and 'locked' or 'unlocked'
-    Bridge.Server.Notify(src, 'Storage is now ' .. state .. '.', 'success')
+    Bridge.Server.Notify(src, locale('notify.storage_status_changed', state == 'locked' and locale('notify.locked') or locale('notify.unlocked')), 'success')
 end)
 
 lib.callback.register('LNS_Housing:server:isStashLocked', function(source, stashId)
@@ -1098,7 +1098,7 @@ exports('GivePhysicalKey', function(propertyId, targetSource)
     local added = Bridge.Server.AddItem(targetSource, pk.Item, 1, {
         propertyId = propertyId,
         isApartment = false,
-        description = 'Key to: ' .. p.label
+        description = locale('item.key_to', p.label)
     })
 
     return added and true or false
@@ -1110,7 +1110,7 @@ RegisterNetEvent('LNS_Housing:server:saveDoorbellCamera', function(propertyId, d
     if not p or p.isApartment then return end
 
     if not HasPermissionAccess(src, propertyId, 'manage') then
-        Bridge.Server.Notify(src, 'You do not have permission to manage this property.', 'error')
+        Bridge.Server.Notify(src, locale('notify.no_manage_perm'), 'error')
         return
     end
 
@@ -1125,7 +1125,7 @@ RegisterNetEvent('LNS_Housing:server:saveDoorbellCamera', function(propertyId, d
     SaveProperty(propertyId)
     AddSecurityLog(propertyId, 'Doorbell Camera Repositioned', 'The doorbell camera placement and angle were updated.', '#3b82f6')
     TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
-    Bridge.Server.Notify(src, 'Doorbell camera position updated successfully!', 'success')
+    Bridge.Server.Notify(src, locale('notify.doorbell_cam_updated'), 'success')
 end)
 
 local function ResolveLastLocationServer(source, position, metadata)

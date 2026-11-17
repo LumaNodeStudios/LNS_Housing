@@ -113,7 +113,7 @@ local function DestroyTrashItems(stashId, playerId)
 
         if playerId and playerId > 0 then
             if Settings.TrashCan.NotifyOnDestroy ~= false then
-                Bridge.Server.Notify(playerId, 'Items placed in the trash can were permanently destroyed.', 'inform')
+                Bridge.Server.Notify(playerId, locale('notify.trash_items_destroyed'), 'inform')
             end
         end
         return itemCount
@@ -520,7 +520,7 @@ RegisterNetEvent('LNS_Housing:server:disposeTrash', function(propertyId, isApart
     else
         local count = Bridge.Server.Search(src, 'count', TrashItemName) or 0
         if count <= 0 then
-            Bridge.Server.Notify(src, 'You do not have a trash bag in your inventory to throw away!', 'error')
+            Bridge.Server.Notify(src, locale('notify.no_trash_in_inv'), 'error')
             CarryingPlayers[src] = nil
             return
         end
@@ -535,14 +535,14 @@ RegisterNetEvent('LNS_Housing:server:disposeTrash', function(propertyId, isApart
 
     if GetVehiclePedIsIn(ped, false) ~= 0 then
         CarryingPlayers[src] = nil
-        Bridge.Server.Notify(src, 'You cannot throw away trash from inside a vehicle!', 'error')
+        Bridge.Server.Notify(src, locale('notify.cannot_throw_in_vehicle'), 'error')
         return
     end
 
     local bucket = GetPlayerRoutingBucket(src)
     if bucket ~= 0 then
         debugPrint('warn', ('[LNS_Housing:Trash:Security] Exploit blocked: Player %d attempted disposal inside private shell routing bucket (%d).'):format(src, bucket))
-        Bridge.Server.Notify(src, 'You must take the trash outside to a street dumpster!', 'error')
+        Bridge.Server.Notify(src, locale('notify.take_trash_outside'), 'error')
         return
     end
 
@@ -562,7 +562,7 @@ RegisterNetEvent('LNS_Housing:server:disposeTrash', function(propertyId, isApart
 
         if elapsed > 1200 then
             CarryingPlayers[src] = nil
-            Bridge.Server.Notify(src, 'The trash bag was carried for too long and broke.', 'error')
+            Bridge.Server.Notify(src, locale('notify.trash_bag_broke'), 'error')
             return
         end
     end
@@ -586,7 +586,7 @@ RegisterNetEvent('LNS_Housing:server:disposeTrash', function(propertyId, isApart
     if IsTrashItem then
         local removed = Bridge.Server.RemoveItem(src, TrashItemName, 1)
         if not removed then
-            Bridge.Server.Notify(src, 'Could not remove the trash bag from your inventory.', 'error')
+            Bridge.Server.Notify(src, locale('notify.could_not_remove_trash'), 'error')
             return
         end
         local remaining = Bridge.Server.Search(src, 'count', TrashItemName) or 0
@@ -620,9 +620,9 @@ RegisterNetEvent('LNS_Housing:server:disposeTrash', function(propertyId, isApart
         end
 
         Bridge.Server.AddMoney(src, account, reward, 'Disposed Street Trash')
-        Bridge.Server.Notify(src, ('You threw away the trash and earned $%d!'):format(reward), 'success')
+        Bridge.Server.Notify(src, locale('notify.threw_trash_reward', reward), 'success')
     else
-        Bridge.Server.Notify(src, 'You threw away the trash into the dumpster.', 'success')
+        Bridge.Server.Notify(src, locale('notify.threw_trash'), 'success')
     end
 
     debugPrint('info', ('[LNS_Housing:Trash] Player %d legitimately disposed trash in dumpster (Item mode: %s).'):format(src, tostring(IsTrashItem)))
@@ -902,7 +902,7 @@ lib.addCommand('cleantrash', {
     },
 }, function(source, args, raw)
     if source > 0 and not CheckPermission(source, 'admin') then
-        Bridge.Server.Notify(source, 'You do not have permission to use this command.', 'error')
+        Bridge.Server.Notify(source, locale('notify.no_perm_command'), 'error')
         return
     end
 
@@ -975,7 +975,7 @@ lib.addCommand('settrash', {
     },
 }, function(source, args, raw)
     if source > 0 and not CheckPermission(source, 'admin') then
-        Bridge.Server.Notify(source, 'You do not have permission to use this command.', 'error')
+        Bridge.Server.Notify(source, locale('notify.no_perm_command'), 'error')
         return
     end
 
@@ -1294,7 +1294,7 @@ RegisterNetEvent('LNS_Housing:server:requestRobotStartClean', function(propertyI
         local targetType = isApartment and 'apartment' or 'house'
         local hasAccess = CheckPermission(src, targetType, propertyId, 'entry')
         if not hasAccess then
-            Bridge.Server.Notify(src, 'You do not have permission to operate the cleaning robot.', 'error')
+            Bridge.Server.Notify(src, locale('notify.no_robot_perm'), 'error')
             return
         end
     end

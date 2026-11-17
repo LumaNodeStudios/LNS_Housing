@@ -10,7 +10,12 @@ version '1.0.0'
 
 ui_page 'web/dist/index.html'
 
+ox_libs {
+    'locale'
+}
+
 files {
+    'locales/*.json',
     'web/dist/index.html',
     'web/dist/**/*',
     'stream/[Shells]/*.ytyp',
@@ -25,6 +30,7 @@ files {
 
 shared_scripts {
     '@ox_lib/init.lua',
+    'shared/locales.lua',
     'shared/furniture.lua',
     'shared/settings.lua',
     'shared/theme.lua',

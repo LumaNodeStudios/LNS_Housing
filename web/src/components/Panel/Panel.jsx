@@ -5,8 +5,10 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import './Panel.css';
 import CustomSelect from '../Common/CustomSelect';
+import { useLocale } from '../../context/LocaleContext';
 
 const Panel = ({ data: initialData }) => {
+  const { t } = useLocale();
   const [activeTab, setActiveTab] = useState('home');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showAddModal, setShowAddModal] = useState(false);
@@ -117,13 +119,13 @@ const Panel = ({ data: initialData }) => {
 
   const isLockedOutTab = propertyData.focusTab === 'rent';
   const tabs = isLockedOutTab ? [
-    { id: 'rent', label: 'Rent Due' }
+    { id: 'rent', label: t('ui.rent_due', 'Rent Due') }
   ] : [
-    { id: 'home', label: 'Home' },
-    { id: 'upgrades', label: 'Upgrades' },
-    { id: 'access', label: 'Access' },
-    ...(propertyData.sale_type === 'rent' ? [{ id: 'rent', label: 'Rent' }] : []),
-    ...((!propertyData.isApartment || propertyData.allowWallColors) ? [{ id: 'settings', label: 'Settings' }] : [])
+    { id: 'home', label: t('ui.home', 'Home') },
+    { id: 'upgrades', label: t('ui.upgrades', 'Upgrades') },
+    { id: 'access', label: t('ui.access', 'Access') },
+    ...(propertyData.sale_type === 'rent' ? [{ id: 'rent', label: t('ui.rent', 'Rent') }] : []),
+    ...((!propertyData.isApartment || propertyData.allowWallColors) ? [{ id: 'settings', label: t('ui.settings', 'Settings') }] : [])
   ];
 
   useEffect(() => {
@@ -332,38 +334,38 @@ const Panel = ({ data: initialData }) => {
   const infoBoxes = [
     {
       id: 'protection',
-      title: 'Protection',
+      title: t('ui.protection', 'Protection'),
       desc: propertyData.isApartment
-        ? 'Easily monitor your apartment locks and upgrade security to deter intruders.'
-        : 'Easily monitor your house locks and get notified when someone tries to lockpick your lock.',
+        ? t('ui.protection_desc_apt', 'Easily monitor your apartment locks and upgrade security to deter intruders.')
+        : t('ui.protection_desc_house', 'Easily monitor your house locks and get notified when someone tries to lockpick your lock.'),
       icon: Shield,
-      actionLabel: 'Upgrade',
+      actionLabel: t('ui.upgrade', 'Upgrade'),
       targetTab: 'upgrades'
     },
     ...(!propertyData.isApartment ? [{
       id: 'parking',
-      title: 'Parking Spots',
+      title: t('ui.parking_spots', 'Parking Spots'),
       number: propertyData.garage ? propertyData.garage.toString() : '1',
-      desc: 'This is how many parking spots you have outside of your house.',
+      desc: t('ui.parking_desc', 'This is how many parking spots you have outside of your house.'),
       icon: Car
     }] : []),
     {
       id: 'roommates',
-      title: 'Manage Residents',
+      title: t('ui.manage_residents', 'Manage Residents'),
       number: roommates.filter(r => !r.isOwner).length.toString(),
       desc: propertyData.isApartment
-        ? 'See who has access to your apartment and manage their permissions.'
-        : 'See who has access to your house and manage their permissions.',
+        ? t('ui.residents_desc_apt', 'See who has access to your apartment and manage their permissions.')
+        : t('ui.residents_desc_house', 'See who has access to your house and manage their permissions.'),
       icon: Users,
-      actionLabel: 'Manage',
+      actionLabel: t('ui.manage', 'Manage'),
       targetTab: 'access'
     },
     ...(propertyData.sale_type === 'rent' ? [{
       id: 'rent',
-      title: 'Rent Due',
-      desc: `Remember to pay your rent fee. Current rent is $${(propertyData.rent_price || 0).toLocaleString()}.`,
+      title: t('ui.rent_due', 'Rent Due'),
+      desc: t('ui.rent_desc', `Remember to pay your rent fee. Current rent is $${(propertyData.rent_price || 0).toLocaleString()}.`, (propertyData.rent_price || 0).toLocaleString()),
       icon: CreditCard,
-      actionLabel: 'Manage',
+      actionLabel: t('ui.manage', 'Manage'),
       targetTab: 'rent'
     }] : [])
   ];
@@ -385,18 +387,18 @@ const Panel = ({ data: initialData }) => {
   };
 
   const powerTiers = [
-    { level: 1, maxPower: 5.0, price: 0, label: 'Standard (5.0 kWh)' },
-    { level: 2, maxPower: 10.0, price: 5000, label: 'Enhanced (10.0 kWh)' },
-    { level: 3, maxPower: 20.0, price: 12000, label: 'High-Cap (20.0 kWh)' },
-    { level: 4, maxPower: 35.0, price: 25000, label: 'Heavy-Duty (35.0 kWh)' },
-    { level: 5, maxPower: 50.0, price: 45000, label: 'Industrial (50.0 kWh)' },
+    { level: 1, maxPower: 5.0, price: 0, label: t('ui.tier_standard', 'Standard (5.0 kWh)') },
+    { level: 2, maxPower: 10.0, price: 5000, label: t('ui.tier_enhanced', 'Enhanced (10.0 kWh)') },
+    { level: 3, maxPower: 20.0, price: 12000, label: t('ui.tier_high_capacity', 'High-Cap (20.0 kWh)') },
+    { level: 4, maxPower: 35.0, price: 25000, label: t('ui.tier_heavy_duty', 'Heavy-Duty (35.0 kWh)') },
+    { level: 5, maxPower: 50.0, price: 45000, label: t('ui.tier_industrial', 'Industrial (50.0 kWh)') },
   ];
 
   const upgrades = [
     {
       id: 'security',
-      title: 'Security System',
-      desc: 'Upgrade locks and reinforced door frames to deter intruders.',
+      title: t('ui.security_systems', 'Security System'),
+      desc: t('ui.power_upgrade_desc', 'Upgrade locks and reinforced door frames to deter intruders.'),
       icon: Shield,
       level: propertyData.metadata?.security_level || 0,
       maxLevel: 5,
@@ -408,8 +410,8 @@ const Panel = ({ data: initialData }) => {
     },
     ...(!propertyData.isApartment ? [{
       id: 'doorbell_camera',
-      title: 'Doorbell Camera',
-      desc: 'Install a motion-activated camera at your front door to detect visitors and view a live feed.',
+      title: t('ui.doorbell_camera', 'Doorbell Camera'),
+      desc: t('ui.doorbell_camera_desc', 'Install a motion-activated camera at your front door to detect visitors and view a live feed.'),
       icon: Camera,
       level: propertyData.metadata?.doorbell_camera ? 1 : 0,
       maxLevel: 1,
@@ -543,7 +545,7 @@ const Panel = ({ data: initialData }) => {
           ))}
         </div>
         <div className="header-actions">
-          <span className="close-text">Close</span>
+          <span className="close-text">{t('close', 'Close')}</span>
           <button className="header-icon-btn" onClick={handleClose}>
             <Power size={18} />
           </button>
@@ -569,11 +571,11 @@ const Panel = ({ data: initialData }) => {
                     <span className="meta-pill-item"><Clock size={12} /> {formatTime(currentTime)}</span>
                     <span className="meta-pill-item"><Calendar size={12} /> {formatDate(currentTime)}</span>
                     <span className="meta-pill-item"><MapPin size={12} /> {propertyData.streetName || propertyData.label || 'Unknown'}</span>
-                    <span className="meta-pill-item"><Building size={12} /> Apartment</span>
+                    <span className="meta-pill-item"><Building size={12} /> {t('ui.apartment', 'Apartment')}</span>
                   </div>
                   <div className="header-title-row">
                     <h1 className="welcome-title-hero">
-                      Welcome, <span>{propertyData.playerName || 'Resident'}</span>
+                      {t('ui.welcome_user', `Welcome, ${propertyData.playerName || 'Resident'}`, propertyData.playerName || 'Resident')}
                     </h1>
                   </div>
                 </div>
@@ -609,25 +611,25 @@ const Panel = ({ data: initialData }) => {
                     <div className="overview-card-header">
                       <div className="overview-card-title">
                         <Building size={16} className="icon-gold" />
-                        <span>Apartment Details</span>
+                        <span>{t('ui.apartment_details', 'Apartment Details')}</span>
                       </div>
                     </div>
                     <div className="overview-stats-grid">
                       <div className="overview-stat-tile">
-                        <span className="overview-stat-label">Security Tier</span>
-                        <span className="overview-stat-val">Level {propertyData.metadata?.security_level || 0} Lock</span>
+                        <span className="overview-stat-label">{t('ui.security_tier', 'Security Tier')}</span>
+                        <span className="overview-stat-val">{t('ui.level_lock', `Level ${propertyData.metadata?.security_level || 0} Lock`, propertyData.metadata?.security_level || 0)}</span>
                       </div>
                       <div className="overview-stat-tile">
-                        <span className="overview-stat-label">Authorized Residents</span>
-                        <span className="overview-stat-val">{roommates.length} {roommates.length === 1 ? 'Resident' : 'Residents'}</span>
+                        <span className="overview-stat-label">{t('ui.authorized_residents', 'Authorized Residents')}</span>
+                        <span className="overview-stat-val">{t('ui.resident_count', `${roommates.length} Residents`, roommates.length)}</span>
                       </div>
                       <div className="overview-stat-tile">
-                        <span className="overview-stat-label">Unit Number</span>
+                        <span className="overview-stat-label">{t('ui.unit_number', 'Unit Number')}</span>
                         <span className="overview-stat-val">#{propertyData.id}</span>
                       </div>
                       <div className="overview-stat-tile">
-                        <span className="overview-stat-label">Wall Design</span>
-                        <span className="overview-stat-val">{propertyData.allowWallColors ? 'Customizable' : 'Standard'}</span>
+                        <span className="overview-stat-label">{t('ui.wall_design', 'Wall Design')}</span>
+                        <span className="overview-stat-val">{propertyData.allowWallColors ? t('ui.customizable', 'Customizable') : t('ui.standard', 'Standard')}</span>
                       </div>
                     </div>
                   </div>
@@ -653,13 +655,13 @@ const Panel = ({ data: initialData }) => {
                       <span className="meta-pill-item"><Building size={12} /> {(propertyData.type === 'Commerce' ? 'Commercial' : propertyData.type) || (propertyData.metadata && (propertyData.metadata.property_type === 'Commerce' ? 'Commercial' : propertyData.metadata.property_type)) || 'Residential'}</span>
                     </div>
                     <h1 className="welcome-title-hero">
-                      Welcome, <span>{propertyData.playerName || 'Resident'}</span>
+                      {t('ui.welcome_user', `Welcome, ${propertyData.playerName || 'Resident'}`, propertyData.playerName || 'Resident')}
                     </h1>
                   </div>
 
                   {(usageStats.electricityEnabled !== false || usageStats.temperatureEnabled !== false) && (
                     <div className="house-usage-card">
-                      <h2 className="usage-main-title">House Usage</h2>
+                      <h2 className="usage-main-title">{t('ui.house_usage', 'House Usage')}</h2>
                       <div className="usage-rows-wrapper">
                         {/* 1. Electricity Level */}
                         {usageStats.electricityEnabled !== false && (
@@ -667,7 +669,7 @@ const Panel = ({ data: initialData }) => {
                             <div className="usage-stat-info">
                               <div className="stat-label-wrap">
                                 <Zap size={14} className="icon-gold" />
-                                <span>Electricity Level</span>
+                                <span>{t('ui.electricity_level', 'Electricity Level')}</span>
                               </div>
                               <span className="stat-value-text font-mono">
                                 {usageStats.totalPower.toFixed(1)} kWh / {usageStats.maxPower.toFixed(1)} kWh
@@ -688,10 +690,10 @@ const Panel = ({ data: initialData }) => {
                             <div className="usage-stat-info">
                               <div className="stat-label-wrap">
                                 <Activity size={14} className={usageStats.breakerTripped ? "icon-red" : "icon-green"} />
-                                <span>Power Grid Status</span>
+                                <span>{t('ui.power_grid_status', 'Power Grid Status')}</span>
                               </div>
                               <span className={`status-badge-pill ${usageStats.breakerTripped ? 'tripped' : 'online'}`}>
-                                {usageStats.breakerTripped ? 'TRIPPED (OVERLOAD)' : 'ONLINE'}
+                                {usageStats.breakerTripped ? t('ui.tripped_overload', 'TRIPPED (OVERLOAD)') : t('ui.online', 'ONLINE')}
                               </span>
                             </div>
                           </div>
@@ -703,7 +705,7 @@ const Panel = ({ data: initialData }) => {
                             <div className="usage-stat-info">
                               <div className="stat-label-wrap">
                                 <Thermometer size={14} className="icon-orange" />
-                                <span>Temperature</span>
+                                <span>{t('ui.temperature', 'Temperature')}</span>
                               </div>
                               <span className="stat-value-text font-mono">
                                 {Math.round(usageStats.displayTemp !== undefined ? usageStats.displayTemp : usageStats.netTemp)}{usageStats.unitSymbol || '°F'} / {usageStats.maxTemp ? `${usageStats.maxTemp}${usageStats.unitSymbol || '°F'}` : '100°F'}
@@ -724,14 +726,14 @@ const Panel = ({ data: initialData }) => {
                             <div className="usage-stat-info">
                               <div className="stat-label-wrap">
                                 <Flame size={14} className="icon-flame" />
-                                <span>Heating / Cooling Level</span>
+                                <span>{t('ui.climate_level', 'Heating / Cooling Level')}</span>
                               </div>
                               <span className="usage-value-text font-mono">
                                 {(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta) > 0
-                                  ? `Heating (+${(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta).toFixed(1)}${usageStats.unitSymbol || '°F'})`
+                                  ? t('ui.heating_val', `Heating (+${(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta).toFixed(1)}${usageStats.unitSymbol || '°F'})`, [(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta).toFixed(1), usageStats.unitSymbol || '°F'])
                                   : (usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta) < 0
-                                    ? `Cooling (${(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta).toFixed(1)}${usageStats.unitSymbol || '°F'})`
-                                    : 'Disabled'}
+                                    ? t('ui.cooling_val', `Cooling (${(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta).toFixed(1)}${usageStats.unitSymbol || '°F'})`, [(usageStats.displayDelta !== undefined ? usageStats.displayDelta : usageStats.tempDelta).toFixed(1), usageStats.unitSymbol || '°F'])
+                                    : t('ui.disabled', 'Disabled')}
                               </span>
                             </div>
                           </div>
@@ -782,25 +784,25 @@ const Panel = ({ data: initialData }) => {
               transition={{ duration: 0.15 }}
             >
               <div className="tab-header-block">
-                <h1 className="tab-title">Property Upgrades</h1>
-                <p className="tab-subtitle">Manage electrical power capacity, door locks, and climate systems.</p>
+                <h1 className="tab-title">{t('ui.property_upgrades', 'Property Upgrades')}</h1>
+                <p className="tab-subtitle">{t('ui.property_upgrades_subtitle', 'Manage electrical power capacity, door locks, and climate systems.')}</p>
               </div>
 
               <div className="security-main-grid">
                 <div className="security-upgrades-col">
                   {usageStats.electricityEnabled !== false && (
                     <>
-                      <h3 className="sub-section-title">Electrical Grid Upgrades</h3>
+                      <h3 className="sub-section-title">{t('ui.electrical_grid_upgrades', 'Electrical Grid Upgrades')}</h3>
                       <div className="upgrade-card-new power-upgrade-card">
                         <div className="upgrade-icon-box">
                           <Zap size={20} />
                         </div>
                         <div className="upgrade-content">
                           <div className="upgrade-top-row">
-                            <h3>Electricity Max Capacity</h3>
+                            <h3>{t('ui.electricity_max_capacity', 'Electricity Max Capacity')}</h3>
                             <span className="lvl-badge">LVL {usageStats.powerLevel}/5</span>
                           </div>
-                          <p>Upgrade your property's electrical grid to power heavy appliances and avoid tripping breakers.</p>
+                          <p>{t('ui.power_upgrade_desc', "Upgrade your property's electrical grid to power heavy appliances and avoid tripping breakers.")}</p>
                           <div className="power-bar-preview">
                             <span className="usage-val">{usageStats.totalPower.toFixed(1)} kWh / {usageStats.maxPower.toFixed(1)} kWh Max</span>
                             <div className="usage-bar-track" style={{ height: '6px', marginTop: '4px' }}>
@@ -828,7 +830,7 @@ const Panel = ({ data: initialData }) => {
                     </>
                   )}
 
-                  <h3 className="sub-section-title" style={{ marginTop: '20px' }}>Security Systems</h3>
+                  <h3 className="sub-section-title" style={{ marginTop: '20px' }}>{t('ui.security_systems', 'Security Systems')}</h3>
                   <div className="upgrades-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {upgrades.map((upgrade) => (
                       <div key={upgrade.id} className="upgrade-card-new">
@@ -845,10 +847,10 @@ const Panel = ({ data: initialData }) => {
                             {upgrade.id === 'doorbell_camera' && upgrade.level >= upgrade.maxLevel ? (
                               <div style={{ display: 'flex', gap: '8px' }}>
                                 <button className="camera-view-btn" onClick={handleViewCamera}>
-                                  <Camera size={12} /> View Live Feed
+                                  <Camera size={12} /> {t('ui.view_live_feed', 'View Live Feed')}
                                 </button>
                                 <button className="camera-view-btn" onClick={handleRepositionCamera}>
-                                  <Settings size={12} /> Reposition
+                                  <Settings size={12} /> {t('ui.reposition', 'Reposition')}
                                 </button>
                               </div>
                             ) : (
@@ -859,7 +861,7 @@ const Panel = ({ data: initialData }) => {
                                   disabled={upgrade.level >= upgrade.maxLevel}
                                   onClick={() => handleUpgradeSecurity(upgrade.id)}
                                 >
-                                  {upgrade.level >= upgrade.maxLevel ? 'MAXED' : 'PURCHASE'}
+                                  {upgrade.level >= upgrade.maxLevel ? t('ui.maxed', 'MAXED') : t('ui.purchase', 'PURCHASE')}
                                 </button>
                               </>
                             )}
@@ -873,7 +875,7 @@ const Panel = ({ data: initialData }) => {
                 <div className="security-history-col">
                   <div className="history-header">
                     <History size={16} />
-                    <h3>Security Log</h3>
+                    <h3>{t('ui.security_log', 'Security Log')}</h3>
                   </div>
                   <div className="history-scroll-list">
                     {securityHistory.length > 0 ? (
@@ -884,7 +886,7 @@ const Panel = ({ data: initialData }) => {
                           </div>
                           <div className="log-details">
                             <div className="log-row">
-                              <span className="log-title">{event.title || 'Security Event'}</span>
+                              <span className="log-title">{event.title || t('ui.security_event', 'Security Event')}</span>
                               <span className="log-date">{event.date}</span>
                             </div>
                             <p className="log-desc">{event.desc}</p>
@@ -895,7 +897,7 @@ const Panel = ({ data: initialData }) => {
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', opacity: 0.4, gap: '8px' }}>
                         <ShieldCheck size={32} />
-                        <span style={{ fontSize: '11px' }}>System fully secured</span>
+                        <span style={{ fontSize: '11px' }}>{t('ui.system_fully_secured', 'System fully secured')}</span>
                       </div>
                     )}
                   </div>
@@ -915,14 +917,14 @@ const Panel = ({ data: initialData }) => {
             >
               <div className="access-header-new">
                 <div className="tab-header-block">
-                  <h1 className="tab-title">Access Control</h1>
-                  <p className="tab-subtitle">Manage residents and their specific property permissions.</p>
+                  <h1 className="tab-title">{t('ui.access_control', 'Access Control')}</h1>
+                  <p className="tab-subtitle">{t('ui.access_subtitle', 'Manage residents and their specific property permissions.')}</p>
                 </div>
                 <button
                   className="add-resident-btn"
                   onClick={() => setShowAddModal(true)}
                 >
-                  <UserPlus size={14} /> <span>Add Resident</span>
+                  <UserPlus size={14} /> <span>{t('ui.add_resident', 'Add Resident')}</span>
                 </button>
               </div>
 
@@ -936,7 +938,7 @@ const Panel = ({ data: initialData }) => {
                       <div className="resident-main">
                         <div className="name-row">
                           <span className="resident-name">{person.name}</span>
-                          {person.isOwner && <span className="owner-badge"><Crown size={8} /> OWNER</span>}
+                          {person.isOwner && <span className="owner-badge"><Crown size={8} /> {t('ui.owner', 'OWNER')}</span>}
                         </div>
                         <span className="resident-cid">{person.citizenid}</span>
                       </div>
@@ -951,42 +953,42 @@ const Panel = ({ data: initialData }) => {
                     </div>
 
                     <div className="permissions-section">
-                      <span className="perm-label">Permissions</span>
+                      <span className="perm-label">{t('ui.permissions', 'Permissions')}</span>
                       <div className="perm-switches">
                         <button
                           className={`perm-toggle-btn ${person.permissions.doors ? 'active' : ''}`}
                           onClick={() => handleTogglePermission(person.id, 'doors')}
                           disabled={person.isOwner}
                         >
-                          <Key size={12} /> Doors
+                          <Key size={12} /> {t('ui.doors', 'Doors')}
                         </button>
                         <button
                           className={`perm-toggle-btn ${person.permissions.storage ? 'active' : ''}`}
                           onClick={() => handleTogglePermission(person.id, 'storage')}
                           disabled={person.isOwner}
                         >
-                          <Package size={12} /> Storage
+                          <Package size={12} /> {t('ui.storage', 'Storage')}
                         </button>
                         <button
                           className={`perm-toggle-btn ${person.permissions.wardrobe ? 'active' : ''}`}
                           onClick={() => handleTogglePermission(person.id, 'wardrobe')}
                           disabled={person.isOwner}
                         >
-                          <Shirt size={12} /> Wardrobe
+                          <Shirt size={12} /> {t('ui.wardrobe', 'Wardrobe')}
                         </button>
                         <button
                           className={`perm-toggle-btn ${person.permissions.furniture ? 'active' : ''}`}
                           onClick={() => handleTogglePermission(person.id, 'furniture')}
                           disabled={person.isOwner}
                         >
-                          <Palette size={12} /> Furniture
+                          <Palette size={12} /> {t('ui.furniture', 'Furniture')}
                         </button>
                         <button
                           className={`perm-toggle-btn ${person.permissions.panel ? 'active' : ''}`}
                           onClick={() => handleTogglePermission(person.id, 'panel')}
                           disabled={person.isOwner}
                         >
-                          <Settings size={12} /> Panel
+                          <Settings size={12} /> {t('ui.panel', 'Panel')}
                         </button>
                       </div>
                     </div>
@@ -1006,15 +1008,15 @@ const Panel = ({ data: initialData }) => {
               transition={{ duration: 0.15 }}
             >
               <div className="tab-header-block">
-                <h1 className="tab-title">Rental & Finance</h1>
-                <p className="tab-subtitle">Manage your property payments and lease history.</p>
+                <h1 className="tab-title">{t('ui.rental_finance', 'Rental & Finance')}</h1>
+                <p className="tab-subtitle">{t('ui.rental_subtitle', 'Manage your property payments and lease history.')}</p>
               </div>
 
               <div className="rent-content-new">
                 <div className="rent-summary-side">
                   {propertyData.metadata?.rent_debt > 0 && (
                     <div className="rent-debt-alert">
-                      <h4 style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>Outstanding Debt: ${propertyData.metadata.rent_debt.toLocaleString()}</h4>
+                      <h4 style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>{t('ui.outstanding_debt', `Outstanding Debt: $${propertyData.metadata.rent_debt.toLocaleString()}`, propertyData.metadata.rent_debt.toLocaleString())}</h4>
                       <p style={{ margin: '4px 0 0 0', fontSize: '11px', opacity: 0.85 }}>
                         Missed payments: {propertyData.metadata.missed_payments || 0}. Lockout: {propertyData.metadata.due_by ? (Math.floor(Date.now() / 1000) > propertyData.metadata.due_by ? "ACTIVE" : new Date(propertyData.metadata.due_by * 1000).toLocaleDateString()) : "Pending"}.
                       </p>
@@ -1024,15 +1026,15 @@ const Panel = ({ data: initialData }) => {
                   <div className="rent-overview-card">
                     <div className="overview-header">
                       <CreditCard size={16} />
-                      <h3>Payment Overview</h3>
+                      <h3>{t('ui.payment_overview', 'Payment Overview')}</h3>
                     </div>
                     <div className="overview-stats">
                       <div className="o-stat">
-                        <span className="o-label">Rent Amount</span>
+                        <span className="o-label">{t('ui.rent_amount', 'Rent Amount')}</span>
                         <span className="o-value">${(propertyData.metadata?.rent_amount || propertyData.price || 1000).toLocaleString()}</span>
                       </div>
                       <div className="o-stat highlight">
-                        <span className="o-label">{propertyData.metadata?.rent_debt > 0 ? "Debt Due" : "Next Cycle Due"}</span>
+                        <span className="o-label">{propertyData.metadata?.rent_debt > 0 ? t('ui.debt_due', 'Debt Due') : t('ui.next_cycle_due', 'Next Cycle Due')}</span>
                         <span className="o-value" style={{ color: propertyData.metadata?.rent_debt > 0 ? 'var(--danger)' : 'var(--primary)' }}>
                           {propertyData.metadata?.due_by
                             ? new Date(propertyData.metadata.due_by * 1000).toLocaleDateString()
@@ -1044,7 +1046,7 @@ const Panel = ({ data: initialData }) => {
                         </span>
                       </div>
                       <div className="o-stat">
-                        <span className="o-label">Total Paid to Date</span>
+                        <span className="o-label">{t('ui.total_paid_to_date', 'Total Paid to Date')}</span>
                         <span className="o-value" style={{ color: 'var(--success)' }}>
                           ${rentHistory.filter(h => h.status === 'Paid').reduce((sum, h) => sum + (h.amount || 0), 0).toLocaleString()}
                         </span>
@@ -1052,8 +1054,8 @@ const Panel = ({ data: initialData }) => {
                     </div>
                     <div className="auto-pay-row">
                       <div className="auto-pay-info">
-                        <h4>Bank Auto-Pay</h4>
-                        <p>Rent auto-deducted weekly</p>
+                        <h4>{t('ui.bank_autopay', 'Bank Auto-Pay')}</h4>
+                        <p>{t('ui.autopay_desc', 'Rent auto-deducted weekly')}</p>
                       </div>
                       <button
                         className={`modern-toggle ${autoPay ? 'active' : ''}`}
@@ -1066,17 +1068,17 @@ const Panel = ({ data: initialData }) => {
                       className="pay-now-btn-new"
                       onClick={() => handlePayRent(propertyData.metadata?.rent_debt > 0 ? propertyData.metadata.rent_debt : (propertyData.metadata?.rent_amount || propertyData.price || 1000))}
                     >
-                      {propertyData.metadata?.rent_debt > 0 ? "Pay Total Debt" : "Pay Next Cycle"}
+                      {propertyData.metadata?.rent_debt > 0 ? t('ui.pay_total_debt', 'Pay Total Debt') : t('ui.pay_next_cycle', 'Pay Next Cycle')}
                     </button>
 
                     <div className="custom-pay-section" style={{ marginTop: '0px', borderTop: '1px solid var(--border-dim)', paddingTop: '8px' }}>
-                      <label style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Custom Payment Amount</label>
+                      <label style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>{t('ui.custom_payment_amount', 'Custom Payment Amount')}</label>
                       <div style={{ display: 'flex', gap: '6px' }}>
                         <div style={{ position: 'relative', flex: 1 }}>
                           <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: '11px', fontWeight: '700' }}>$</span>
                           <input
                             type="number"
-                            placeholder="Amount"
+                            placeholder={t('ui.amount', 'Amount')}
                             value={customPayAmount}
                             onChange={(e) => setCustomPayAmount(e.target.value)}
                             style={{ width: '100%', padding: '6px 8px 6px 20px', borderRadius: '6px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-dim)', color: '#fff', fontSize: '11px', outline: 'none' }}
@@ -1088,7 +1090,7 @@ const Panel = ({ data: initialData }) => {
                           className="pay-now-btn-new"
                           style={{ margin: 0, padding: '6px 10px', fontSize: '11px', width: 'auto', flexShrink: 0 }}
                         >
-                          Pay
+                          {t('ui.pay', 'Pay')}
                         </button>
                       </div>
                     </div>
@@ -1098,16 +1100,16 @@ const Panel = ({ data: initialData }) => {
                 <div className="rent-history-side">
                   <div className="history-header-new">
                     <History size={16} />
-                    <h3>Transaction History</h3>
+                    <h3>{t('ui.transaction_history', 'Transaction History')}</h3>
                   </div>
                   <div className="history-table-wrapper">
                     <table className="modern-table">
                       <thead>
                         <tr>
-                          <th>Date</th>
-                          <th>Description</th>
-                          <th>Amount</th>
-                          <th>Status</th>
+                          <th>{t('ui.date', 'Date')}</th>
+                          <th>{t('ui.description', 'Description')}</th>
+                          <th>{t('ui.amount', 'Amount')}</th>
+                          <th>{t('ui.status', 'Status')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1129,7 +1131,7 @@ const Panel = ({ data: initialData }) => {
                         ) : (
                           <tr>
                             <td colSpan="4" style={{ textAlign: 'center', opacity: 0.4, padding: '24px', fontSize: '11px' }}>
-                              No transactions on record.
+                              {t('ui.no_transactions', 'No transactions on record.')}
                             </td>
                           </tr>
                         )}
@@ -1151,8 +1153,8 @@ const Panel = ({ data: initialData }) => {
               transition={{ duration: 0.15 }}
             >
               <div className="tab-header-block">
-                <h1 className="tab-title">Property Settings</h1>
-                <p className="tab-subtitle">Configure your home's systems and appearance.</p>
+                <h1 className="tab-title">{t('ui.property_settings', 'Property Settings')}</h1>
+                <p className="tab-subtitle">{t('ui.settings_subtitle', "Configure your home's systems and appearance.")}</p>
               </div>
 
               <div className="settings-grid">
@@ -1160,7 +1162,7 @@ const Panel = ({ data: initialData }) => {
                   <div className="settings-section">
                     <div className="section-header-row">
                       <Shield size={16} />
-                      <h3>Security & Privacy</h3>
+                      <h3>{t('ui.security_privacy', 'Security & Privacy')}</h3>
                     </div>
 
                     <div className="settings-list">
@@ -1168,8 +1170,8 @@ const Panel = ({ data: initialData }) => {
                         <div className="setting-info">
                           <BellRing size={14} />
                           <div>
-                            <h4>Lock Notifications</h4>
-                            <p>Get alerted when someone locks or unlocks your doors.</p>
+                            <h4>{t('ui.lock_notifications', 'Lock Notifications')}</h4>
+                            <p>{t('ui.lock_notifications_desc', 'Get alerted when someone locks or unlocks your doors.')}</p>
                           </div>
                         </div>
                         <button
@@ -1190,12 +1192,12 @@ const Panel = ({ data: initialData }) => {
                     <div className="settings-section design-section">
                       <div className="section-header-row">
                         <Palette size={16} />
-                        <h3>Interior Design</h3>
+                        <h3>{t('ui.interior_design', 'Interior Design')}</h3>
                       </div>
 
                       <div className="color-picker-container">
                         <div className="picker-header">
-                          <label>Wall Tint Color</label>
+                          <label>{t('ui.wall_tint_color', 'Wall Tint Color')}</label>
                           <span className="selected-color-name">
                             {WALL_COLORS.find(c => c.id === selectedWallColor)?.name || 'Default'}
                           </span>
@@ -1217,8 +1219,8 @@ const Panel = ({ data: initialData }) => {
                       </div>
 
                       <div className="design-footer">
-                        <p>Changes are applied immediately to all interior walls.</p>
-                        <button className="apply-btn" onClick={() => handleWallColorChange(0)}>Reset Defaults</button>
+                        <p>{t('ui.wall_tint_desc', 'Changes are applied immediately to all interior walls.')}</p>
+                        <button className="apply-btn" onClick={() => handleWallColorChange(0)}>{t('ui.reset_defaults', 'Reset Defaults')}</button>
                       </div>
                     </div>
                   )}
@@ -1245,13 +1247,13 @@ const Panel = ({ data: initialData }) => {
               transition={{ type: 'spring', duration: 0.35 }}
             >
               <div className="modal-header">
-                <h3>Add New Resident</h3>
+                <h3>{t('ui.add_new_resident', 'Add New Resident')}</h3>
                 <button className="close-modal" onClick={() => { setShowAddModal(false); setModalError(''); }}>
                   <X size={16} />
                 </button>
               </div>
               <div className="modal-body">
-                <p>Enter the Server ID of the resident you wish to grant property permissions to, or select from nearby players.</p>
+                <p>{t('ui.add_resident_desc', 'Enter the Server ID of the resident you wish to grant property permissions to, or select from nearby players.')}</p>
                 {modalError && (
                   <div style={{
                     background: 'rgba(239,68,68,0.12)',
@@ -1270,9 +1272,9 @@ const Panel = ({ data: initialData }) => {
                 )}
                 <div className="modal-input-group" style={{ marginBottom: '12px' }}>
                   <CustomSelect
-                    label="Select Nearby Player"
+                    label={t('ui.select_nearby_player', 'Select Nearby Player')}
                     value={newRoommateId}
-                    placeholder={nearbyPlayers.length > 0 ? "Select Online Player" : "No Nearby Players"}
+                    placeholder={nearbyPlayers.length > 0 ? t('ui.select_online_player', 'Select Online Player') : t('ui.no_nearby_players', 'No Nearby Players')}
                     options={nearbyPlayers.map(p => ({
                       value: p.id,
                       label: `${p.name} (ID: ${p.id})`
@@ -1281,53 +1283,53 @@ const Panel = ({ data: initialData }) => {
                   />
                 </div>
                 <div className="modal-input-group">
-                  <label>Server ID (Source)</label>
+                  <label>{t('ui.server_id', 'Server ID (Source)')}</label>
                   <input
                     type="text"
-                    placeholder="e.g. 1"
+                    placeholder={t('ui.placeholder_id_example', 'e.g. 1')}
                     value={newRoommateId}
                     onChange={(e) => setNewRoommateId(e.target.value)}
                   />
                 </div>
                 <div className="permissions-selector">
-                  <label>Permissions Profile</label>
+                  <label>{t('ui.permissions_profile', 'Permissions Profile')}</label>
                   <div className="perms-grid">
                     <div
                       className={`perm-toggle ${initialPermissions.doors ? 'active' : ''}`}
                       onClick={() => setInitialPermissions(prev => ({ ...prev, doors: !prev.doors }))}
                     >
-                      <Key size={12} /> Doors
+                      <Key size={12} /> {t('ui.doors', 'Doors')}
                     </div>
                     <div
                       className={`perm-toggle ${initialPermissions.storage ? 'active' : ''}`}
                       onClick={() => setInitialPermissions(prev => ({ ...prev, storage: !prev.storage }))}
                     >
-                      <Package size={12} /> Storage
+                      <Package size={12} /> {t('ui.storage', 'Storage')}
                     </div>
                     <div
                       className={`perm-toggle ${initialPermissions.wardrobe ? 'active' : ''}`}
                       onClick={() => setInitialPermissions(prev => ({ ...prev, wardrobe: !prev.wardrobe }))}
                     >
-                      <Shirt size={12} /> Wardrobe
+                      <Shirt size={12} /> {t('ui.wardrobe', 'Wardrobe')}
                     </div>
                     <div
                       className={`perm-toggle ${initialPermissions.furniture ? 'active' : ''}`}
                       onClick={() => setInitialPermissions(prev => ({ ...prev, furniture: !prev.furniture }))}
                     >
-                      <Palette size={12} /> Furniture
+                      <Palette size={12} /> {t('ui.furniture', 'Furniture')}
                     </div>
                     <div
                       className={`perm-toggle ${initialPermissions.panel ? 'active' : ''}`}
                       onClick={() => setInitialPermissions(prev => ({ ...prev, panel: !prev.panel }))}
                     >
-                      <Settings size={12} /> Panel
+                      <Settings size={12} /> {t('ui.panel', 'Panel')}
                     </div>
                   </div>
                 </div>
               </div>
               <div className="modal-footer">
-                <button className="btn-cancel" onClick={() => setShowAddModal(false)}>Cancel</button>
-                <button className="btn-confirm" onClick={handleAddRoommate}>Add Resident</button>
+                <button className="btn-cancel" onClick={() => setShowAddModal(false)}>{t('cancel', 'Cancel')}</button>
+                <button className="btn-confirm" onClick={handleAddRoommate}>{t('ui.add_resident', 'Add Resident')}</button>
               </div>
             </motion.div>
           </motion.div>

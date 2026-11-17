@@ -74,7 +74,7 @@ local function GetDefaultPanelFurniture()
     end
     return {
         model = 'reh_prop_reh_tablet_01a',
-        label = 'Property Panel'
+        label = locale('target.property_panel')
     }, 'prerequisites'
 end
 
@@ -460,7 +460,7 @@ local function OnPlayerLoaded(src)
         local currentTime = GetGameTimer()
         if not lastNoRoomNotify[src] or (currentTime - lastNoRoomNotify[src]) > 5000 then
             lastNoRoomNotify[src] = currentTime
-            Bridge.Server.Notify(src, 'No apartment rooms are currently available right now.', 'error')
+            Bridge.Server.Notify(src, locale('notify.no_available_apartments'), 'error')
         end
         return
     end
@@ -664,7 +664,7 @@ RegisterNetEvent('LNS_Housing:server:enterApartmentBucket', function(roomId)
     end
 
     if not hasAccess then
-        Bridge.Server.Notify(src, 'You do not have access to this apartment.', 'error')
+        Bridge.Server.Notify(src, locale('notify.no_key_access'), 'error')
         return
     end
 
@@ -898,7 +898,7 @@ RegisterNetEvent('LNS_Housing:server:updateApartmentPermissions', function(roomI
         end
         
         if count > Settings.MaxKeys then
-            Bridge.Server.Notify(src, 'You have reached the maximum number of keys (' .. Settings.MaxKeys .. ') for this apartment!', 'error')
+            Bridge.Server.Notify(src, locale('notify.max_keys_reached', Settings.MaxKeys), 'error')
             return
         end
 
@@ -919,7 +919,7 @@ RegisterNetEvent('LNS_Housing:server:updateApartmentPermissions', function(roomI
             wallColor = result.wall_color or 0
         })
         
-        Bridge.Server.Notify(src, 'Apartment permissions updated successfully!', 'success')
+        Bridge.Server.Notify(src, locale('notify.apt_perms_updated'), 'success')
     end
 end)
 
@@ -966,25 +966,25 @@ local function ProcessBuyApartmentFurniture(src, roomId, items, totalPrice, paym
     if not citizenid then return false, 'No identifier' end
 
     if type(items) ~= 'table' then
-        Bridge.Server.Notify(src, 'Invalid furniture payload.', 'error')
+        Bridge.Server.Notify(src, locale('notify.invalid_furniture_payload'), 'error')
         return false, 'Invalid payload'
     end
 
     local price = tonumber(totalPrice)
     if not price or price ~= price then
-        Bridge.Server.Notify(src, 'Invalid purchase amount.', 'error')
+        Bridge.Server.Notify(src, locale('notify.invalid_purchase_amount'), 'error')
         return false, 'Invalid amount'
     end
 
     price = math.floor(price + 0.0)
     if price < 0 then
-        Bridge.Server.Notify(src, 'Invalid purchase amount.', 'error')
+        Bridge.Server.Notify(src, locale('notify.invalid_purchase_amount'), 'error')
         return false, 'Invalid amount'
     end
 
     local result = FindManagedApartment(roomId, citizenid)
     if not result then
-        Bridge.Server.Notify(src, 'You do not have management access to this apartment.', 'error')
+        Bridge.Server.Notify(src, locale('notify.no_apt_manage_perm'), 'error')
         return false, 'No access'
     end
 
@@ -993,14 +993,14 @@ local function ProcessBuyApartmentFurniture(src, roomId, items, totalPrice, paym
     if price > 0 then
         if money < price then
             local targetAccountName = payType == 'cash' and 'cash' or 'bank account'
-            Bridge.Server.Notify(src, 'Not enough money in your ' .. targetAccountName .. '!', 'error')
+            Bridge.Server.Notify(src, locale('notify.not_enough_money_account', targetAccountName), 'error')
             return false, 'Not enough money'
         end
 
         local removed = Bridge.Server.RemoveMoney(src, payType, price, "Bought furniture for apartment #" .. roomId)
         if not removed then
             local targetAccountName = payType == 'cash' and 'cash' or 'bank'
-            Bridge.Server.Notify(src, 'Could not process ' .. targetAccountName .. ' payment.', 'error')
+            Bridge.Server.Notify(src, locale('notify.could_not_process_payment_account', targetAccountName), 'error')
             return false, 'Payment failed'
         end
     end
@@ -1024,7 +1024,7 @@ local function ProcessBuyApartmentFurniture(src, roomId, items, totalPrice, paym
         return json.encode(currentFurniture)
     end)
     if not okEncode then
-        Bridge.Server.Notify(src, 'Could not process furniture data.', 'error')
+        Bridge.Server.Notify(src, locale('notify.could_not_process_furniture'), 'error')
         return false, 'Encode failed'
     end
 
@@ -1036,7 +1036,7 @@ local function ProcessBuyApartmentFurniture(src, roomId, items, totalPrice, paym
         })
     end)
     if not okUpdate then
-        Bridge.Server.Notify(src, 'Database error while saving furniture.', 'error')
+        Bridge.Server.Notify(src, locale('notify.database_error'), 'error')
         return false, 'Database error'
     end
 
@@ -1046,7 +1046,7 @@ local function ProcessBuyApartmentFurniture(src, roomId, items, totalPrice, paym
     if CalculatePropertyPowerAndTemp then CalculatePropertyPowerAndTemp(roomId) end
 
     TriggerClientEvent('LNS_Housing:client:updateApartmentFurniture', -1, roomId, currentFurniture)
-    Bridge.Server.Notify(src, 'Furniture bought successfully!', 'success')
+    Bridge.Server.Notify(src, locale('notify.furniture_purchased'), 'success')
     return true
 end
 
@@ -1147,7 +1147,7 @@ local function GetPlayerSpawnsServer(source)
                     table.insert(spawns, {
                         id = roomId,
                         type = "apartment",
-                        label = "Apartment Room #" .. roomId,
+                        label = locale('target.apartment_room_prefix') .. ' #' .. roomId,
                         coords = roomData.spawn
                     })
                 end
@@ -1709,9 +1709,9 @@ RegisterNetEvent('LNS_Housing:server:ringApartmentDoorbell', function(roomId)
             for _, insideSrc in ipairs(playersInside) do
                 TriggerClientEvent('LNS_Housing:client:receiveApartmentDoorbell', insideSrc, roomId, src, visitorName)
             end
-            Bridge.Server.Notify(src, 'You rang the doorbell. Waiting for an answer...', 'info')
+            Bridge.Server.Notify(src, locale('notify.doorbell_rang'), 'info')
         else
-            Bridge.Server.Notify(src, 'No one is currently inside to answer the door.', 'error')
+            Bridge.Server.Notify(src, locale('notify.doorbell_no_answer'), 'error')
         end
         return
     end
@@ -1742,9 +1742,9 @@ RegisterNetEvent('LNS_Housing:server:answerApartmentDoorbell', function(roomId, 
 
         local roomData = getRoomDataById(roomId)
         TriggerClientEvent('LNS_Housing:client:enterGuestApartment', guestSrc, roomId, roomData)
-        Bridge.Server.Notify(src, 'You let the guest in.', 'success')
+        Bridge.Server.Notify(src, locale('notify.guest_let_in'), 'success')
     else
-        Bridge.Server.Notify(guestSrc, 'The resident did not let you in.', 'error')
+        Bridge.Server.Notify(guestSrc, locale('notify.guest_denied'), 'error')
     end
 end)
 
@@ -1762,7 +1762,7 @@ exports('GiveApartmentPhysicalKey', function(roomId, targetSource)
     local added = Bridge.Server.AddItem(targetSource, pk.Item, 1, {
         propertyId = roomId,
         isApartment = true,
-        description = 'Key to: Apartment Room #' .. roomId
+        description = locale('item.key_to', locale('target.apartment_room_prefix') .. ' #' .. roomId)
     })
 
     return added and true or false

@@ -47,14 +47,14 @@ RegisterNetEvent('LNS_Housing:server:policeRaidDoor', function(propertyId, prope
     
     local playerJob = Bridge.Server.GetPlayerJob(src)
     if not Bridge.IsPoliceJob(playerJob) then
-        Bridge.Server.Notify(src, 'Only police officers are authorized to breach doors!', 'error')
+        Bridge.Server.Notify(src, locale('notify.only_police_breach'), 'error')
         return
     end
 
     local raidItem = Settings.Security.RaidItem or 'WEAPON_BATTERINGRAM'
     local itemCount = Bridge.Server.Search(src, 'count', raidItem)
     if itemCount < 1 then
-        Bridge.Server.Notify(src, 'You do not have the required breaching weapon!', 'error')
+        Bridge.Server.Notify(src, locale('notify.breach_weapon_required'), 'error')
         return
     end
 
@@ -85,7 +85,7 @@ RegisterNetEvent('LNS_Housing:server:policeRaidDoor', function(propertyId, prope
         TemporaryAccess.doors[propertyId][identifier] = true
 
         TriggerClientEvent('LNS_Housing:client:breachForceOpenDoor', -1, doorId, propertyId, doorCoords, breacherCoords, swingAngle)
-        Bridge.Server.Notify(src, 'Door breached successfully!', 'success')
+        Bridge.Server.Notify(src, locale('notify.door_breach_success'), 'success')
     else
         if p then
             p.metadata = p.metadata or {}
@@ -98,7 +98,7 @@ RegisterNetEvent('LNS_Housing:server:policeRaidDoor', function(propertyId, prope
 
             TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
             TriggerClientEvent('LNS_Housing:client:breachForceOpenDoor', -1, doorId, propertyId, doorCoords, breacherCoords, swingAngle)
-            Bridge.Server.Notify(src, 'Door breached successfully!', 'success')
+            Bridge.Server.Notify(src, locale('notify.door_breach_success'), 'success')
         end
     end
 end)
@@ -109,14 +109,14 @@ RegisterNetEvent('LNS_Housing:server:policeRaidStash', function(propertyId, stas
     
     local playerJob = Bridge.Server.GetPlayerJob(src)
     if not Bridge.IsPoliceJob(playerJob) then
-        Bridge.Server.Notify(src, 'Only police officers are authorized to breach storage!', 'error')
+        Bridge.Server.Notify(src, locale('notify.only_police_storage'), 'error')
         return
     end
 
     local accessTool = Settings.Security.PoliceAccessTool or 'police_access_tool'
     local itemCount = Bridge.Server.Search(src, 'count', accessTool)
     if itemCount < 1 then
-        Bridge.Server.Notify(src, 'You do not have the required Police Access Tool!', 'error')
+        Bridge.Server.Notify(src, locale('notify.police_tool_required'), 'error')
         return
     end
 
@@ -124,14 +124,14 @@ RegisterNetEvent('LNS_Housing:server:policeRaidStash', function(propertyId, stas
     if not TemporaryAccess.stashes[propertyId] then TemporaryAccess.stashes[propertyId] = {} end
     TemporaryAccess.stashes[propertyId][identifier] = true
 
-    Bridge.Server.Notify(src, 'Storage breached successfully!', 'success')
+    Bridge.Server.Notify(src, locale('notify.storage_breach_success'), 'success')
 end)
 
 RegisterNetEvent('LNS_Housing:server:policeSecureDoor', function(propertyId, propertyType, doorId)
     local src = source
     local playerJob = Bridge.Server.GetPlayerJob(src)
     if not Bridge.IsPoliceJob(playerJob) then
-        Bridge.Server.Notify(src, 'Only police officers are authorized to secure doors!', 'error')
+        Bridge.Server.Notify(src, locale('notify.only_police_secure'), 'error')
         return
     end
 
@@ -163,5 +163,5 @@ RegisterNetEvent('LNS_Housing:server:policeSecureDoor', function(propertyId, pro
         TemporaryAccess.doors[propertyId] = nil
     end
 
-    Bridge.Server.Notify(src, 'Door secured and locked successfully.', 'success')
+    Bridge.Server.Notify(src, locale('notify.door_secured'), 'success')
 end)
