@@ -51,8 +51,19 @@ EntranceTargets = {}
 LoadedFurniture = {}
 
 RegisterNUICallback('getLocales', function(_, cb)
-    local locales = (lib and lib.getLocales and lib.getLocales()) or {}
-    cb(locales)
+    local lang = lib.getLocaleKey()
+    local customLocale = GetConvar("LNS_Housing:locale", "")
+    if lang == "en" and customLocale ~= "" then
+        lang = customLocale
+    end
+    local fileContent = LoadResourceFile(cache.resource, ("locales/%s.json"):format(lang))
+    local localesData = fileContent and json.decode(fileContent) or {}
+    if lang ~= "en" then
+        local defaultContent = LoadResourceFile(cache.resource, "locales/en.json")
+        local defaultData = defaultContent and json.decode(defaultContent) or {}
+        localesData = lib.table.merge(defaultData, localesData)
+    end
+    cb(localesData.UI or {})
 end)
 
 RegisterNUICallback('closeUI', function(_, cb)

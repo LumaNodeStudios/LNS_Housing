@@ -131,3 +131,6 @@ function debugPrint(level, ...)
         end
     end
 end
+
+-- Global alias for ox_lib locale fallback
+_L = locale

@@ -388,7 +388,6 @@ function EnterApartmentRoom(roomData)
         SetEntityCoords(ped, spawnCoords.x, spawnCoords.y, spawnCoords.z, false, false, false, false)
         FreezeEntityPosition(ped, false)
 
-        -- Interior Exit Zone
         if instanceExitTarget then
             exports.ox_target:removeZone(instanceExitTarget)
             instanceExitTarget = nil
@@ -409,7 +408,6 @@ function EnterApartmentRoom(roomData)
             }
         })
 
-        -- Optional: Configured Wardrobe Location (simple vec3, ox_target only, no prop)
         if instanceWardrobeZone then
             exports.ox_target:removeZone(instanceWardrobeZone)
             instanceWardrobeZone = nil
@@ -434,7 +432,6 @@ function EnterApartmentRoom(roomData)
             })
         end
 
-        -- Optional: Configured Stash Location (simple vec3, ox_target only, no prop)
         if instanceStashZone then
             exports.ox_target:removeZone(instanceStashZone)
             instanceStashZone = nil

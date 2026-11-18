@@ -167,23 +167,13 @@ end
 
 function Bridge.Client.Notify(msg, type, ...)
     debugPrint('info', 'Client notification', {msg = msg, type = type})
+    local description = select('#', ...) > 0 and locale(msg, ...) or msg
     lib.notify({
         title = locale('housing_title'),
-        description = locale(msg, ...),
+        description = description,
         type = type or 'inform'
     })
 end
-
-RegisterNUICallback('getLocales', function(_, cb)
-    cb(lib.getLocales())
-end)
-
-AddEventHandler('ox_lib:setLocale', function()
-    SendNUIMessage({
-        action = 'setLocales',
-        locales = lib.getLocales()
-    })
-end)
 
 --- Skill Check / Minigame
 function Bridge.Client.SkillCheck(difficulty, inputs)

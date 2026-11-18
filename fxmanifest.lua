@@ -10,10 +10,6 @@ version '1.0.0'
 
 ui_page 'web/dist/index.html'
 
-ox_libs {
-    'locale'
-}
-
 files {
     'locales/*.json',
     'web/dist/index.html',
@@ -30,7 +26,6 @@ files {
 
 shared_scripts {
     '@ox_lib/init.lua',
-    'shared/locales.lua',
     'shared/furniture.lua',
     'shared/settings.lua',
     'shared/theme.lua',
@@ -106,3 +101,5 @@ data_file 'WEAPONINFO_FILE' 'data/weapons.meta'
 data_file 'WEAPON_ANIMATIONS_FILE' 'data/weaponanimations.meta'
 data_file 'WEAPON_METADATA_FILE' 'data/weaponarchetypes.meta'
 data_file 'PED_PERSONALITY_FILE' 'data/pedpersonality.meta'
+
+ox_lib 'locale'

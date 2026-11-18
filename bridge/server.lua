@@ -570,9 +570,10 @@ end
 -- Server-side Notifications
 function Bridge.Server.Notify(source, msg, type, ...)
     debugPrint('info', 'Bridge.Server.Notify', {source = source, msg = msg, type = type})
+    local description = select('#', ...) > 0 and locale(msg, ...) or msg
     lib.notify(source, {
         title = locale('housing_title'),
-        description = locale(msg, ...),
+        description = description,
         type = type or 'inform'
     })
 end
