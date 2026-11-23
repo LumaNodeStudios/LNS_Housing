@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Sofa, Bed, Lamp, Tv, Utensils, Bath, Search, Package, Check, Trash2,
   Camera, Move, RotateCw, X, ShoppingCart, ShoppingBag, Hammer, ArrowLeft,
