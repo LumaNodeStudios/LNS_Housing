@@ -113,9 +113,7 @@ function Bridge.IsRealEstateAgencyJob(job)
     return type(agencies) == 'table' and agencies[jobName] ~= nil
 end
 
--- ============================================================================
 -- Apartment Buildings Helper Functions
--- ============================================================================
 
 function Bridge.GetApartmentBuildings()
     local apts = Settings and Settings.Apartments

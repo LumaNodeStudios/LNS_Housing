@@ -1,4 +1,61 @@
 local Settings = lib.load('shared.settings')
+local Furniture = lib.load('shared.furniture')
+
+local function FindCatalogItemServer(model, itemId)
+    if itemId then
+        for _, category in ipairs(Furniture) do
+            for _, item in ipairs(category.items) do
+                if item.id == itemId then
+                    return item, category.id
+                end
+            end
+        end
+    end
+    if not model then return nil end
+    local targetHash = tonumber(model) or GetHashKey(model)
+    for _, category in ipairs(Furniture) do
+        for _, item in ipairs(category.items) do
+            local itemHash = tonumber(item.model) or GetHashKey(item.model)
+            if itemHash == targetHash then
+                return item, category.id
+            end
+            if item.variants then
+                for _, variant in ipairs(item.variants) do
+                    local varHash = tonumber(variant.model or item.model) or GetHashKey(variant.model or item.model)
+                    if varHash == targetHash then
+                        return item, category.id, variant
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function DoesItemMatchCatalogServer(placedItem, catalogItem)
+    if not placedItem or not catalogItem then return false end
+    if placedItem.itemId and catalogItem.id and placedItem.itemId == catalogItem.id then
+        return true
+    end
+    if placedItem.id and catalogItem.id and placedItem.id == catalogItem.id then
+        return true
+    end
+    if placedItem.model and catalogItem.model then
+        local placedHash = tonumber(placedItem.model) or GetHashKey(placedItem.model)
+        local catHash = tonumber(catalogItem.model) or GetHashKey(catalogItem.model)
+        if placedHash == catHash then
+            return true
+        end
+        if catalogItem.variants then
+            for _, variant in ipairs(catalogItem.variants) do
+                local varHash = tonumber(variant.model or catalogItem.model) or GetHashKey(variant.model or catalogItem.model)
+                if placedHash == varHash then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
 local activeRooms = {}
 local playerRooms = {}
 local playerRoomBuildings = {}
@@ -1141,6 +1198,20 @@ RegisterNetEvent('LNS_Housing:server:saveApartmentFurniture', function(roomId, f
     local citizenid = Bridge.Server.GetIdentifier(src)
     if not citizenid then return end
 
+    -- Check furniture item max limits
+    local counts = {}
+    for _, f in ipairs(furnitureData or {}) do
+        local catalogItem = FindCatalogItemServer(f.model, f.itemId or f.id)
+        if catalogItem and catalogItem.max and catalogItem.max > 0 then
+            counts[catalogItem.id] = (counts[catalogItem.id] or 0) + 1
+            if counts[catalogItem.id] > catalogItem.max then
+                local itemName = catalogItem.label or f.label or f.model
+                Bridge.Server.Notify(src, locale('notify.furniture_limit_reached', catalogItem.max, itemName), 'error')
+                return
+            end
+        end
+    end
+
     local result = FindManagedApartment(roomId, citizenid)
     if result then
         MySQL.update.await('UPDATE apartments SET furniture = ? WHERE room_id = ? AND citizenid = ?', {
@@ -1185,6 +1256,41 @@ local function ProcessBuyApartmentFurniture(src, roomId, items, totalPrice, paym
         return false, 'No access'
     end
 
+    local currentFurniture = {}
+    if result.furniture and result.furniture ~= '' then
+        local okDecode, decoded = pcall(function()
+            return json.decode(result.furniture)
+        end)
+
+        if okDecode and type(decoded) == 'table' then
+            currentFurniture = decoded
+        end
+    end
+
+    -- Check furniture item max limits
+    for _, item in ipairs(items) do
+        local catalogItem = FindCatalogItemServer(item.model, item.itemId or item.id)
+        if catalogItem and catalogItem.max and catalogItem.max > 0 then
+            local currentCount = 0
+            for _, existing in ipairs(currentFurniture) do
+                if DoesItemMatchCatalogServer(existing, catalogItem) then
+                    currentCount = currentCount + 1
+                end
+            end
+            local inBatchCount = 0
+            for _, batchItem in ipairs(items) do
+                if DoesItemMatchCatalogServer(batchItem, catalogItem) then
+                    inBatchCount = inBatchCount + 1
+                end
+            end
+            if currentCount + inBatchCount > catalogItem.max then
+                local itemName = catalogItem.label or item.label or item.model
+                Bridge.Server.Notify(src, locale('notify.furniture_limit_reached', catalogItem.max, itemName), 'error')
+                return false, 'Furniture limit reached'
+            end
+        end
+    end
+
     local payType = paymentMethod == 'cash' and 'cash' or 'bank'
     local money = Bridge.Server.GetMoney(src, payType)
     if price > 0 then
@@ -1199,17 +1305,6 @@ local function ProcessBuyApartmentFurniture(src, roomId, items, totalPrice, paym
             local targetAccountName = payType == 'cash' and 'cash' or 'bank'
             Bridge.Server.Notify(src, locale('notify.could_not_process_payment_account', targetAccountName), 'error')
             return false, 'Payment failed'
-        end
-    end
-
-    local currentFurniture = {}
-    if result.furniture and result.furniture ~= '' then
-        local okDecode, decoded = pcall(function()
-            return json.decode(result.furniture)
-        end)
-
-        if okDecode and type(decoded) == 'table' then
-            currentFurniture = decoded
         end
     end
 

@@ -672,7 +672,11 @@
     "buy": "KUPI",
     "bid": "PONUDI",
     "view": "OGLEJ SI",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "Dosežena omejitev: Postavite lahko največ %s tega predmeta",
+    "furniture_limit_badge": "%s/%s postavljenih",
+    "max_placed": "MAX",
+    "placed": "Postavljenih"
   },
   "housing_title": "Nepremičnine",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "MLO notranjost #%s zajeta (%s sob%s).",
     "motion_detected": "Zaznano gibanje na %s!",
     "restorepower_usage": "Uporaba: /restorepower [propertyId] (pustite prazno za trenutno nepremičnino)",
-    "route_saved_waypoints": "Pot čiščenja uspešno shranjena z %s točkami!"
+    "route_saved_waypoints": "Pot čiščenja uspešno shranjena z %s točkami!",
+    "furniture_limit_reached": "Dosegli ste največjo omejitev (%s) za %s!",
+    "furniture_limit_reached_generic": "Dosežena je omejitev postavljanja pohištva za enega ali več predmetov!"
   },
   "target": {
     "enter_property": "Vstopi v nepremičnino",

@@ -672,7 +672,11 @@
     "buy": "ΑΓΟΡΑ",
     "bid": "ΠΡΟΣΦΟΡΑ",
     "view": "ΠΡΟΒΟΛΗ",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "Επιτεύχθηκε το όριο: Μπορείτε να τοποθετήσετε έως %s από αυτό το αντικείμενο",
+    "furniture_limit_badge": "%s/%s τοποθετημένα",
+    "max_placed": "MAX",
+    "placed": "Τοποθετημένα"
   },
   "housing_title": "Στέγαση",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "Καταγράφηκε το MLO εσωτερικό #%s (%s δωμάτια%s).",
     "motion_detected": "Εντοπίστηκε κίνηση στο %s!",
     "restorepower_usage": "Χρήση: /restorepower [propertyId] (αφήστε κενό για το τρέχον ακίνητο)",
-    "route_saved_waypoints": "Η διαδρομή καθαρισμού αποθηκεύτηκε επιτυχώς με %s σημεία!"
+    "route_saved_waypoints": "Η διαδρομή καθαρισμού αποθηκεύτηκε επιτυχώς με %s σημεία!",
+    "furniture_limit_reached": "Έχετε φτάσει το μέγιστο όριο (%s) για %s!",
+    "furniture_limit_reached_generic": "Συμπληρώθηκε το όριο τοποθέτησης επίπλων για ένα ή περισσότερα αντικείμενα!"
   },
   "target": {
     "enter_property": "Είσοδος στο Ακίνητο",

@@ -672,7 +672,11 @@
     "buy": "КУПИТЬ",
     "bid": "СТАВКА",
     "view": "ОБЗОР",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "Достигнут лимит: Вы можете разместить не более %s этого предмета",
+    "furniture_limit_badge": "%s/%s размещено",
+    "max_placed": "МАКС",
+    "placed": "Размещено"
   },
   "housing_title": "Жилье",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "Интерьер MLO #%s захвачен (%s комнат%s).",
     "motion_detected": "Обнаружено движение в %s!",
     "restorepower_usage": "Использование: /restorepower [propertyId] (оставьте пустым для текущей недвижимости)",
-    "route_saved_waypoints": "Маршрут уборки успешно сохранен с %s точками!"
+    "route_saved_waypoints": "Маршрут уборки успешно сохранен с %s точками!",
+    "furniture_limit_reached": "Вы достигли максимального лимита (%s) для %s!",
+    "furniture_limit_reached_generic": "Достигнут лимит размещения мебели для одного или нескольких предметов!"
   },
   "target": {
     "enter_property": "Войти в недвижимость",

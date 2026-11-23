@@ -672,7 +672,11 @@
     "buy": "購買",
     "bid": "出價",
     "view": "檢視",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "已達上限：此物品最多只能放置 %s 個",
+    "furniture_limit_badge": "已放置 %s/%s",
+    "max_placed": "已滿",
+    "placed": "已放置"
   },
   "housing_title": "房屋系统",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "MLO 室內 #%s 已擷取（%s 個房間%s）。",
     "motion_detected": "在 %s 偵測到動態目標！",
     "restorepower_usage": "用法：/restorepower [propertyId]（留空則為目前房產）",
-    "route_saved_waypoints": "清潔路徑儲存成功，共 %s 個導航點！"
+    "route_saved_waypoints": "清潔路徑儲存成功，共 %s 個導航點！",
+    "furniture_limit_reached": "已達到最大放置數量上限 (%s 個)：%s！",
+    "furniture_limit_reached_generic": "一件或多件家具已達到放置數量上限！"
   },
   "target": {
     "enter_property": "进入房产",

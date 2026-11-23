@@ -411,6 +411,42 @@
   z-index: 4;
 }
 
+/* Item Card Placement Limit Badge */
+.item-card-limit-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 5px;
+  background: rgba(18, 18, 24, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 5px;
+  color: var(--text-muted, #9ca3af);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.3px;
+  backdrop-filter: blur(4px);
+}
+
+.item-card-limit-badge.limit-reached {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: rgba(239, 68, 68, 0.55);
+  color: #f87171;
+  font-weight: 800;
+}
+
+.item-card.limit-reached {
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.item-card.limit-reached:hover {
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
 /* Item Card Variant Button (small button on items supporting styles/colors) */
 .item-card-variant-btn {
   position: absolute;
@@ -514,6 +550,31 @@
   font-weight: 600;
   color: var(--primary, #3b82f6);
   letter-spacing: 0.3px;
+}
+
+.variants-header-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.variants-limit-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted, #9ca3af);
+  letter-spacing: 0.3px;
+}
+
+.variants-limit-badge.limit-reached {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #f87171;
+  font-weight: 800;
 }
 
 .variants-subtext {

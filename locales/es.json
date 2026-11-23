@@ -672,7 +672,11 @@
     "buy": "COMPRAR",
     "bid": "PUJAR",
     "view": "VER",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "Límite alcanzado: Solo puedes colocar hasta %s de este objeto",
+    "furniture_limit_badge": "%s/%s colocados",
+    "max_placed": "MÁX",
+    "placed": "Colocados"
   },
   "housing_title": "Vivienda",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "Interior MLO #%s capturado (%s habitaciones%s).",
     "motion_detected": "¡Movimiento detectado en %s!",
     "restorepower_usage": "Uso: /restorepower [propertyId] (dejar en blanco para la propiedad actual)",
-    "route_saved_waypoints": "¡Ruta de limpieza guardada con éxito con %s puntos de ruta!"
+    "route_saved_waypoints": "¡Ruta de limpieza guardada con éxito con %s puntos de ruta!",
+    "furniture_limit_reached": "¡Has alcanzado el límite máximo (%s) para %s!",
+    "furniture_limit_reached_generic": "¡Se ha alcanzado el límite de colocación de muebles para uno o más objetos!"
   },
   "target": {
     "enter_property": "Entrar a la propiedad",

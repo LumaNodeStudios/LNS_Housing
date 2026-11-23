@@ -672,7 +672,11 @@
     "buy": "SATIN AL",
     "bid": "TEKLİF VER",
     "view": "İNCELE",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "Limite ulaşıldı: Bu eşyadan en fazla %s adet yerleştirebilirsiniz",
+    "furniture_limit_badge": "%s/%s yerleştirildi",
+    "max_placed": "MAKS",
+    "placed": "Yerleştirildi"
   },
   "housing_title": "Emlak",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "MLO iç mekanı #%s kaydedildi (%s oda%s).",
     "motion_detected": "%s konumunda hareket algılandı!",
     "restorepower_usage": "Kullanım: /restorepower [propertyId] (mevcut mülk için boş bırakın)",
-    "route_saved_waypoints": "Temizlik rotası %s yol noktası ile başarıyla kaydedildi!"
+    "route_saved_waypoints": "Temizlik rotası %s yol noktası ile başarıyla kaydedildi!",
+    "furniture_limit_reached": "Maksimum yerleştirme limitine (%s) ulaştınız: %s!",
+    "furniture_limit_reached_generic": "Bir veya daha fazla eşya için mobilya yerleştirme limitine ulaşıldı!"
   },
   "target": {
     "enter_property": "Mülke Gir",

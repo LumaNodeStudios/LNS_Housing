@@ -672,7 +672,11 @@
     "buy": "ACHETER",
     "bid": "ENCHÉRIR",
     "view": "VOIR",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "Limite atteinte : Vous ne pouvez placer que jusqu'à %s de cet objet",
+    "furniture_limit_badge": "%s/%s placés",
+    "max_placed": "MAX",
+    "placed": "Placés"
   },
   "housing_title": "Logement",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "Intérieur MLO #%s capturé (%s pièces%s).",
     "motion_detected": "Mouvement détecté à %s !",
     "restorepower_usage": "Utilisation : /restorepower [propertyId] (laisser vide pour la propriété actuelle)",
-    "route_saved_waypoints": "Itinéraire de nettoyage enregistré avec succès (%s points de passage) !"
+    "route_saved_waypoints": "Itinéraire de nettoyage enregistré avec succès (%s points de passage) !",
+    "furniture_limit_reached": "Vous avez atteint la limite maximale (%s) pour %s !",
+    "furniture_limit_reached_generic": "Limite de placement de meubles atteinte pour un ou plusieurs objets !"
   },
   "target": {
     "enter_property": "Entrer dans la propriété",

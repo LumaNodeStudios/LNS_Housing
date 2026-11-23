@@ -672,7 +672,11 @@
     "buy": "BELI",
     "bid": "TAWAR",
     "view": "LIHAT",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "Batas tercapai: Anda hanya dapat menempatkan hingga %s dari item ini",
+    "furniture_limit_badge": "%s/%s ditempatkan",
+    "max_placed": "MAKS",
+    "placed": "Ditempatkan"
   },
   "housing_title": "Perumahan",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "Interior MLO #%s berhasil diambil (%s ruangan%s).",
     "motion_detected": "Gerakan terdeteksi di %s!",
     "restorepower_usage": "Penggunaan: /restorepower [propertyId] (kosongkan untuk properti saat ini)",
-    "route_saved_waypoints": "Rute pembersihan berhasil disimpan dengan %s titik rute!"
+    "route_saved_waypoints": "Rute pembersihan berhasil disimpan dengan %s titik rute!",
+    "furniture_limit_reached": "Anda telah mencapai batas maksimum (%s) untuk %s!",
+    "furniture_limit_reached_generic": "Batas penempatan perabotan tercapai untuk satu atau lebih item!"
   },
   "target": {
     "enter_property": "Masuk Properti",

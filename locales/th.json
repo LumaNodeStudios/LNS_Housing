@@ -672,7 +672,11 @@
     "buy": "ซื้อ",
     "bid": "ประมูล",
     "view": "ดู",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "ถึงขีดจำกัดแล้ว: คุณสามารถวางไอเทมนี้ได้สูงสุด %s ชิ้นเท่านั้น",
+    "furniture_limit_badge": "%s/%s ชิ้นที่วางแล้ว",
+    "max_placed": "สูงสุด",
+    "placed": "วางแล้ว"
   },
   "housing_title": "ระบบที่พักอาศัย",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "บันทึกภายใน MLO #%s สำเร็จแล้ว (%s ห้อง%s)",
     "motion_detected": "ตรวจพบการเคลื่อนไหวที่ %s!",
     "restorepower_usage": "วิธีใช้: /restorepower [propertyId] (เว้นว่างไว้สำหรับอสังหาฯ ปัจจุบัน)",
-    "route_saved_waypoints": "บันทึกเส้นทางทำความสะอาดสำเร็จ พร้อมจุดนำทาง %s จุด!"
+    "route_saved_waypoints": "บันทึกเส้นทางทำความสะอาดสำเร็จ พร้อมจุดนำทาง %s จุด!",
+    "furniture_limit_reached": "คุณถึงขีดจำกัดสูงสุด (%s) แล้วสำหรับ %s!",
+    "furniture_limit_reached_generic": "ถึงขีดจำกัดจำนวนการวางเฟอร์นิเจอร์แล้ว!"
   },
   "target": {
     "enter_property": "เข้าสู่อสังหาริมทรัพย์",

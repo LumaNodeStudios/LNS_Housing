@@ -672,7 +672,11 @@
     "buy": "购买",
     "bid": "竞拍",
     "view": "查看",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "已达上限：此物品最多只能放置 %s 个",
+    "furniture_limit_badge": "已放置 %s/%s",
+    "max_placed": "已满",
+    "placed": "已放置"
   },
   "housing_title": "房屋系统",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "MLO 室内 #%s 已捕获（%s 个房间%s）。",
     "motion_detected": "在 %s 检测到活动目标！",
     "restorepower_usage": "用法：/restorepower [房产ID]（留空则为当前房产）",
-    "route_saved_waypoints": "清洁路线保存成功，共 %s 个路径点！"
+    "route_saved_waypoints": "清洁路线保存成功，共 %s 个路径点！",
+    "furniture_limit_reached": "已达到最大放置数量上限（%s 个）：%s！",
+    "furniture_limit_reached_generic": "一件或多件家具已达到放置数量上限！"
   },
   "target": {
     "enter_property": "进入房产",

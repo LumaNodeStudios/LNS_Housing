@@ -18,7 +18,17 @@ local function SafeRequestModel(modelInput, timeout)
     return HasModelLoaded(hash) and hash or nil
 end
 
-local function FindCatalogItem(model)
+local function FindCatalogItem(model, itemId)
+    if itemId then
+        for _, category in ipairs(Furniture) do
+            for _, item in ipairs(category.items) do
+                if item.id == itemId then
+                    return item, category.id
+                end
+            end
+        end
+    end
+    if not model then return nil end
     local targetHash = tonumber(model) or GetHashKey(model)
     for _, category in ipairs(Furniture) do
         for _, item in ipairs(category.items) do
@@ -38,6 +48,32 @@ local function FindCatalogItem(model)
     end
 end
 
+local function DoesItemMatchCatalog(placedItem, catalogItem)
+    if not placedItem or not catalogItem then return false end
+    if placedItem.itemId and catalogItem.id and placedItem.itemId == catalogItem.id then
+        return true
+    end
+    if placedItem.id and catalogItem.id and placedItem.id == catalogItem.id then
+        return true
+    end
+    if placedItem.model and catalogItem.model then
+        local placedHash = tonumber(placedItem.model) or GetHashKey(placedItem.model)
+        local catHash = tonumber(catalogItem.model) or GetHashKey(catalogItem.model)
+        if placedHash == catHash then
+            return true
+        end
+        if catalogItem.variants then
+            for _, variant in ipairs(catalogItem.variants) do
+                local varHash = tonumber(variant.model or catalogItem.model) or GetHashKey(variant.model or catalogItem.model)
+                if placedHash == varHash then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
 Modeler = {
     IsMenuActive = false,
     IsFreecamMode = false,
@@ -55,6 +91,31 @@ Modeler = {
     HoverDistance = 5.0,
     HoverSession = 0,
     Clipboard = nil,
+
+    GetPlacedCount = function(self, catalogItem, excludeId)
+        if not catalogItem then return 0 end
+        local count = 0
+        local property = Properties[self.property_id]
+        if property and property.furniture then
+            for _, item in ipairs(property.furniture) do
+                if DoesItemMatchCatalog(item, catalogItem) then
+                    if not (excludeId and (item.id == excludeId or tostring(item.id) == tostring(excludeId))) then
+                        count = count + 1
+                    end
+                end
+            end
+        end
+        if self.Cart then
+            for cartId, item in pairs(self.Cart) do
+                if DoesItemMatchCatalog(item, catalogItem) then
+                    if not (excludeId and (cartId == excludeId or item.entity == excludeId)) then
+                        count = count + 1
+                    end
+                end
+            end
+        end
+        return count
+    end,
 
     OpenMenu = function(self, propertyId)
         local property = Properties[propertyId]
@@ -382,18 +443,21 @@ Modeler = {
         self:StartPlacement(data)
 
         local p = self.PlacingData
-        SendNUIMessage({
-            action = "selectFurniture",
-            data = {
-                kind = p.kind,
-                id = p.id,
-                cartId = p.cartId,
-                model = p.model,
-                label = p.label,
-                price = p.price,
-                category = p.category,
-            }
-        })
+        if p then
+            SendNUIMessage({
+                action = "selectFurniture",
+                data = {
+                    kind = p.kind,
+                    id = p.id,
+                    itemId = p.itemId,
+                    cartId = p.cartId,
+                    model = p.model,
+                    label = p.label,
+                    price = p.price,
+                    category = p.category,
+                }
+            })
+        end
         return true
     end,
 
@@ -402,6 +466,7 @@ Modeler = {
         local d = self.PlacingData
         self.Clipboard = {
             model = d.model,
+            itemId = d.itemId,
             label = d.label,
             price = d.price,
             category = d.category,
@@ -437,8 +502,19 @@ Modeler = {
             end
         end
 
-        self:StartPlacement({
+        local catalog = FindCatalogItem(clip.model, clip.itemId)
+        if catalog and catalog.max and catalog.max > 0 then
+            local currentCount = self:GetPlacedCount(catalog)
+            if currentCount >= catalog.max then
+                local label = catalog.label or clip.label or clip.model
+                Bridge.Client.Notify(locale('notify.furniture_limit_reached', catalog.max, label), 'error')
+                return false
+            end
+        end
+
+        local started = self:StartPlacement({
             model = clip.model,
+            itemId = clip.itemId or (catalog and catalog.id),
             label = clip.label,
             price = clip.price,
             category = clip.category,
@@ -448,12 +524,14 @@ Modeler = {
             rotation = clip.rotation,
             fromPaste = true,
         })
+        if started == false then return false end
 
         SendNUIMessage({
             action = "selectFurniture",
             data = {
                 kind = 'new',
                 model = clip.model,
+                itemId = clip.itemId or (catalog and catalog.id),
                 label = clip.label,
                 price = clip.price,
                 category = clip.category,
@@ -582,7 +660,19 @@ Modeler = {
     StartPlacement = function(self, data)
         self:HoverOut()
         local model = data.model or data.object
-        local catalog, catalogCategory = FindCatalogItem(model)
+        local catalog, catalogCategory = FindCatalogItem(model, data.itemId or data.id)
+
+        if (not data.kind or data.kind == 'new') and not data.entity then
+            if catalog and catalog.max and catalog.max > 0 then
+                local currentCount = self:GetPlacedCount(catalog)
+                if currentCount >= catalog.max then
+                    local label = catalog.label or data.label or model
+                    Bridge.Client.Notify(locale('notify.furniture_limit_reached', catalog.max, label), 'error')
+                    return false
+                end
+            end
+        end
+
         local curObject
         local objectRot
         local objectPos
@@ -605,6 +695,7 @@ Modeler = {
             self.PlacingData = {
                 kind = data.kind or 'owned',
                 id = data.id,
+                itemId = data.itemId or (catalog and catalog.id),
                 cartId = data.cartId,
                 model = model,
                 label = data.label or (catalog and catalog.label),
@@ -634,6 +725,7 @@ Modeler = {
             self.PlacingData = {
                 kind = 'new',
                 model = model,
+                itemId = data.itemId or (catalog and catalog.id) or data.id,
                 label = data.label or (catalog and catalog.label),
                 price = data.price or (catalog and catalog.price),
                 category = data.category or catalogCategory,
@@ -968,6 +1060,7 @@ Modeler = {
             local entity = spawned[item.id] or spawned[tonumber(item.id)] or spawned[tostring(item.id)]
             table.insert(ownedItems, {
                 id = item.id,
+                itemId = item.itemId,
                 model = item.model,
                 label = item.label,
                 entity = entity,
@@ -1014,14 +1107,33 @@ Modeler = {
     AddToCart = function(self, data)
         if not self.CurrentObject then return end
 
-        local cartId = tostring(math.random(100000, 999999)) .. '_' .. tostring(GetGameTimer())
         local finalModel = (self.PlacingData and self.PlacingData.model) or data.model
-        local finalLabel = (self.PlacingData and self.PlacingData.label) or data.label
-        local finalPrice = (self.PlacingData and self.PlacingData.price) or data.price or 0
+        local finalItemId = (self.PlacingData and self.PlacingData.itemId) or data.itemId or data.id
+        local catalog = FindCatalogItem(finalModel, finalItemId)
+
+        if catalog and catalog.max and catalog.max > 0 then
+            local currentCount = self:GetPlacedCount(catalog)
+            if currentCount >= catalog.max then
+                local label = catalog.label or (self.PlacingData and self.PlacingData.label) or data.label or finalModel
+                Bridge.Client.Notify(locale('notify.furniture_limit_reached', catalog.max, label), 'error')
+                if DoesEntityExist(self.CurrentObject) then
+                    DeleteEntity(self.CurrentObject)
+                end
+                self.CurrentObject = nil
+                self.PlacingData = nil
+                SendNUIMessage({ action = "placementEnded" })
+                return false
+            end
+        end
+
+        local cartId = tostring(math.random(100000, 999999)) .. '_' .. tostring(GetGameTimer())
+        local finalLabel = (self.PlacingData and self.PlacingData.label) or data.label or (catalog and catalog.label)
+        local finalPrice = (self.PlacingData and self.PlacingData.price) or data.price or (catalog and catalog.price) or 0
         local finalTexVar = (self.PlacingData and self.PlacingData.textureVariation ~= nil) and self.PlacingData.textureVariation or (data.textureVariation ~= nil and tonumber(data.textureVariation) or nil)
 
         local item = {
             cartId = cartId,
+            itemId = finalItemId or (catalog and catalog.id),
             label = finalLabel,
             model = finalModel,
             price = finalPrice,
@@ -1048,6 +1160,7 @@ Modeler = {
 
         self.CurrentObject = nil
         self.PlacingData = nil
+        return true
     end,
 
     RemoveCartItem = function(self, data)
@@ -1084,6 +1197,7 @@ Modeler = {
             totalPrice = totalPrice + (v.price or 0)
             items[#items + 1] = {
                 id = math.random(100000, 999999),
+                itemId = v.itemId,
                 model = v.model,
                 label = v.label,
                 position = v.position,
@@ -1098,6 +1212,31 @@ Modeler = {
         end
 
         local property = Properties[self.property_id]
+
+        for _, v in ipairs(items) do
+            local catalog = FindCatalogItem(v.model, v.itemId)
+            if catalog and catalog.max and catalog.max > 0 then
+                local currentOwned = 0
+                if property and property.furniture then
+                    for _, existing in ipairs(property.furniture) do
+                        if DoesItemMatchCatalog(existing, catalog) then
+                            currentOwned = currentOwned + 1
+                        end
+                    end
+                end
+                local inCartCount = 0
+                for _, b in ipairs(items) do
+                    if DoesItemMatchCatalog(b, catalog) then
+                        inCartCount = inCartCount + 1
+                    end
+                end
+                if currentOwned + inCartCount > catalog.max then
+                    local label = catalog.label or v.label or v.model
+                    return false, locale('notify.furniture_limit_reached', catalog.max, label)
+                end
+            end
+        end
+
         local success = false
         local reason = nil
 
@@ -1225,8 +1364,8 @@ Modeler = {
 }
 
 RegisterNUICallback("previewFurniture", function(data, cb)
-	Modeler:StartPlacement(data)
-	cb("ok")
+	local res = Modeler:StartPlacement(data)
+	cb(res ~= false and "ok" or "limit_reached")
 end)
 
 RegisterNUICallback("changeVariant", function(data, cb)
@@ -1369,8 +1508,8 @@ end)
 
 RegisterNUICallback("addToCart", function(data, cb)
     debugPrint('info', 'Furniture NUI: addToCart', data)
-    Modeler:AddToCart(data)
-    cb("ok")
+    local res = Modeler:AddToCart(data)
+    cb(res ~= false and "ok" or "limit_reached")
 end)
 
 RegisterNUICallback("removeCartItem", function(data, cb)

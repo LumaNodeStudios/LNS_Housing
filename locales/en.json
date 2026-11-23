@@ -298,6 +298,9 @@
     "variant": "Variant",
     "variants_styles": "Variants / Styles",
     "select_style_variation": "Select a style or color variation below to preview or place",
+    "furniture_limit_reached": "Limit reached: You can only place up to %s of this item",
+    "furniture_limit_badge": "%s/%s placed",
+    "max_placed": "MAX",
     "active": "ACTIVE",
     "all_furniture": "ALL FURNITURE",
     "back_to_shopping": "Back to Shopping",
@@ -672,7 +675,8 @@
     "buy": "BUY",
     "bid": "BID",
     "view": "VIEW",
-    "gps": "GPS"
+    "gps": "GPS",
+    "placed": "Placed"
   },
   "housing_title": "Housing",
   "notify": {
@@ -908,6 +912,8 @@
     "no_perm_buy_furniture": "You do not have permission to buy furniture here.",
     "could_not_process_payment": "Could not process payment.",
     "furniture_purchased": "Furniture purchased successfully!",
+    "furniture_limit_reached": "You have reached the maximum limit (%s) for %s!",
+    "furniture_limit_reached_generic": "Furniture placement limit reached for one or more items!",
     "database_error": "Database error while saving furniture.",
     "cleaning_timer_set": "Cleaning schedule set to: %s",
     "cutpower_usage": "Usage: /cutpower [propertyId] (leave blank for current property)",

@@ -672,7 +672,11 @@
     "buy": "VÁSÁRLÁS",
     "bid": "LICITÁLÁS",
     "view": "MEGTEKINTÉS",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "Limit elérve: Ebből a tárgyból legfeljebb %s darabot helyezhetsz el",
+    "furniture_limit_badge": "%s/%s elhelyezve",
+    "max_placed": "MAX",
+    "placed": "Elhelyezve"
   },
   "housing_title": "Lakhatás",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "MLO belső tér #%s rögzítve (%s szoba%s).",
     "motion_detected": "Mozgás észlelve itt: %s!",
     "restorepower_usage": "Használat: /restorepower [ingatlanId] (hagyd üresen a jelenlegi ingatlanhoz)",
-    "route_saved_waypoints": "Takarítási útvonal sikeresen mentve %s útponttal!"
+    "route_saved_waypoints": "Takarítási útvonal sikeresen mentve %s útponttal!",
+    "furniture_limit_reached": "Elérted a maximális korlátot (%s) a következőhöz: %s!",
+    "furniture_limit_reached_generic": "A bútor elhelyezési korlát elérve egy vagy több tárgynál!"
   },
   "target": {
     "enter_property": "Belépés az ingatlanba",

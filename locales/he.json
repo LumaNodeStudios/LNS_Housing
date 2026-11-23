@@ -672,7 +672,11 @@
     "buy": "קנייה",
     "bid": "הגשת הצעה",
     "view": "צפייה",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "הגעת למגבלה: באפשרותך להציב עד %s בלבד מפריט זה",
+    "furniture_limit_badge": "%s/%s הוצבו",
+    "max_placed": "מקסימום",
+    "placed": "הוצבו"
   },
   "housing_title": "דיור",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "פנים MLO מס' %s נלכד (%s חדרים%s).",
     "motion_detected": "זוהתה תנועה ב-%s!",
     "restorepower_usage": "שימוש: /restorepower [מזהה נכס] (השאר ריק עבור הנכס הנוכחי)",
-    "route_saved_waypoints": "מסלול הניקיון נשמר בהצלחה עם %s נקודות ציון!"
+    "route_saved_waypoints": "מסלול הניקיון נשמר בהצלחה עם %s נקודות ציון!",
+    "furniture_limit_reached": "הגעת למגבלה המרבית (%s) עבור %s!",
+    "furniture_limit_reached_generic": "הגעת למגבלת הצבת הרהיטים עבור פריט אחד או יותר!"
   },
   "target": {
     "enter_property": "כניסה לנכס",

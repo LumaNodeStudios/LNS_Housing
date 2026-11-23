@@ -672,7 +672,11 @@
     "buy": "ყიდვა",
     "bid": "ფსონი",
     "view": "ნახვა",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "ლიმიტი მიღწეულია: შეგიძლიათ განათავსოთ მხოლოდ %s-მდე ამ ნივთიდან",
+    "furniture_limit_badge": "%s/%s განთავსებული",
+    "max_placed": "MAX",
+    "placed": "განთავსებული"
   },
   "housing_title": "საცხოვრებელი",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "MLO ინტერიერი #%s დაფიქსირდა (%s ოთახი%s).",
     "motion_detected": "მოძრაობა დაფიქსირდა: %s!",
     "restorepower_usage": "გამოყენება: /restorepower [propertyId] (დატოვეთ ცარიელი მიმდინარე ქონებისთვის)",
-    "route_saved_waypoints": "დალაგების მარშრუტი წარმატებით შეინახა %s წერტილით!"
+    "route_saved_waypoints": "დალაგების მარშრუტი წარმატებით შეინახა %s წერტილით!",
+    "furniture_limit_reached": "თქვენ მიაღწიეთ მაქსიმალურ ლიმიტს (%s) %s-სთვის!",
+    "furniture_limit_reached_generic": "ავეჯის განთავსების ლიმიტი ამოიწურა ერთი ან მეტი ნივთისთვის!"
   },
   "target": {
     "enter_property": "ქონებაში შესვლა",

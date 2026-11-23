@@ -12,7 +12,8 @@ return {
                 type = 'panel',
                 isPanel = true,
                 powerConsumption = 0.1,
-                tempEffect = 0.0
+                tempEffect = 0.0,
+                max = 1
             },
             --[[
             {

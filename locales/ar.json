@@ -672,7 +672,11 @@
     "buy": "شراء",
     "bid": "مزايدة",
     "view": "عرض",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "تم الوصول إلى الحد: يمكنك وضع حتى %s فقط من هذا العنصر",
+    "furniture_limit_badge": "%s/%s تم وضعه",
+    "max_placed": "الحد الأقصى",
+    "placed": "تم وضعه"
   },
   "housing_title": "الإسكان",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "تم التقاط تصميم MLO الداخلي #%s (%s غرف%s).",
     "motion_detected": "تم رصد حركة في %s!",
     "restorepower_usage": "الاستخدام: /restorepower [معرف العقار] (اتركه فارغاً للعقار الحالي)",
-    "route_saved_waypoints": "تم حفظ مسار التنظيف بنجاح مع %s نقاط مسار!"
+    "route_saved_waypoints": "تم حفظ مسار التنظيف بنجاح مع %s نقاط مسار!",
+    "furniture_limit_reached": "لقد وصلت إلى الحد الأقصى (%s) لـ %s!",
+    "furniture_limit_reached_generic": "تم الوصول إلى الحد الأقصى لوضع الأثاث لعنصر أو أكثر!"
   },
   "target": {
     "enter_property": "دخول العقار",

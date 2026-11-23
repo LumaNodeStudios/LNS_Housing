@@ -672,7 +672,11 @@
     "buy": "ACQUISTA",
     "bid": "FAI OFFERTA",
     "view": "VISUALIZZA",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "Limite raggiunto: Puoi posizionare solo fino a %s di questo oggetto",
+    "furniture_limit_badge": "%s/%s posizionati",
+    "max_placed": "MAX",
+    "placed": "Posizionati"
   },
   "housing_title": "Abitazioni",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "Interno MLO #%s acquisito (%s stanze%s).",
     "motion_detected": "Movimento rilevato a %s!",
     "restorepower_usage": "Uso: /restorepower [propertyId] (lascia vuoto per la proprietà attuale)",
-    "route_saved_waypoints": "Percorso di pulizia salvato con successo con %s punti di passaggio!"
+    "route_saved_waypoints": "Percorso di pulizia salvato con successo con %s punti di passaggio!",
+    "furniture_limit_reached": "Hai raggiunto il limite massimo (%s) per %s!",
+    "furniture_limit_reached_generic": "Limite di posizionamento mobili raggiunto per uno o più oggetti!"
   },
   "target": {
     "enter_property": "Entra nella proprietà",

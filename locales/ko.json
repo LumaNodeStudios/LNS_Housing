@@ -672,7 +672,11 @@
     "buy": "구매",
     "bid": "입찰",
     "view": "보기",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "배치 한도 도달: 이 아이템은 최대 %s개까지만 배치할 수 있습니다",
+    "furniture_limit_badge": "%s/%s개 배치됨",
+    "max_placed": "최대",
+    "placed": "배치됨"
   },
   "housing_title": "부동산",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "MLO 내부 #%s 캡처 완료 (%s개 방%s).",
     "motion_detected": "%s에서 움직임이 감지되었습니다!",
     "restorepower_usage": "사용법: /restorepower [부동산ID] (현재 부동산은 공란으로 둠)",
-    "route_saved_waypoints": "청소 경로가 %s개의 경유지와 함께 성공적으로 저장되었습니다!"
+    "route_saved_waypoints": "청소 경로가 %s개의 경유지와 함께 성공적으로 저장되었습니다!",
+    "furniture_limit_reached": "최대 배치 한도(%s개)에 도달했습니다: %s!",
+    "furniture_limit_reached_generic": "하나 이상의 가구 배치 한도에 도달했습니다!"
   },
   "target": {
     "enter_property": "부동산 입장",

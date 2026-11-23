@@ -297,6 +297,7 @@ const ItemCard = React.memo(function ItemCard({
   ItemIcon,
   isPlacing,
   isThisPlacing,
+  placedCount = 0,
   onHoverIn,
   onHoverOut,
   onClick,
@@ -304,16 +305,26 @@ const ItemCard = React.memo(function ItemCard({
 }) {
   const variants = React.useMemo(() => getNormalizedVariants(item), [item]);
   const hasVariants = variants.length > 0;
+  const maxLimit = item?.max;
+  const isMaxReached = maxLimit !== undefined && maxLimit > 0 && placedCount >= maxLimit;
 
   return (
     <div
-      className={`item-card ${isPlacing ? (isThisPlacing ? 'is-placing' : 'disabled') : ''}`}
+      className={`item-card ${isPlacing ? (isThisPlacing ? 'is-placing' : 'disabled') : ''} ${isMaxReached ? 'limit-reached' : ''}`}
       onMouseEnter={onHoverIn}
       onMouseLeave={onHoverOut}
       onClick={onClick}
     >
       <FurnitureImage item={item} ItemIcon={ItemIcon} />
       <span className="item-card-price">${item.price}</span>
+      {maxLimit !== undefined && maxLimit > 0 && (
+        <span
+          className={`item-card-limit-badge ${isMaxReached ? 'limit-reached' : ''}`}
+          title={`${placedCount} / ${maxLimit} placed`}
+        >
+          {placedCount}/{maxLimit}
+        </span>
+      )}
       {hasVariants && (
         <button
           type="button"
@@ -402,6 +413,39 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
   const placingItemVariants = React.useMemo(() => {
     return getNormalizedVariants(parentForPlacing);
   }, [parentForPlacing]);
+
+  const getPlacedCount = React.useCallback((item) => {
+    if (!item) return 0;
+    let count = 0;
+    const itemModel = item.model ? String(item.model).toLowerCase() : null;
+    const itemId = item.id;
+    const variantModels = new Set(
+      Array.isArray(item.variants)
+        ? item.variants.map(v => (v.model || item.model ? String(v.model || item.model).toLowerCase() : null)).filter(Boolean)
+        : []
+    );
+    if (itemModel) variantModels.add(itemModel);
+
+    const matches = (placed) => {
+      if (!placed) return false;
+      if (itemId && (placed.itemId === itemId || placed.id === itemId)) return true;
+      const placedModel = placed.model ? String(placed.model).toLowerCase() : null;
+      if (placedModel && variantModels.has(placedModel)) return true;
+      return false;
+    };
+
+    if (Array.isArray(ownedItems)) {
+      for (const owned of ownedItems) {
+        if (matches(owned)) count++;
+      }
+    }
+    if (Array.isArray(cart)) {
+      for (const cartItem of cart) {
+        if (matches(cartItem)) count++;
+      }
+    }
+    return count;
+  }, [ownedItems, cart]);
 
   useEffect(() => {
     // Fetch active cart on mount if any
@@ -497,7 +541,16 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
           if (!e.repeat) { post('copyFurniture'); showToast('Copied'); }
         } else if (k === 'v') {
           e.preventDefault();
-          if (!e.repeat) post('pasteFurniture');
+          if (!e.repeat) {
+            if (parentForPlacing && parentForPlacing.max && parentForPlacing.max > 0) {
+              const placed = getPlacedCount(parentForPlacing);
+              if (placed >= parentForPlacing.max) {
+                showToast(t('ui.furniture_limit_reached', `Limit reached: You can only place up to ${parentForPlacing.max} of this item`, [parentForPlacing.max, parentForPlacing.label]));
+                return;
+              }
+            }
+            post('pasteFurniture');
+          }
         }
         return;
       }
@@ -525,7 +578,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [freecamMode, isPlacing]);
+  }, [freecamMode, isPlacing, parentForPlacing, getPlacedCount, t]);
 
   useEffect(() => {
     const handleWorldClick = (e) => {
@@ -697,6 +750,16 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
 
   const handlePreview = (item) => {
     if (isPlacing) return;
+    if (activeTab !== 'editor') {
+      const max = item?.max;
+      if (max !== undefined && max > 0) {
+        const placed = getPlacedCount(item);
+        if (placed >= max) {
+          showToast(t('ui.furniture_limit_reached', `Limit reached: You can only place up to ${max} of this item`, [max, item.label]));
+          return;
+        }
+      }
+    }
     setIsPlacing(true);
     setPlacingItem(item);
     setPlacingKind(activeTab === 'editor' ? 'owned' : 'new');
@@ -716,11 +779,29 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
       setPlacingItem(variantItem);
       showToast('Variant Applied');
     } else {
+      const parent = variantParentItem || variantItem;
+      const max = parent?.max;
+      if (max !== undefined && max > 0) {
+        const placed = getPlacedCount(parent);
+        if (placed >= max) {
+          showToast(t('ui.furniture_limit_reached', `Limit reached: You can only place up to ${max} of this item`, [max, parent.label]));
+          return;
+        }
+      }
       handlePreview(variantItem);
     }
   };
 
   const handleAddToCart = (item) => {
+    const parent = parentForPlacing || item;
+    const max = parent?.max || item?.max;
+    if (max !== undefined && max > 0) {
+      const placed = getPlacedCount(parent);
+      if (placed >= max) {
+        showToast(t('ui.furniture_limit_reached', `Limit reached: You can only place up to ${max} of this item`, [max, parent.label || item.label]));
+        return;
+      }
+    }
     const catId = item.categoryId || item.category || activeCategory;
     post('addToCart', { ...item, category: catId });
     clearPlacing();
@@ -931,9 +1012,16 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                         </button>
                         <div className="variants-header-info">
                           <h2 className="variants-title">{variantParentItem.label}</h2>
-                          <span className="variants-badge">
-                            {activeItemVariants.length} {activeItemVariants.length === 1 ? t('ui.variant', 'Variant') : t('ui.variants_styles', 'Variants / Styles')}
-                          </span>
+                          <div className="variants-header-badges">
+                            <span className="variants-badge">
+                              {activeItemVariants.length} {activeItemVariants.length === 1 ? t('ui.variant', 'Variant') : t('ui.variants_styles', 'Variants / Styles')}
+                            </span>
+                            {variantParentItem.max !== undefined && variantParentItem.max > 0 && (
+                              <span className={`variants-limit-badge ${getPlacedCount(variantParentItem) >= variantParentItem.max ? 'limit-reached' : ''}`}>
+                                {getPlacedCount(variantParentItem)} / {variantParentItem.max} {t('ui.placed', 'Placed')}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -1035,6 +1123,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                                 ItemIcon={ItemIcon}
                                 isPlacing={isPlacing}
                                 isThisPlacing={placingItem?.id === item.id}
+                                placedCount={getPlacedCount(item)}
                                 onHoverIn={() => handleHoverIn(item)}
                                 onHoverOut={handleHoverOut}
                                 onClick={() => handlePreview(item)}

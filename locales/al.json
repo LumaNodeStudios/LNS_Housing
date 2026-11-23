@@ -672,7 +672,11 @@
     "buy": "BLI",
     "bid": "OFERTO",
     "view": "SHIKO",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "Kufiri u arrit: Mund të vendosni vetëm deri në %s nga ky artikull",
+    "furniture_limit_badge": "%s/%s të vendosura",
+    "max_placed": "MAX",
+    "placed": "Të vendosura"
   },
   "housing_title": "Banesat",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "Brendësia MLO #%s u regjistrua (%s dhoma%s).",
     "motion_detected": "Lëvizje e zbuluar në %s!",
     "restorepower_usage": "Përdorimi: /restorepower [propertyId] (lini bosh për pronën aktuale)",
-    "route_saved_waypoints": "Rruga e pastrimit u ruajt me sukses me %s pika orientimi!"
+    "route_saved_waypoints": "Rruga e pastrimit u ruajt me sukses me %s pika orientimi!",
+    "furniture_limit_reached": "Keni arritur kufirin maksimal (%s) për %s!",
+    "furniture_limit_reached_generic": "Kufiri i vendosjes së orendive u arrit për një ose më shumë artikuj!"
   },
   "target": {
     "enter_property": "Hyr në Pronë",

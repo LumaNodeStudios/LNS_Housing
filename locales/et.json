@@ -672,7 +672,11 @@
     "buy": "OSTA",
     "bid": "PAKU",
     "view": "VAATA",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "Limiit saavutatud: Saate paigutada ainult kuni %s seda eset",
+    "furniture_limit_badge": "%s/%s paigutatud",
+    "max_placed": "MAX",
+    "placed": "Paigutatud"
   },
   "housing_title": "Kinnisvara",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "MLO interjöör #%s salvestatud (%s tuba%s).",
     "motion_detected": "Liikumine tuvastatud kohas %s!",
     "restorepower_usage": "Kasutamine: /restorepower [kinnisvaraId] (jäta tühjaks praeguse kinnisvara jaoks)",
-    "route_saved_waypoints": "Koristustee edukalt salvestatud %s teekonnapunktiga!"
+    "route_saved_waypoints": "Koristustee edukalt salvestatud %s teekonnapunktiga!",
+    "furniture_limit_reached": "Oled saavutanud eseme maksimaalse limiidi (%s) kohteelle %s!",
+    "furniture_limit_reached_generic": "Mööbli paigutamise limiit on ületatud ühel või mitmel esemel!"
   },
   "target": {
     "enter_property": "Sisene kinnisvarasse",

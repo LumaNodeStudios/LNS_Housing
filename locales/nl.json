@@ -672,7 +672,11 @@
     "buy": "KOPEN",
     "bid": "BIEDEN",
     "view": "BEKIJKEN",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "Limiet bereikt: Je kunt maximaal %s van dit item plaatsen",
+    "furniture_limit_badge": "%s/%s geplaatst",
+    "max_placed": "MAX",
+    "placed": "Geplaatst"
   },
   "housing_title": "Huisvesting",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "MLO-interieur #%s vastgelegd (%s kamers%s).",
     "motion_detected": "Beweging gedetecteerd bij %s!",
     "restorepower_usage": "Gebruik: /restorepower [propertyId] (leeg laten voor huidige woning)",
-    "route_saved_waypoints": "Schoonmaakroute succesvol opgeslagen met %s routepunten!"
+    "route_saved_waypoints": "Schoonmaakroute succesvol opgeslagen met %s routepunten!",
+    "furniture_limit_reached": "Je hebt de maximale limiet (%s) voor %s bereikt!",
+    "furniture_limit_reached_generic": "Plaatsingslimiet voor meubels bereikt voor een of meer items!"
   },
   "target": {
     "enter_property": "Woning betreden",

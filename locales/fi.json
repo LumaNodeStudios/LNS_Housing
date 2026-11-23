@@ -672,7 +672,11 @@
     "buy": "OSTA",
     "bid": "TARJOA",
     "view": "NÄYTÄ",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "Raja saavutettu: Voit asettaa enintään %s tätä esinettä",
+    "furniture_limit_badge": "%s/%s asetettu",
+    "max_placed": "MAX",
+    "placed": "Asetettu"
   },
   "housing_title": "Asuminen",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "MLO-sisätila #%s tallennettu (%s huonetta%s).",
     "motion_detected": "Liikettä havaittu kohteessa %s!",
     "restorepower_usage": "Käyttö: /restorepower [propertyId] (jätä tyhjäksi nykyiselle kiinteistölle)",
-    "route_saved_waypoints": "Siivousreitti tallennettu onnistuneesti %s reittipisteellä!"
+    "route_saved_waypoints": "Siivousreitti tallennettu onnistuneesti %s reittipisteellä!",
+    "furniture_limit_reached": "Olet saavuttanut enimmäisrajan (%s) kohteelle %s!",
+    "furniture_limit_reached_generic": "Huonekalujen sijoitusraja on saavutettu yhdelle tai useammalle esineelle!"
   },
   "target": {
     "enter_property": "Astu kiinteistöön",

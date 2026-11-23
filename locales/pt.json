@@ -672,7 +672,11 @@
     "buy": "COMPRAR",
     "bid": "DAR LANCE",
     "view": "VER",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "Limite atingido: Apenas podes colocar até %s deste item",
+    "furniture_limit_badge": "%s/%s colocados",
+    "max_placed": "MÁX",
+    "placed": "Colocados"
   },
   "housing_title": "Habitação",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "Interior MLO #%s capturado (%s divisões%s).",
     "motion_detected": "Movimento detetado em %s!",
     "restorepower_usage": "Uso: /restorepower [propertyId] (deixar em branco para a propriedade atual)",
-    "route_saved_waypoints": "Rota de limpeza guardada com sucesso com %s pontos de rota!"
+    "route_saved_waypoints": "Rota de limpeza guardada com sucesso com %s pontos de rota!",
+    "furniture_limit_reached": "Atingiste o limite máximo (%s) para %s!",
+    "furniture_limit_reached_generic": "Limite de colocação de mobília atingido para um ou mais itens!"
   },
   "target": {
     "enter_property": "Entrar na Propriedade",

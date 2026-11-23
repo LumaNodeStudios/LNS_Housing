@@ -672,7 +672,11 @@
     "buy": "KUP",
     "bid": "LICYTUJ",
     "view": "ZOBACZ",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "Osiągnięto limit: Możesz umieścić maksymalnie %s tego przedmiotu",
+    "furniture_limit_badge": "%s/%s postawiono",
+    "max_placed": "MAX",
+    "placed": "Postawiono"
   },
   "housing_title": "Mieszkania",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "Przechwycono wnętrze MLO #%s (%s pokojów%s).",
     "motion_detected": "Wykryto ruch w %s!",
     "restorepower_usage": "Użycie: /restorepower [propertyId] (pozostaw puste dla bieżącej nieruchomości)",
-    "route_saved_waypoints": "Trasa sprzątania zapisana pomyślnie z %s punktami!"
+    "route_saved_waypoints": "Trasa sprzątania zapisana pomyślnie z %s punktami!",
+    "furniture_limit_reached": "Osiągnięto maksymalny limit (%s) dla %s!",
+    "furniture_limit_reached_generic": "Osiągnięto limit rozmieszczania mebli dla jednego lub więcej przedmiotów!"
   },
   "target": {
     "enter_property": "Wejdź do nieruchomości",

@@ -672,7 +672,11 @@
     "buy": "購入",
     "bid": "入札",
     "view": "確認",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "上限に達しました: このアイテムは最大%s個までしか配置できません",
+    "furniture_limit_badge": "%s/%s個 配置済み",
+    "max_placed": "最大",
+    "placed": "配置済み"
   },
   "housing_title": "住宅",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "MLOインテリア #%s を取得しました（部屋数：%s%s）。",
     "motion_detected": "%s で動体を検知しました！",
     "restorepower_usage": "使用法：/restorepower [物件ID]（現在の物件の場合は空欄）",
-    "route_saved_waypoints": "清掃ルートを正常に保存しました（ウェイポイント：%s 箇所）！"
+    "route_saved_waypoints": "清掃ルートを正常に保存しました（ウェイポイント：%s 箇所）！",
+    "furniture_limit_reached": "最大配置上限（%s個）に達しました: %s",
+    "furniture_limit_reached_generic": "一部の家具の配置上限に達しました！"
   },
   "target": {
     "enter_property": "物件に入る",

@@ -672,7 +672,11 @@
     "buy": "PIRKTI",
     "bid": "STATYTI",
     "view": "PERŽIŪRĖTI",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "Pasiektas limitas: Galite pastatyti tik iki %s šio daikto vienetų",
+    "furniture_limit_badge": "%s/%s pastatyta",
+    "max_placed": "MAX",
+    "placed": "Pastatyta"
   },
   "housing_title": "Būstas",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "MLO interjeras #%s užfiksuotas (%s kambariai%s).",
     "motion_detected": "Užfiksuotas judesys ties %s!",
     "restorepower_usage": "Naudojimas: /restorepower [propertyId] (palikite tuščią dabartiniam turtui)",
-    "route_saved_waypoints": "Valymo maršrutas sėkmingai išsaugotas su %s tarpinėmis stotelėmis!"
+    "route_saved_waypoints": "Valymo maršrutas sėkmingai išsaugotas su %s tarpinėmis stotelėmis!",
+    "furniture_limit_reached": "Pasiekėte maksimalų limitą (%s) daiktui %s!",
+    "furniture_limit_reached_generic": "Viršytas baldų statymo limitas vienam ar keliems daiktams!"
   },
   "target": {
     "enter_property": "Įeiti į nekilnojamąjį turtą",

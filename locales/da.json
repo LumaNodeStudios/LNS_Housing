@@ -672,7 +672,11 @@
     "buy": "KØB",
     "bid": "BYD",
     "view": "SE",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "Grænse nået: Du kan kun placere op til %s af denne genstand",
+    "furniture_limit_badge": "%s/%s placeret",
+    "max_placed": "MAKS",
+    "placed": "Placeret"
   },
   "housing_title": "Bolig",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "MLO-interiør #%s registreret (%s rum%s).",
     "motion_detected": "Bevægelse registreret ved %s!",
     "restorepower_usage": "Brug: /restorepower [propertyId] (efterlad blank for nuværende ejendom)",
-    "route_saved_waypoints": "Rengøringsrute gemt med %s rutepunkter!"
+    "route_saved_waypoints": "Rengøringsrute gemt med %s rutepunkter!",
+    "furniture_limit_reached": "Du har nået den maksimale grænse (%s) for %s!",
+    "furniture_limit_reached_generic": "Møbelplaceringsgrænsen er nået for en eller flere genstande!"
   },
   "target": {
     "enter_property": "Gå ind i ejendommen",

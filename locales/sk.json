@@ -672,7 +672,11 @@
     "buy": "KÚPIŤ",
     "bid": "PRIHODIŤ",
     "view": "ZOBRAZIŤ",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "Dosiahnutý limit: Môžete umiestniť maximálne %s tohto predmetu",
+    "furniture_limit_badge": "%s/%s umiestnené",
+    "max_placed": "MAX",
+    "placed": "Umiestnené"
   },
   "housing_title": "Bývanie",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "Interiér MLO #%s zachytený (%s miestností%s).",
     "motion_detected": "Zaznamenaný pohyb v %s!",
     "restorepower_usage": "Použitie: /restorepower [propertyId] (nechajte prázdne pre aktuálnu nehnuteľnosť)",
-    "route_saved_waypoints": "Trasa upratovania bola úspešne uložená s %s bodmi!"
+    "route_saved_waypoints": "Trasa upratovania bola úspešne uložená s %s bodmi!",
+    "furniture_limit_reached": "Dosiahli ste maximálny limit (%s) pre %s!",
+    "furniture_limit_reached_generic": "Bol prekročený limit umiestnenia nábytku pre jeden alebo viac predmetov!"
   },
   "target": {
     "enter_property": "Vstúpiť do nehnuteľnosti",

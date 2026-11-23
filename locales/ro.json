@@ -672,7 +672,11 @@
     "buy": "CUMPĂRĂ",
     "bid": "LICITEAZĂ",
     "view": "VEZI",
-    "gps": "GPS"
+    "gps": "GPS",
+    "furniture_limit_reached": "Limită atinsă: Poți plasa doar până la %s din acest obiect",
+    "furniture_limit_badge": "%s/%s plasate",
+    "max_placed": "MAX",
+    "placed": "Plasate"
   },
   "housing_title": "Locuințe",
   "notify": {
@@ -917,7 +921,9 @@
     "mlo_interior_captured": "Interior MLO #%s capturat (%s camere%s).",
     "motion_detected": "Mișcare detectată la %s!",
     "restorepower_usage": "Utilizare: /restorepower [propertyId] (lăsați gol pentru proprietatea curentă)",
-    "route_saved_waypoints": "Traseu de curățenie salvat cu succes cu %s puncte de referință!"
+    "route_saved_waypoints": "Traseu de curățenie salvat cu succes cu %s puncte de referință!",
+    "furniture_limit_reached": "Ai atins limita maximă (%s) pentru %s!",
+    "furniture_limit_reached_generic": "Limita de plasare a mobilierului a fost atinsă pentru unul sau mai multe obiecte!"
   },
   "target": {
     "enter_property": "Intră în proprietate",
