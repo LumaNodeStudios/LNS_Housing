@@ -195,9 +195,10 @@ function App() {
       root.style.setProperty('--primary', theme.primary);
       const rgb = hexToRgb(theme.primary);
       root.style.setProperty('--primary-rgb', rgb);
-      root.style.setProperty('--primary-glow', `rgba(${rgb}, 0.15)`);
+      root.style.setProperty('--primary-glow',
+        `rgba(${rgb}, 0.15)`);
       root.style.setProperty('--border-hover', theme.primary);
-            const rawHex = String(theme.primary).replace(/^#/, '').trim();
+      const rawHex = String(theme.primary).replace(/^#/, '').trim();
       const arrowHex = '#' + (rawHex.length >= 6 ? rawHex.substring(0, 6) : rawHex);
       root.style.setProperty('--select-arrow', `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(arrowHex)}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`);
     }
@@ -225,7 +226,7 @@ function App() {
             setTheme((prev) => ({ ...prev, ...t }));
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, []);
 
@@ -697,121 +698,122 @@ function App() {
   return (
     <LocaleProvider>
       <div
-      className="app-container"
-      style={{
-        visibility: isVisible ? 'visible' : 'hidden',
-        '--primary': theme.primary,
-        '--primary-dark': theme.primaryDark,
-        '--primary-text': theme.primaryText,
-        '--primary-rgb': hexToRgb(theme.primary),
-        '--primary-glow': `rgba(${hexToRgb(theme.primary)}, 0.15)`,
-        '--border-hover': theme.primary
-      }}
-    >
-      <ScreenshotProgress progress={screenshotProgress} />
-      <div className="ui-wrapper">
-        <AnimatePresence mode="wait">
-          {showPanel && (
-            <Panel key="panel" data={propertyData} />
-          )}
+        className="app-container"
+        style={{
+          visibility: isVisible ? 'visible' : 'hidden',
+          '--primary': theme.primary,
+          '--primary-dark': theme.primaryDark,
+          '--primary-text': theme.primaryText,
+          '--primary-rgb': hexToRgb(theme.primary),
+          '--primary-glow':
+            `rgba(${hexToRgb(theme.primary)}, 0.15)`,
+          '--border-hover': theme.primary
+        }}
+      >
+        <ScreenshotProgress progress={screenshotProgress} />
+        <div className="ui-wrapper">
+          <AnimatePresence mode="wait">
+            {showPanel && (
+              <Panel key="panel" data={propertyData} />
+            )}
 
-          {showFurniture && (
-            <FurnitureMenu
-              key="furniture"
-              items={furnitureData}
-              ownedItems={ownedItems}
-            />
-          )}
+            {showFurniture && (
+              <FurnitureMenu
+                key="furniture"
+                items={furnitureData}
+                ownedItems={ownedItems}
+              />
+            )}
 
-          {showRealEstate && (
-            <RealEstate
-              key="realestate"
-              properties={allProperties}
-              hasPermission={hasPermission}
-              initialTab={initialTab}
-              onlyBuyViaContracts={onlyBuyViaContracts}
-              shells={shells}
-              electricityEnabled={electricityEnabled}
-              onOpenPaperContract={(contract) => {
-                closeAll();
-                setContractPaperData(contract);
-                setShowContractPaper(true);
-              }}
-            />
-          )}
+            {showRealEstate && (
+              <RealEstate
+                key="realestate"
+                properties={allProperties}
+                hasPermission={hasPermission}
+                initialTab={initialTab}
+                onlyBuyViaContracts={onlyBuyViaContracts}
+                shells={shells}
+                electricityEnabled={electricityEnabled}
+                onOpenPaperContract={(contract) => {
+                  closeAll();
+                  setContractPaperData(contract);
+                  setShowContractPaper(true);
+                }}
+              />
+            )}
 
-          {showContractPaper && (
-            <ContractPaper
-              key="contractpaper"
-              contract={contractPaperData}
-              onClose={() => {
-                closeAll();
-              }}
-              onRespond={(id, action) => {
-                if (window.GetParentResourceName) {
-                  fetch(`https://${window.GetParentResourceName()}/respondToContract`, {
-                    method: 'POST',
-                    body: JSON.stringify({ id, action })
-                  });
-                }
-              }}
-            />
-          )}
+            {showContractPaper && (
+              <ContractPaper
+                key="contractpaper"
+                contract={contractPaperData}
+                onClose={() => {
+                  closeAll();
+                }}
+                onRespond={(id, action) => {
+                  if (window.GetParentResourceName) {
+                    fetch(`https://${window.GetParentResourceName()}/respondToContract`, {
+                      method: 'POST',
+                      body: JSON.stringify({ id, action })
+                    });
+                  }
+                }}
+              />
+            )}
 
-          {showApartmentCreator && (
-            <ApartmentCreator
-              key="aptcreator"
-              isEdit={false}
-              initialRooms={[]}
-              onClose={() => {
-                if (window.GetParentResourceName) {
-                  fetch(`https://${window.GetParentResourceName()}/closeUI`, {
-                    method: 'POST',
-                    body: JSON.stringify({})
-                  });
-                }
-                closeAll();
-              }}
-            />
-          )}
+            {showApartmentCreator && (
+              <ApartmentCreator
+                key="aptcreator"
+                isEdit={false}
+                initialRooms={[]}
+                onClose={() => {
+                  if (window.GetParentResourceName) {
+                    fetch(`https://${window.GetParentResourceName()}/closeUI`, {
+                      method: 'POST',
+                      body: JSON.stringify({})
+                    });
+                  }
+                  closeAll();
+                }}
+              />
+            )}
 
-          {showApartmentEditor && (
-            <ApartmentCreator
-              key="apteditor"
-              isEdit={true}
-              initialRooms={apartmentCreatorData.rooms}
-              onClose={() => {
-                if (window.GetParentResourceName) {
-                  fetch(`https://${window.GetParentResourceName()}/closeUI`, {
-                    method: 'POST',
-                    body: JSON.stringify({})
-                  });
-                }
-                closeAll();
-              }}
-            />
-          )}
+            {showApartmentEditor && (
+              <ApartmentCreator
+                key="apteditor"
+                isEdit={true}
+                initialRooms={apartmentCreatorData.rooms}
+                onClose={() => {
+                  if (window.GetParentResourceName) {
+                    fetch(`https://${window.GetParentResourceName()}/closeUI`, {
+                      method: 'POST',
+                      body: JSON.stringify({})
+                    });
+                  }
+                  closeAll();
+                }}
+              />
+            )}
 
-          {showStorageKeypad && (
-            <StorageKeypad
-              key="storagekeypad"
-              data={storageKeypadData}
-              onClose={() => {
-                setShowStorageKeypad(false);
-                if (window.GetParentResourceName) {
-                  fetch(`https://${window.GetParentResourceName()}/closeStorageKeypad`, {
-                    method: 'POST',
-                    body: JSON.stringify({})
-                  });
-                }
-              }}
-            />
-          )}
-        </AnimatePresence>
+            {showStorageKeypad && (
+              <StorageKeypad
+                key="storagekeypad"
+                data={storageKeypadData}
+                onClose={() => {
+                  setShowStorageKeypad(false);
+                  if (window.GetParentResourceName) {
+                    fetch(`https://${window.GetParentResourceName()}/closeStorageKeypad`, {
+                      method: 'POST',
+                      body: JSON.stringify({})
+                    });
+                  }
+                }}
+              />
+            )}
+          </AnimatePresence>
 
-        <BreachMinigame active={showBreachMinigame} onClose={() => setShowBreachMinigame(false)} />
+          <BreachMinigame active={showBreachMinigame} onClose={() => setShowBreachMinigame(false)} />
+        </div>
       </div>
-    </div>
     </LocaleProvider>
   );
 }

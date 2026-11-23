@@ -113,6 +113,129 @@ function Bridge.IsRealEstateAgencyJob(job)
     return type(agencies) == 'table' and agencies[jobName] ~= nil
 end
 
+-- ============================================================================
+-- Apartment Buildings Helper Functions
+-- ============================================================================
+
+function Bridge.GetApartmentBuildings()
+    local apts = Settings and Settings.Apartments
+    if not apts or apts.Enabled == false then return {} end
+
+    local buildings = {}
+    if apts.Buildings and type(apts.Buildings) == 'table' and #apts.Buildings > 0 then
+        for i, b in ipairs(apts.Buildings) do
+            local id = b.id or ('building_' .. i)
+            local coords = b.coords or (b.entrance) or vec3(0, 0, 0)
+            local bCoordsList = {}
+            if b.breakerCoords then
+                if type(b.breakerCoords) == 'table' and b.breakerCoords[1] ~= nil then
+                    for _, bc in ipairs(b.breakerCoords) do
+                        if bc and bc.x and bc.y and bc.z then
+                            table.insert(bCoordsList, vec3(bc.x, bc.y, bc.z))
+                        end
+                    end
+                elseif b.breakerCoords.x and b.breakerCoords.y and b.breakerCoords.z then
+                    table.insert(bCoordsList, vec3(b.breakerCoords.x, b.breakerCoords.y, b.breakerCoords.z))
+                end
+            end
+
+            table.insert(buildings, {
+                id = id,
+                label = b.label or ("Apartments " .. id),
+                sprite = b.sprite or 475,
+                color = b.color or 3,
+                scale = b.scale or 0.8,
+                coords = vec3(coords.x, coords.y, coords.z),
+                entrance = b.entrance and vec3(b.entrance.x, b.entrance.y, b.entrance.z) or vec3(coords.x, coords.y, coords.z),
+                ped = b.ped,
+                pedmodel = b.pedmodel or `a_m_y_business_01`,
+                breakerCoords = b.breakerCoords,
+                breakerCoordsList = bCoordsList,
+                type = b.type,
+                shell = b.shell,
+                shellCoords = b.shellCoords,
+                ipl = b.ipl,
+                spawnCoords = b.spawnCoords,
+                wardrobe = b.wardrobe,
+                stash = b.stash,
+            })
+        end
+    elseif apts.Building and type(apts.Building) == 'table' then
+        local b = apts.Building
+        local coords = b.coords or vec3(-826.53, -700.2, 27.06)
+        local bCoordsList = {}
+        if b.breakerCoords then
+            if type(b.breakerCoords) == 'table' and b.breakerCoords[1] ~= nil then
+                for _, bc in ipairs(b.breakerCoords) do
+                    if bc and bc.x and bc.y and bc.z then
+                        table.insert(bCoordsList, vec3(bc.x, bc.y, bc.z))
+                    end
+                end
+            elseif b.breakerCoords.x and b.breakerCoords.y and b.breakerCoords.z then
+                table.insert(bCoordsList, vec3(b.breakerCoords.x, b.breakerCoords.y, b.breakerCoords.z))
+            end
+        end
+        table.insert(buildings, {
+            id = 'wiwang',
+            label = b.label or "WIWANG Apartments",
+            sprite = b.sprite or 475,
+            color = b.color or 3,
+            scale = b.scale or 0.8,
+            coords = vec3(coords.x, coords.y, coords.z),
+            entrance = vec3(coords.x, coords.y, coords.z),
+            ped = b.ped,
+            pedmodel = b.pedmodel or `a_m_y_business_01`,
+            breakerCoords = b.breakerCoords,
+            breakerCoordsList = bCoordsList,
+            wardrobe = b.wardrobe,
+            stash = b.stash,
+        })
+    end
+
+    return buildings
+end
+
+function Bridge.GetApartmentBuildingById(buildingId, allowFallback)
+    local buildings = Bridge.GetApartmentBuildings()
+    if not buildings or #buildings == 0 then return nil end
+
+    if buildingId then
+        local bIdStr = tostring(buildingId):lower()
+        for _, b in ipairs(buildings) do
+            if tostring(b.id):lower() == bIdStr then
+                return b
+            end
+        end
+    end
+
+    if allowFallback then
+        return buildings[1]
+    end
+
+    return nil
+end
+
+function Bridge.GetNearestApartmentBuilding(coords)
+    local buildings = Bridge.GetApartmentBuildings()
+    if not buildings or #buildings == 0 then return nil end
+    if not coords then return buildings[1] end
+
+    local targetPos = vec3(coords.x, coords.y, coords.z)
+    local nearest = buildings[1]
+    local nearestDist = #(targetPos - nearest.coords)
+
+    for i = 2, #buildings do
+        local b = buildings[i]
+        local dist = #(targetPos - b.coords)
+        if dist < nearestDist then
+            nearestDist = dist
+            nearest = b
+        end
+    end
+
+    return nearest
+end
+
 -- Global Debug Print Utility using ox_lib print
 function debugPrint(level, ...)
     if Settings and Settings.Debug and Settings.Debug.Prints then

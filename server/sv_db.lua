@@ -322,11 +322,19 @@ MySQL.ready(function()
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 license VARCHAR(50) NOT NULL,
                 room_id INT NOT NULL,
+                building_id VARCHAR(50) DEFAULT NULL,
                 is_new TINYINT(1) DEFAULT 1,
                 assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE KEY unique_license (license)
             )
         ]])
+
+        pcall(function()
+            local cols = MySQL.query.await("SHOW COLUMNS FROM player_apartments LIKE 'building_id'")
+            if not cols or #cols == 0 then
+                MySQL.query.await("ALTER TABLE player_apartments ADD COLUMN building_id VARCHAR(50) DEFAULT NULL")
+            end
+        end)
 
         pcall(function()
             local cols = MySQL.query.await("SHOW COLUMNS FROM player_apartments LIKE 'citizenid'")
@@ -409,6 +417,7 @@ MySQL.ready(function()
         MySQL.query.await([[
             CREATE TABLE IF NOT EXISTS apartment_rooms (
                 id INT PRIMARY KEY,
+                building_id VARCHAR(50) DEFAULT NULL,
                 corners LONGTEXT NOT NULL,
                 thickness FLOAT NOT NULL DEFAULT 3.5,
                 zOffset FLOAT NOT NULL DEFAULT 0.0,
@@ -423,6 +432,13 @@ MySQL.ready(function()
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         ]])
     end
+
+    pcall(function()
+        local cols = MySQL.query.await("SHOW COLUMNS FROM `apartment_rooms` LIKE 'building_id'")
+        if not cols or #cols == 0 then
+            MySQL.query.await("ALTER TABLE `apartment_rooms` ADD COLUMN `building_id` VARCHAR(50) DEFAULT NULL")
+        end
+    end)
 
     pcall(function()
         local cols = MySQL.query.await("SHOW COLUMNS FROM `apartment_rooms` LIKE 'tablet_coords'")

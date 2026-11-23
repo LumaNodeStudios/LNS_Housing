@@ -830,7 +830,7 @@ function LoadFurnitures(propertyId)
                                             ResetStoragePasscodeHandler(propertyId, f.id, stashId, stashLabel, isFridge)
                                         end,
                                         canInteract = function()
-                                            return HasPropertyAccessLocal(p, 'storage')
+                                            return HasPropertyAccessLocal(p, 'manage')
                                         end
                                     },
                                     {

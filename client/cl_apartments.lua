@@ -9,13 +9,18 @@ ApartmentRooms = Settings.Rooms
 
 local apartmentBlip = nil
 local apartmentPed = nil
+local apartmentBlips = {}
+local apartmentPeds = {}
+local buildingEntranceTargets = {}
 insideApartment = false
 MyApartmentId = nil
+MyBuildingId = nil
 local MyRoomData = nil
 apartmentZones = {}
 CurrentApartmentId = nil
 
 local isInsideInstance = false
+local currentInstanceBuildingId = nil
 local spawnedInstanceShell = nil
 local activeInstanceIpls = {}
 local instanceExitTarget = nil
@@ -28,217 +33,267 @@ local function IsStarterInstanceMode()
     return cfg and cfg.Mode == 'instance'
 end
 
-local function RegisterBuildingEntranceTarget()
+local function ClearBuildingEntranceTargets()
+    if buildingEntranceTargets then
+        for _, zoneId in ipairs(buildingEntranceTargets) do
+            exports.ox_target:removeZone(zoneId)
+        end
+        buildingEntranceTargets = {}
+    end
     if buildingEntranceTarget then
         exports.ox_target:removeZone(buildingEntranceTarget)
         buildingEntranceTarget = nil
     end
+end
+
+local function RegisterBuildingEntranceTarget()
+    ClearBuildingEntranceTargets()
 
     if not IsStarterInstanceMode() then return end
 
-    local cfg = Settings.Apartments and Settings.Apartments.Starter
-    local entranceCoords = (cfg and cfg.Entrance) or (Settings.Apartments and Settings.Apartments.Building and Settings.Apartments.Building.coords)
-    if not entranceCoords then return end
+    local buildings = Bridge.GetApartmentBuildings()
+    for _, building in ipairs(buildings) do
+        local entranceCoords = building.coords or building.ped
+        if entranceCoords then
+            local bId = building.id
+            local bLabel = building.label or "Apartments"
 
-    buildingEntranceTarget = exports.ox_target:addSphereZone({
-        coords = vec3(entranceCoords.x, entranceCoords.y, entranceCoords.z),
-        radius = 2.0,
-        debug = Settings.Debug.Zones,
-        options = {
-            {
-                name = 'apt_enter_mine',
-                label = locale('target.enter_my_apartment'),
-                icon = 'fas fa-key',
-                onSelect = function()
-                    local assignedRoom = lib.callback.await('LNS_Housing:server:getMyApartment', false)
-                    if assignedRoom and assignedRoom.roomData then
-                        EnterApartmentRoom(assignedRoom.roomData)
-                    else
-                        Bridge.Client.Notify(locale('notify.no_apartment_assigned'), 'error')
-                    end
-                end
-            },
-            {
-                name = 'apt_visit_room',
-                label = locale('target.visit_apartment'),
-                icon = 'fas fa-door-open',
-                onSelect = function()
-                    local input = lib.inputDialog(locale('dialog.visit_apartment'), {
-                        { type = 'number', label = locale('dialog.room_number'), placeholder = locale('dialog.room_number_placeholder'), required = true, min = 1 }
-                    })
-                    if not input or not input[1] then return end
-                    local targetRoomId = tonumber(input[1])
-                    if not targetRoomId then return end
+            local zoneId = exports.ox_target:addSphereZone({
+                coords = vec3(entranceCoords.x, entranceCoords.y, entranceCoords.z),
+                radius = 2.0,
+                debug = Settings.Debug.Zones,
+                options = {
+                    {
+                        name = 'apt_enter_mine_' .. bId,
+                        label = locale('target.enter_my_apartment'),
+                        icon = 'fas fa-key',
+                        onSelect = function()
+                            local assignedRoom = lib.callback.await('LNS_Housing:server:getMyApartment', false)
+                            if assignedRoom and assignedRoom.roomData then
+                                local assignedBuildingId = assignedRoom.buildingId or (assignedRoom.roomData and (assignedRoom.roomData.buildingId or assignedRoom.roomData.building_id)) or MyBuildingId
+                                if assignedBuildingId and assignedBuildingId ~= bId then
+                                    local actualBldg = Bridge.GetApartmentBuildingById(assignedBuildingId, true)
+                                    local actualLabel = actualBldg and actualBldg.label or assignedBuildingId
+                                    Bridge.Client.Notify(locale('notify.apt_wrong_building', actualLabel), 'error')
+                                    return
+                                end
+                                EnterApartmentRoom(assignedRoom.roomData, bId)
+                            else
+                                Bridge.Client.Notify(locale('notify.no_apartment_assigned'), 'error')
+                            end
+                        end
+                    },
+                    {
+                        name = 'apt_visit_room_' .. bId,
+                        label = locale('target.visit_apartment'),
+                        icon = 'fas fa-door-open',
+                        onSelect = function()
+                            local input = lib.inputDialog(locale('dialog.visit_apartment') .. ' (' .. bLabel .. ')', {
+                                { type = 'number', label = locale('dialog.room_number'), placeholder = locale('dialog.room_number_placeholder'), required = true, min = 1 }
+                            })
+                            if not input or not input[1] then return end
+                            local targetRoomId = tonumber(input[1])
+                            if not targetRoomId then return end
 
-                    local canEnter = lib.callback.await('LNS_Housing:server:canEnterApartment', false, targetRoomId)
-                    if canEnter then
-                        local roomData = lib.callback.await('LNS_Housing:server:getApartmentRoomData', false, targetRoomId)
-                        if roomData then
-                            EnterApartmentRoom(roomData)
-                        else
-                            Bridge.Client.Notify(locale('notify.apartment_load_failed'), 'error')
+                            local canEnter = lib.callback.await('LNS_Housing:server:canEnterApartment', false, targetRoomId, bId)
+                            if canEnter then
+                                local roomData = lib.callback.await('LNS_Housing:server:getApartmentRoomData', false, targetRoomId, bId)
+                                if roomData then
+                                    EnterApartmentRoom(roomData, bId)
+                                else
+                                    Bridge.Client.Notify(locale('notify.apartment_load_failed'), 'error')
+                                end
+                            else
+                                local alert = lib.alertDialog({
+                                    header = locale('dialog.visit_apartment') .. ' #' .. targetRoomId,
+                                    content = locale('dialog.doorbell_confirm_msg', targetRoomId),
+                                    centered = true,
+                                    cancel = true,
+                                    labels = {
+                                        confirm = locale('dialog.ring_bell'),
+                                        cancel = locale('dialog.cancel')
+                                    }
+                                })
+                                if alert == 'confirm' then
+                                    TriggerServerEvent('LNS_Housing:server:ringApartmentDoorbell', targetRoomId, bId)
+                                end
+                            end
                         end
-                    else
-                        local alert = lib.alertDialog({
-                            header = locale('dialog.visit_apartment') .. ' #' .. targetRoomId,
-                            content = locale('dialog.doorbell_confirm_msg', targetRoomId),
-                            centered = true,
-                            cancel = true,
-                            labels = {
-                                confirm = locale('dialog.ring_bell'),
-                                cancel = locale('dialog.cancel')
-                            }
-                        })
-                        if alert == 'confirm' then
-                            TriggerServerEvent('LNS_Housing:server:ringApartmentDoorbell', targetRoomId)
+                    },
+                    {
+                        name = 'apt_police_breach_' .. bId,
+                        label = locale('target.police_breach_apartment'),
+                        icon = 'fas fa-shield-halved',
+                        canInteract = function()
+                            local job = Bridge.Client.GetPlayerJob()
+                            return Bridge.IsPoliceJob(job)
+                        end,
+                        onSelect = function()
+                            local input = lib.inputDialog(locale('dialog.police_breach_apt'), {
+                                { type = 'number', label = locale('dialog.room_number_breach'), placeholder = locale('dialog.room_number_placeholder'), required = true, min = 1 }
+                            })
+                            if not input or not input[1] then return end
+                            local targetRoomId = tonumber(input[1])
+                            if not targetRoomId then return end
+                            StartPoliceRaid(targetRoomId, 'apartment', nil)
                         end
-                    end
-                end
-            },
-            {
-                name = 'apt_manage_keys',
-                label = locale('target.apartment_management'),
-                icon = 'fas fa-id-card',
-                canInteract = function()
-                    return MyApartmentId ~= nil
-                end,
-                onSelect = function()
-                    openKeyManagementUI()
-                end
-            },
-            {
-                name = 'apt_police_breach',
-                label = locale('target.police_breach_apartment'),
-                icon = 'fas fa-shield-halved',
-                canInteract = function()
-                    local job = Bridge.Client.GetPlayerJob()
-                    return Bridge.IsPoliceJob(job)
-                end,
-                onSelect = function()
-                    local input = lib.inputDialog(locale('dialog.police_breach_apt'), {
-                        { type = 'number', label = locale('dialog.room_number_breach'), placeholder = locale('dialog.room_number_placeholder'), required = true, min = 1 }
-                    })
-                    if not input or not input[1] then return end
-                    local targetRoomId = tonumber(input[1])
-                    if not targetRoomId then return end
-                    StartPoliceRaid(targetRoomId, 'apartment', nil)
-                end
-            }
-        }
-    })
+                    }
+                }
+            })
+            table.insert(buildingEntranceTargets, zoneId)
+        end
+    end
 end
 
 local function CreateApartmentBlip()
-    if apartmentBlip then
+    if apartmentBlips then
+        for _, blip in ipairs(apartmentBlips) do
+            if DoesBlipExist(blip) then
+                RemoveBlip(blip)
+            end
+        end
+        apartmentBlips = {}
+    end
+    if apartmentBlip and DoesBlipExist(apartmentBlip) then
         RemoveBlip(apartmentBlip)
+        apartmentBlip = nil
     end
 
-    apartmentBlip = AddBlipForCoord(Settings.Apartments.Building.coords.x, Settings.Apartments.Building.coords.y, Settings.Apartments.Building.coords.z)
-    SetBlipSprite(apartmentBlip, Settings.Apartments.Building.sprite)
-    SetBlipDisplay(apartmentBlip, 4)
-    SetBlipScale(apartmentBlip, Settings.Apartments.Building.scale)
-    SetBlipColour(apartmentBlip, Settings.Apartments.Building.color)
-    SetBlipAsShortRange(apartmentBlip, true)
-    BeginTextCommandSetBlipName("STRING")
-    AddTextComponentString(locale('menu.wiwang_apartments'))
-    EndTextCommandSetBlipName(apartmentBlip)
+    local buildings = Bridge.GetApartmentBuildings()
+    for _, building in ipairs(buildings) do
+        local coords = building.coords
+        if coords then
+            local blip = AddBlipForCoord(coords.x, coords.y, coords.z)
+            SetBlipSprite(blip, building.sprite or 475)
+            SetBlipDisplay(blip, 4)
+            SetBlipScale(blip, building.scale or 0.65)
+            SetBlipColour(blip, building.color or 3)
+            SetBlipAsShortRange(blip, true)
+            BeginTextCommandSetBlipName("STRING")
+            AddTextComponentString(building.label or locale('menu.wiwang_apartments'))
+            EndTextCommandSetBlipName(blip)
+            table.insert(apartmentBlips, blip)
+        end
+    end
 end
 
 local function CreateApartmentPed()
-    local pedModel = Settings.Apartments.Building.pedmodel
-    local pedCoords = Settings.Apartments.Building.ped
-    
-    lib.requestModel(pedModel)
-    while not HasModelLoaded(pedModel) do
-        Wait(100)
+    if apartmentPeds then
+        for _, ped in ipairs(apartmentPeds) do
+            if DoesEntityExist(ped) then
+                DeleteEntity(ped)
+            end
+        end
+        apartmentPeds = {}
     end
-    
-    apartmentPed = CreatePed(4, pedModel, pedCoords.x, pedCoords.y, pedCoords.z - 1.0, pedCoords.w, false, true)
-    FreezeEntityPosition(apartmentPed, true)
-    SetEntityInvincible(apartmentPed, true)
-    SetBlockingOfNonTemporaryEvents(apartmentPed, true)
+    if apartmentPed and DoesEntityExist(apartmentPed) then
+        DeleteEntity(apartmentPed)
+        apartmentPed = nil
+    end
 
-    local pedOptions = {
-        {
-            name = 'apartment_info',
-            icon = 'fa-solid fa-circle-info',
-            label = locale('target.check_apartment_info'),
-            debug = Settings.Debug.Zones,
-            onSelect = function()
-                if MyApartmentId then
-                    Bridge.Client.Notify(locale('notify.my_apartment_info', MyApartmentId), 'info')
-                else
-                    Bridge.Client.Notify(locale('notify.no_apartment_assigned'), 'error')
-                end
+    local buildings = Bridge.GetApartmentBuildings()
+    for _, building in ipairs(buildings) do
+        local pedCoords = building.ped
+        local pedModel = building.pedmodel or 'a_m_y_business_02'
+        if pedCoords then
+            lib.requestModel(pedModel)
+            while not HasModelLoaded(pedModel) do
+                Wait(100)
             end
-        }
-    }
 
-    if IsStarterInstanceMode() then
-        table.insert(pedOptions, {
-            name = 'ped_enter_mine',
-            icon = 'fa-solid fa-key',
-            label = locale('target.enter_my_apartment'),
-            debug = Settings.Debug.Zones,
-            onSelect = function()
-                local assignedRoom = lib.callback.await('LNS_Housing:server:getMyApartment', false)
-                if assignedRoom and assignedRoom.roomData then
-                    EnterApartmentRoom(assignedRoom.roomData)
-                else
-                    Bridge.Client.Notify(locale('notify.no_apartment_assigned'), 'error')
-                end
-            end
-        })
-        table.insert(pedOptions, {
-            name = 'ped_visit_room',
-            icon = 'fa-solid fa-door-open',
-            label = locale('target.visit_apartment'),
-            debug = Settings.Debug.Zones,
-            onSelect = function()
-                local input = lib.inputDialog(locale('dialog.visit_apartment'), {
-                    { type = 'number', label = locale('dialog.room_number'), placeholder = locale('dialog.room_number_placeholder'), required = true, min = 1 }
+            local ped = CreatePed(4, pedModel, pedCoords.x, pedCoords.y, pedCoords.z - 1.0, pedCoords.w or 0.0, false, true)
+            FreezeEntityPosition(ped, true)
+            SetEntityInvincible(ped, true)
+            SetBlockingOfNonTemporaryEvents(ped, true)
+
+            local bId = building.id
+            local bLabel = building.label or "Apartments"
+
+            local pedOptions = {
+                {
+                    name = 'apartment_info_' .. bId,
+                    icon = 'fa-solid fa-circle-info',
+                    label = locale('target.check_apartment_info'),
+                    debug = Settings.Debug.Zones,
+                    onSelect = function()
+                        if MyApartmentId then
+                            if MyBuildingId then
+                                local myB = Bridge.GetApartmentBuildingById(MyBuildingId, true)
+                                local myBLabel = myB and myB.label or MyBuildingId
+                                Bridge.Client.Notify(locale('notify.my_apartment_info_building', myBLabel, MyApartmentId), 'info')
+                            else
+                                Bridge.Client.Notify(locale('notify.my_apartment_info', MyApartmentId), 'info')
+                            end
+                        else
+                            Bridge.Client.Notify(locale('notify.no_apartment_assigned'), 'error')
+                        end
+                    end
+                }
+            }
+
+            if IsStarterInstanceMode() then
+                table.insert(pedOptions, {
+                    name = 'ped_enter_mine_' .. bId,
+                    icon = 'fa-solid fa-key',
+                    label = locale('target.enter_my_apartment'),
+                    debug = Settings.Debug.Zones,
+                    onSelect = function()
+                        local assignedRoom = lib.callback.await('LNS_Housing:server:getMyApartment', false)
+                        if assignedRoom and assignedRoom.roomData then
+                            local assignedBuildingId = assignedRoom.buildingId or (assignedRoom.roomData and (assignedRoom.roomData.buildingId or assignedRoom.roomData.building_id)) or MyBuildingId
+                            if assignedBuildingId and assignedBuildingId ~= bId then
+                                local actualBldg = Bridge.GetApartmentBuildingById(assignedBuildingId, true)
+                                local actualLabel = actualBldg and actualBldg.label or assignedBuildingId
+                                Bridge.Client.Notify(locale('notify.apt_wrong_building', actualLabel), 'error')
+                                return
+                            end
+                            EnterApartmentRoom(assignedRoom.roomData, bId)
+                        else
+                            Bridge.Client.Notify(locale('notify.no_apartment_assigned'), 'error')
+                        end
+                    end
                 })
-                if not input or not input[1] then return end
-                local targetRoomId = tonumber(input[1])
-                if not targetRoomId then return end
+                table.insert(pedOptions, {
+                    name = 'ped_visit_room_' .. bId,
+                    icon = 'fa-solid fa-door-open',
+                    label = locale('target.visit_apartment'),
+                    debug = Settings.Debug.Zones,
+                    onSelect = function()
+                        local input = lib.inputDialog(locale('dialog.visit_apartment') .. ' (' .. bLabel .. ')', {
+                            { type = 'number', label = locale('dialog.room_number'), placeholder = locale('dialog.room_number_placeholder'), required = true, min = 1 }
+                        })
+                        if not input or not input[1] then return end
+                        local targetRoomId = tonumber(input[1])
+                        if not targetRoomId then return end
 
-                local canEnter = lib.callback.await('LNS_Housing:server:canEnterApartment', false, targetRoomId)
-                if canEnter then
-                    local roomData = lib.callback.await('LNS_Housing:server:getApartmentRoomData', false, targetRoomId)
-                    if roomData then
-                        EnterApartmentRoom(roomData)
-                    else
-                        Bridge.Client.Notify(locale('notify.apartment_load_failed'), 'error')
+                        local canEnter = lib.callback.await('LNS_Housing:server:canEnterApartment', false, targetRoomId, bId)
+                        if canEnter then
+                            local roomData = lib.callback.await('LNS_Housing:server:getApartmentRoomData', false, targetRoomId, bId)
+                            if roomData then
+                                EnterApartmentRoom(roomData, bId)
+                            else
+                                Bridge.Client.Notify(locale('notify.apartment_load_failed'), 'error')
+                            end
+                        else
+                            local alert = lib.alertDialog({
+                                header = locale('dialog.visit_apartment') .. ' #' .. targetRoomId,
+                                content = locale('dialog.doorbell_confirm_msg', targetRoomId),
+                                centered = true,
+                                cancel = true,
+                                labels = { confirm = locale('dialog.ring_bell'), cancel = locale('dialog.cancel') }
+                            })
+                            if alert == 'confirm' then
+                                TriggerServerEvent('LNS_Housing:server:ringApartmentDoorbell', targetRoomId, bId)
+                            end
+                        end
                     end
-                else
-                    local alert = lib.alertDialog({
-                        header = locale('dialog.visit_apartment') .. ' #' .. targetRoomId,
-                        content = locale('dialog.doorbell_confirm_msg', targetRoomId),
-                        centered = true,
-                        cancel = true,
-                        labels = { confirm = locale('dialog.ring_bell'), cancel = locale('dialog.cancel') }
-                    })
-                    if alert == 'confirm' then
-                        TriggerServerEvent('LNS_Housing:server:ringApartmentDoorbell', targetRoomId)
-                    end
-                end
+                })
             end
-        })
-        table.insert(pedOptions, {
-            name = 'ped_manage_keys',
-            icon = 'fa-solid fa-id-card',
-            label = locale('target.apartment_management'),
-            debug = Settings.Debug.Zones,
-            canInteract = function()
-                return MyApartmentId ~= nil
-            end,
-            onSelect = function()
-                openKeyManagementUI()
-            end
-        })
+
+            exports.ox_target:addLocalEntity(ped, pedOptions)
+            table.insert(apartmentPeds, ped)
+        end
     end
-
-    exports.ox_target:addLocalEntity(apartmentPed, pedOptions)
 
     if CreateApartmentBreakerTarget then CreateApartmentBreakerTarget() end
 end
@@ -283,9 +338,12 @@ function openKeyManagementUI()
     })
 end
 
-function EnterApartmentRoom(roomData)
+function EnterApartmentRoom(roomData, buildingId)
     if not roomData or not roomData.id then return end
     if CurrentApartmentId == roomData.id and insideApartment then return end
+
+    local bId = buildingId or (roomData and (roomData.buildingId or roomData.building_id)) or MyBuildingId
+    currentInstanceBuildingId = bId
 
     local isInstance = roomData.isInstance or (IsStarterInstanceMode() and (roomData.isStarter or (MyApartmentId and (roomData.id == MyApartmentId or tostring(roomData.id) == tostring(MyApartmentId) or tonumber(roomData.id) == tonumber(MyApartmentId))) or (not roomData.buildingKey and (not roomData.corners or #roomData.corners == 0))))
 
@@ -301,10 +359,12 @@ function EnterApartmentRoom(roomData)
             LocalPlayer.state:set('insideApartment', true, true)
         end)
 
-        TriggerServerEvent('LNS_Housing:server:enterApartmentBucket', roomData.id)
+        TriggerServerEvent('LNS_Housing:server:enterApartmentBucket', roomData.id, bId)
 
-        local roomInfo = lib.callback.await('LNS_Housing:server:getApartmentInfo', false, roomData.id) or {}
-        local starterCfg = Settings.Apartments and Settings.Apartments.Starter
+        local roomInfo = lib.callback.await('LNS_Housing:server:getApartmentInfo', false, roomData.id, bId) or {}
+        local building = Bridge.GetApartmentBuildingById(bId, true)
+        local starterCfg = (building and building.starter) or (Settings.Apartments and Settings.Apartments.Starter)
+        local buildingCoords = building and (building.coords or building.entrance)
 
         local aptType = roomData.type or (starterCfg and starterCfg.Type) or 'shell'
         local isIpl = (aptType == 'ipl') or (roomData.ipl ~= nil)
@@ -412,7 +472,7 @@ function EnterApartmentRoom(roomData)
             exports.ox_target:removeZone(instanceWardrobeZone)
             instanceWardrobeZone = nil
         end
-        local wardrobePos = roomData.wardrobe or (starterCfg and starterCfg.Wardrobe)
+        local wardrobePos = roomData.wardrobe or (building and building.wardrobe)
         if wardrobePos and wardrobePos.x and wardrobePos.y and wardrobePos.z then
             instanceWardrobeZone = exports.ox_target:addSphereZone({
                 coords = vec3(wardrobePos.x, wardrobePos.y, wardrobePos.z),
@@ -436,7 +496,7 @@ function EnterApartmentRoom(roomData)
             exports.ox_target:removeZone(instanceStashZone)
             instanceStashZone = nil
         end
-        local stashPos = roomData.stash or (starterCfg and starterCfg.Stash)
+        local stashPos = roomData.stash or (building and building.stash)
         if stashPos and stashPos.x and stashPos.y and stashPos.z then
             instanceStashZone = exports.ox_target:addSphereZone({
                 coords = vec3(stashPos.x, stashPos.y, stashPos.z),
@@ -458,6 +518,7 @@ function EnterApartmentRoom(roomData)
             })
         end
 
+        local exitEntrance = roomData.entrance or buildingCoords
         Properties[roomData.id] = {
             id = roomData.id,
             label = locale('target.apartment_room_prefix') .. ' #' .. roomData.id,
@@ -471,7 +532,8 @@ function EnterApartmentRoom(roomData)
                 security_level = roomInfo.security_level or 0,
                 shell = roomData.shell or (starterCfg and starterCfg.Shell),
                 spawn = spawnCoords,
-                entrance = roomData.entrance or (starterCfg and starterCfg.Entrance) or (Settings.Apartments.Building and Settings.Apartments.Building.coords),
+                entrance = exitEntrance,
+                buildingId = bId,
                 isInstance = true
             },
             furniture = roomInfo.furniture or {},
@@ -624,8 +686,12 @@ function LeaveApartmentRoom(roomId)
 
         TriggerServerEvent('LNS_Housing:server:leaveApartmentBucket')
 
-        local starterCfg = Settings.Apartments and Settings.Apartments.Starter
-        local exitCoords = (starterCfg and starterCfg.Entrance) or (Settings.Apartments and Settings.Apartments.Building and Settings.Apartments.Building.coords)
+        local bId = currentInstanceBuildingId or (Properties[targetId] and Properties[targetId].metadata and Properties[targetId].metadata.buildingId) or MyBuildingId
+        local building = Bridge.GetApartmentBuildingById(bId, true)
+        local starterCfg = (building and building.starter) or (Settings.Apartments and Settings.Apartments.Starter)
+        local exitCoords = (Properties[targetId] and Properties[targetId].metadata and Properties[targetId].metadata.entrance)
+            or (building and (building.coords or building.entrance))
+            or (Settings.Apartments and Settings.Apartments.Building and Settings.Apartments.Building.coords)
         if exitCoords then
             local ped = PlayerPedId()
             FreezeEntityPosition(ped, true)
@@ -640,6 +706,7 @@ function LeaveApartmentRoom(roomId)
             SetEntityCoords(ped, exitCoords.x, exitCoords.y, exitCoords.z, false, false, false, false)
             FreezeEntityPosition(ped, false)
         end
+        currentInstanceBuildingId = nil
 
         UnloadFurnitures(targetId)
         if UnloadPropertyTrash then UnloadPropertyTrash(targetId) end
@@ -1079,10 +1146,10 @@ local function teleportToStarterApartment()
     end
 
     if assignedRoom and assignedRoom.roomData then
-        TriggerEvent('LNS_Housing:client:setApartmentData', assignedRoom.roomId, assignedRoom.roomData)
+        TriggerEvent('LNS_Housing:client:setApartmentData', assignedRoom.roomId, assignedRoom.roomData, assignedRoom.buildingId)
 
         if IsStarterInstanceMode() or assignedRoom.roomData.isInstance then
-            EnterApartmentRoom(assignedRoom.roomData)
+            EnterApartmentRoom(assignedRoom.roomData, assignedRoom.buildingId)
             Bridge.Client.Notify(locale('notify.welcome_starter_apartment'), 'success')
             return
         end
@@ -1117,10 +1184,11 @@ end
 
 exports('TeleportToStarterApartment', teleportToStarterApartment)
 
-RegisterNetEvent('LNS_Housing:client:setApartmentData', function(roomId, roomData)
-    debugPrint('info', 'LNS_Housing:client:setApartmentData received', {roomId = roomId, roomData = roomData})
+RegisterNetEvent('LNS_Housing:client:setApartmentData', function(roomId, roomData, buildingId)
+    debugPrint('info', 'LNS_Housing:client:setApartmentData received', {roomId = roomId, roomData = roomData, buildingId = buildingId})
     MyApartmentId = roomId
     MyRoomData = roomData
+    MyBuildingId = buildingId or (roomData and (roomData.buildingId or roomData.building_id)) or MyBuildingId
 
     RegisterAllApartmentZones()
     if IsStarterInstanceMode() then
@@ -1269,7 +1337,7 @@ local function initApartmentForPlayer()
                 table.insert(Settings.Rooms, assignedRoom.roomData)
             end
         end
-        TriggerEvent('LNS_Housing:client:setApartmentData', assignedRoom.roomId, assignedRoom.roomData)
+        TriggerEvent('LNS_Housing:client:setApartmentData', assignedRoom.roomId, assignedRoom.roomData, assignedRoom.buildingId)
 
         if IsStarterInstanceMode() then
             CreateThread(function()
@@ -1279,7 +1347,7 @@ local function initApartmentForPlayer()
                 local starterCfg = Settings.Apartments and Settings.Apartments.Starter
                 local shellCoords = starterCfg and (starterCfg.ShellCoords or starterCfg.SpawnCoords)
                 if shellCoords and #(coords - vec3(shellCoords.x, shellCoords.y, shellCoords.z)) < 50.0 and not insideApartment then
-                    EnterApartmentRoom(assignedRoom.roomData)
+                    EnterApartmentRoom(assignedRoom.roomData, assignedRoom.buildingId)
                 end
             end)
         else
@@ -1448,10 +1516,7 @@ end
 local function OnClientPlayerUnloaded()
     isApartmentLoaded = false
     ClearApartmentDoors()
-    if buildingEntranceTarget then
-        exports.ox_target:removeZone(buildingEntranceTarget)
-        buildingEntranceTarget = nil
-    end
+    ClearBuildingEntranceTargets()
     CleanUpApartmentSession()
 end
 
@@ -1570,10 +1635,7 @@ AddEventHandler('onResourceStop', function(resourceName)
         exports.ox_target:removeZone(instanceStashZone)
         instanceStashZone = nil
     end
-    if buildingEntranceTarget then
-        exports.ox_target:removeZone(buildingEntranceTarget)
-        buildingEntranceTarget = nil
-    end
+    ClearBuildingEntranceTargets()
     if activeInstanceIpls then
         for _, name in ipairs(activeInstanceIpls) do
             if IsIplActive(name) then
@@ -1596,12 +1658,30 @@ AddEventHandler('onResourceStop', function(resourceName)
         apartmentZones = {}
     end
 
-    if apartmentPed then
+    if apartmentPeds then
+        for _, ped in ipairs(apartmentPeds) do
+            if DoesEntityExist(ped) then
+                DeleteEntity(ped)
+            end
+        end
+        apartmentPeds = {}
+    end
+    if apartmentPed and DoesEntityExist(apartmentPed) then
         DeleteEntity(apartmentPed)
+        apartmentPed = nil
     end
     
-    if apartmentBlip then
+    if apartmentBlips then
+        for _, blip in ipairs(apartmentBlips) do
+            if DoesBlipExist(blip) then
+                RemoveBlip(blip)
+            end
+        end
+        apartmentBlips = {}
+    end
+    if apartmentBlip and DoesBlipExist(apartmentBlip) then
         RemoveBlip(apartmentBlip)
+        apartmentBlip = nil
     end
 
     ClearApartmentDoors()

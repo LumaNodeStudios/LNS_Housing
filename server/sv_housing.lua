@@ -1033,7 +1033,7 @@ end)
 lib.callback.register('LNS_Housing:server:getStorageInfo', function(source, propertyId, stashId)
     debugPrint('info', 'LNS_Housing:server:getStorageInfo called', {source = source, propertyId = propertyId, stashId = stashId})
     local isApartment = Properties[propertyId] == nil
-    local hasAccess = CheckPermission(source, isApartment and 'apartment' or 'house', propertyId, 'storage')
+    local hasManage = CheckPermission(source, isApartment and 'apartment' or 'house', propertyId, 'manage')
     if StoragePasscodes[stashId] == nil then
         local row = MySQL.single.await('SELECT passcode FROM housing_storage_passcodes WHERE stash_id = ?', { stashId })
         if row and row.passcode then
@@ -1047,7 +1047,7 @@ lib.callback.register('LNS_Housing:server:getStorageInfo', function(source, prop
     return {
         hasPasscode = hasPasscode,
         isLocked = LockedStashes[stashId],
-        canManage = hasAccess
+        canManage = hasManage
     }
 end)
 
@@ -1072,7 +1072,7 @@ end)
 lib.callback.register('LNS_Housing:server:setStoragePasscode', function(source, propertyId, stashId, newPasscode, isReset)
     debugPrint('info', 'LNS_Housing:server:setStoragePasscode called', {source = source, propertyId = propertyId, stashId = stashId, isReset = isReset})
     local isApartment = Properties[propertyId] == nil
-    local hasAccess = CheckPermission(source, isApartment and 'apartment' or 'house', propertyId, 'storage')
+    local hasAccess = CheckPermission(source, isApartment and 'apartment' or 'house', propertyId, 'manage')
     if not hasAccess then
         return { success = false, message = 'You do not have permission to manage this storage.' }
     end

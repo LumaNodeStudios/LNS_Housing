@@ -6,10 +6,17 @@ import {
   EyeOff,
   Check,
   Delete,
-  AlertCircle
+  AlertCircle,
+  Lock,
+  Unlock,
+  RotateCcw,
+  KeyRound,
+  ShieldCheck
 } from 'lucide-react';
 import { useLocale } from '../../context/LocaleContext';
 import './StorageKeypad.css';
+
+const PASSCODE_LENGTH = 4;
 
 const fetchNui = async (eventName, data = {}) => {
   const resourceName = window.GetParentResourceName ? window.GetParentResourceName() : 'LNS_Housing';
@@ -33,6 +40,7 @@ export default function StorageKeypad({ data, onClose }) {
   const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
   const [errorMessage, setErrorMessage] = useState('');
   const [shake, setShake] = useState(false);
+
   const codeRef = useRef(code);
   const statusRef = useRef(status);
   const modeRef = useRef(mode);
@@ -41,15 +49,13 @@ export default function StorageKeypad({ data, onClose }) {
   statusRef.current = status;
   modeRef.current = mode;
 
-  const title = data?.title || (data?.isFridge ? t('ui.refrigerator', 'Refrigerator') : t('ui.storage_unit', 'Storage Unit'));
   const isFridge = data?.isFridge || false;
+  const title = data?.title || (isFridge ? t('ui.refrigerator', 'Refrigerator') : t('ui.storage_unit', 'Storage Unit'));
   const canReset = data?.canReset || false;
-  const maxDigits = 8;
-  const minDigits = 4;
 
   const handleDigit = (digit) => {
     if (statusRef.current === 'loading' || statusRef.current === 'success') return;
-    if (codeRef.current.length >= maxDigits) return;
+    if (codeRef.current.length >= PASSCODE_LENGTH) return;
     if (statusRef.current === 'error') {
       setStatus('idle');
       setErrorMessage('');
@@ -77,11 +83,11 @@ export default function StorageKeypad({ data, onClose }) {
   const handleSubmit = async () => {
     if (statusRef.current === 'loading' || statusRef.current === 'success') return;
 
-    if (codeRef.current.length < minDigits) {
+    if (codeRef.current.length < PASSCODE_LENGTH) {
       setStatus('error');
-      setErrorMessage(`Passcode must be at least ${minDigits} digits`);
+      setErrorMessage(t('ui.passcode_4_digits', 'Enter 4 digits'));
       setShake(true);
-      setTimeout(() => setShake(false), 500);
+      setTimeout(() => setShake(false), 450);
       return;
     }
 
@@ -100,7 +106,7 @@ export default function StorageKeypad({ data, onClose }) {
       setStatus('success');
       setTimeout(() => {
         if (onClose) onClose();
-      }, 400);
+      }, 450);
     } else {
       setStatus('error');
       setErrorMessage(res?.message || t('ui.incorrect_passcode', 'Incorrect passcode'));
@@ -108,7 +114,7 @@ export default function StorageKeypad({ data, onClose }) {
       setTimeout(() => {
         setShake(false);
         setCode('');
-      }, 500);
+      }, 600);
     }
   };
 
@@ -130,6 +136,9 @@ export default function StorageKeypad({ data, onClose }) {
       } else if (e.key === 'Enter') {
         e.preventDefault();
         handleSubmit();
+      } else if (e.key === 'Delete') {
+        e.preventDefault();
+        handleClear();
       }
     };
 
@@ -143,23 +152,29 @@ export default function StorageKeypad({ data, onClose }) {
         return {
           badge: t('ui.set_passcode', 'SET PASSCODE'),
           badgeClass: 'badge-register',
-          subtitle: t('ui.set_passcode_sub', 'Create a 4-8 digit passcode to secure this storage'),
-          submitLabel: t('ui.register_passcode_btn', 'REGISTER PASSCODE'),
+          subtitle: t('ui.set_passcode_sub', 'Create a 4-digit passcode to secure this storage'),
+          submitLabel: t('ui.register_passcode_btn', 'SET PASSCODE'),
+          icon: <ShieldCheck size={18} />,
+          submitIcon: <ShieldCheck size={16} />,
         };
       case 'reset':
         return {
           badge: t('ui.reset_passcode', 'RESET PASSCODE'),
           badgeClass: 'badge-reset',
-          subtitle: t('ui.reset_passcode_sub', 'Enter a new 4-8 digit passcode for this storage'),
+          subtitle: t('ui.reset_passcode_sub', 'Enter a new 4-digit passcode for this storage'),
           submitLabel: t('ui.save_passcode_btn', 'SAVE NEW PASSCODE'),
+          icon: <KeyRound size={18} />,
+          submitIcon: <KeyRound size={16} />,
         };
       case 'unlock':
       default:
         return {
           badge: t('ui.locked', 'LOCKED'),
           badgeClass: 'badge-locked',
-          subtitle: t('ui.enter_passcode_sub', 'Enter storage passcode to unlock and open'),
+          subtitle: t('ui.enter_passcode_sub', 'Enter 4-digit passcode to unlock and open'),
           submitLabel: t('ui.unlock_storage_btn', 'UNLOCK STORAGE'),
+          icon: <Lock size={18} />,
+          submitIcon: <Unlock size={16} />,
         };
     }
   };
@@ -170,14 +185,17 @@ export default function StorageKeypad({ data, onClose }) {
     <div className="keypad-overlay">
       <motion.div
         className={`keypad-container ${shake ? 'keypad-shake' : ''}`}
-        initial={{ opacity: 0, scale: 0.92, y: 15 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.92, y: 15 }}
-        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.18 }}
       >
         {/* Header */}
         <div className="keypad-header">
           <div className="keypad-header-left">
+            <div className={`keypad-icon-box ${modeInfo.badgeClass}`}>
+              {modeInfo.icon}
+            </div>
             <div className="keypad-header-text">
               <div className="keypad-title-row">
                 <span className="keypad-title">{title}</span>
@@ -186,6 +204,7 @@ export default function StorageKeypad({ data, onClose }) {
               <p className="keypad-subtitle">{modeInfo.subtitle}</p>
             </div>
           </div>
+
           <div className="keypad-header-actions">
             {mode === 'unlock' && canReset && (
               <button
@@ -201,9 +220,11 @@ export default function StorageKeypad({ data, onClose }) {
                   setErrorMessage('');
                 }}
               >
+                <RotateCcw size={13} />
                 <span>{t('ui.reset', 'Reset')}</span>
               </button>
             )}
+
             {mode === 'reset' && (
               <button
                 type="button"
@@ -218,9 +239,11 @@ export default function StorageKeypad({ data, onClose }) {
                   setErrorMessage('');
                 }}
               >
+                <Lock size={13} />
                 <span>{t('ui.unlock', 'Unlock')}</span>
               </button>
             )}
+
             <button
               type="button"
               className="keypad-close-btn"
@@ -231,62 +254,102 @@ export default function StorageKeypad({ data, onClose }) {
               }}
               title={t('ui.close_keypad', 'Close keypad')}
             >
-              <X size={18} />
+              <X size={16} />
             </button>
           </div>
         </div>
 
         {/* PIN Screen / Display */}
-        <div className={`keypad-screen ${status === 'error' ? 'screen-error' : ''} ${status === 'success' ? 'screen-success' : ''}`}>
-          <div className="screen-content">
-            {status === 'success' ? (
-              <div className="screen-status-msg success">
-                <Check size={22} className="success-icon" />
-                <span>{t('ui.passcode_accepted', 'PASSCODE ACCEPTED')}</span>
-              </div>
-            ) : status === 'error' ? (
-              <div className="screen-status-msg error">
-                <AlertCircle size={20} className="error-icon" />
-                <span>{errorMessage || t('ui.incorrect_passcode', 'INCORRECT PASSCODE')}</span>
-              </div>
-            ) : (
-              <div className="screen-digits-row">
-                {Array.from({ length: Math.max(code.length, minDigits) }).map((_, idx) => {
-                  const hasChar = idx < code.length;
-                  const char = code[idx];
-                  return (
-                    <div
-                      key={idx}
-                      className={`screen-dot-slot ${hasChar ? 'filled' : ''} ${idx === code.length ? 'current' : ''}`}
-                    >
-                      {hasChar ? (
-                        showCode ? (
-                          <span className="dot-char">{char}</span>
-                        ) : (
-                          <span className="dot-bullet" />
-                        )
-                      ) : (
-                        <span className="dot-placeholder" />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-          <div className="screen-controls">
+        <div
+          className={`keypad-screen ${
+            status === 'error' ? 'screen-error' : ''
+          } ${status === 'success' ? 'screen-success' : ''}`}
+        >
+          {/* Top row with Visibility toggle */}
+          <div className="screen-top-bar">
+            <span className="screen-top-label">{t('ui.enter_passcode', 'ENTER PASSCODE')}</span>
             <button
-              className="screen-toggle-vis"
+              className={`screen-toggle-vis ${showCode ? 'active' : ''}`}
               onClick={() => setShowCode(!showCode)}
               title={showCode ? t('ui.hide_passcode', 'Hide passcode') : t('ui.show_passcode', 'Show passcode')}
               type="button"
             >
-              {showCode ? <EyeOff size={16} /> : <Eye size={16} />}
+              {showCode ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>
           </div>
+
+          {/* Fixed 4 Slots Row */}
+          <div className="screen-slots-row">
+            {Array.from({ length: PASSCODE_LENGTH }).map((_, idx) => {
+              const isFilled = idx < code.length;
+              const isCurrent = idx === code.length && status === 'idle';
+              const char = code[idx];
+
+              let slotClass = 'screen-slot-box';
+              if (status === 'success') {
+                slotClass += ' success';
+              } else if (status === 'error') {
+                slotClass += ' error';
+              } else if (isFilled) {
+                slotClass += ' filled';
+              } else if (isCurrent) {
+                slotClass += ' current';
+              } else {
+                slotClass += ' empty';
+              }
+
+              return (
+                <div key={idx} className={slotClass}>
+                  {isFilled ? (
+                    showCode ? (
+                      <span className="slot-digit">{char}</span>
+                    ) : (
+                      <span className="slot-bullet" />
+                    )
+                  ) : isCurrent ? (
+                    <span className="slot-cursor" />
+                  ) : (
+                    <span className="slot-dash" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Status Feedback Message */}
+          <AnimatePresence>
+            {status === 'error' && (
+              <motion.div
+                className="screen-feedback-banner error"
+                initial={{ opacity: 0, y: -2 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -2 }}
+                transition={{ duration: 0.12 }}
+              >
+                <AlertCircle size={13} />
+                <span>{errorMessage || t('ui.incorrect_passcode', 'Incorrect passcode')}</span>
+              </motion.div>
+            )}
+            {status === 'success' && (
+              <motion.div
+                className="screen-feedback-banner success"
+                initial={{ opacity: 0, y: -2 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -2 }}
+                transition={{ duration: 0.12 }}
+              >
+                <Check size={13} />
+                <span>
+                  {mode === 'unlock'
+                    ? t('ui.access_granted', 'ACCESS GRANTED')
+                    : t('ui.passcode_accepted', 'PASSCODE ACCEPTED')}
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Keypad Grid */}
+        {/* Keypad Grid (0-9, Clear, Backspace) */}
         <div className="keypad-grid">
           {[
             { num: '1', sub: '' },
@@ -327,7 +390,7 @@ export default function StorageKeypad({ data, onClose }) {
             disabled={status === 'loading' || status === 'success' || code.length === 0}
             title={t('ui.clear', 'Clear')}
           >
-            <span>{t('ui.clr', 'CLR')}</span>
+            <span className="btn-action-text">{t('ui.clr', 'CLR')}</span>
           </button>
 
           <button
@@ -355,29 +418,39 @@ export default function StorageKeypad({ data, onClose }) {
             disabled={status === 'loading' || status === 'success' || code.length === 0}
             title={t('ui.backspace', 'Backspace')}
           >
-            <Delete size={20} />
+            <Delete size={19} />
           </button>
         </div>
 
         {/* Submit Button */}
         <button
           type="button"
-          className={`keypad-submit-btn ${mode === 'register' ? 'btn-register' : mode === 'reset' ? 'btn-reset' : 'btn-unlock'} ${
-            status === 'loading' ? 'loading' : ''
-          }`}
+          className={`keypad-submit-btn ${
+            mode === 'register' ? 'btn-register' : mode === 'reset' ? 'btn-reset' : 'btn-unlock'
+          } ${status === 'loading' ? 'loading' : ''} ${status === 'success' ? 'success' : ''}`}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             handleSubmit();
           }}
-          disabled={status === 'loading' || status === 'success' || code.length < minDigits}
+          disabled={status === 'loading' || status === 'success' || code.length < PASSCODE_LENGTH}
         >
           {status === 'loading' ? (
             <div className="submit-spinner" />
           ) : status === 'success' ? (
-            <span>{t('ui.access_granted', 'ACCESS GRANTED')}</span>
+            <>
+              <Check size={16} />
+              <span>
+                {mode === 'unlock'
+                  ? t('ui.access_granted', 'ACCESS GRANTED')
+                  : t('ui.passcode_accepted', 'PASSCODE ACCEPTED')}
+              </span>
+            </>
           ) : (
-            <span>{modeInfo.submitLabel}</span>
+            <>
+              {modeInfo.submitIcon}
+              <span>{modeInfo.submitLabel}</span>
+            </>
           )}
         </button>
 

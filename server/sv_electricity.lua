@@ -4,6 +4,7 @@ local FurnitureLookupByHash = {}
 local FurnitureLookupById = {}
 local FurnitureLookupByLabel = {}
 local isLookupBuilt = false
+local apartmentBreakerTripped = {}
 
 local function EnsureFurnitureLookup()
     if isLookupBuilt and next(FurnitureLookupByModel) ~= nil then return end
@@ -168,13 +169,16 @@ function CalculatePropertyPowerAndTemp(propertyId)
     end
 
     local maxPower = (p and p.metadata and tonumber(p.metadata.max_power)) or ((Settings.Electricity and Settings.Electricity.DefaultMaxPower) or 5.0)
-    local tripped = p and p.metadata and p.metadata.breaker_tripped or false
+    local tripped = (p and p.metadata and p.metadata.breaker_tripped) or apartmentBreakerTripped[strId] or (numId and apartmentBreakerTripped[numId]) or false
 
     if isElectricityEnabled and totalPower > maxPower and not tripped then
         if p then
             if not p.metadata then p.metadata = {} end
             p.metadata.breaker_tripped = true
             SaveProperty(propertyId)
+        else
+            apartmentBreakerTripped[strId] = true
+            if numId then apartmentBreakerTripped[numId] = true end
         end
         tripped = true
         TriggerClientEvent('LNS_Housing:client:breakerTrippedNotify', -1, propertyId, totalPower, maxPower)
@@ -218,13 +222,47 @@ lib.callback.register('LNS_Housing:server:getPropertyUsageStats', function(sourc
     }
 end)
 
-lib.callback.register('LNS_Housing:server:resetBreaker', function(source, propertyId)
+lib.callback.register('LNS_Housing:server:resetBreaker', function(source, propertyId, buildingId)
     if Settings.Electricity and Settings.Electricity.Enabled == false then
         return { success = false, message = "Electricity system is currently disabled." }
     end
     local src = source
-    local p = Properties[propertyId]
-    if not p then return { success = false, message = "Property not found." } end
+    local numId = tonumber(propertyId)
+    local strId = tostring(propertyId)
+    local p = Properties[propertyId] or (numId and Properties[numId]) or Properties[strId]
+
+    if not p then
+        if buildingId and GetApartmentBuildingId then
+            local actualBId = GetApartmentBuildingId(propertyId)
+            if actualBId and actualBId ~= buildingId then
+                local actualBldg = Bridge.GetApartmentBuildingById(actualBId, true)
+                local curBldg = Bridge.GetApartmentBuildingById(buildingId, true)
+                local actualLabel = actualBldg and actualBldg.label or actualBId
+                local curLabel = curBldg and curBldg.label or buildingId
+                return {
+                    success = false,
+                    message = string.format("This breaker box belongs to %s, not your apartment at %s.", curLabel, actualLabel)
+                }
+            end
+        end
+
+        local totalPower, netTemp, tripped, maxPower = CalculatePropertyPowerAndTemp(propertyId)
+        if totalPower > maxPower then
+            return {
+                success = false,
+                message = string.format("Breaker tripped again! Usage (%.1f kWh) exceeds max limit (%.1f kWh). Remove electronics or upgrade power.", totalPower, maxPower)
+            }
+        end
+
+        apartmentBreakerTripped[strId] = false
+        if numId then apartmentBreakerTripped[numId] = false end
+        TriggerClientEvent('LNS_Housing:client:breakerReset', -1, propertyId)
+
+        return {
+            success = true,
+            message = "Apartment breaker reset! Electrical power restored."
+        }
+    end
 
     local totalPower, netTemp, tripped, maxPower = CalculatePropertyPowerAndTemp(propertyId)
     if totalPower > maxPower then

@@ -120,13 +120,9 @@ return {
 
             SpawnCoords = vec4(-825.09, -710.45, -100.0, 0.0), -- Interior spawn coordinates (optional override; if nil, auto-derived from Shell/IPL door offset)
 
-            Entrance = vec3(-826.53, -700.2, 27.06), -- Exterior building entrance & exit location (optional; defaults to Building.coords)
-
             BucketOffset = 20000, -- Base routing bucket offset (player bucket = BucketOffset + roomId)
 
-            Wardrobe = vec3(-825.09, -706.5, -100.0), -- Optional: Manually set Wardrobe location (simple vec3, set to nil to disable)
-
-            Stash = vec3(-828.0, -708.5, -100.0), -- Optional: Manually set Stash location (simple vec3, set to nil to disable)
+            DefaultBuilding = nil, -- Optional: Pin starter assignment to a specific building ID (e.g. 'wiwang'). If nil, randomly assigns across configured buildings
         },
 
         Creator = {
@@ -135,16 +131,41 @@ return {
             Group = 'admin'                 -- User group permitted to run this command
         },
 
-        -- Configuration for the main apartment building lobby/reception
-        Building = {
-            sprite = 475,                   -- Blip icon ID for apartments
-            color = 3,                      -- Blip color ID
-            scale = 0.8,
-            label = "WIWANG Apartments",
-            coords = vec3(-826.53, -700.2, 27.06), -- Entrance vector coordinate
-            ped = vector4(-823.55, -702.17, 28.06, 3.0), -- Ped vector coordinate (Check room number)
-            pedmodel = `a_m_y_business_01`, -- Ped model
-            breakerCoords = vec3(-828.53, -702.2, 27.06) -- Shared breaker box interaction location
+        -- Configurations for starter apartment buildings
+        Buildings = {
+            {
+                id = 'wiwang',                  -- Unique identifier for the apartment building
+                label = "WIWANG Apartments",    -- Blip, MDT & UI label
+                sprite = 475,                   -- Blip icon ID
+                color = 3,                      -- Blip color ID
+                scale = 0.8,
+                coords = vec3(-826.635, -691.499, 28.197), -- Exterior entrance & exit coordinates
+                ped = vector4(-823.55, -702.17, 28.06, 3.0), -- Receptionist ped vector4 coordinate (set to nil to disable)
+                pedmodel = `a_m_y_business_01`, -- Ped model
+                breakerCoords = vec3(-828.53, -702.2, 27.06), -- Shared breaker box interaction location (supports single vec3 or array of vec3s)
+                wardrobe = vec3(-820.542, -690.562, -100.369), -- Wardrobe location (simple vec3, set to nil to disable)
+                stash = vec3(-819.367, -696.222, -100.966), -- Stash location (simple vec3, set to nil to disable)
+                -- Optional per-building interior overrides (falls back to Starter defaults above):
+                -- type = 'shell',
+                -- shell = 'Apartment Furnished',
+                -- shellCoords = vec3(-826.53, -700.2, -100.0),
+                -- ipl = 'Eclipse Penthouse 1',
+                -- spawnCoords = vec4(-825.09, -710.45, -100.0, 0.0),
+            },
+            -- Example adding a second starter apartment building:
+            -- {
+            --     id = 'integrity',
+            --     label = "Integrity Way Apartments",
+            --     sprite = 475,
+            --     color = 2,
+            --     scale = 0.8,
+            --     coords = vec3(-47.74, -585.86, 37.95),
+            --     ped = vector4(-45.32, -583.12, 37.95, 200.0),
+            --     pedmodel = `a_m_y_business_01`,
+            --     breakerCoords = vec3(-49.12, -583.5, 37.95),
+            --     wardrobe = vec3(-825.09, -706.5, -100.0),
+            --     stash = vec3(-828.0, -708.5, -100.0),
+            -- }
         }
     },
 

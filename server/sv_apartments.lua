@@ -1,6 +1,8 @@
 local Settings = lib.load('shared.settings')
 local activeRooms = {}
 local playerRooms = {}
+local playerRoomBuildings = {}
+local roomBuildings = {}
 local roomDoors = {}
 local assignedRoomIds = {}
 local lastNoRoomNotify = {}
@@ -31,6 +33,61 @@ local function GetPlayerLicense(src)
     local lic = GetPlayerIdentifierByType(src, 'license')
     local lic2 = GetPlayerIdentifierByType(src, 'license2')
     return lic or lic2, lic2 or lic
+end
+
+function GetApartmentBuildingId(roomId)
+    if not roomId then return nil end
+    local numId = tonumber(roomId)
+    local strId = tostring(roomId)
+    if numId and roomBuildings[numId] then return roomBuildings[numId] end
+    if roomBuildings[strId] then return roomBuildings[strId] end
+
+    if Settings.Rooms then
+        for _, r in ipairs(Settings.Rooms) do
+            if r.id == roomId or tostring(r.id) == strId or (numId and tonumber(r.id) == numId) then
+                local bId = r.buildingId or r.building_id
+                if bId and bId ~= '' then
+                    roomBuildings[numId or roomId] = bId
+                    return bId
+                end
+            end
+        end
+    end
+
+    local paRow = MySQL.single.await('SELECT building_id FROM player_apartments WHERE room_id = ? LIMIT 1', { numId or roomId })
+    if paRow and paRow.building_id and paRow.building_id ~= '' then
+        roomBuildings[numId or roomId] = paRow.building_id
+        return paRow.building_id
+    end
+
+    local arRow = MySQL.single.await('SELECT building_id, door_coords, spawn_coords FROM apartment_rooms WHERE id = ? LIMIT 1', { numId or roomId })
+    if arRow then
+        if arRow.building_id and arRow.building_id ~= '' then
+            roomBuildings[numId or roomId] = arRow.building_id
+            return arRow.building_id
+        end
+        local refCoords = nil
+        if arRow.door_coords then
+            local dc = json.decode(arRow.door_coords)
+            if dc then refCoords = vec3(dc.x, dc.y, dc.z) end
+        end
+        if not refCoords and arRow.spawn_coords then
+            local sc = json.decode(arRow.spawn_coords)
+            if sc then refCoords = vec3(sc.x, sc.y, sc.z) end
+        end
+        if refCoords then
+            local nearest = Bridge.GetNearestApartmentBuilding(refCoords)
+            if nearest then
+                roomBuildings[numId or roomId] = nearest.id
+                return nearest.id
+            end
+        end
+    end
+
+    local defaultB = Bridge.GetApartmentBuildings()[1]
+    local defId = defaultB and defaultB.id or 'wiwang'
+    roomBuildings[numId or roomId] = defId
+    return defId
 end
 
 local Furniture = lib.load('shared.furniture') or {}
@@ -194,8 +251,18 @@ CreateThread(function()
             local interiorCoords = r.interior_coords and json.decode(r.interior_coords) or nil
             local interiorCenter = r.interior_center and json.decode(r.interior_center) or nil
 
+            local buildingId = r.building_id
+            if not buildingId or buildingId == '' then
+                local refCoords = doorCoords or (spawnVec and vec3(spawnVec.x, spawnVec.y, spawnVec.z))
+                local nearest = Bridge.GetNearestApartmentBuilding(refCoords)
+                buildingId = nearest and nearest.id or 'wiwang'
+            end
+            roomBuildings[r.id] = buildingId
+
             table.insert(Settings.Rooms, {
                 id = r.id,
+                buildingId = buildingId,
+                building_id = buildingId,
                 corners = cornersVec,
                 thickness = r.thickness,
                 zOffset = r.zOffset,
@@ -216,11 +283,17 @@ CreateThread(function()
         end
     end
 
-    local result = MySQL.query.await('SELECT license, room_id FROM player_apartments')
+    local result = MySQL.query.await('SELECT license, room_id, building_id FROM player_apartments')
     if result then
         for _, row in ipairs(result) do
             playerRooms[row.license] = row.room_id
             assignedRoomIds[row.room_id] = true
+            local bId = row.building_id
+            if not bId or bId == '' then
+                bId = roomBuildings[row.room_id] or GetApartmentBuildingId(row.room_id)
+            end
+            playerRoomBuildings[row.license] = bId
+            roomBuildings[row.room_id] = bId
         end
         lib.print.info('Loaded ' .. #result .. ' apartments.')
     end
@@ -235,23 +308,29 @@ local function IsStarterInstanceMode()
     return Settings.Apartments and Settings.Apartments.Starter and Settings.Apartments.Starter.Mode == 'instance'
 end
 
-local function GetStarterApartmentRoomData(roomId)
+local function GetStarterApartmentRoomData(roomId, buildingId)
     local cfg = Settings.Apartments and Settings.Apartments.Starter
     if not cfg then return nil end
 
-    local entrance = cfg.Entrance or (Settings.Apartments.Building and Settings.Apartments.Building.coords) or vec3(-826.53, -700.2, 27.06)
-    local interiorType = cfg.Type or 'shell'
-    local spawnCoords = cfg.SpawnCoords
+    local bId = buildingId or GetApartmentBuildingId(roomId)
+    local building = Bridge.GetApartmentBuildingById(bId, true)
+    local bLabel = building and building.label or "WIWANG Apartments"
+    local buildingActualId = building and building.id or bId or 'wiwang'
+    local entrance = (building and (building.coords or building.entrance))
+    local interiorType = (building and building.type) or cfg.Type or 'shell'
+    local shellName = (building and building.shell) or cfg.Shell or 'Apartment Furnished'
+    local iplName = (building and building.ipl) or cfg.IPL or 'Eclipse Penthouse 1'
+    local shellOrigin = (building and building.shellCoords) or cfg.ShellCoords or vec3(entrance.x, entrance.y, Settings.ShellSpawningZ or -100.0)
+    local spawnCoords = (building and building.spawnCoords) or cfg.SpawnCoords
 
     if not spawnCoords then
         if interiorType == 'ipl' then
-            local iplData = Settings.IPLs and Settings.IPLs[cfg.IPL]
+            local iplData = Settings.IPLs and Settings.IPLs[iplName]
             if iplData and iplData.coords then
                 spawnCoords = iplData.coords
             end
         else
-            local shellData = Settings.Shells and Settings.Shells[cfg.Shell]
-            local shellOrigin = cfg.ShellCoords or vec3(entrance.x, entrance.y, Settings.ShellSpawningZ or -100.0)
+            local shellData = Settings.Shells and Settings.Shells[shellName]
             if shellData and shellData.doorOffset then
                 spawnCoords = vec4(
                     shellOrigin.x + shellData.doorOffset.x,
@@ -272,37 +351,53 @@ local function GetStarterApartmentRoomData(roomId)
 
     return {
         id = roomId,
+        buildingId = buildingActualId,
+        building_id = buildingActualId,
+        buildingLabel = bLabel,
         isStarter = true,
         isInstance = true,
         interiorType = interiorType,
-        shell = interiorType == 'shell' and cfg.Shell or nil,
-        ipl = interiorType == 'ipl' and cfg.IPL or nil,
-        shellCoords = cfg.ShellCoords or vec3(entrance.x, entrance.y, Settings.ShellSpawningZ or -100.0),
+        shell = interiorType == 'shell' and shellName or nil,
+        ipl = interiorType == 'ipl' and iplName or nil,
+        shellCoords = shellOrigin,
         doorCoords = entrance,
+        entrance = entrance,
         doorHeading = 0.0,
         spawn = spawnCoords,
         price = 0,
         bucket = bucketOffset + numId,
-        wardrobe = cfg.Wardrobe,
-        stash = cfg.Stash
+        wardrobe = (building and building.wardrobe),
+        stash = (building and building.stash)
     }
 end
 
-function GetRoomDataByIdServer(roomId)
-    if not Settings.Rooms then return nil end
-    for _, room in ipairs(Settings.Rooms) do
-        if room.id == roomId or tostring(room.id) == tostring(roomId) or (tonumber(room.id) and tonumber(roomId) and tonumber(room.id) == tonumber(roomId)) then
-            return room
+function GetRoomDataByIdServer(roomId, buildingId)
+    if not roomId then return nil end
+    local numId = tonumber(roomId)
+    local strId = tostring(roomId)
+
+    if Settings.Rooms then
+        for _, room in ipairs(Settings.Rooms) do
+            if room.id == roomId or tostring(room.id) == strId or (numId and tonumber(room.id) == numId) then
+                local bId = room.buildingId or room.building_id or buildingId or GetApartmentBuildingId(roomId)
+                local b = Bridge.GetApartmentBuildingById(bId, true)
+                local cloned = table.clone(room)
+                cloned.buildingId = b and b.id or bId
+                cloned.building_id = cloned.buildingId
+                cloned.buildingLabel = b and b.label or 'Apartments'
+                return cloned
+            end
         end
     end
+
     if IsStarterInstanceMode() then
-        return GetStarterApartmentRoomData(roomId)
+        return GetStarterApartmentRoomData(roomId, buildingId)
     end
     return nil
 end
 local getRoomDataById = GetRoomDataByIdServer
 
-local function getAvailableRoom()
+local function getAvailableRoom(buildingId)
     if #Settings.Rooms == 0 then
         local Rooms = MySQL.query.await('SELECT * FROM apartment_rooms')
         if Rooms and #Rooms > 0 then
@@ -332,8 +427,18 @@ local function getAvailableRoom()
                 local interiorCoords = r.interior_coords and json.decode(r.interior_coords) or nil
                 local interiorCenter = r.interior_center and json.decode(r.interior_center) or nil
 
+                local rBuildingId = r.building_id
+                if not rBuildingId or rBuildingId == '' then
+                    local refCoords = doorCoords or (spawnVec and vec3(spawnVec.x, spawnVec.y, spawnVec.z))
+                    local nearest = Bridge.GetNearestApartmentBuilding(refCoords)
+                    rBuildingId = nearest and nearest.id or 'wiwang'
+                end
+                roomBuildings[r.id] = rBuildingId
+
                 table.insert(Settings.Rooms, {
                     id = r.id,
+                    buildingId = rBuildingId,
+                    building_id = rBuildingId,
                     corners = cornersVec,
                     thickness = r.thickness,
                     zOffset = r.zOffset,
@@ -360,7 +465,9 @@ local function getAvailableRoom()
     local available = {}
     for _, room in ipairs(Settings.Rooms) do
         if room.isStarter and not assignedRoomIds[room.id] then
-            table.insert(available, room)
+            if not buildingId or tostring(room.buildingId):lower() == tostring(buildingId):lower() then
+                table.insert(available, room)
+            end
         end
     end
     
@@ -368,6 +475,18 @@ local function getAvailableRoom()
         local selected = available[math.random(#available)]
         return selected
     end
+
+    if buildingId then
+        for _, room in ipairs(Settings.Rooms) do
+            if room.isStarter and not assignedRoomIds[room.id] then
+                table.insert(available, room)
+            end
+        end
+        if #available > 0 then
+            return available[math.random(#available)]
+        end
+    end
+
     return nil
 end
 
@@ -375,73 +494,116 @@ local function getPlayerRoom(src, citizenid, isNew)
     local lic1, lic2 = GetPlayerLicense(src)
     if not lic1 and not lic2 then return nil end
 
-    if playerRooms[lic1] then return playerRooms[lic1] end
-    if lic2 and playerRooms[lic2] then return playerRooms[lic2] end
+    if playerRooms[lic1] then return playerRooms[lic1], playerRoomBuildings[lic1] end
+    if lic2 and playerRooms[lic2] then return playerRooms[lic2], playerRoomBuildings[lic2] end
 
-    local result = MySQL.single.await('SELECT room_id FROM player_apartments WHERE license = ? OR license = ?', {lic1, lic2})
+    local result = MySQL.single.await('SELECT room_id, building_id FROM player_apartments WHERE license = ? OR license = ?', {lic1, lic2})
     if result then
+        local bId = result.building_id or GetApartmentBuildingId(result.room_id)
         playerRooms[lic1] = result.room_id
-        if lic2 then playerRooms[lic2] = result.room_id end
+        playerRoomBuildings[lic1] = bId
+        if lic2 then
+            playerRooms[lic2] = result.room_id
+            playerRoomBuildings[lic2] = bId
+        end
         assignedRoomIds[result.room_id] = true
-        return result.room_id
+        roomBuildings[result.room_id] = bId
+        return result.room_id, bId
     end
 
     if IsStarterInstanceMode() then
+        local buildings = Bridge.GetApartmentBuildings()
+        local chosenBuilding = nil
+        local defaultBId = Settings.Apartments and Settings.Apartments.Starter and Settings.Apartments.Starter.DefaultBuilding
+        if defaultBId then
+            chosenBuilding = Bridge.GetApartmentBuildingById(defaultBId, false)
+        end
+        if not chosenBuilding and #buildings > 0 then
+            chosenBuilding = buildings[math.random(#buildings)]
+        end
+        local chosenBuildingId = chosenBuilding and chosenBuilding.id or 'wiwang'
+
         local maxRow = MySQL.single.await('SELECT COALESCE(MAX(room_id), 0) AS max_id FROM player_apartments')
         local newRoomId = (maxRow and tonumber(maxRow.max_id) or 0) + 1
         local isNewChar = not not isNew
 
         local insertSuccess = pcall(function()
-            MySQL.insert.await('INSERT INTO player_apartments (license, room_id, is_new) VALUES (?, ?, ?)', {
+            MySQL.insert.await('INSERT INTO player_apartments (license, room_id, building_id, is_new) VALUES (?, ?, ?, ?)', {
                 lic1,
                 newRoomId,
+                chosenBuildingId,
                 isNewChar and 1 or 0
             })
         end)
 
         if insertSuccess then
             playerRooms[lic1] = newRoomId
-            if lic2 then playerRooms[lic2] = newRoomId end
+            playerRoomBuildings[lic1] = chosenBuildingId
+            if lic2 then
+                playerRooms[lic2] = newRoomId
+                playerRoomBuildings[lic2] = chosenBuildingId
+            end
             assignedRoomIds[newRoomId] = true
-            return newRoomId
+            roomBuildings[newRoomId] = chosenBuildingId
+            return newRoomId, chosenBuildingId
         else
-            local r = MySQL.single.await('SELECT room_id FROM player_apartments WHERE license = ? OR license = ?', {lic1, lic2})
+            local r = MySQL.single.await('SELECT room_id, building_id FROM player_apartments WHERE license = ? OR license = ?', {lic1, lic2})
             if r then
+                local bId = r.building_id or chosenBuildingId
                 playerRooms[lic1] = r.room_id
-                if lic2 then playerRooms[lic2] = r.room_id end
+                playerRoomBuildings[lic1] = bId
+                if lic2 then
+                    playerRooms[lic2] = r.room_id
+                    playerRoomBuildings[lic2] = bId
+                end
                 assignedRoomIds[r.room_id] = true
-                return r.room_id
+                roomBuildings[r.room_id] = bId
+                return r.room_id, bId
             end
         end
         return nil
     end
 
-    local room = getAvailableRoom()
+    local defaultBId = Settings.Apartments and Settings.Apartments.Starter and Settings.Apartments.Starter.DefaultBuilding
+    local room = getAvailableRoom(defaultBId)
     if room then
         assignedRoomIds[room.id] = true
         local isNewChar = not not isNew
+        local bId = room.buildingId or GetApartmentBuildingId(room.id)
 
         local insertSuccess = pcall(function()
-            MySQL.insert.await('INSERT INTO player_apartments (license, room_id, is_new) VALUES (?, ?, ?)', {
+            MySQL.insert.await('INSERT INTO player_apartments (license, room_id, building_id, is_new) VALUES (?, ?, ?, ?)', {
                 lic1,
                 room.id,
+                bId,
                 isNewChar and 1 or 0
             })
         end)
 
         if insertSuccess then
             playerRooms[lic1] = room.id
-            if lic2 then playerRooms[lic2] = room.id end
+            playerRoomBuildings[lic1] = bId
+            if lic2 then
+                playerRooms[lic2] = room.id
+                playerRoomBuildings[lic2] = bId
+            end
+            roomBuildings[room.id] = bId
             SyncApartmentDoor(room.id)
-            return room.id
+            return room.id, bId
         else
             assignedRoomIds[room.id] = nil
-            local r = MySQL.single.await('SELECT room_id FROM player_apartments WHERE license = ? OR license = ?', {lic1, lic2})
+            local r = MySQL.single.await('SELECT room_id, building_id FROM player_apartments WHERE license = ? OR license = ?', {lic1, lic2})
             if r then
+                local foundBId = r.building_id or bId
                 playerRooms[lic1] = r.room_id
-                if lic2 then playerRooms[lic2] = r.room_id end
+                playerRoomBuildings[lic1] = foundBId
+                if lic2 then
+                    playerRooms[lic2] = r.room_id
+                    playerRoomBuildings[lic2] = foundBId
+                end
                 assignedRoomIds[r.room_id] = true
-                return r.room_id
+                roomBuildings[r.room_id] = foundBId
+                return r.room_id, foundBId
             end
         end
     end
@@ -455,7 +617,7 @@ local function OnPlayerLoaded(src)
         return 
     end
 
-    local roomId = getPlayerRoom(src, citizenid, false)
+    local roomId, buildingId = getPlayerRoom(src, citizenid, false)
     if not roomId then
         local currentTime = GetGameTimer()
         if not lastNoRoomNotify[src] or (currentTime - lastNoRoomNotify[src]) > 5000 then
@@ -465,7 +627,8 @@ local function OnPlayerLoaded(src)
         return
     end
 
-    local roomData = getRoomDataById(roomId)
+    buildingId = buildingId or GetApartmentBuildingId(roomId)
+    local roomData = getRoomDataById(roomId, buildingId)
     if roomData then
         local result = MySQL.single.await('SELECT id FROM apartments WHERE citizenid = ? AND room_id = ?', {citizenid, roomId})
         if not result then
@@ -486,7 +649,7 @@ local function OnPlayerLoaded(src)
         
         SyncApartmentDoor(roomId)
         
-        TriggerClientEvent('LNS_Housing:client:setApartmentData', src, roomId, roomData)
+        TriggerClientEvent('LNS_Housing:client:setApartmentData', src, roomId, roomData, buildingId)
     end
 end
 
@@ -552,10 +715,19 @@ lib.callback.register('LNS_Housing:server:getMyApartment', function(source)
     local citizenid = Bridge.Server.GetIdentifier(source)
     if not citizenid then return nil end
     
-    local roomId = getPlayerRoom(source, citizenid, true)
+    local roomId, buildingId = getPlayerRoom(source, citizenid, true)
     if roomId then
-        local roomData = getRoomDataById(roomId)
-        return { roomId = roomId, room_id = roomId, roomData = roomData }
+        buildingId = buildingId or GetApartmentBuildingId(roomId)
+        local roomData = getRoomDataById(roomId, buildingId)
+        local building = Bridge.GetApartmentBuildingById(buildingId, true)
+        return { 
+            roomId = roomId, 
+            room_id = roomId, 
+            roomData = roomData,
+            buildingId = buildingId,
+            building_id = buildingId,
+            buildingLabel = building and building.label or "Apartments"
+        }
     end
     return nil
 end)
@@ -566,12 +738,13 @@ lib.callback.register('LNS_Housing:server:claimNewCharacterSpawn', function(sour
     local citizenid = Bridge.Server.GetIdentifier(source)
     if not citizenid then return { shouldSpawn = false } end
 
-    local roomId = getPlayerRoom(source, citizenid, false)
+    local roomId, buildingId = getPlayerRoom(source, citizenid, false)
     if not roomId then return { shouldSpawn = false } end
+    buildingId = buildingId or GetApartmentBuildingId(roomId)
 
     local result = MySQL.single.await('SELECT is_new FROM apartments WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
     if not result then
-        local roomData = getRoomDataById(roomId)
+        local roomData = getRoomDataById(roomId, buildingId)
         local initialFurniture = {}
         if roomData and roomData.tabletCoords then
             table.insert(initialFurniture, CreateDefaultPanelFurniture(roomData.tabletCoords.position, roomData.tabletCoords.rotation))
@@ -592,14 +765,15 @@ lib.callback.register('LNS_Housing:server:claimNewCharacterSpawn', function(sour
         MySQL.update.await('UPDATE apartments SET is_new = 0 WHERE room_id = ? AND citizenid = ?', {roomId, citizenid})
         exports.LNS_Housing:GiveApartmentPhysicalKey(roomId, source)
         
-        local roomData = getRoomDataById(roomId)
+        local roomData = getRoomDataById(roomId, buildingId)
         if roomData then
             return {
                 shouldSpawn = true,
                 roomId = roomId,
                 spawnCoords = roomData.spawn,
                 isInstance = roomData.isInstance,
-                roomData = roomData
+                roomData = roomData,
+                buildingId = buildingId
             }
         end
     end
@@ -609,14 +783,22 @@ end)
 
 local apartmentGuestAccess = {}
 
-RegisterNetEvent('LNS_Housing:server:enterApartmentBucket', function(roomId)
+RegisterNetEvent('LNS_Housing:server:enterApartmentBucket', function(roomId, buildingId)
     local src = source
-    debugPrint('info', 'LNS_Housing:server:enterApartmentBucket received', {src = src, roomId = roomId})
+    debugPrint('info', 'LNS_Housing:server:enterApartmentBucket received', {src = src, roomId = roomId, buildingId = buildingId})
     roomId = tonumber(roomId) or roomId
     if not roomId then return end
 
     local citizenid = Bridge.Server.GetIdentifier(src)
     if not citizenid then return end
+
+    local actualBuildingId = GetApartmentBuildingId(roomId)
+    if buildingId and actualBuildingId and buildingId ~= actualBuildingId then
+        local bldg = Bridge.GetApartmentBuildingById(actualBuildingId, true)
+        local bLabel = bldg and bldg.label or actualBuildingId
+        Bridge.Server.Notify(src, locale('notify.apt_wrong_building', bLabel), 'error')
+        return
+    end
 
     local hasAccess = false
     local isOwner = false
@@ -668,7 +850,9 @@ RegisterNetEvent('LNS_Housing:server:enterApartmentBucket', function(roomId)
         return
     end
 
-    local cfg = Settings.Apartments and Settings.Apartments.Starter
+    local bId = actualBuildingId or buildingId
+    local bldg = Bridge.GetApartmentBuildingById(bId, true)
+    local cfg = (bldg and bldg.starter) or (Settings.Apartments and Settings.Apartments.Starter)
     local bucketOffset = (cfg and cfg.BucketOffset) or 20000
     local targetBucket = bucketOffset + (tonumber(roomId) or 1)
 
@@ -677,9 +861,10 @@ RegisterNetEvent('LNS_Housing:server:enterApartmentBucket', function(roomId)
     Player(src).state:set('insidePropertyId', roomId, true)
     Player(src).state:set('insideApartment', true, true)
     Player(src).state:set('apartmentBucket', targetBucket, true)
+    Player(src).state:set('apartmentBuildingId', bId, true)
     Bridge.Server.SetPlayerInside(src, roomId)
 
-    if cfg and cfg.Stash then
+    if (bldg and bldg.stash) or (cfg and cfg.Stash) then
         local stashSlots = (Settings.Stash and Settings.Stash.slots) or 50
         local stashWeight = (Settings.Stash and Settings.Stash.weight) or 100000
         local stashLabel = (Settings.Stash and Settings.Stash.label) or 'Apartment Storage'
@@ -702,14 +887,22 @@ RegisterNetEvent('LNS_Housing:server:leaveApartmentBucket', function()
     Player(src).state:set('insidePropertyId', nil, true)
     Player(src).state:set('insideApartment', false, true)
     Player(src).state:set('apartmentBucket', nil, true)
+    Player(src).state:set('apartmentBuildingId', nil, true)
     Bridge.Server.ClearPlayerInside(src)
 end)
 
-lib.callback.register('LNS_Housing:server:canEnterApartment', function(source, roomId)
+lib.callback.register('LNS_Housing:server:canEnterApartment', function(source, roomId, buildingId)
     roomId = tonumber(roomId) or roomId
     if not roomId then return false end
     local citizenid = Bridge.Server.GetIdentifier(source)
     if not citizenid then return false end
+
+    if buildingId then
+        local actualBId = GetApartmentBuildingId(roomId)
+        if actualBId and actualBId ~= buildingId then
+            return false
+        end
+    end
 
     local lic1, lic2 = GetPlayerLicense(source)
     if (lic1 and playerRooms[lic1] and (playerRooms[lic1] == roomId or tostring(playerRooms[lic1]) == tostring(roomId))) or
@@ -739,10 +932,11 @@ lib.callback.register('LNS_Housing:server:canEnterApartment', function(source, r
     return false
 end)
 
-lib.callback.register('LNS_Housing:server:getApartmentRoomData', function(source, roomId)
+lib.callback.register('LNS_Housing:server:getApartmentRoomData', function(source, roomId, buildingId)
     roomId = tonumber(roomId) or roomId
     if not roomId then return nil end
-    return getRoomDataById(roomId)
+    buildingId = buildingId or GetApartmentBuildingId(roomId)
+    return getRoomDataById(roomId, buildingId)
 end)
 
 local function FindManagedApartment(roomId, citizenid)
@@ -767,12 +961,13 @@ local function FindManagedApartment(roomId, citizenid)
     return nil
 end
 
-lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, roomId)
-    debugPrint('info', 'LNS_Housing:server:getApartmentInfo called', {source = source, roomId = roomId})
+lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, roomId, buildingId)
+    debugPrint('info', 'LNS_Housing:server:getApartmentInfo called', {source = source, roomId = roomId, buildingId = buildingId})
     WaitForDb()
     local citizenid = Bridge.Server.GetIdentifier(source)
     if not citizenid then return nil end
 
+    local bId = buildingId or GetApartmentBuildingId(roomId)
     local license = GetPlayerLicense(source)
 
     local result = MySQL.single.await('SELECT * FROM apartments WHERE (room_id = ? OR room_id = ?) AND citizenid = ?', {roomId, tostring(roomId), citizenid})
@@ -786,7 +981,7 @@ lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, ro
     if not result and license then
         local checkApt = MySQL.single.await('SELECT room_id FROM player_apartments WHERE license = ?', {license})
         if checkApt and (checkApt.room_id == roomId or tostring(checkApt.room_id) == tostring(roomId) or tonumber(checkApt.room_id) == tonumber(roomId)) then
-            local roomData = getRoomDataById(roomId)
+            local roomData = getRoomDataById(roomId, bId)
             local initialFurniture = {}
             if roomData and roomData.tabletCoords then
                 table.insert(initialFurniture, CreateDefaultPanelFurniture(roomData.tabletCoords.position, roomData.tabletCoords.rotation))
@@ -803,7 +998,7 @@ lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, ro
     end
     if result then
         local furnitureList = json.decode(result.furniture or '[]')
-        local roomData = getRoomDataById(roomId)
+        local roomData = getRoomDataById(roomId, bId)
         if roomData and roomData.tabletCoords then
             local hasTablet = false
             local changed = false
@@ -862,7 +1057,9 @@ lib.callback.register('LNS_Housing:server:getApartmentInfo', function(source, ro
             permissions = permissions,
             furniture = furnitureList,
             wallColor = result.wall_color,
-            security_level = tonumber(result.security_level) or 0
+            security_level = tonumber(result.security_level) or 0,
+            buildingId = bId,
+            building_id = bId
         }
     end
     return nil
@@ -1142,13 +1339,17 @@ local function GetPlayerSpawnsServer(source)
             end
             
             if roomId then
-                local roomData = getRoomDataById(roomId)
+                local bId = playerRoomBuildings[citizenid] or (license and playerRoomBuildings[license]) or GetApartmentBuildingId(roomId)
+                local roomData = getRoomDataById(roomId, bId)
+                local building = Bridge.GetApartmentBuildingById(bId, true)
+                local bLabel = building and building.label or locale('target.apartment_room_prefix')
                 if roomData then
                     table.insert(spawns, {
                         id = roomId,
                         type = "apartment",
-                        label = locale('target.apartment_room_prefix') .. ' #' .. roomId,
-                        coords = roomData.spawn
+                        label = bLabel .. ' #' .. roomId,
+                        coords = roomData.spawn,
+                        buildingId = bId
                     })
                 end
             end
@@ -1236,6 +1437,12 @@ lib.callback.register('LNS_Housing:server:getApartmentRooms', function(source)
             local interiorCoords = r.interior_coords and json.decode(r.interior_coords) or nil
             local interiorCenter = r.interior_center and json.decode(r.interior_center) or nil
 
+            local bId = r.building_id
+            if not bId then
+                local bldg = Bridge.GetNearestApartmentBuilding(sc or doorCoords)
+                bId = bldg and bldg.id or 'wiwang'
+            end
+
             table.insert(formatted, {
                 id = r.id,
                 corners = corners,
@@ -1253,7 +1460,9 @@ lib.callback.register('LNS_Housing:server:getApartmentRooms', function(source)
                 interiorCenter = interiorCenter,
                 roomCount = tonumber(r.room_count) or nil,
                 roomName = r.room_name,
-                roomKey = tonumber(r.room_key) or nil
+                roomKey = tonumber(r.room_key) or nil,
+                buildingId = bId,
+                building_id = bId
             })
         end
     end
@@ -1310,10 +1519,15 @@ lib.callback.register('LNS_Housing:server:createApartment', function(source, dat
     end
 
     local tabletCoords = data.tabletCoords
+    local buildingId = data.buildingId or data.building_id
+    if not buildingId then
+        local bldg = Bridge.GetNearestApartmentBuilding(spawn or doorCoords)
+        buildingId = bldg and bldg.id or 'wiwang'
+    end
 
     local success = MySQL.insert.await([[
-        INSERT INTO apartment_rooms (id, corners, thickness, zOffset, door_model, door_coords, door_heading, spawn_coords, price, is_starter, tablet_coords, interior_id, interior_coords, interior_center, room_count, room_name, room_key)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO apartment_rooms (id, corners, thickness, zOffset, door_model, door_coords, door_heading, spawn_coords, price, is_starter, tablet_coords, interior_id, interior_coords, interior_center, room_count, room_name, room_key, building_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ]], {
         roomId,
         corners and json.encode(corners) or nil,
@@ -1331,7 +1545,8 @@ lib.callback.register('LNS_Housing:server:createApartment', function(source, dat
         interiorCenter and json.encode(interiorCenter) or nil,
         roomCount,
         roomName,
-        roomKey
+        roomKey,
+        buildingId
     })
 
     if success then
@@ -1366,10 +1581,13 @@ lib.callback.register('LNS_Housing:server:createApartment', function(source, dat
             interior_center = interiorCenter,
             room_count = roomCount,
             room_name = roomName,
-            room_key = roomKey
+            room_key = roomKey,
+            buildingId = buildingId,
+            building_id = buildingId
         }
 
         table.insert(Settings.Rooms, newRoom)
+        roomBuildings[roomId] = buildingId
 
         if doorCoordsVec and doorModel then
             local doorName = "Apartment Room #" .. roomId
@@ -1414,7 +1632,9 @@ lib.callback.register('LNS_Housing:server:createApartment', function(source, dat
             interiorCenter = interiorCenter,
             roomCount = roomCount,
             roomName = roomName,
-            roomKey = roomKey
+            roomKey = roomKey,
+            buildingId = buildingId,
+            building_id = buildingId
         })
 
         return true
@@ -1475,10 +1695,15 @@ lib.callback.register('LNS_Housing:server:updateApartment', function(source, dat
     end
 
     local tabletCoords = data.tabletCoords
+    local buildingId = data.buildingId or data.building_id
+    if not buildingId then
+        local bldg = Bridge.GetNearestApartmentBuilding(spawn or doorCoords)
+        buildingId = bldg and bldg.id or 'wiwang'
+    end
 
     local success = MySQL.update.await([[
         UPDATE apartment_rooms 
-        SET corners = ?, thickness = ?, zOffset = ?, door_model = ?, door_coords = ?, door_heading = ?, spawn_coords = ?, price = ?, is_starter = ?, tablet_coords = ?, interior_id = ?, interior_coords = ?, interior_center = ?, room_count = ?, room_name = ?, room_key = ?
+        SET corners = ?, thickness = ?, zOffset = ?, door_model = ?, door_coords = ?, door_heading = ?, spawn_coords = ?, price = ?, is_starter = ?, tablet_coords = ?, interior_id = ?, interior_coords = ?, interior_center = ?, room_count = ?, room_name = ?, room_key = ?, building_id = ?
         WHERE id = ?
     ]], {
         corners and json.encode(corners) or nil,
@@ -1497,6 +1722,7 @@ lib.callback.register('LNS_Housing:server:updateApartment', function(source, dat
         roomCount,
         roomName,
         roomKey,
+        buildingId,
         roomId
     })
 
@@ -1540,7 +1766,9 @@ lib.callback.register('LNS_Housing:server:updateApartment', function(source, dat
             interior_center = interiorCenter,
             room_count = roomCount,
             room_name = roomName,
-            room_key = roomKey
+            room_key = roomKey,
+            buildingId = buildingId,
+            building_id = buildingId
         }
 
         if foundIndex then
@@ -1548,6 +1776,7 @@ lib.callback.register('LNS_Housing:server:updateApartment', function(source, dat
         else
             table.insert(Settings.Rooms, updatedRoom)
         end
+        roomBuildings[roomId] = buildingId
 
         if doorCoordsVec and doorModel then
             local doorName = "Apartment Room #" .. roomId
@@ -1597,7 +1826,9 @@ lib.callback.register('LNS_Housing:server:updateApartment', function(source, dat
             interiorCenter = interiorCenter,
             roomCount = roomCount,
             roomName = roomName,
-            roomKey = roomKey
+            roomKey = roomKey,
+            buildingId = buildingId,
+            building_id = buildingId
         })
 
         return true
@@ -1683,12 +1914,21 @@ lib.callback.register('LNS_Housing:server:deleteApartmentRoom', function(source,
     return true
 end)
 
-RegisterNetEvent('LNS_Housing:server:ringApartmentDoorbell', function(roomId)
+RegisterNetEvent('LNS_Housing:server:ringApartmentDoorbell', function(roomId, buildingId)
     local src = source
     roomId = tonumber(roomId) or roomId
     if not roomId then return end
 
-    local roomData = getRoomDataById(roomId)
+    if buildingId then
+        local actualBId = GetApartmentBuildingId(roomId)
+        if actualBId and actualBId ~= buildingId then
+            Bridge.Server.Notify(src, locale('notify.room_not_in_building', tostring(roomId)), 'error')
+            return
+        end
+    end
+
+    local bId = buildingId or GetApartmentBuildingId(roomId)
+    local roomData = getRoomDataById(roomId, bId)
     if not roomData then return end
 
     if IsStarterInstanceMode() then
@@ -1809,7 +2049,8 @@ local function FormatApartmentForMDT(aptData, roomData)
     local roomId = (roomData and roomData.id) or (aptData and aptData.room_id)
     if not roomId then return nil end
 
-    local building = (Settings.Apartments and Settings.Apartments.Building) or {}
+    local buildingId = (roomData and (roomData.buildingId or roomData.building_id)) or (aptData and aptData.building_id) or GetApartmentBuildingId(roomId)
+    local building = Bridge.GetApartmentBuildingById(buildingId, true) or {}
     local buildingLabel = building.label or "WIWANG Apartments"
     local buildingCoords = building.coords
 
@@ -1870,6 +2111,8 @@ local function FormatApartmentForMDT(aptData, roomData)
         label = fullLabel,
         name = roomName,
         room_name = roomName,
+        buildingId = buildingId,
+        building_id = buildingId,
         building = buildingLabel,
         building_label = buildingLabel,
         buildingCoords = buildingCoords,
