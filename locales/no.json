@@ -676,7 +676,15 @@
     "furniture_limit_reached": "Grense nådd: Du kan bare plassere opptil %s av denne gjenstanden",
     "furniture_limit_badge": "%s/%s plassert",
     "max_placed": "MAKS",
-    "placed": "Plassert"
+    "placed": "Plassert",
+    "max_storage_stashes": "Maks. oppbevaringsbokser (0 = Ubegrenset)",
+    "max_stashes": "Maks. lagre",
+    "unlimited": "Ubegrenset",
+    "storage_limit_reached": "Lagringsgrense nådd: Denne eiendommen tillater maksimalt %s oppbevaringsboks(er)",
+    "storage_stashes_label": "Oppbevaringsbokser",
+    "deleted": "Slettet",
+    "copied": "Kopiert",
+    "variant_applied": "Variant brukt"
   },
   "housing_title": "Bolig",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "Bruk: /restorepower [propertyId] (la stå tomt for nåværende eiendom)",
     "route_saved_waypoints": "Rengjøringsrute lagret med %s veipunkter!",
     "furniture_limit_reached": "Du har nådd den maksimale grensen (%s) for %s!",
-    "furniture_limit_reached_generic": "Møbelplasseringsgrense er nådd for en eller flere gjenstander!"
+    "furniture_limit_reached_generic": "Møbelplasseringsgrense er nådd for en eller flere gjenstander!",
+    "storage_limit_reached": "Du har nådd den maksimale grensen for oppbevaringsbokser (%s) for denne eiendommen!"
   },
   "target": {
     "enter_property": "Gå inn i eiendom",

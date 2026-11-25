@@ -676,7 +676,15 @@
     "furniture_limit_reached": "ถึงขีดจำกัดแล้ว: คุณสามารถวางไอเทมนี้ได้สูงสุด %s ชิ้นเท่านั้น",
     "furniture_limit_badge": "%s/%s ชิ้นที่วางแล้ว",
     "max_placed": "สูงสุด",
-    "placed": "วางแล้ว"
+    "placed": "วางแล้ว",
+    "max_storage_stashes": "จำนวนตู้เก็บของสูงสุด (0 = ไม่จำกัด)",
+    "max_stashes": "ตู้เก็บของสูงสุด",
+    "unlimited": "ไม่จำกัด",
+    "storage_limit_reached": "ถึงขีดจำกัดการเก็บของแล้ว: ทรัพย์สินนี้วางตู้เก็บของได้สูงสุด %s ตู้",
+    "storage_stashes_label": "ตู้เก็บของ",
+    "deleted": "ลบแล้ว",
+    "copied": "คัดลอกแล้ว",
+    "variant_applied": "ใช้รูปแบบแล้ว"
   },
   "housing_title": "ระบบที่พักอาศัย",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "วิธีใช้: /restorepower [propertyId] (เว้นว่างไว้สำหรับอสังหาฯ ปัจจุบัน)",
     "route_saved_waypoints": "บันทึกเส้นทางทำความสะอาดสำเร็จ พร้อมจุดนำทาง %s จุด!",
     "furniture_limit_reached": "คุณถึงขีดจำกัดสูงสุด (%s) แล้วสำหรับ %s!",
-    "furniture_limit_reached_generic": "ถึงขีดจำกัดจำนวนการวางเฟอร์นิเจอร์แล้ว!"
+    "furniture_limit_reached_generic": "ถึงขีดจำกัดจำนวนการวางเฟอร์นิเจอร์แล้ว!",
+    "storage_limit_reached": "คุณวางตู้เก็บของครบขีดจำกัดสูงสุด (%s) ของทรัพย์สินนี้แล้ว!"
   },
   "target": {
     "enter_property": "เข้าสู่อสังหาริมทรัพย์",

@@ -676,7 +676,15 @@
     "furniture_limit_reached": "Límite alcanzado: Solo puedes colocar hasta %s de este objeto",
     "furniture_limit_badge": "%s/%s colocados",
     "max_placed": "MÁX",
-    "placed": "Colocados"
+    "placed": "Colocados",
+    "max_storage_stashes": "Máx. alijos de almacenamiento (0 = Ilimitado)",
+    "max_stashes": "Máx. alijos",
+    "unlimited": "Ilimitado",
+    "storage_limit_reached": "Límite de almacenamiento alcanzado: Esta propiedad permite un máximo de %s alijo(s)",
+    "storage_stashes_label": "Alijos",
+    "deleted": "Eliminado",
+    "copied": "Copiado",
+    "variant_applied": "Variante aplicada"
   },
   "housing_title": "Vivienda",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "Uso: /restorepower [propertyId] (dejar en blanco para la propiedad actual)",
     "route_saved_waypoints": "¡Ruta de limpieza guardada con éxito con %s puntos de ruta!",
     "furniture_limit_reached": "¡Has alcanzado el límite máximo (%s) para %s!",
-    "furniture_limit_reached_generic": "¡Se ha alcanzado el límite de colocación de muebles para uno o más objetos!"
+    "furniture_limit_reached_generic": "¡Se ha alcanzado el límite de colocación de muebles para uno o más objetos!",
+    "storage_limit_reached": "¡Has alcanzado el límite máximo de alijos de almacenamiento (%s) para esta propiedad!"
   },
   "target": {
     "enter_property": "Entrar a la propiedad",

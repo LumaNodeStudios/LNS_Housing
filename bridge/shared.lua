@@ -114,7 +114,6 @@ function Bridge.IsRealEstateAgencyJob(job)
 end
 
 -- Apartment Buildings Helper Functions
-
 function Bridge.GetApartmentBuildings()
     local apts = Settings and Settings.Apartments
     if not apts or apts.Enabled == false then return {} end
@@ -232,6 +231,21 @@ function Bridge.GetNearestApartmentBuilding(coords)
     end
 
     return nearest
+end
+
+-- Check whether a furniture catalog entry counts toward a property's storage stash limit.
+function Bridge.IsCountedStorageStash(itemData)
+    if not itemData or not itemData.isStorage then return false end
+
+    local isTrash = itemData.isTrash or itemData.type == 'trash' or itemData.isDisposal or itemData.type == 'disposal'
+    if isTrash then return false end
+
+    local isFridge = itemData.isFridge or itemData.type == 'fridge' or (itemData.id and tostring(itemData.id):lower():find('fridge') ~= nil)
+    if isFridge then
+        return Settings and Settings.Stash and Settings.Stash.CountFridgesInLimit == true or false
+    end
+
+    return true
 end
 
 -- Global Debug Print Utility using ox_lib print

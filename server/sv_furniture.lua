@@ -58,6 +58,17 @@ local function DoesItemMatchCatalogServer(placedItem, catalogItem)
     return false
 end
 
+local function CountPropertyStorageStashes(furnitureList)
+    local count = 0
+    for _, f in ipairs(furnitureList or {}) do
+        local catalogItem = FindCatalogItemServer(f.model, f.itemId or f.id)
+        if Bridge.IsCountedStorageStash(catalogItem) then
+            count = count + 1
+        end
+    end
+    return count
+end
+
 local function ProcessBuyFurniture(src, propertyId, items, totalPrice, paymentMethod)
     debugPrint('info', 'LNS_Housing:server:buyFurniture received', {src = src, propertyId = propertyId, totalPrice = totalPrice, paymentMethod = paymentMethod})
     local p = Properties[propertyId]
@@ -101,6 +112,19 @@ local function ProcessBuyFurniture(src, propertyId, items, totalPrice, paymentMe
                 local itemName = catalogItem.label or item.label or item.model
                 Bridge.Server.Notify(src, locale('notify.furniture_limit_reached', catalogItem.max, itemName), 'error')
                 return false, 'Furniture limit reached'
+            end
+        end
+    end
+
+    -- Check property-wide storage stash limit (0 = unlimited)
+    local maxStashes = tonumber(p.metadata and p.metadata.max_stashes) or 0
+    if maxStashes > 0 then
+        local batchStorageCount = CountPropertyStorageStashes(items)
+        if batchStorageCount > 0 then
+            local existingStorageCount = CountPropertyStorageStashes(p.furniture)
+            if existingStorageCount + batchStorageCount > maxStashes then
+                Bridge.Server.Notify(src, locale('notify.storage_limit_reached', maxStashes), 'error')
+                return false, 'Storage stash limit reached'
             end
         end
     end
@@ -155,6 +179,13 @@ RegisterNetEvent('LNS_Housing:server:saveFurniture', function(propertyId, furnit
                     return
                 end
             end
+        end
+
+        -- Check property-wide storage stash limit (0 = unlimited)
+        local maxStashes = tonumber(p.metadata and p.metadata.max_stashes) or 0
+        if maxStashes > 0 and CountPropertyStorageStashes(furnitureData) > maxStashes then
+            Bridge.Server.Notify(src, locale('notify.storage_limit_reached', maxStashes), 'error')
+            return
         end
 
         p.furniture = furnitureData

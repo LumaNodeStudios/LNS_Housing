@@ -105,7 +105,8 @@ return {
     ----------------------------------------------------------------------------
     Apartments = {
         Enabled = true,                     -- Toggle for enabling or disabling apartment system
-        CanBreakIn = false,                  -- If true, apartments can be lockpicked/broken into
+        CanBreakIn = false,                 -- If true, apartments can be lockpicked/broken into
+        MaxStashes = 0,                     -- Maximum number of placed storage stashes per apartment (0 = unlimited)
 
         Starter = {
             Mode = 'instance',                  -- 'instance' (uses 1 shell/ipl with routing buckets per player) or 'mlo' (legacy physical rooms)
@@ -175,7 +176,8 @@ return {
     Stash = {
         label = 'Property Storage',         -- Display label when opening the stash
         slots = 50,                         -- Number of storage slots
-        weight = 100000                     -- Maximum weight capacity of the stash (e.g., in grams)
+        weight = 100000,                    -- Maximum weight capacity of the stash (e.g., in grams)
+        CountFridgesInLimit = false         -- If true, refrigerators also count toward a property's max storage stash limit
     },
 
     ----------------------------------------------------------------------------

@@ -676,7 +676,15 @@
     "furniture_limit_reached": "Batas tercapai: Anda hanya dapat menempatkan hingga %s dari item ini",
     "furniture_limit_badge": "%s/%s ditempatkan",
     "max_placed": "MAKS",
-    "placed": "Ditempatkan"
+    "placed": "Ditempatkan",
+    "max_storage_stashes": "Maks. Penyimpanan (0 = Tanpa Batas)",
+    "max_stashes": "Maks. Stash",
+    "unlimited": "Tanpa Batas",
+    "storage_limit_reached": "Batas penyimpanan tercapai: Properti ini hanya mengizinkan maksimal %s stash penyimpanan",
+    "storage_stashes_label": "Stash Penyimpanan",
+    "deleted": "Dihapus",
+    "copied": "Disalin",
+    "variant_applied": "Varian Diterapkan"
   },
   "housing_title": "Perumahan",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "Penggunaan: /restorepower [propertyId] (kosongkan untuk properti saat ini)",
     "route_saved_waypoints": "Rute pembersihan berhasil disimpan dengan %s titik rute!",
     "furniture_limit_reached": "Anda telah mencapai batas maksimum (%s) untuk %s!",
-    "furniture_limit_reached_generic": "Batas penempatan perabotan tercapai untuk satu atau lebih item!"
+    "furniture_limit_reached_generic": "Batas penempatan perabotan tercapai untuk satu atau lebih item!",
+    "storage_limit_reached": "Anda telah mencapai batas maksimal stash penyimpanan (%s) untuk properti ini!"
   },
   "target": {
     "enter_property": "Masuk Properti",

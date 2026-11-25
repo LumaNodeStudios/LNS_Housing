@@ -676,7 +676,15 @@
     "furniture_limit_reached": "Osiągnięto limit: Możesz umieścić maksymalnie %s tego przedmiotu",
     "furniture_limit_badge": "%s/%s postawiono",
     "max_placed": "MAX",
-    "placed": "Postawiono"
+    "placed": "Postawiono",
+    "max_storage_stashes": "Maks. skrytek (0 = Bez limitu)",
+    "max_stashes": "Maks. skrytki",
+    "unlimited": "Bez limitu",
+    "storage_limit_reached": "Osiągnięto limit skrytek: Ta nieruchomość pozwala na maksymalnie %s skrytkę/skrytek",
+    "storage_stashes_label": "Skrytki",
+    "deleted": "Usunięto",
+    "copied": "Skopiowano",
+    "variant_applied": "Zastosowano wariant"
   },
   "housing_title": "Mieszkania",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "Użycie: /restorepower [propertyId] (pozostaw puste dla bieżącej nieruchomości)",
     "route_saved_waypoints": "Trasa sprzątania zapisana pomyślnie z %s punktami!",
     "furniture_limit_reached": "Osiągnięto maksymalny limit (%s) dla %s!",
-    "furniture_limit_reached_generic": "Osiągnięto limit rozmieszczania mebli dla jednego lub więcej przedmiotów!"
+    "furniture_limit_reached_generic": "Osiągnięto limit rozmieszczania mebli dla jednego lub więcej przedmiotów!",
+    "storage_limit_reached": "Osiągnięto maksymalny limit skrytek (%s) dla tej nieruchomości!"
   },
   "target": {
     "enter_property": "Wejdź do nieruchomości",

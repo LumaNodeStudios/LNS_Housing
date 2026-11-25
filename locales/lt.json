@@ -676,7 +676,15 @@
     "furniture_limit_reached": "Pasiektas limitas: Galite pastatyti tik iki %s šio daikto vienetų",
     "furniture_limit_badge": "%s/%s pastatyta",
     "max_placed": "MAX",
-    "placed": "Pastatyta"
+    "placed": "Pastatyta",
+    "max_storage_stashes": "Maks. saugyklų (0 = Neribota)",
+    "max_stashes": "Maks. saugyklos",
+    "unlimited": "Neribota",
+    "storage_limit_reached": "Pasiektas saugyklų limitas: Šiame būste leidžiama daugiausia %s saugykla(-os)",
+    "storage_stashes_label": "Saugyklos",
+    "deleted": "Ištrinta",
+    "copied": "Nukopijuota",
+    "variant_applied": "Variantas pritaikytas"
   },
   "housing_title": "Būstas",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "Naudojimas: /restorepower [propertyId] (palikite tuščią dabartiniam turtui)",
     "route_saved_waypoints": "Valymo maršrutas sėkmingai išsaugotas su %s tarpinėmis stotelėmis!",
     "furniture_limit_reached": "Pasiekėte maksimalų limitą (%s) daiktui %s!",
-    "furniture_limit_reached_generic": "Viršytas baldų statymo limitas vienam ar keliems daiktams!"
+    "furniture_limit_reached_generic": "Viršytas baldų statymo limitas vienam ar keliems daiktams!",
+    "storage_limit_reached": "Pasiekėte maksimalų saugyklų limitą (%s) šiam būstui!"
   },
   "target": {
     "enter_property": "Įeiti į nekilnojamąjį turtą",

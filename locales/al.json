@@ -676,7 +676,15 @@
     "furniture_limit_reached": "Kufiri u arrit: Mund të vendosni vetëm deri në %s nga ky artikull",
     "furniture_limit_badge": "%s/%s të vendosura",
     "max_placed": "MAX",
-    "placed": "Të vendosura"
+    "placed": "Të vendosura",
+    "max_storage_stashes": "Maks. depo (0 = Pa kufi)",
+    "max_stashes": "Maks. depo",
+    "unlimited": "Pa kufi",
+    "storage_limit_reached": "Limiti i depos u arrit: Kjo pronë lejon maksimumi %s depo",
+    "storage_stashes_label": "Depot e magazinimit",
+    "deleted": "U fshi",
+    "copied": "U kopjua",
+    "variant_applied": "Varianti u aplikua"
   },
   "housing_title": "Banesat",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "Përdorimi: /restorepower [propertyId] (lini bosh për pronën aktuale)",
     "route_saved_waypoints": "Rruga e pastrimit u ruajt me sukses me %s pika orientimi!",
     "furniture_limit_reached": "Keni arritur kufirin maksimal (%s) për %s!",
-    "furniture_limit_reached_generic": "Kufiri i vendosjes së orendive u arrit për një ose më shumë artikuj!"
+    "furniture_limit_reached_generic": "Kufiri i vendosjes së orendive u arrit për një ose më shumë artikuj!",
+    "storage_limit_reached": "Keni arritur limitin maksimal të depove (%s) për këtë pronë!"
   },
   "target": {
     "enter_property": "Hyr në Pronë",

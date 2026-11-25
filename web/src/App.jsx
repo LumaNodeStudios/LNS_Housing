@@ -157,6 +157,7 @@ function App() {
   const [apartmentCreatorData, setApartmentCreatorData] = useState({ isEdit: false, rooms: [] });
   const [shells, setShells] = useState(isLocalDev ? MOCK_SHELLS : []);
   const [electricityEnabled, setElectricityEnabled] = useState(true);
+  const [storageLimit, setStorageLimit] = useState({ maxStashes: 0, countFridges: false });
 
   const [theme, setTheme] = useState({
     primary: '#6ed3f3',
@@ -318,6 +319,12 @@ function App() {
           break;
         case 'setOwnedItems':
           setOwnedItems(data);
+          break;
+        case 'setStorageLimit':
+          setStorageLimit({
+            maxStashes: Math.max(0, parseInt(data?.maxStashes, 10) || 0),
+            countFridges: Boolean(data?.countFridges)
+          });
           break;
         case 'openApartmentCreator':
           closeAll();
@@ -722,6 +729,7 @@ function App() {
                 key="furniture"
                 items={furnitureData}
                 ownedItems={ownedItems}
+                storageLimit={storageLimit}
               />
             )}
 

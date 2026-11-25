@@ -676,7 +676,15 @@
     "furniture_limit_reached": "ლიმიტი მიღწეულია: შეგიძლიათ განათავსოთ მხოლოდ %s-მდე ამ ნივთიდან",
     "furniture_limit_badge": "%s/%s განთავსებული",
     "max_placed": "MAX",
-    "placed": "განთავსებული"
+    "placed": "განთავსებული",
+    "max_storage_stashes": "მაქს. საცავები (0 = შეუზღუდავი)",
+    "max_stashes": "მაქს. საცავი",
+    "unlimited": "შეუზღუდავი",
+    "storage_limit_reached": "საცავის ლიმიტი ამოიწურა: ამ ქონებაში დაშვებულია მაქსიმუმ %s საცავი",
+    "storage_stashes_label": "საცავები",
+    "deleted": "წაიშალა",
+    "copied": "დაკოპირდა",
+    "variant_applied": "ვარიანტი გამოყენებულია"
   },
   "housing_title": "საცხოვრებელი",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "გამოყენება: /restorepower [propertyId] (დატოვეთ ცარიელი მიმდინარე ქონებისთვის)",
     "route_saved_waypoints": "დალაგების მარშრუტი წარმატებით შეინახა %s წერტილით!",
     "furniture_limit_reached": "თქვენ მიაღწიეთ მაქსიმალურ ლიმიტს (%s) %s-სთვის!",
-    "furniture_limit_reached_generic": "ავეჯის განთავსების ლიმიტი ამოიწურა ერთი ან მეტი ნივთისთვის!"
+    "furniture_limit_reached_generic": "ავეჯის განთავსების ლიმიტი ამოიწურა ერთი ან მეტი ნივთისთვის!",
+    "storage_limit_reached": "თქვენ მიაღწიეთ ამ ქონების საცავების მაქსიმალურ ლიმიტს (%s)!"
   },
   "target": {
     "enter_property": "ქონებაში შესვლა",

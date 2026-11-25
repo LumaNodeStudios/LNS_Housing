@@ -676,7 +676,15 @@
     "furniture_limit_reached": "Limiit saavutatud: Saate paigutada ainult kuni %s seda eset",
     "furniture_limit_badge": "%s/%s paigutatud",
     "max_placed": "MAX",
-    "placed": "Paigutatud"
+    "placed": "Paigutatud",
+    "max_storage_stashes": "Maks. panipaiku (0 = Piiramatu)",
+    "max_stashes": "Maks. panipaiku",
+    "unlimited": "Piiramatu",
+    "storage_limit_reached": "Hoiustamispiirang täis: Sellel kinnistul on lubatud kuni %s panipaik(a)",
+    "storage_stashes_label": "Panipaigad",
+    "deleted": "Kustutatud",
+    "copied": "Kopeeritud",
+    "variant_applied": "Variant rakendatud"
   },
   "housing_title": "Kinnisvara",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "Kasutamine: /restorepower [kinnisvaraId] (jäta tühjaks praeguse kinnisvara jaoks)",
     "route_saved_waypoints": "Koristustee edukalt salvestatud %s teekonnapunktiga!",
     "furniture_limit_reached": "Oled saavutanud eseme maksimaalse limiidi (%s) kohteelle %s!",
-    "furniture_limit_reached_generic": "Mööbli paigutamise limiit on ületatud ühel või mitmel esemel!"
+    "furniture_limit_reached_generic": "Mööbli paigutamise limiit on ületatud ühel või mitmel esemel!",
+    "storage_limit_reached": "Olete saavutanud selle kinnistu maksimaalse panipaikade arvu (%s)!"
   },
   "target": {
     "enter_property": "Sisene kinnisvarasse",

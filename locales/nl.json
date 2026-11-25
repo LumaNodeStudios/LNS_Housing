@@ -676,7 +676,15 @@
     "furniture_limit_reached": "Limiet bereikt: Je kunt maximaal %s van dit item plaatsen",
     "furniture_limit_badge": "%s/%s geplaatst",
     "max_placed": "MAX",
-    "placed": "Geplaatst"
+    "placed": "Geplaatst",
+    "max_storage_stashes": "Max. opslagkisten (0 = Onbeperkt)",
+    "max_stashes": "Max. opslag",
+    "unlimited": "Onbeperkt",
+    "storage_limit_reached": "Opslaglimiet bereikt: Dit pand staat maximaal %s opslagkist(en) toe",
+    "storage_stashes_label": "Opslagkisten",
+    "deleted": "Verwijderd",
+    "copied": "Gekopieerd",
+    "variant_applied": "Variant toegepast"
   },
   "housing_title": "Huisvesting",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "Gebruik: /restorepower [propertyId] (leeg laten voor huidige woning)",
     "route_saved_waypoints": "Schoonmaakroute succesvol opgeslagen met %s routepunten!",
     "furniture_limit_reached": "Je hebt de maximale limiet (%s) voor %s bereikt!",
-    "furniture_limit_reached_generic": "Plaatsingslimiet voor meubels bereikt voor een of meer items!"
+    "furniture_limit_reached_generic": "Plaatsingslimiet voor meubels bereikt voor een of meer items!",
+    "storage_limit_reached": "Je hebt de maximale limiet voor opslagkisten (%s) van dit pand bereikt!"
   },
   "target": {
     "enter_property": "Woning betreden",

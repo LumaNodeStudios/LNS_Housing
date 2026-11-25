@@ -357,6 +357,10 @@ lib.callback.register('LNS_Housing:server:updateListingDetails', function(source
     end
     p.metadata.shell = data.mlo and 'mlo' or (data.shell or p.metadata.shell or 'Standard Motel')
     p.metadata.allow_wall_colors = data.allowWallColors or false
+    if data.maxStashes ~= nil or data.max_stashes ~= nil then
+        local rawMax = data.maxStashes ~= nil and data.maxStashes or data.max_stashes
+        p.metadata.max_stashes = math.max(0, math.floor(tonumber(rawMax) or 0))
+    end
 
     if data.cameraPosition then
         p.metadata.camera_coords = data.cameraPosition

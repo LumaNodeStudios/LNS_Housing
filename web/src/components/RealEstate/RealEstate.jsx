@@ -165,6 +165,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         roomCount: null,
         currentRoom: null,
         slots: 2,
+        maxStashes: 0,
         allowWallColors: true,
         saleType: 'direct',
         doors: [],
@@ -410,6 +411,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             mlo: !p.metadata || !p.metadata.shell || p.metadata.shell === 'mlo',
             shell: p.metadata && p.metadata.shell ? p.metadata.shell : 'mlo',
             slots: p.garage || 2,
+            maxStashes: p.metadata && p.metadata.max_stashes !== undefined ? Number(p.metadata.max_stashes) : 0,
             allowWallColors: p.allowWallColors !== false,
             saleType: p.sale_type || 'direct',
             doors: p.doors || [],
@@ -457,6 +459,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                     metadata: {
                         ...(updated[editingPropertyId].metadata || {}),
                         shell: formData.mlo ? 'mlo' : formData.shell,
+                        max_stashes: Math.max(0, parseInt(formData.maxStashes, 10) || 0),
                         allow_wall_colors: formData.allowWallColors,
                         entrance: formData.entranceCoords,
                         interior_id: formData.interiorId,
@@ -488,6 +491,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 sale_type: formData.saleType,
                 type: formData.type,
                 slots: parseInt(formData.slots),
+                maxStashes: Math.max(0, parseInt(formData.maxStashes, 10) || 0),
                 allowWallColors: formData.allowWallColors,
                 mlo: formData.mlo,
                 shell: formData.shell,
@@ -902,6 +906,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
             roomCount: null,
             currentRoom: null,
             slots: 2,
+            maxStashes: 0,
             allowWallColors: true,
             saleType: 'direct',
             doors: [],
@@ -943,8 +948,10 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
     };
 
     const handleCreateProperty = () => {
+        const parsedMaxStashes = Math.max(0, parseInt(formData.maxStashes, 10) || 0);
         const payload = {
             ...formData,
+            maxStashes: parsedMaxStashes,
             garageCoords: parseInt(formData.slots, 10) > 0 ? formData.garageCoords : null,
             garageSpawnCoords: parseInt(formData.slots, 10) > 0 ? formData.garageSpawnCoords : null,
         };
@@ -964,6 +971,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 image: payload.image || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
                 metadata: {
                     shell: payload.mlo ? 'mlo' : payload.shell,
+                    max_stashes: parsedMaxStashes,
                     allow_wall_colors: payload.allowWallColors,
                     entrance: payload.entranceCoords,
                     garage_data: payload.garageCoords ? { ...payload.garageCoords, spawn: payload.garageSpawnCoords } : null,
@@ -1028,6 +1036,10 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                             <div className="detail-item">
                                 <div className="detail-label"><Warehouse size={12} /> {t('ui.garage_slots', 'Garage Slots')}</div>
                                 <div className="detail-value">{p.garage || 0}</div>
+                            </div>
+                            <div className="detail-item">
+                                <div className="detail-label"><Database size={12} /> {t('ui.max_stashes', 'Max Stashes')}</div>
+                                <div className="detail-value">{(p.metadata?.max_stashes > 0) ? p.metadata.max_stashes : t('ui.unlimited', 'Unlimited')}</div>
                             </div>
                             <div className="detail-item">
                                 <div className="detail-label"><DollarSign size={12} /> {t('ui.market_price', 'Market Price')}</div>
@@ -1896,6 +1908,57 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                             </>
                                         )}
 
+                                        <div className="re-creator-input-field">
+                                            <label style={{ justifyContent: 'space-between', width: '100%' }}>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    <Database size={12} /> {t('ui.max_storage_stashes', 'Max Storage Stashes (0 = Unlimited)')}
+                                                </span>
+                                                <span style={{ fontSize: '10px', color: 'var(--primary)', opacity: 0.9 }}>
+                                                    {(parseInt(formData.maxStashes, 10) || 0) === 0 ? t('ui.unlimited', 'Unlimited') : `${parseInt(formData.maxStashes, 10)}`}
+                                                </span>
+                                            </label>
+                                            <div className="re-number-input-wrapper">
+                                                <input
+                                                    name="maxStashes"
+                                                    type="number"
+                                                    value={formData.maxStashes}
+                                                    onChange={(e) => {
+                                                        const raw = e.target.value;
+                                                        if (raw === '') {
+                                                            setFormData(prev => ({ ...prev, maxStashes: '' }));
+                                                            return;
+                                                        }
+                                                        const parsed = Math.max(0, parseInt(raw, 10) || 0);
+                                                        setFormData(prev => ({ ...prev, maxStashes: parsed }));
+                                                    }}
+                                                    onBlur={() => {
+                                                        if (formData.maxStashes === '' || formData.maxStashes === null || formData.maxStashes === undefined) {
+                                                            setFormData(prev => ({ ...prev, maxStashes: 0 }));
+                                                        }
+                                                    }}
+                                                    placeholder="0"
+                                                    min="0"
+                                                    className="re-number-input-spinless"
+                                                />
+                                                <div className="re-number-spinners">
+                                                    <button
+                                                        type="button"
+                                                        className="spinner-arrow up"
+                                                        onClick={() => handleInputChange({ target: { name: 'maxStashes', value: (parseInt(formData.maxStashes, 10) || 0) + 1 } })}
+                                                    >
+                                                        <ChevronUp size={10} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="spinner-arrow down"
+                                                        onClick={() => handleInputChange({ target: { name: 'maxStashes', value: Math.max(0, (parseInt(formData.maxStashes, 10) || 0) - 1) } })}
+                                                    >
+                                                        <ChevronDown size={10} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         {parseInt(formData.slots, 10) > 0 && (
                                             <>
                                                 <div className="re-interactive-row" style={{ marginTop: '10px', borderTop: '1px solid var(--border-dim)', paddingTop: '10px' }}>
@@ -2205,6 +2268,10 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                     <div className="info-box">
                                         <span className="info-label">{t('ui.parking_slots', 'Parking Slots')}</span>
                                         <span className="info-value">{selectedProperty.garage} {t('ui.slots', 'slots')}</span>
+                                    </div>
+                                    <div className="info-box">
+                                        <span className="info-label">{t('ui.storage_stashes_label', 'Storage Stashes')}</span>
+                                        <span className="info-value">{(selectedProperty.metadata?.max_stashes > 0) ? selectedProperty.metadata.max_stashes : t('ui.unlimited', 'Unlimited')}</span>
                                     </div>
                                     {selectedProperty.sale_type === 'auction' && (
                                         <div className="info-box highlight">

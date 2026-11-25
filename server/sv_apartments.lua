@@ -1193,6 +1193,17 @@ RegisterNetEvent('LNS_Housing:server:updateApartmentWallColor', function(roomId,
     end
 end)
 
+local function CountApartmentStorageStashes(furnitureList)
+    local count = 0
+    for _, f in ipairs(furnitureList or {}) do
+        local catalogItem = FindCatalogItemServer(f.model, f.itemId or f.id)
+        if Bridge.IsCountedStorageStash(catalogItem) then
+            count = count + 1
+        end
+    end
+    return count
+end
+
 RegisterNetEvent('LNS_Housing:server:saveApartmentFurniture', function(roomId, furnitureData)
     local src = source
     local citizenid = Bridge.Server.GetIdentifier(src)
@@ -1210,6 +1221,12 @@ RegisterNetEvent('LNS_Housing:server:saveApartmentFurniture', function(roomId, f
                 return
             end
         end
+    end
+
+    local maxStashes = math.max(0, math.floor(tonumber(Settings.Apartments and Settings.Apartments.MaxStashes) or 0))
+    if maxStashes > 0 and CountApartmentStorageStashes(furnitureData) > maxStashes then
+        Bridge.Server.Notify(src, locale('notify.storage_limit_reached', maxStashes), 'error')
+        return
     end
 
     local result = FindManagedApartment(roomId, citizenid)
@@ -1287,6 +1304,18 @@ local function ProcessBuyApartmentFurniture(src, roomId, items, totalPrice, paym
                 local itemName = catalogItem.label or item.label or item.model
                 Bridge.Server.Notify(src, locale('notify.furniture_limit_reached', catalogItem.max, itemName), 'error')
                 return false, 'Furniture limit reached'
+            end
+        end
+    end
+
+    local maxStashes = math.max(0, math.floor(tonumber(Settings.Apartments and Settings.Apartments.MaxStashes) or 0))
+    if maxStashes > 0 then
+        local batchStorageCount = CountApartmentStorageStashes(items)
+        if batchStorageCount > 0 then
+            local existingStorageCount = CountApartmentStorageStashes(currentFurniture)
+            if existingStorageCount + batchStorageCount > maxStashes then
+                Bridge.Server.Notify(src, locale('notify.storage_limit_reached', maxStashes), 'error')
+                return false, 'Storage stash limit reached'
             end
         end
     end

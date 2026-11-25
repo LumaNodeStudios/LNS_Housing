@@ -166,6 +166,7 @@ lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
     data.interior_coords = data.interiorCoords or data.interior_coords or nil
     data.interior_center = data.interiorCenter or data.interior_center or nil
     data.room_count = tonumber(data.roomCount or data.room_count) or nil
+    data.max_stashes = math.max(0, math.floor(tonumber(data.maxStashes ~= nil and data.maxStashes or data.max_stashes) or 0))
 
     if data.garageCoords then
         local spawn = data.garageSpawnCoords or data.garageCoords

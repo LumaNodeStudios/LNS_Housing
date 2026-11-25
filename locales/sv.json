@@ -676,7 +676,15 @@
     "furniture_limit_reached": "Gräns nådd: Du kan bara placera upp till %s av detta föremål",
     "furniture_limit_badge": "%s/%s placerade",
     "max_placed": "MAX",
-    "placed": "Placerade"
+    "placed": "Placerade",
+    "max_storage_stashes": "Max antal förvaringsfack (0 = Obegränsat)",
+    "max_stashes": "Max förvaring",
+    "unlimited": "Obegränsat",
+    "storage_limit_reached": "Förvaringsgräns nådd: Denna fastighet tillåter högst %s förvaringsfack",
+    "storage_stashes_label": "Förvaringsfack",
+    "deleted": "Raderad",
+    "copied": "Kopierad",
+    "variant_applied": "Variant tillämpad"
   },
   "housing_title": "Bostäder",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "Användning: /restorepower [propertyId] (lämna tomt för nuvarande fastighet)",
     "route_saved_waypoints": "Städrutten sparades med %s vägpunkter!",
     "furniture_limit_reached": "Du har nått den maximala gränsen (%s) för %s!",
-    "furniture_limit_reached_generic": "Möbleringsgräns har nåtts för ett eller flera föremål!"
+    "furniture_limit_reached_generic": "Möbleringsgräns har nåtts för ett eller flera föremål!",
+    "storage_limit_reached": "Du har nått maxgränsen för förvaringsfack (%s) för denna fastighet!"
   },
   "target": {
     "enter_property": "Gå in i fastighet",

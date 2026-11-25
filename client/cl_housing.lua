@@ -74,6 +74,13 @@ RegisterNUICallback('closeUI', function(_, cb)
     cb('ok')
 end)
 
+RegisterNUICallback('notify', function(data, cb)
+    if data and data.message and data.message ~= '' then
+        Bridge.Client.Notify(tostring(data.message), data.type or 'inform')
+    end
+    cb('ok')
+end)
+
 RegisterNUICallback('closeStorageKeypad', function(_, cb)
     debugPrint('info', 'NUI callback: closeStorageKeypad')
     SetNuiFocus(false, false)

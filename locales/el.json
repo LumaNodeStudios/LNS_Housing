@@ -676,7 +676,15 @@
     "furniture_limit_reached": "Επιτεύχθηκε το όριο: Μπορείτε να τοποθετήσετε έως %s από αυτό το αντικείμενο",
     "furniture_limit_badge": "%s/%s τοποθετημένα",
     "max_placed": "MAX",
-    "placed": "Τοποθετημένα"
+    "placed": "Τοποθετημένα",
+    "max_storage_stashes": "Μέγιστες αποθήκες (0 = Απεριόριστο)",
+    "max_stashes": "Μέγ. αποθήκες",
+    "unlimited": "Απεριόριστο",
+    "storage_limit_reached": "Συμπληρώθηκε το όριο αποθήκευσης: Αυτό το ακίνητο επιτρέπει έως %s αποθήκη(-ες)",
+    "storage_stashes_label": "Αποθήκες",
+    "deleted": "Διαγράφηκε",
+    "copied": "Αντιγράφηκε",
+    "variant_applied": "Η παραλλαγή εφαρμόστηκε"
   },
   "housing_title": "Στέγαση",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "Χρήση: /restorepower [propertyId] (αφήστε κενό για το τρέχον ακίνητο)",
     "route_saved_waypoints": "Η διαδρομή καθαρισμού αποθηκεύτηκε επιτυχώς με %s σημεία!",
     "furniture_limit_reached": "Έχετε φτάσει το μέγιστο όριο (%s) για %s!",
-    "furniture_limit_reached_generic": "Συμπληρώθηκε το όριο τοποθέτησης επίπλων για ένα ή περισσότερα αντικείμενα!"
+    "furniture_limit_reached_generic": "Συμπληρώθηκε το όριο τοποθέτησης επίπλων για ένα ή περισσότερα αντικείμενα!",
+    "storage_limit_reached": "Φτάσατε το μέγιστο όριο αποθηκών (%s) για αυτό το ακίνητο!"
   },
   "target": {
     "enter_property": "Είσοδος στο Ακίνητο",

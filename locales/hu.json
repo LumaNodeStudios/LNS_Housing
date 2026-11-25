@@ -676,7 +676,15 @@
     "furniture_limit_reached": "Limit elérve: Ebből a tárgyból legfeljebb %s darabot helyezhetsz el",
     "furniture_limit_badge": "%s/%s elhelyezve",
     "max_placed": "MAX",
-    "placed": "Elhelyezve"
+    "placed": "Elhelyezve",
+    "max_storage_stashes": "Max. tárolóládák (0 = Korlátlan)",
+    "max_stashes": "Max. tárolók",
+    "unlimited": "Korlátlan",
+    "storage_limit_reached": "Tárolási korlát elérve: Ez az ingatlan legfeljebb %s tárolóládát engedélyez",
+    "storage_stashes_label": "Tárolók",
+    "deleted": "Törölve",
+    "copied": "Másolva",
+    "variant_applied": "Változat alkalmazva"
   },
   "housing_title": "Lakhatás",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "Használat: /restorepower [ingatlanId] (hagyd üresen a jelenlegi ingatlanhoz)",
     "route_saved_waypoints": "Takarítási útvonal sikeresen mentve %s útponttal!",
     "furniture_limit_reached": "Elérted a maximális korlátot (%s) a következőhöz: %s!",
-    "furniture_limit_reached_generic": "A bútor elhelyezési korlát elérve egy vagy több tárgynál!"
+    "furniture_limit_reached_generic": "A bútor elhelyezési korlát elérve egy vagy több tárgynál!",
+    "storage_limit_reached": "Elérted a maximális tárolóláda-korlátot (%s) ennél az ingatlannál!"
   },
   "target": {
     "enter_property": "Belépés az ingatlanba",

@@ -676,7 +676,15 @@
     "furniture_limit_reached": "Limite raggiunto: Puoi posizionare solo fino a %s di questo oggetto",
     "furniture_limit_badge": "%s/%s posizionati",
     "max_placed": "MAX",
-    "placed": "Posizionati"
+    "placed": "Posizionati",
+    "max_storage_stashes": "Max. depositi (0 = Illimitato)",
+    "max_stashes": "Max. depositi",
+    "unlimited": "Illimitato",
+    "storage_limit_reached": "Limite di archiviazione raggiunto: Questa proprietà consente un massimo di %s deposito/i",
+    "storage_stashes_label": "Depositi",
+    "deleted": "Eliminato",
+    "copied": "Copiato",
+    "variant_applied": "Variante applicata"
   },
   "housing_title": "Abitazioni",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "Uso: /restorepower [propertyId] (lascia vuoto per la proprietà attuale)",
     "route_saved_waypoints": "Percorso di pulizia salvato con successo con %s punti di passaggio!",
     "furniture_limit_reached": "Hai raggiunto il limite massimo (%s) per %s!",
-    "furniture_limit_reached_generic": "Limite di posizionamento mobili raggiunto per uno o più oggetti!"
+    "furniture_limit_reached_generic": "Limite di posizionamento mobili raggiunto per uno o più oggetti!",
+    "storage_limit_reached": "Hai raggiunto il limite massimo di depositi (%s) per questa proprietà!"
   },
   "target": {
     "enter_property": "Entra nella proprietà",

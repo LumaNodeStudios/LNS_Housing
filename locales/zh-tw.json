@@ -676,7 +676,15 @@
     "furniture_limit_reached": "已達上限：此物品最多只能放置 %s 個",
     "furniture_limit_badge": "已放置 %s/%s",
     "max_placed": "已滿",
-    "placed": "已放置"
+    "placed": "已放置",
+    "max_storage_stashes": "最大儲物箱數量 (0 = 無限制)",
+    "max_stashes": "最大儲物箱",
+    "unlimited": "無限制",
+    "storage_limit_reached": "已達儲物上限：此房產最多允許放置 %s 個儲物箱",
+    "storage_stashes_label": "儲物箱",
+    "deleted": "已刪除",
+    "copied": "已複製",
+    "variant_applied": "已套用樣式"
   },
   "housing_title": "房屋系统",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "用法：/restorepower [propertyId]（留空則為目前房產）",
     "route_saved_waypoints": "清潔路徑儲存成功，共 %s 個導航點！",
     "furniture_limit_reached": "已達到最大放置數量上限 (%s 個)：%s！",
-    "furniture_limit_reached_generic": "一件或多件家具已達到放置數量上限！"
+    "furniture_limit_reached_generic": "一件或多件家具已達到放置數量上限！",
+    "storage_limit_reached": "您已達到此房產的最大儲物箱數量限制（%s）！"
   },
   "target": {
     "enter_property": "进入房产",

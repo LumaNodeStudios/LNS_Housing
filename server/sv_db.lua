@@ -29,6 +29,11 @@ function LoadProperties()
             if v.metadata.max_power == nil then v.metadata.max_power = (Settings.Electricity and Settings.Electricity.DefaultMaxPower) or 5.0 end
             if v.metadata.power_level == nil then v.metadata.power_level = 1 end
             if v.metadata.breaker_tripped == nil then v.metadata.breaker_tripped = false end
+            if v.metadata.max_stashes == nil then
+                v.metadata.max_stashes = 0
+            else
+                v.metadata.max_stashes = math.max(0, math.floor(tonumber(v.metadata.max_stashes) or 0))
+            end
             local propType = v.property_type or (v.metadata and (v.metadata.property_type or v.metadata.type)) or 'Residential'
             if propType == 'Commerce' then propType = 'Commercial' end
             v.property_type = propType
@@ -98,6 +103,7 @@ function CreateProperty(data)
 
     local propType = data.type or data.property_type or 'Residential'
     if propType == 'Commerce' then propType = 'Commercial' end
+    local maxStashes = math.max(0, math.floor(tonumber(data.maxStashes ~= nil and data.maxStashes or data.max_stashes) or 0))
 
     local id = MySQL.insert.await('INSERT INTO housing_properties (label, price, doors, image, sale_type, auction_data, zone_data, metadata, yard_zone_data, last_mowed, lawn_data, agency, agent_cid, commission_rate, garage, property_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', {
         data.name or data.label, 
@@ -138,7 +144,8 @@ function CreateProperty(data)
             breaker_coords = data.breaker_coords or data.breakerCoords or nil,
             max_power = (Settings.Electricity and Settings.Electricity.DefaultMaxPower) or 5.0,
             power_level = 1,
-            breaker_tripped = false
+            breaker_tripped = false,
+            max_stashes = maxStashes
         }),
         json.encode(data.yard_zone_data or nil),
         0,
@@ -184,7 +191,8 @@ function CreateProperty(data)
                 breaker_coords = data.breaker_coords or data.breakerCoords or nil,
                 max_power = (Settings.Electricity and Settings.Electricity.DefaultMaxPower) or 5.0,
                 power_level = 1,
-                breaker_tripped = false
+                breaker_tripped = false,
+                max_stashes = maxStashes
             },
             image = data.image or nil,
             sale_type = data.saleType or 'direct',

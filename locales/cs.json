@@ -676,7 +676,15 @@
     "furniture_limit_reached": "Dosažen limit: Můžete umístit maximálně %s tohoto předmětu",
     "furniture_limit_badge": "%s/%s umístěno",
     "max_placed": "MAX",
-    "placed": "Umístěno"
+    "placed": "Umístěno",
+    "max_storage_stashes": "Max. úložných schránek (0 = Bez limitu)",
+    "max_stashes": "Max. úložišť",
+    "unlimited": "Bez limitu",
+    "storage_limit_reached": "Dosažen limit úložiště: Tato nemovitost povoluje maximálně %s úložných schránek",
+    "storage_stashes_label": "Úložné schránky",
+    "deleted": "Smazáno",
+    "copied": "Zkopírováno",
+    "variant_applied": "Varianta použita"
   },
   "housing_title": "Bydlení",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "Použití: /restorepower [propertyId] (nechte prázdné pro aktuální nemovitost)",
     "route_saved_waypoints": "Trasa úklidu byla úspěšně uložena s %s body!",
     "furniture_limit_reached": "Dosáhli jste maximálního limitu (%s) pro %s!",
-    "furniture_limit_reached_generic": "Byl překročen limit umístění nábytku pro jeden nebo více předmětů!"
+    "furniture_limit_reached_generic": "Byl překročen limit umístění nábytku pro jeden nebo více předmětů!",
+    "storage_limit_reached": "Dosáhli jste maximálního limitu úložných schránek (%s) pro tuto nemovitost!"
   },
   "target": {
     "enter_property": "Vstoupit do nemovitosti",

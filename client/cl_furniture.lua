@@ -117,6 +117,52 @@ Modeler = {
         return count
     end,
 
+    GetMaxStashes = function(self)
+        local property = Properties[self.property_id]
+        if not property then return 0 end
+        if property.isApartment then
+            return math.max(0, math.floor(tonumber(Settings.Apartments and Settings.Apartments.MaxStashes) or 0))
+        end
+        return math.max(0, math.floor(tonumber(property.metadata and property.metadata.max_stashes) or 0))
+    end,
+
+    GetStorageCount = function(self, excludeId)
+        local count = 0
+        local property = Properties[self.property_id]
+        if property and property.furniture then
+            for _, item in ipairs(property.furniture) do
+                if not (excludeId and (item.id == excludeId or tostring(item.id) == tostring(excludeId))) then
+                    local cat = FindCatalogItem(item.model, item.itemId or item.id)
+                    if Bridge.IsCountedStorageStash(cat) then
+                        count = count + 1
+                    end
+                end
+            end
+        end
+        if self.Cart then
+            for cartId, item in pairs(self.Cart) do
+                if not (excludeId and (cartId == excludeId or item.entity == excludeId)) then
+                    local cat = FindCatalogItem(item.model, item.itemId or item.id)
+                    if Bridge.IsCountedStorageStash(cat) then
+                        count = count + 1
+                    end
+                end
+            end
+        end
+        return count
+    end,
+
+    CanPlaceStorageItem = function(self, catalogItem, additionalCount)
+        if not Bridge.IsCountedStorageStash(catalogItem) then return true end
+        local maxStashes = self:GetMaxStashes()
+        if maxStashes <= 0 then return true end
+        local currentCount = self:GetStorageCount()
+        if currentCount + (additionalCount or 1) > maxStashes then
+            return false, maxStashes
+        end
+        return true
+    end,
+
     OpenMenu = function(self, propertyId)
         local property = Properties[propertyId]
         if not property then return end
@@ -135,6 +181,13 @@ Modeler = {
         self:UpdateOwnedItems()
         self:StartSelectionThread()
 
+        SendNUIMessage({
+            action = "setStorageLimit",
+            data = {
+                maxStashes = self:GetMaxStashes(),
+                countFridges = Settings and Settings.Stash and Settings.Stash.CountFridgesInLimit == true or false
+            }
+        })
         SendNUIMessage({ action = "setVisible", data = true, theme = lib.load('shared.theme') or Theme })
 
         local cartList = {}
@@ -511,6 +564,11 @@ Modeler = {
                 return false
             end
         end
+        local canPlaceStorage, maxStashes = self:CanPlaceStorageItem(catalog, 1)
+        if not canPlaceStorage then
+            Bridge.Client.Notify(locale('notify.storage_limit_reached', maxStashes), 'error')
+            return false
+        end
 
         local started = self:StartPlacement({
             model = clip.model,
@@ -560,7 +618,7 @@ Modeler = {
             self:RemoveOwnedItem({ id = id })
         end
 
-        SendNUIMessage({ action = "placementEnded" })
+        SendNUIMessage({ action = "placementEnded", data = { deleted = true } })
         return true
     end,
 
@@ -670,6 +728,11 @@ Modeler = {
                     Bridge.Client.Notify(locale('notify.furniture_limit_reached', catalog.max, label), 'error')
                     return false
                 end
+            end
+            local canPlaceStorage, maxStashes = self:CanPlaceStorageItem(catalog, 1)
+            if not canPlaceStorage then
+                Bridge.Client.Notify(locale('notify.storage_limit_reached', maxStashes), 'error')
+                return false
             end
         end
 
@@ -1126,6 +1189,18 @@ Modeler = {
             end
         end
 
+        local canPlaceStorage, maxStashes = self:CanPlaceStorageItem(catalog, 1)
+        if not canPlaceStorage then
+            Bridge.Client.Notify(locale('notify.storage_limit_reached', maxStashes), 'error')
+            if DoesEntityExist(self.CurrentObject) then
+                DeleteEntity(self.CurrentObject)
+            end
+            self.CurrentObject = nil
+            self.PlacingData = nil
+            SendNUIMessage({ action = "placementEnded" })
+            return false
+        end
+
         local cartId = tostring(math.random(100000, 999999)) .. '_' .. tostring(GetGameTimer())
         local finalLabel = (self.PlacingData and self.PlacingData.label) or data.label or (catalog and catalog.label)
         local finalPrice = (self.PlacingData and self.PlacingData.price) or data.price or (catalog and catalog.price) or 0
@@ -1234,6 +1309,15 @@ Modeler = {
                     local label = catalog.label or v.label or v.model
                     return false, locale('notify.furniture_limit_reached', catalog.max, label)
                 end
+            end
+        end
+
+        local maxStashes = self:GetMaxStashes()
+        if maxStashes > 0 then
+            local totalStorageAfterBuy = self:GetStorageCount()
+            if totalStorageAfterBuy > maxStashes then
+                Bridge.Client.Notify(locale('notify.storage_limit_reached', maxStashes), 'error')
+                return false, locale('notify.storage_limit_reached', maxStashes)
             end
         end
 

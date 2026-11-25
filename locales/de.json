@@ -676,7 +676,15 @@
     "furniture_limit_reached": "Limit erreicht: Du kannst nur bis zu %s dieses Objekts platzieren",
     "furniture_limit_badge": "%s/%s platziert",
     "max_placed": "MAX",
-    "placed": "Platziert"
+    "placed": "Platziert",
+    "max_storage_stashes": "Max. Lagerfächer (0 = Unbegrenzt)",
+    "max_stashes": "Max. Lager",
+    "unlimited": "Unbegrenzt",
+    "storage_limit_reached": "Lagerlimit erreicht: Diese Immobilie erlaubt maximal %s Lagerfach/Lagerfächer",
+    "storage_stashes_label": "Lagerfächer",
+    "deleted": "Gelöscht",
+    "copied": "Kopiert",
+    "variant_applied": "Variante angewendet"
   },
   "housing_title": "Wohnen",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "Verwendung: /restorepower [propertyId] (leer lassen für aktuelle Immobilie)",
     "route_saved_waypoints": "Reinigungsroute erfolgreich mit %s Wegpunkten gespeichert!",
     "furniture_limit_reached": "Du hast das maximale Limit (%s) für %s erreicht!",
-    "furniture_limit_reached_generic": "Möbel-Platzierungslimit für einen oder mehrere Gegenstände erreicht!"
+    "furniture_limit_reached_generic": "Möbel-Platzierungslimit für einen oder mehrere Gegenstände erreicht!",
+    "storage_limit_reached": "Du hast das maximale Lagerlimit (%s) für diese Immobilie erreicht!"
   },
   "target": {
     "enter_property": "Immobilie betreten",

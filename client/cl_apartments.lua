@@ -231,65 +231,6 @@ local function CreateApartmentPed()
                 }
             }
 
-            if IsStarterInstanceMode() then
-                table.insert(pedOptions, {
-                    name = 'ped_enter_mine_' .. bId,
-                    icon = 'fa-solid fa-key',
-                    label = locale('target.enter_my_apartment'),
-                    debug = Settings.Debug.Zones,
-                    onSelect = function()
-                        local assignedRoom = lib.callback.await('LNS_Housing:server:getMyApartment', false)
-                        if assignedRoom and assignedRoom.roomData then
-                            local assignedBuildingId = assignedRoom.buildingId or (assignedRoom.roomData and (assignedRoom.roomData.buildingId or assignedRoom.roomData.building_id)) or MyBuildingId
-                            if assignedBuildingId and assignedBuildingId ~= bId then
-                                local actualBldg = Bridge.GetApartmentBuildingById(assignedBuildingId, true)
-                                local actualLabel = actualBldg and actualBldg.label or assignedBuildingId
-                                Bridge.Client.Notify(locale('notify.apt_wrong_building', actualLabel), 'error')
-                                return
-                            end
-                            EnterApartmentRoom(assignedRoom.roomData, bId)
-                        else
-                            Bridge.Client.Notify(locale('notify.no_apartment_assigned'), 'error')
-                        end
-                    end
-                })
-                table.insert(pedOptions, {
-                    name = 'ped_visit_room_' .. bId,
-                    icon = 'fa-solid fa-door-open',
-                    label = locale('target.visit_apartment'),
-                    debug = Settings.Debug.Zones,
-                    onSelect = function()
-                        local input = lib.inputDialog(locale('dialog.visit_apartment') .. ' (' .. bLabel .. ')', {
-                            { type = 'number', label = locale('dialog.room_number'), placeholder = locale('dialog.room_number_placeholder'), required = true, min = 1 }
-                        })
-                        if not input or not input[1] then return end
-                        local targetRoomId = tonumber(input[1])
-                        if not targetRoomId then return end
-
-                        local canEnter = lib.callback.await('LNS_Housing:server:canEnterApartment', false, targetRoomId, bId)
-                        if canEnter then
-                            local roomData = lib.callback.await('LNS_Housing:server:getApartmentRoomData', false, targetRoomId, bId)
-                            if roomData then
-                                EnterApartmentRoom(roomData, bId)
-                            else
-                                Bridge.Client.Notify(locale('notify.apartment_load_failed'), 'error')
-                            end
-                        else
-                            local alert = lib.alertDialog({
-                                header = locale('dialog.visit_apartment') .. ' #' .. targetRoomId,
-                                content = locale('dialog.doorbell_confirm_msg', targetRoomId),
-                                centered = true,
-                                cancel = true,
-                                labels = { confirm = locale('dialog.ring_bell'), cancel = locale('dialog.cancel') }
-                            })
-                            if alert == 'confirm' then
-                                TriggerServerEvent('LNS_Housing:server:ringApartmentDoorbell', targetRoomId, bId)
-                            end
-                        end
-                    end
-                })
-            end
-
             exports.ox_target:addLocalEntity(ped, pedOptions)
             table.insert(apartmentPeds, ped)
         end

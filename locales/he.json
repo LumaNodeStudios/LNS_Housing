@@ -676,7 +676,15 @@
     "furniture_limit_reached": "הגעת למגבלה: באפשרותך להציב עד %s בלבד מפריט זה",
     "furniture_limit_badge": "%s/%s הוצבו",
     "max_placed": "מקסימום",
-    "placed": "הוצבו"
+    "placed": "הוצבו",
+    "max_storage_stashes": "מקסימום תאי אחסון (0 = ללא הגבלה)",
+    "max_stashes": "מקס׳ אחסונים",
+    "unlimited": "ללא הגבלה",
+    "storage_limit_reached": "מגבלת האחסון הושגה: נכס זה מאפשר לכל היותר %s תא(י) אחסון",
+    "storage_stashes_label": "תאי אחסון",
+    "deleted": "נמחק",
+    "copied": "הועתק",
+    "variant_applied": "הסגנון הוחל"
   },
   "housing_title": "דיור",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "שימוש: /restorepower [מזהה נכס] (השאר ריק עבור הנכס הנוכחי)",
     "route_saved_waypoints": "מסלול הניקיון נשמר בהצלחה עם %s נקודות ציון!",
     "furniture_limit_reached": "הגעת למגבלה המרבית (%s) עבור %s!",
-    "furniture_limit_reached_generic": "הגעת למגבלת הצבת הרהיטים עבור פריט אחד או יותר!"
+    "furniture_limit_reached_generic": "הגעת למגבלת הצבת הרהיטים עבור פריט אחד או יותר!",
+    "storage_limit_reached": "הגעת למגבלה המרבית של תאי האחסון (%s) עבור נכס זה!"
   },
   "target": {
     "enter_property": "כניסה לנכס",

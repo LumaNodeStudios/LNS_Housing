@@ -676,7 +676,15 @@
     "furniture_limit_reached": "Limite atingido: Apenas podes colocar até %s deste item",
     "furniture_limit_badge": "%s/%s colocados",
     "max_placed": "MÁX",
-    "placed": "Colocados"
+    "placed": "Colocados",
+    "max_storage_stashes": "Máx. cofres de armazenamento (0 = Ilimitado)",
+    "max_stashes": "Máx. cofres",
+    "unlimited": "Ilimitado",
+    "storage_limit_reached": "Limite de armazenamento atingido: Este imóvel permite um máximo de %s cofre(s)",
+    "storage_stashes_label": "Cofres",
+    "deleted": "Eliminado",
+    "copied": "Copiado",
+    "variant_applied": "Variante aplicada"
   },
   "housing_title": "Habitação",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "Uso: /restorepower [propertyId] (deixar em branco para a propriedade atual)",
     "route_saved_waypoints": "Rota de limpeza guardada com sucesso com %s pontos de rota!",
     "furniture_limit_reached": "Atingiste o limite máximo (%s) para %s!",
-    "furniture_limit_reached_generic": "Limite de colocação de mobília atingido para um ou mais itens!"
+    "furniture_limit_reached_generic": "Limite de colocação de mobília atingido para um ou mais itens!",
+    "storage_limit_reached": "Atingiu o limite máximo de cofres de armazenamento (%s) para este imóvel!"
   },
   "target": {
     "enter_property": "Entrar na Propriedade",

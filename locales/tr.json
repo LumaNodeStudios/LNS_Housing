@@ -676,7 +676,15 @@
     "furniture_limit_reached": "Limite ulaşıldı: Bu eşyadan en fazla %s adet yerleştirebilirsiniz",
     "furniture_limit_badge": "%s/%s yerleştirildi",
     "max_placed": "MAKS",
-    "placed": "Yerleştirildi"
+    "placed": "Yerleştirildi",
+    "max_storage_stashes": "Maks. Depolama Alanı (0 = Sınırsız)",
+    "max_stashes": "Maks. Depo",
+    "unlimited": "Sınırsız",
+    "storage_limit_reached": "Depolama sınırına ulaşıldı: Bu mülk en fazla %s depolama alanına izin verir",
+    "storage_stashes_label": "Depolama Alanları",
+    "deleted": "Silindi",
+    "copied": "Kopyalandı",
+    "variant_applied": "Varyant Uygulandı"
   },
   "housing_title": "Emlak",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "Kullanım: /restorepower [propertyId] (mevcut mülk için boş bırakın)",
     "route_saved_waypoints": "Temizlik rotası %s yol noktası ile başarıyla kaydedildi!",
     "furniture_limit_reached": "Maksimum yerleştirme limitine (%s) ulaştınız: %s!",
-    "furniture_limit_reached_generic": "Bir veya daha fazla eşya için mobilya yerleştirme limitine ulaşıldı!"
+    "furniture_limit_reached_generic": "Bir veya daha fazla eşya için mobilya yerleştirme limitine ulaşıldı!",
+    "storage_limit_reached": "Bu mülk için maksimum depolama alanı sınırına (%s) ulaştınız!"
   },
   "target": {
     "enter_property": "Mülke Gir",

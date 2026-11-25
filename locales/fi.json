@@ -676,7 +676,15 @@
     "furniture_limit_reached": "Raja saavutettu: Voit asettaa enintään %s tätä esinettä",
     "furniture_limit_badge": "%s/%s asetettu",
     "max_placed": "MAX",
-    "placed": "Asetettu"
+    "placed": "Asetettu",
+    "max_storage_stashes": "Enintään varastoja (0 = Rajoittamaton)",
+    "max_stashes": "Maks. varastot",
+    "unlimited": "Rajoittamaton",
+    "storage_limit_reached": "Varastoraja saavutettu: Tähän kiinteistöön voi sijoittaa enintään %s varastoa",
+    "storage_stashes_label": "Varastot",
+    "deleted": "Poistettu",
+    "copied": "Kopioitu",
+    "variant_applied": "Muunnelma käytössä"
   },
   "housing_title": "Asuminen",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "Käyttö: /restorepower [propertyId] (jätä tyhjäksi nykyiselle kiinteistölle)",
     "route_saved_waypoints": "Siivousreitti tallennettu onnistuneesti %s reittipisteellä!",
     "furniture_limit_reached": "Olet saavuttanut enimmäisrajan (%s) kohteelle %s!",
-    "furniture_limit_reached_generic": "Huonekalujen sijoitusraja on saavutettu yhdelle tai useammalle esineelle!"
+    "furniture_limit_reached_generic": "Huonekalujen sijoitusraja on saavutettu yhdelle tai useammalle esineelle!",
+    "storage_limit_reached": "Olet saavuttanut tämän kiinteistön varastojen enimmäismäärän (%s)!"
   },
   "target": {
     "enter_property": "Astu kiinteistöön",

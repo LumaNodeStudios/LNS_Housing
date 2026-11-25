@@ -676,7 +676,15 @@
     "furniture_limit_reached": "Limită atinsă: Poți plasa doar până la %s din acest obiect",
     "furniture_limit_badge": "%s/%s plasate",
     "max_placed": "MAX",
-    "placed": "Plasate"
+    "placed": "Plasate",
+    "max_storage_stashes": "Max. spații de depozitare (0 = Nelimitat)",
+    "max_stashes": "Max. depozite",
+    "unlimited": "Nelimitat",
+    "storage_limit_reached": "Limita de depozitare atinsă: Această proprietate permite maximum %s spațiu/spații de depozitare",
+    "storage_stashes_label": "Spații de depozitare",
+    "deleted": "Șters",
+    "copied": "Copiat",
+    "variant_applied": "Variantă aplicată"
   },
   "housing_title": "Locuințe",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "Utilizare: /restorepower [propertyId] (lăsați gol pentru proprietatea curentă)",
     "route_saved_waypoints": "Traseu de curățenie salvat cu succes cu %s puncte de referință!",
     "furniture_limit_reached": "Ai atins limita maximă (%s) pentru %s!",
-    "furniture_limit_reached_generic": "Limita de plasare a mobilierului a fost atinsă pentru unul sau mai multe obiecte!"
+    "furniture_limit_reached_generic": "Limita de plasare a mobilierului a fost atinsă pentru unul sau mai multe obiecte!",
+    "storage_limit_reached": "Ai atins limita maximă de spații de depozitare (%s) pentru această proprietate!"
   },
   "target": {
     "enter_property": "Intră în proprietate",

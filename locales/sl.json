@@ -676,7 +676,15 @@
     "furniture_limit_reached": "Dosežena omejitev: Postavite lahko največ %s tega predmeta",
     "furniture_limit_badge": "%s/%s postavljenih",
     "max_placed": "MAX",
-    "placed": "Postavljenih"
+    "placed": "Postavljenih",
+    "max_storage_stashes": "Največ shramb (0 = Neomejeno)",
+    "max_stashes": "Maks. shramb",
+    "unlimited": "Neomejeno",
+    "storage_limit_reached": "Dosežena omejitev shranjevanja: Ta nepremičnina dovoljuje največ %s shramb(o)",
+    "storage_stashes_label": "Shrambe",
+    "deleted": "Izbrisano",
+    "copied": "Kopirano",
+    "variant_applied": "Različica uporabljena"
   },
   "housing_title": "Nepremičnine",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "Uporaba: /restorepower [propertyId] (pustite prazno za trenutno nepremičnino)",
     "route_saved_waypoints": "Pot čiščenja uspešno shranjena z %s točkami!",
     "furniture_limit_reached": "Dosegli ste največjo omejitev (%s) za %s!",
-    "furniture_limit_reached_generic": "Dosežena je omejitev postavljanja pohištva za enega ali več predmetov!"
+    "furniture_limit_reached_generic": "Dosežena je omejitev postavljanja pohištva za enega ali več predmetov!",
+    "storage_limit_reached": "Dosegli ste največje število shramb (%s) za to nepremičnino!"
   },
   "target": {
     "enter_property": "Vstopi v nepremičnino",

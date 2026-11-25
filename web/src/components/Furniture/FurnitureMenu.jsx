@@ -292,12 +292,23 @@ const FurnitureImage = React.memo(function FurnitureImage({ item, ItemIcon }) {
   );
 });
 
+const isCountedStorageItem = (item, countFridges) => {
+  if (!item || !item.isStorage) return false;
+  if (item.isTrash || item.type === 'trash' || item.isDisposal || item.type === 'disposal') return false;
+  const isFridge = item.isFridge || item.type === 'fridge' || (item.id && String(item.id).toLowerCase().includes('fridge'));
+  if (isFridge) return Boolean(countFridges);
+  return true;
+};
+
 const ItemCard = React.memo(function ItemCard({
   item,
   ItemIcon,
   isPlacing,
   isThisPlacing,
   placedCount = 0,
+  isCountedStorage = false,
+  placedStorageCount = 0,
+  maxStashes = 0,
   onHoverIn,
   onHoverOut,
   onClick,
@@ -306,7 +317,13 @@ const ItemCard = React.memo(function ItemCard({
   const variants = React.useMemo(() => getNormalizedVariants(item), [item]);
   const hasVariants = variants.length > 0;
   const maxLimit = item?.max;
-  const isMaxReached = maxLimit !== undefined && maxLimit > 0 && placedCount >= maxLimit;
+  const isItemMaxReached = maxLimit !== undefined && maxLimit > 0 && placedCount >= maxLimit;
+  const isStorageLimitActive = isCountedStorage && maxStashes > 0;
+  const isStorageMaxReached = isStorageLimitActive && placedStorageCount >= maxStashes;
+  const isMaxReached = isItemMaxReached || isStorageMaxReached;
+
+  const showItemBadge = maxLimit !== undefined && maxLimit > 0;
+  const showStorageBadge = !showItemBadge && isStorageLimitActive;
 
   return (
     <div
@@ -317,12 +334,20 @@ const ItemCard = React.memo(function ItemCard({
     >
       <FurnitureImage item={item} ItemIcon={ItemIcon} />
       <span className="item-card-price">${item.price}</span>
-      {maxLimit !== undefined && maxLimit > 0 && (
+      {showItemBadge && (
         <span
-          className={`item-card-limit-badge ${isMaxReached ? 'limit-reached' : ''}`}
+          className={`item-card-limit-badge ${isItemMaxReached ? 'limit-reached' : ''}`}
           title={`${placedCount} / ${maxLimit} placed`}
         >
           {placedCount}/{maxLimit}
+        </span>
+      )}
+      {showStorageBadge && (
+        <span
+          className={`item-card-limit-badge ${isStorageMaxReached ? 'limit-reached' : ''}`}
+          title={`${placedStorageCount} / ${maxStashes} storage stashes placed`}
+        >
+          {placedStorageCount}/{maxStashes}
         </span>
       )}
       {hasVariants && (
@@ -343,8 +368,10 @@ const ItemCard = React.memo(function ItemCard({
   );
 });
 
-const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
+const FurnitureMenu = ({ items = [], ownedItems = [], storageLimit = { maxStashes: 0, countFridges: false } }) => {
   const { t } = useLocale();
+  const maxStashes = Math.max(0, parseInt(storageLimit?.maxStashes, 10) || 0);
+  const countFridges = Boolean(storageLimit?.countFridges);
   const [activeCategory, setActiveCategory] = useState('all');
   const [activeTab, setActiveTab] = useState('shopping');
   const [cart, setCart] = useState([]);
@@ -362,13 +389,12 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
   const [posStep, setPosStep] = useState(0.01);
   const [rotStep, setRotStep] = useState(1);
   const [copiedTransform, setCopiedTransform] = useState(null);
-  const [toast, setToast] = useState(null);
   const [variantParentItem, setVariantParentItem] = useState(null);
   const controlsList = useMemo(() => getControls(t), [t]);
 
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 1200);
+  const notifyBridge = (msg, type = 'inform') => {
+    if (!msg) return;
+    post('notify', { message: msg, type });
   };
 
   const clearPlacing = () => {
@@ -447,6 +473,63 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
     return count;
   }, [ownedItems, cart]);
 
+  const catalogLookup = React.useMemo(() => {
+    const byId = new Map();
+    const byModel = new Map();
+    if (Array.isArray(items)) {
+      for (const cat of items) {
+        if (!Array.isArray(cat?.items)) continue;
+        for (const it of cat.items) {
+          if (it.id) byId.set(it.id, it);
+          if (it.model) byModel.set(String(it.model).toLowerCase(), it);
+          if (Array.isArray(it.variants)) {
+            for (const v of it.variants) {
+              const vModel = v.model || it.model;
+              if (vModel && !byModel.has(String(vModel).toLowerCase())) {
+                byModel.set(String(vModel).toLowerCase(), it);
+              }
+            }
+          }
+        }
+      }
+    }
+    return { byId, byModel };
+  }, [items]);
+
+  const resolveCatalogItem = React.useCallback((entry) => {
+    if (!entry) return null;
+    if (entry.isStorage !== undefined) return entry;
+    if (entry.itemId && catalogLookup.byId.has(entry.itemId)) return catalogLookup.byId.get(entry.itemId);
+    if (entry.id && catalogLookup.byId.has(entry.id)) return catalogLookup.byId.get(entry.id);
+    if (entry.model) {
+      const m = catalogLookup.byModel.get(String(entry.model).toLowerCase());
+      if (m) return m;
+    }
+    return null;
+  }, [catalogLookup]);
+
+  const placedStorageCount = React.useMemo(() => {
+    let count = 0;
+    const countList = (list) => {
+      if (!Array.isArray(list)) return;
+      for (const entry of list) {
+        const cat = resolveCatalogItem(entry);
+        if (isCountedStorageItem(cat, countFridges)) {
+          count++;
+        }
+      }
+    };
+    countList(ownedItems);
+    countList(cart);
+    return count;
+  }, [ownedItems, cart, resolveCatalogItem, countFridges]);
+
+  const isAtStorageLimit = React.useCallback((targetItem) => {
+    if (maxStashes <= 0) return false;
+    const cat = resolveCatalogItem(targetItem) || targetItem;
+    return isCountedStorageItem(cat, countFridges) && placedStorageCount >= maxStashes;
+  }, [maxStashes, resolveCatalogItem, countFridges, placedStorageCount]);
+
   useEffect(() => {
     // Fetch active cart on mount if any
     if (window.GetParentResourceName) {
@@ -517,8 +600,9 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
         setIsPlacing(false);
         setPlacingItem(null);
         setPlacingKind(null);
-        setToast('Deleted');
-        setTimeout(() => setToast(null), 1200);
+        if (event.data?.data?.deleted) {
+          notifyBridge(t('ui.deleted', 'Deleted'), 'inform');
+        }
       }
     };
 
@@ -538,16 +622,20 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
         const k = e.key.toLowerCase();
         if (k === 'c' && isPlacing) {
           e.preventDefault();
-          if (!e.repeat) { post('copyFurniture'); showToast('Copied'); }
+          if (!e.repeat) { post('copyFurniture'); notifyBridge(t('ui.copied', 'Copied'), 'success'); }
         } else if (k === 'v') {
           e.preventDefault();
           if (!e.repeat) {
             if (parentForPlacing && parentForPlacing.max && parentForPlacing.max > 0) {
               const placed = getPlacedCount(parentForPlacing);
               if (placed >= parentForPlacing.max) {
-                showToast(t('ui.furniture_limit_reached', `Limit reached: You can only place up to ${parentForPlacing.max} of this item`, [parentForPlacing.max, parentForPlacing.label]));
+                notifyBridge(t('ui.furniture_limit_reached', `Limit reached: You can only place up to ${parentForPlacing.max} of this item`, [parentForPlacing.max, parentForPlacing.label]), 'error');
                 return;
               }
+            }
+            if (isAtStorageLimit(parentForPlacing || placingItem)) {
+              notifyBridge(t('ui.storage_limit_reached', `Storage limit reached: This property allows a maximum of ${maxStashes} storage stash(es)`, [maxStashes]), 'error');
+              return;
             }
             post('pasteFurniture');
           }
@@ -578,7 +666,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [freecamMode, isPlacing, parentForPlacing, getPlacedCount, t]);
+  }, [freecamMode, isPlacing, parentForPlacing, placingItem, getPlacedCount, isAtStorageLimit, maxStashes, t]);
 
   useEffect(() => {
     const handleWorldClick = (e) => {
@@ -755,9 +843,13 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
       if (max !== undefined && max > 0) {
         const placed = getPlacedCount(item);
         if (placed >= max) {
-          showToast(t('ui.furniture_limit_reached', `Limit reached: You can only place up to ${max} of this item`, [max, item.label]));
+          notifyBridge(t('ui.furniture_limit_reached', `Limit reached: You can only place up to ${max} of this item`, [max, item.label]), 'error');
           return;
         }
+      }
+      if (isAtStorageLimit(item)) {
+        notifyBridge(t('ui.storage_limit_reached', `Storage limit reached: This property allows a maximum of ${maxStashes} storage stash(es)`, [maxStashes]), 'error');
+        return;
       }
     }
     setIsPlacing(true);
@@ -777,16 +869,20 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
         variantId: variant.id,
       });
       setPlacingItem(variantItem);
-      showToast('Variant Applied');
+      notifyBridge(t('ui.variant_applied', 'Variant Applied'), 'success');
     } else {
       const parent = variantParentItem || variantItem;
       const max = parent?.max;
       if (max !== undefined && max > 0) {
         const placed = getPlacedCount(parent);
         if (placed >= max) {
-          showToast(t('ui.furniture_limit_reached', `Limit reached: You can only place up to ${max} of this item`, [max, parent.label]));
+          notifyBridge(t('ui.furniture_limit_reached', `Limit reached: You can only place up to ${max} of this item`, [max, parent.label]), 'error');
           return;
         }
+      }
+      if (isAtStorageLimit(parent)) {
+        notifyBridge(t('ui.storage_limit_reached', `Storage limit reached: This property allows a maximum of ${maxStashes} storage stash(es)`, [maxStashes]), 'error');
+        return;
       }
       handlePreview(variantItem);
     }
@@ -798,9 +894,13 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
     if (max !== undefined && max > 0) {
       const placed = getPlacedCount(parent);
       if (placed >= max) {
-        showToast(t('ui.furniture_limit_reached', `Limit reached: You can only place up to ${max} of this item`, [max, parent.label || item.label]));
+        notifyBridge(t('ui.furniture_limit_reached', `Limit reached: You can only place up to ${max} of this item`, [max, parent.label || item.label]), 'error');
         return;
       }
+    }
+    if (isAtStorageLimit(parent)) {
+      notifyBridge(t('ui.storage_limit_reached', `Storage limit reached: This property allows a maximum of ${maxStashes} storage stash(es)`, [maxStashes]), 'error');
+      return;
     }
     const catId = item.categoryId || item.category || activeCategory;
     post('addToCart', { ...item, category: catId });
@@ -878,7 +978,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
     const zeroRot = { x: 0, y: 0, z: 0 };
     setObjectRotation(zeroRot);
     post('rotateObject', zeroRot);
-    showToast(t('ui.rotation_reset', 'Rotation Reset'));
+    notifyBridge(t('ui.rotation_reset', 'Rotation Reset'), 'success');
   };
 
   const handleSnapHeading = (angle) => {
@@ -898,7 +998,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
       position: { ...objectCoords },
       rotation: { ...objectRotation }
     });
-    showToast(t('ui.transform_copied', 'Transform Copied'));
+    notifyBridge(t('ui.transform_copied', 'Transform Copied'), 'success');
   };
 
   const handlePasteTransform = () => {
@@ -909,7 +1009,7 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
     setObjectRotation(nextRot);
     post('moveObject', nextPos);
     post('rotateObject', nextRot);
-    showToast(t('ui.transform_pasted', 'Transform Pasted'));
+    notifyBridge(t('ui.transform_pasted', 'Transform Pasted'), 'success');
   };
 
   const handleClose = () => {
@@ -1124,6 +1224,9 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
                                 isPlacing={isPlacing}
                                 isThisPlacing={placingItem?.id === item.id}
                                 placedCount={getPlacedCount(item)}
+                                isCountedStorage={isCountedStorageItem(item, countFridges)}
+                                placedStorageCount={placedStorageCount}
+                                maxStashes={maxStashes}
                                 onHoverIn={() => handleHoverIn(item)}
                                 onHoverOut={handleHoverOut}
                                 onClick={() => handlePreview(item)}
@@ -1738,8 +1841,6 @@ const FurnitureMenu = ({ items = [], ownedItems = [] }) => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {toast && <div className="controls-toast">{toast}</div>}
 
       {freecamMode && (
         <div className={`freecam-hint ${isPlacing ? 'with-placement' : ''}`}>

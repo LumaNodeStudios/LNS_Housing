@@ -676,7 +676,15 @@
     "furniture_limit_reached": "Достигнут лимит: Вы можете разместить не более %s этого предмета",
     "furniture_limit_badge": "%s/%s размещено",
     "max_placed": "МАКС",
-    "placed": "Размещено"
+    "placed": "Размещено",
+    "max_storage_stashes": "Макс. хранилищ (0 = Без ограничений)",
+    "max_stashes": "Макс. хранилищ",
+    "unlimited": "Без ограничений",
+    "storage_limit_reached": "Достигнут лимит хранилищ: в этом доме разрешено максимум %s хранилищ(а)",
+    "storage_stashes_label": "Хранилища",
+    "deleted": "Удалено",
+    "copied": "Скопировано",
+    "variant_applied": "Вариант применён"
   },
   "housing_title": "Жилье",
   "notify": {
@@ -923,7 +931,8 @@
     "restorepower_usage": "Использование: /restorepower [propertyId] (оставьте пустым для текущей недвижимости)",
     "route_saved_waypoints": "Маршрут уборки успешно сохранен с %s точками!",
     "furniture_limit_reached": "Вы достигли максимального лимита (%s) для %s!",
-    "furniture_limit_reached_generic": "Достигнут лимит размещения мебели для одного или нескольких предметов!"
+    "furniture_limit_reached_generic": "Достигнут лимит размещения мебели для одного или нескольких предметов!",
+    "storage_limit_reached": "Вы достигли максимального лимита хранилищ (%s) для этого объекта недвижимости!"
   },
   "target": {
     "enter_property": "Войти в недвижимость",

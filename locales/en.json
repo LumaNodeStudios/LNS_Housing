@@ -676,7 +676,15 @@
     "bid": "BID",
     "view": "VIEW",
     "gps": "GPS",
-    "placed": "Placed"
+    "placed": "Placed",
+    "max_storage_stashes": "Max Storage Stashes (0 = Unlimited)",
+    "max_stashes": "Max Stashes",
+    "unlimited": "Unlimited",
+    "storage_limit_reached": "Storage limit reached: This property allows a maximum of %s storage stash(es)",
+    "storage_stashes_label": "Storage Stashes",
+    "deleted": "Deleted",
+    "copied": "Copied",
+    "variant_applied": "Variant Applied"
   },
   "housing_title": "Housing",
   "notify": {
@@ -914,6 +922,7 @@
     "furniture_purchased": "Furniture purchased successfully!",
     "furniture_limit_reached": "You have reached the maximum limit (%s) for %s!",
     "furniture_limit_reached_generic": "Furniture placement limit reached for one or more items!",
+    "storage_limit_reached": "You have reached the maximum storage stash limit (%s) for this property!",
     "database_error": "Database error while saving furniture.",
     "cleaning_timer_set": "Cleaning schedule set to: %s",
     "cutpower_usage": "Usage: /cutpower [propertyId] (leave blank for current property)",
