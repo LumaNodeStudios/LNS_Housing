@@ -345,8 +345,6 @@ lib.callback.register('LNS_Housing:server:updateListingDetails', function(source
     p.sale_type = data.sale_type or p.sale_type
     p.image = data.image
     p.zone_data = data.zone_data or p.zone_data
-    p.metadata.size = calculateSquareFootage(p.zone_data)
-    p.size = p.metadata.size
     p.yard_zone_data = data.yard_zone_data or p.yard_zone_data
 
     if not p.metadata then p.metadata = {} end
@@ -357,8 +355,23 @@ lib.callback.register('LNS_Housing:server:updateListingDetails', function(source
         p.property_type = propType
         p.metadata.property_type = propType
     end
-    p.metadata.shell = data.mlo and 'mlo' or (data.shell or p.metadata.shell or 'Standard Motel')
+    local isMlo = data.mlo == true or (data.mlo == nil and (p.metadata.mlo == true or p.metadata.shell == 'mlo'))
+    p.metadata.mlo = isMlo
+    p.metadata.shell = isMlo and 'mlo' or (data.shell or p.metadata.shell or 'Standard Motel')
     p.metadata.allow_wall_colors = data.allowWallColors or false
+
+    local interiorSqFt = (not isMlo) and Bridge.GetInteriorSqFt(p.metadata.shell) or nil
+    if interiorSqFt then
+        p.metadata.size = interiorSqFt
+    elseif p.zone_data and p.zone_data.points and #p.zone_data.points >= 3 then
+        p.metadata.size = calculateSquareFootage(p.zone_data)
+    elseif (tonumber(data.roomCount or data.room_count or p.metadata.room_count) or 0) > 0 then
+        local rc = tonumber(data.roomCount or data.room_count or p.metadata.room_count)
+        p.metadata.size = math.max(600, rc * 250)
+    elseif not p.metadata.size or p.metadata.size == 0 then
+        p.metadata.size = isMlo and 1200 or 0
+    end
+    p.size = p.metadata.size
     if data.maxStashes ~= nil or data.max_stashes ~= nil then
         local rawMax = data.maxStashes ~= nil and data.maxStashes or data.max_stashes
         p.metadata.max_stashes = math.max(0, math.floor(tonumber(rawMax) or 0))

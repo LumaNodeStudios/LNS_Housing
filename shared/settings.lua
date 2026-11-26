@@ -622,96 +622,112 @@ return {
         ["Standard Motel"] = {
             label = "Standard Motel",
             hash = "standardmotel_shell",
+            sqft = 410, -- Square footage displayed for properties using this shell
             doorOffset = { x = -0.5, y = -2.3, z = 0.0, h = 90.0, width = 1.5 }, -- Exit door offset from the shell origin
             previewUrl = "https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/standardmotel_shell.png" -- Image link/URL or relative path to preview image
         },
         ["Modern Hotel"] = {
             label = "Modern Hotel",
             hash = "modernhotel_shell",
+            sqft = 1232,
             doorOffset = { x = 4.98, y = 4.35, z = -0.75, h = 179.79, width = 2.0 },
             previewUrl = "https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/modernhotel_shell.png"
         },
         ["Apartment Furnished"] = {
             label = "Apartment Furnished",
             hash = "furnitured_midapart",
+            sqft = 2076,
             doorOffset = { x = 1.44, y = -10.25, z = 0.0, h = 0.0, width = 1.5 },
             previewUrl = "https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/furnitured_midapart.png"
         },
         ["Apartment Unfurnished"] = {
             label = "Apartment Unfurnished",
             hash = "shell_v16mid",
+            sqft = 2076,
             doorOffset = { x = 1.34, y = -14.36, z = -0.5, h = 354.08, width = 1.5 },
             previewUrl = "https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_v16mid.png"
         },
         ["Apartment 2 Unfurnished"] = {
             label = "Apartment 2 Unfurnished",
             hash = "shell_v16low",
+            sqft = 924,
             doorOffset = { x = 4.69, y = -6.5, z = -1.0, h = 358.50, width = 1.5 },
             previewUrl = "https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_v16low.png"
         },
         ["Garage"] = {
             label = "Garage",
             hash = "shell_garagem",
+            sqft = 3005,
             doorOffset = { x = 14.0, y = 1.7, z = -0.76, h = 88.49, width = 2.0 },
             previewUrl = "https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_garagem.png"
         },
         ["Office"] = {
             label = "Office",
             hash = "shell_office1",
+            sqft = 955,
             doorOffset = { x = 1.2, y = 4.90, z = -0.73, h = 180.0, width = 2.0 },
             previewUrl = "https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_office1.png"
         },
         ["Store"] = {
             label = "Store",
             hash = "shell_store1",
+            sqft = 793,
             doorOffset = { x = -2.69, y = -4.56, z = -0.62, h = 1.91, width = 2.0 },
             previewUrl = "https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_store1.png"
         },
         ["Warehouse"] = {
             label = "Warehouse",
             hash = "shell_warehouse1",
+            sqft = 1661,
             doorOffset = { x = -8.96, y = 0.11, z = -0.95, h = 270.64, width = 2.0 },
             previewUrl = "https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_warehouse1.png"
         },
         ["Container"] = {
             label = "Container",
             hash = "container_shell",
+            sqft = 327,
             doorOffset = { x = 0.05, y = -5.7, z = -0.22, h = 1.7, width = 2.2 },
             previewUrl = "https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/container_shell.png"
         },
         ["2 Floor House"] = {
             label = "2 Floor House",
             hash = "shell_michael",
+            sqft = 4420,
             doorOffset = { x = -9.6, y = 5.63, z = -4.07, h = 268.55, width = 2.0 },
             previewUrl = "https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_michael.png"
         },
         ["House 1"] = {
             label = "House 1",
             hash = "shell_frankaunt",
+            sqft = 1603,
             doorOffset = { x = -0.34, y = -5.97, z = -0.57, h = 357.23, width = 2.0 },
             previewUrl = "https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_frankaunt.png"
         },
         ["House 2"] = {
             label = "House 2",
             hash = "shell_ranch",
+            sqft = 3491,
             doorOffset = { x = -1.23, y = -5.54, z = -1.1, h = 272.21, width = 2.0 },
             previewUrl = "https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_ranch.png"
         },
         ["House 3"] = {
             label = "House 3",
             hash = "shell_lester",
+            sqft = 874,
             doorOffset = { x = -1.61, y = -6.02, z = -0.37, h = 357.7, width = 2.0 },
             previewUrl = "https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_lester.png"
         },
         ["House 4"] = {
             label = "House 4",
             hash = "shell_trevor",
+            sqft = 1471,
             doorOffset = { x = 0.2, y = -3.82, z = -0.41, h = 358.4, width = 2.0 },
             previewUrl = "https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_trevor.png"
         },
         ["Trailer"] = {
             label = "Trailer",
             hash = "shell_trailer",
+            sqft = 584,
             doorOffset = { x = -1.27, y = -2.08, z = -0.48, h = 358.84, width = 2.0 },
             previewUrl = "https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_trailer.png"
         }
@@ -724,6 +740,7 @@ return {
         ["Eclipse Penthouse 1"] = {
             label = "Eclipse Penthouse 1",
             ipls = { "apa_v_mp_h_01_a" },
+            sqft = 3200, -- Square footage displayed for properties using this IPL
             coords = vec4(-786.8663, 315.7642, 217.6385, 270.0),
             exitCoords = vec4(-786.8663, 315.7642, 217.6385, 270.0),
             previewUrl = "" -- Image link/URL or relative path to preview image
@@ -731,6 +748,7 @@ return {
         ["Eclipse Penthouse 2"] = {
             label = "Eclipse Penthouse 2",
             ipls = { "apa_v_mp_h_02_a" },
+            sqft = 3200,
             coords = vec4(-786.9563, 315.6229, 187.9136, 270.0),
             exitCoords = vec4(-786.9563, 315.6229, 187.9136, 270.0),
             previewUrl = ""
@@ -738,6 +756,7 @@ return {
         ["Eclipse Penthouse 3"] = {
             label = "Eclipse Penthouse 3",
             ipls = { "apa_v_mp_h_03_a" },
+            sqft = 3200,
             coords = vec4(-786.8741, 315.7975, 157.9137, 270.0),
             exitCoords = vec4(-786.8741, 315.7975, 157.9137, 270.0),
             previewUrl = ""

@@ -425,7 +425,10 @@ function RunNoLagMigration(isDryRun)
         end
 
         local propSize = 1200
-        if rawMeta.size and tonumber(rawMeta.size) and tonumber(rawMeta.size) > 0 then
+        local interiorSqFt = (not isMlo) and Bridge and Bridge.GetInteriorSqFt and Bridge.GetInteriorSqFt(shellName) or nil
+        if interiorSqFt then
+            propSize = interiorSqFt
+        elseif rawMeta.size and tonumber(rawMeta.size) and tonumber(rawMeta.size) > 0 then
             propSize = tonumber(rawMeta.size)
         elseif rawMeta.yardZone and rawMeta.yardZone.area and tonumber(rawMeta.yardZone.area) then
             propSize = math.floor(tonumber(rawMeta.yardZone.area) + 0.5)

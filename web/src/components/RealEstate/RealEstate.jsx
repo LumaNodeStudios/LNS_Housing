@@ -41,25 +41,25 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
         }));
     };
     const shellOptions = (shells && shells.length > 0) ? shells : [
-        { value: 'Standard Motel', label: 'Standard Motel', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/standardmotel_shell.png', type: 'shell' },
-        { value: 'Modern Hotel', label: 'Modern Hotel', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/modernhotel_shell.png', type: 'shell' },
-        { value: 'Apartment Furnished', label: 'Apartment Furnished', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/furnitured_midapart.png', type: 'shell' },
-        { value: 'Apartment Unfurnished', label: 'Apartment Unfurnished', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_v16mid.png', type: 'shell' },
-        { value: 'Apartment 2 Unfurnished', label: 'Apartment 2 Unfurnished', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_v16low.png', type: 'shell' },
-        { value: 'Garage', label: 'Garage', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_garagem.png', type: 'shell' },
-        { value: 'Office', label: 'Office', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_office1.png', type: 'shell' },
-        { value: 'Store', label: 'Store', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_store1.png', type: 'shell' },
-        { value: 'Warehouse', label: 'Warehouse', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_warehouse1.png', type: 'shell' },
-        { value: 'Container', label: 'Container', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/container_shell.png', type: 'shell' },
-        { value: '2 Floor House', label: '2 Floor House', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_michael.png', type: 'shell' },
-        { value: 'House 1', label: 'House 1', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_frankaunt.png', type: 'shell' },
-        { value: 'House 2', label: 'House 2', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_ranch.png', type: 'shell' },
-        { value: 'House 3', label: 'House 3', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_lester.png', type: 'shell' },
-        { value: 'House 4', label: 'House 4', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_trevor.png', type: 'shell' },
-        { value: 'Trailer', label: 'Trailer', previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_trailer.png', type: 'shell' },
-        { value: 'Eclipse Penthouse 1', label: 'Eclipse Penthouse 1', previewUrl: '', type: 'ipl' },
-        { value: 'Eclipse Penthouse 2', label: 'Eclipse Penthouse 2', previewUrl: '', type: 'ipl' },
-        { value: 'Eclipse Penthouse 3', label: 'Eclipse Penthouse 3', previewUrl: '', type: 'ipl' }
+        { value: 'Standard Motel', label: 'Standard Motel', sqft: 410, previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/standardmotel_shell.png', type: 'shell' },
+        { value: 'Modern Hotel', label: 'Modern Hotel', sqft: 1232, previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/modernhotel_shell.png', type: 'shell' },
+        { value: 'Apartment Furnished', label: 'Apartment Furnished', sqft: 2076, previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/furnitured_midapart.png', type: 'shell' },
+        { value: 'Apartment Unfurnished', label: 'Apartment Unfurnished', sqft: 2076, previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_v16mid.png', type: 'shell' },
+        { value: 'Apartment 2 Unfurnished', label: 'Apartment 2 Unfurnished', sqft: 924, previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_v16low.png', type: 'shell' },
+        { value: 'Garage', label: 'Garage', sqft: 3005, previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_garagem.png', type: 'shell' },
+        { value: 'Office', label: 'Office', sqft: 955, previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_office1.png', type: 'shell' },
+        { value: 'Store', label: 'Store', sqft: 793, previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_store1.png', type: 'shell' },
+        { value: 'Warehouse', label: 'Warehouse', sqft: 1661, previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_warehouse1.png', type: 'shell' },
+        { value: 'Container', label: 'Container', sqft: 327, previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/container_shell.png', type: 'shell' },
+        { value: '2 Floor House', label: '2 Floor House', sqft: 4420, previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_michael.png', type: 'shell' },
+        { value: 'House 1', label: 'House 1', sqft: 1603, previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_frankaunt.png', type: 'shell' },
+        { value: 'House 2', label: 'House 2', sqft: 3491, previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_ranch.png', type: 'shell' },
+        { value: 'House 3', label: 'House 3', sqft: 874, previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_lester.png', type: 'shell' },
+        { value: 'House 4', label: 'House 4', sqft: 1471, previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_trevor.png', type: 'shell' },
+        { value: 'Trailer', label: 'Trailer', sqft: 584, previewUrl: 'https://r2.fivemanage.com/ikenZGXRwE4faTVyko8MZ/Docs/Housing/Shell_Thumbnails/shell_trailer.png', type: 'shell' },
+        { value: 'Eclipse Penthouse 1', label: 'Eclipse Penthouse 1', sqft: 3200, previewUrl: '', type: 'ipl' },
+        { value: 'Eclipse Penthouse 2', label: 'Eclipse Penthouse 2', sqft: 3200, previewUrl: '', type: 'ipl' },
+        { value: 'Eclipse Penthouse 3', label: 'Eclipse Penthouse 3', sqft: 3200, previewUrl: '', type: 'ipl' }
     ];
 
     const [previewModalImage, setPreviewModalImage] = useState(null);
@@ -450,6 +450,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                     type: formData.type,
                     garage: parseInt(formData.slots, 10) || 0,
                     slots: parseInt(formData.slots, 10) || 0,
+                    size: (!formData.mlo && currentShellOption?.sqft > 0) ? currentShellOption.sqft : (updated[editingPropertyId].size || 0),
                     allowWallColors: formData.allowWallColors,
                     image: formData.image,
                     doors: formData.doors,
@@ -966,7 +967,7 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                 type: (payload.type === 'Commerce' ? 'Commercial' : payload.type) || 'Residential',
                 region: 'Los Santos',
                 garage: parseInt(payload.slots, 10) || 0,
-                size: 2400,
+                size: (!payload.mlo && currentShellOption?.sqft > 0) ? currentShellOption.sqft : 2400,
                 owner: null,
                 image: payload.image || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
                 metadata: {
@@ -1852,6 +1853,9 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                                 <div className="re-shell-preview-bottom">
                                                                     <div className="re-shell-preview-info">
                                                                         <span className="re-shell-preview-title">{currentShellOption.label}</span>
+                                                                        {currentShellOption.sqft > 0 && (
+                                                                            <span className="re-shell-preview-sub">{Number(currentShellOption.sqft).toLocaleString()} {t('ui.sq_ft', 'sq ft')}</span>
+                                                                        )}
                                                                     </div>
                                                                     <span className="re-shell-counter">{Math.max(1, currentShellIndex + 1)} / {shellOptions.length}</span>
                                                                 </div>
@@ -1864,6 +1868,11 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                                             </div>
                                                             <div className="re-shell-empty-texts">
                                                                 <span className="re-shell-empty-title">{currentShellOption?.label || t('ui.selected_interior', 'Selected Interior')}</span>
+                                                                {currentShellOption?.sqft > 0 && (
+                                                                    <span className="re-shell-empty-desc" style={{ color: 'var(--primary)', fontWeight: 600 }}>
+                                                                        {Number(currentShellOption.sqft).toLocaleString()} {t('ui.sq_ft', 'sq ft')}
+                                                                    </span>
+                                                                )}
                                                                 <span className="re-shell-empty-desc">
                                                                     {t('ui.no_preview_configured', 'No preview image configured.')}
                                                                 </span>
@@ -2272,6 +2281,10 @@ const RealEstate = ({ properties, hasPermission, initialTab, onlyBuyViaContracts
                                     <div className="info-box">
                                         <span className="info-label">{t('ui.storage_stashes_label', 'Storage Stashes')}</span>
                                         <span className="info-value">{(selectedProperty.metadata?.max_stashes > 0) ? selectedProperty.metadata.max_stashes : t('ui.unlimited', 'Unlimited')}</span>
+                                    </div>
+                                    <div className="info-box">
+                                        <span className="info-label">{t('ui.size', 'Size')}</span>
+                                        <span className="info-value">{selectedProperty.size || 0} {t('ui.sq_ft', 'sq ft')}</span>
                                     </div>
                                     {selectedProperty.sale_type === 'auction' && (
                                         <div className="info-box highlight">

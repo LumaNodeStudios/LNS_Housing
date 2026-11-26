@@ -248,6 +248,67 @@ function Bridge.IsCountedStorageStash(itemData)
     return true
 end
 
+-- Resolve configured square footage for a shell or IPL interior name
+function Bridge.GetInteriorSqFt(shellName)
+    if not shellName or shellName == '' or shellName == 'mlo' then return nil end
+
+    local cfg = (Settings and Settings.Shells and Settings.Shells[shellName])
+        or (Settings and Settings.IPLs and Settings.IPLs[shellName])
+
+    if not cfg and Settings then
+        local targetLower = string.lower(tostring(shellName))
+        for k, data in pairs(Settings.Shells or {}) do
+            if string.lower(tostring(k)) == targetLower
+                or (data.hash and string.lower(tostring(data.hash)) == targetLower)
+                or (data.label and string.lower(tostring(data.label)) == targetLower) then
+                cfg = data
+                break
+            end
+        end
+        if not cfg then
+            for k, data in pairs(Settings.IPLs or {}) do
+                if string.lower(tostring(k)) == targetLower
+                    or (data.label and string.lower(tostring(data.label)) == targetLower) then
+                    cfg = data
+                    break
+                end
+            end
+        end
+    end
+
+    if not cfg then return nil end
+    local sqft = tonumber(cfg.sqft or cfg.sqFt or cfg.sq_ft or cfg.size)
+    if sqft and sqft > 0 then
+        return math.floor(sqft)
+    end
+    return nil
+end
+
+-- Build sorted shell + IPL option list for NUI selectors
+function Bridge.GetInteriorOptions()
+    local shellList = {}
+    for name, data in pairs((Settings and Settings.Shells) or {}) do
+        table.insert(shellList, {
+            value = name,
+            label = data.label or name,
+            previewUrl = data.previewUrl or '',
+            sqft = Bridge.GetInteriorSqFt(name) or 0,
+            type = 'shell'
+        })
+    end
+    for name, data in pairs((Settings and Settings.IPLs) or {}) do
+        table.insert(shellList, {
+            value = name,
+            label = data.label or name,
+            previewUrl = data.previewUrl or '',
+            sqft = Bridge.GetInteriorSqFt(name) or 0,
+            type = 'ipl'
+        })
+    end
+    table.sort(shellList, function(a, b) return a.label < b.label end)
+    return shellList
+end
+
 -- Global Debug Print Utility using ox_lib print
 function debugPrint(level, ...)
     if Settings and Settings.Debug and Settings.Debug.Prints then

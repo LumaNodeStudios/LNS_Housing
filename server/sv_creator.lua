@@ -184,7 +184,11 @@ lib.callback.register('LNS_Housing:server:createHouse', function(source, data)
         }
     end
 
-    if data.zone_data and data.zone_data.points and #data.zone_data.points >= 3 then
+    local isMlo = data.mlo == true or data.shell == 'mlo'
+    local interiorSqFt = (not isMlo) and Bridge.GetInteriorSqFt(data.shell) or nil
+    if interiorSqFt then
+        data.size = interiorSqFt
+    elseif data.zone_data and data.zone_data.points and #data.zone_data.points >= 3 then
         data.size = calculateSquareFootage(data.zone_data)
     elseif data.room_count and data.room_count > 0 then
         data.size = math.max(600, data.room_count * 250)

@@ -57,10 +57,19 @@ const CustomSelect = ({ label, icon: Icon, value, options = [], onChange, name, 
                     <span className="re-custom-select-value">
                         {selectedOption ? selectedOption.label : effectivePlaceholder}
                     </span>
-                    {selectedOption?.type && (
-                        <span className={`re-custom-select-type-tag ${selectedOption.type}`}>
-                            {selectedOption.type.toUpperCase()}
-                        </span>
+                    {(selectedOption?.sqft > 0 || selectedOption?.type) && (
+                        <div className="re-custom-select-meta-tags">
+                            {selectedOption?.sqft > 0 && (
+                                <span className="re-custom-select-sqft-tag">
+                                    {Number(selectedOption.sqft).toLocaleString()} {t('ui.sq_ft', 'sq ft')}
+                                </span>
+                            )}
+                            {selectedOption?.type && (
+                                <span className={`re-custom-select-type-tag ${selectedOption.type}`}>
+                                    {selectedOption.type.toUpperCase()}
+                                </span>
+                            )}
+                        </div>
                     )}
                 </div>
                 <ChevronDown size={14} className={`re-custom-select-arrow ${isOpen ? 'open' : ''}`} />
@@ -99,10 +108,19 @@ const CustomSelect = ({ label, icon: Icon, value, options = [], onChange, name, 
                                         </div>
                                     ) : null)}
                                     <span className="option-text">{option.label}</span>
-                                    {option.type && (
-                                        <span className={`re-custom-select-type-tag ${option.type}`}>
-                                            {option.type.toUpperCase()}
-                                        </span>
+                                    {(option.sqft > 0 || option.type) && (
+                                        <div className="re-custom-select-meta-tags">
+                                            {option.sqft > 0 && (
+                                                <span className="re-custom-select-sqft-tag">
+                                                    {Number(option.sqft).toLocaleString()} {t('ui.sq_ft', 'sq ft')}
+                                                </span>
+                                            )}
+                                            {option.type && (
+                                                <span className={`re-custom-select-type-tag ${option.type}`}>
+                                                    {option.type.toUpperCase()}
+                                                </span>
+                                            )}
+                                        </div>
                                     )}
                                     {String(value) === String(option.value) && <Check size={12} className="option-check" />}
                                 </div>

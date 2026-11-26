@@ -24,6 +24,14 @@ function LoadProperties()
             if v.metadata.tenant_history == nil then v.metadata.tenant_history = {} end
             if v.metadata.rent_history == nil then v.metadata.rent_history = {} end
             if v.metadata.partial_payment == nil then v.metadata.partial_payment = 0 end
+            local shellName = v.metadata.shell
+            local isMlo = v.metadata.mlo == true or shellName == 'mlo' or not shellName
+            if not isMlo then
+                local configuredSqFt = Bridge and Bridge.GetInteriorSqFt and Bridge.GetInteriorSqFt(shellName)
+                if configuredSqFt then
+                    v.metadata.size = configuredSqFt
+                end
+            end
             if v.metadata.size == nil then v.metadata.size = 0 end
             if v.metadata.region == nil then v.metadata.region = 'Unknown' end
             if v.metadata.max_power == nil then v.metadata.max_power = (Settings.Electricity and Settings.Electricity.DefaultMaxPower) or 5.0 end

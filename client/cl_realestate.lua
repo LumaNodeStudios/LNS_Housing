@@ -6,24 +6,7 @@ if Settings.RealEstate and Settings.RealEstate.Command then
         local properties = lib.callback.await('LNS_Housing:server:getProperties', false)
         local hasPermission = lib.callback.await('LNS_Housing:server:checkPermission', false, 'realestate')
         
-        local shellList = {}
-        for name, data in pairs(Settings.Shells or {}) do
-            table.insert(shellList, {
-                value = name,
-                label = data.label or name,
-                previewUrl = data.previewUrl or '',
-                type = 'shell'
-            })
-        end
-        for name, data in pairs(Settings.IPLs or {}) do
-            table.insert(shellList, {
-                value = name,
-                label = data.label or name,
-                previewUrl = data.previewUrl or '',
-                type = 'ipl'
-            })
-        end
-        table.sort(shellList, function(a, b) return a.label < b.label end)
+        local shellList = Bridge.GetInteriorOptions()
 
         SendNUIMessage({
             action = 'openRealEstate',
@@ -44,24 +27,7 @@ RegisterNetEvent('LNS_Housing:client:openRealEstateFromItem', function()
     local properties = lib.callback.await('LNS_Housing:server:getProperties', false)
     local hasPermission = lib.callback.await('LNS_Housing:server:checkPermission', false, 'realestate')
 
-    local shellList = {}
-    for name, data in pairs(Settings.Shells or {}) do
-        table.insert(shellList, {
-            value = name,
-            label = data.label or name,
-            previewUrl = data.previewUrl or '',
-            type = 'shell'
-        })
-    end
-    for name, data in pairs(Settings.IPLs or {}) do
-        table.insert(shellList, {
-            value = name,
-            label = data.label or name,
-            previewUrl = data.previewUrl or '',
-            type = 'ipl'
-        })
-    end
-    table.sort(shellList, function(a, b) return a.label < b.label end)
+    local shellList = Bridge.GetInteriorOptions()
 
     SendNUIMessage({
         action = 'openRealEstate',
