@@ -106,7 +106,7 @@ return {
     Apartments = {
         Enabled = true,                     -- Toggle for enabling or disabling apartment system
         CanBreakIn = false,                 -- If true, apartments can be lockpicked/broken into
-        MaxStashes = 0,                     -- Maximum number of placed storage stashes per apartment (0 = unlimited)
+        MaxStashes = 0,                     -- Maximum number of placed storage stashes per apartment (0 = unlimited). NOTE: If using instanced apartments the Buildings.stash counts towards this value.
 
         Starter = {
             Mode = 'instance',                  -- 'instance' (uses 1 shell/ipl with routing buckets per player) or 'mlo' (legacy physical rooms)

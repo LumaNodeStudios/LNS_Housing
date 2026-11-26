@@ -150,8 +150,6 @@ export default function StorageKeypad({ data, onClose }) {
     switch (mode) {
       case 'register':
         return {
-          badge: t('ui.set_passcode', 'SET PASSCODE'),
-          badgeClass: 'badge-register',
           subtitle: t('ui.set_passcode_sub', 'Create a 4-digit passcode to secure this storage'),
           submitLabel: t('ui.register_passcode_btn', 'SET PASSCODE'),
           icon: <ShieldCheck size={18} />,
@@ -159,8 +157,6 @@ export default function StorageKeypad({ data, onClose }) {
         };
       case 'reset':
         return {
-          badge: t('ui.reset_passcode', 'RESET PASSCODE'),
-          badgeClass: 'badge-reset',
           subtitle: t('ui.reset_passcode_sub', 'Enter a new 4-digit passcode for this storage'),
           submitLabel: t('ui.save_passcode_btn', 'SAVE NEW PASSCODE'),
           icon: <KeyRound size={18} />,
@@ -169,8 +165,6 @@ export default function StorageKeypad({ data, onClose }) {
       case 'unlock':
       default:
         return {
-          badge: t('ui.locked', 'LOCKED'),
-          badgeClass: 'badge-locked',
           subtitle: t('ui.enter_passcode_sub', 'Enter 4-digit passcode to unlock and open'),
           submitLabel: t('ui.unlock_storage_btn', 'UNLOCK STORAGE'),
           icon: <Lock size={18} />,
@@ -193,13 +187,9 @@ export default function StorageKeypad({ data, onClose }) {
         {/* Header */}
         <div className="keypad-header">
           <div className="keypad-header-left">
-            <div className={`keypad-icon-box ${modeInfo.badgeClass}`}>
-              {modeInfo.icon}
-            </div>
             <div className="keypad-header-text">
               <div className="keypad-title-row">
                 <span className="keypad-title">{title}</span>
-                <span className={`keypad-badge ${modeInfo.badgeClass}`}>{modeInfo.badge}</span>
               </div>
               <p className="keypad-subtitle">{modeInfo.subtitle}</p>
             </div>
@@ -261,9 +251,8 @@ export default function StorageKeypad({ data, onClose }) {
 
         {/* PIN Screen / Display */}
         <div
-          className={`keypad-screen ${
-            status === 'error' ? 'screen-error' : ''
-          } ${status === 'success' ? 'screen-success' : ''}`}
+          className={`keypad-screen ${status === 'error' ? 'screen-error' : ''
+            } ${status === 'success' ? 'screen-success' : ''}`}
         >
           {/* Top row with Visibility toggle */}
           <div className="screen-top-bar">
@@ -425,9 +414,8 @@ export default function StorageKeypad({ data, onClose }) {
         {/* Submit Button */}
         <button
           type="button"
-          className={`keypad-submit-btn ${
-            mode === 'register' ? 'btn-register' : mode === 'reset' ? 'btn-reset' : 'btn-unlock'
-          } ${status === 'loading' ? 'loading' : ''} ${status === 'success' ? 'success' : ''}`}
+          className={`keypad-submit-btn ${mode === 'register' ? 'btn-register' : mode === 'reset' ? 'btn-reset' : 'btn-unlock'
+            } ${status === 'loading' ? 'loading' : ''} ${status === 'success' ? 'success' : ''}`}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();

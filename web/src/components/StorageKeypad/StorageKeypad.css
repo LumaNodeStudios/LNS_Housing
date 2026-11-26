@@ -36,10 +36,27 @@
 }
 
 @keyframes keypadShake {
-  10%, 90% { transform: translate3d(-3px, 0, 0); }
-  20%, 80% { transform: translate3d(4px, 0, 0); }
-  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-  40%, 60% { transform: translate3d(4px, 0, 0); }
+
+  10%,
+  90% {
+    transform: translate3d(-3px, 0, 0);
+  }
+
+  20%,
+  80% {
+    transform: translate3d(4px, 0, 0);
+  }
+
+  30%,
+  50%,
+  70% {
+    transform: translate3d(-4px, 0, 0);
+  }
+
+  40%,
+  60% {
+    transform: translate3d(4px, 0, 0);
+  }
 }
 
 /* Header */
@@ -58,34 +75,6 @@
   gap: 10px;
   flex: 1;
   min-width: 0;
-}
-
-.keypad-icon-box {
-  width: 36px;
-  height: 36px;
-  border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.keypad-icon-box.badge-locked {
-  background: rgba(244, 63, 94, 0.12);
-  color: #f43f5e;
-  border: 1px solid rgba(244, 63, 94, 0.25);
-}
-
-.keypad-icon-box.badge-register {
-  background: rgba(var(--primary-rgb), 0.12);
-  color: var(--primary);
-  border: 1px solid rgba(var(--primary-rgb), 0.25);
-}
-
-.keypad-icon-box.badge-reset {
-  background: rgba(168, 85, 247, 0.12);
-  color: #c084fc;
-  border: 1px solid rgba(168, 85, 247, 0.25);
 }
 
 .keypad-header-text {
@@ -307,8 +296,15 @@
 }
 
 @keyframes cursorBlink {
-  0%, 100% { opacity: 0.15; }
-  50% { opacity: 1; }
+
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+
+  50% {
+    opacity: 1;
+  }
 }
 
 /* Filled State */
@@ -535,7 +531,9 @@
 }
 
 @keyframes keypadSpin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Footer Hint */
