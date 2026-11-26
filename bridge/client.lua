@@ -261,13 +261,12 @@ end)
 -- Garage Zone Management
 function Bridge.Client.RegisterGarage(propertyId, label, garageData)
     debugPrint('info', 'Registering garage', {propertyId = propertyId, label = label, garageData = garageData})
-    if Bridge.GarageScript == 'jg-advancedgarages' or Bridge.GarageScript == 'cd_garage' or Bridge.GarageScript == 'op-garages' then
-        local garageName = string.format("property-%s-garage", propertyId)
+    if Bridge.GarageScript == 'op-garages' then
         if clientGarageZones[propertyId] then
             clientGarageZones[propertyId]:remove()
             clientGarageZones[propertyId] = nil
         end
-        
+
         local hasAccess = false
         clientGarageZones[propertyId] = lib.zones.box({
             coords = vector3(garageData.x, garageData.y, garageData.z),
@@ -278,7 +277,7 @@ function Bridge.Client.RegisterGarage(propertyId, label, garageData)
                 debugPrint('debug', 'Garage zone onEnter', {propertyId = propertyId})
                 hasAccess = lib.callback.await('LNS_Housing:server:checkPermission', false, 'house', propertyId, 'entry')
                 if not hasAccess then return end
-                
+
                 if cache.ped and IsPedInAnyVehicle(cache.ped, true) then
                     lib.showTextUI(locale('textui.store_vehicle'))
                 else
@@ -290,27 +289,9 @@ function Bridge.Client.RegisterGarage(propertyId, label, garageData)
                 if IsControlJustReleased(0, 38) then
                     debugPrint('debug', 'Garage zone interaction triggered', {propertyId = propertyId})
                     Wait(100)
-                    if Bridge.GarageScript == 'op-garages' then
-                        local spawn = garageData.spawn or garageData
-                        local spawnCoords = vector4(spawn.x, spawn.y, spawn.z, spawn.h or 0.0)
-                        exports['op-garages']:OpenGarageHere(spawnCoords, true)
-                    else
-                        if cache.ped and IsPedInAnyVehicle(cache.ped, true) then
-                            if Bridge.GarageScript == 'jg-advancedgarages' then
-                                TriggerEvent('jg-advancedgarages:client:store-vehicle', garageName, "car")
-                            elseif Bridge.GarageScript == 'cd_garage' then
-                                TriggerEvent('cd_garage:PropertyGarage:StoreVehicle')
-                            end
-                        else
-                            local spawn = garageData.spawn or garageData
-                            local spawnCoords = vector4(spawn.x, spawn.y, spawn.z, spawn.h or 0.0)
-                            if Bridge.GarageScript == 'jg-advancedgarages' then
-                                TriggerEvent('jg-advancedgarages:client:open-garage', garageName, "car", spawnCoords)
-                            elseif Bridge.GarageScript == 'cd_garage' then
-                                TriggerEvent('cd_garage:PropertyGarage:Open', spawnCoords)
-                            end
-                        end
-                    end
+                    local spawn = garageData.spawn or garageData
+                    local spawnCoords = vector4(spawn.x, spawn.y, spawn.z, spawn.h or 0.0)
+                    exports['op-garages']:OpenGarageHere(spawnCoords, true)
                 end
             end,
             onExit = function()

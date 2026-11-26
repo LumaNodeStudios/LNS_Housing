@@ -24,6 +24,7 @@ RegisterNetEvent('LNS_Housing:server:updatePermissions', function(propertyId, pe
     p.permissions = permissions
     SaveProperty(propertyId)
     SyncPropertyDoor(propertyId)
+    Bridge.Server.RefreshGarageAccess(propertyId)
     TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
 
     if GetResourceState('sd-phone') == 'started' then

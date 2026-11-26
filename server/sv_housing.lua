@@ -389,6 +389,7 @@ lib.callback.register('LNS_Housing:server:buyHouse', function(source, propertyId
         p.owner = Bridge.Server.GetIdentifier(source)
         SaveProperty(propertyId)
         SyncPropertyDoor(propertyId)
+        Bridge.Server.RefreshGarageAccess(propertyId)
 
         MySQL.update.await('UPDATE housing_contracts SET status = ? WHERE property_id = ? AND status = ?', {'declined', propertyId, 'pending'})
 
@@ -445,6 +446,7 @@ CreateThread(function()
                                         p.metadata.missed_payments = 0
                                         p.metadata.due_by = nil
                                         SyncPropertyDoor(id)
+                                        Bridge.Server.RefreshGarageAccess(id)
                                     end
 
                                     local tenant = Bridge.Server.IsPlayerOnline(p.owner)
@@ -497,6 +499,7 @@ CreateThread(function()
 
                         if now > p.metadata.due_by then
                             SyncPropertyDoor(id)
+                            Bridge.Server.RefreshGarageAccess(id)
 
                             local retrievalPeriod = rentConf.RetrievalPeriod or 604800
                             local maxMissed = rentConf.MaxMissedPayments or 3
@@ -524,6 +527,7 @@ CreateThread(function()
 
                                 SaveProperty(id)
                                 SyncPropertyDoor(id)
+                                Bridge.Server.RefreshGarageAccess(id)
                                 TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
                             else
                                 local tenant = Bridge.Server.IsPlayerOnline(p.owner)
@@ -994,6 +998,7 @@ exports('GiveKey', function(propertyId, targetIdentifier)
     table.insert(p.permissions.entry, cid)
     SaveProperty(propertyId)
     SyncPropertyDoor(propertyId)
+    Bridge.Server.RefreshGarageAccess(propertyId)
     TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
     return true
 end)
@@ -1024,6 +1029,7 @@ exports('RemoveKey', function(propertyId, targetIdentifier)
     if removed then
         SaveProperty(propertyId)
         SyncPropertyDoor(propertyId)
+        Bridge.Server.RefreshGarageAccess(propertyId)
         TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
         return true
     end

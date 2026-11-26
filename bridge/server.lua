@@ -579,33 +579,232 @@ function Bridge.Server.Notify(source, msg, type, ...)
 end
 
 -- Server-side Garage Registration
+local registeredGarages = {}
+
+local function buildGarageCoords(garageData)
+    if type(garageData) ~= 'table' or garageData.x == nil or garageData.y == nil or garageData.z == nil then
+        return nil, nil
+    end
+    local openCoords = vector3(tonumber(garageData.x), tonumber(garageData.y), tonumber(garageData.z))
+    local spawn = type(garageData.spawn) == 'table' and garageData.spawn or garageData
+    local spawnCoords = vector4(
+        tonumber(spawn.x) or openCoords.x,
+        tonumber(spawn.y) or openCoords.y,
+        tonumber(spawn.z) or openCoords.z,
+        tonumber(spawn.h or spawn.w) or 0.0
+    )
+    return openCoords, spawnCoords
+end
+
+local function getPropertyAccessIdentifiers(p)
+    local seen = {}
+    local list = {}
+    if not p then return list end
+    if p.owner and p.owner ~= '' then
+        seen[p.owner] = true
+    end
+    if type(p.permissions) == 'table' then
+        if type(p.permissions.entry) == 'table' then
+            for _, cid in ipairs(p.permissions.entry) do
+                if type(cid) == 'string' and cid ~= '' and not seen[cid] then
+                    seen[cid] = true
+                    list[#list + 1] = cid
+                end
+            end
+        elseif #p.permissions > 0 then
+            for _, cid in ipairs(p.permissions) do
+                if type(cid) == 'string' and cid ~= '' and not seen[cid] then
+                    seen[cid] = true
+                    list[#list + 1] = cid
+                end
+            end
+        end
+    end
+    return list
+end
+
 function Bridge.Server.RegisterGarage(propertyId, label, garageData)
     debugPrint('info', 'Bridge.Server.RegisterGarage', {propertyId = propertyId, label = label, garageData = garageData})
+    local openCoords, spawnCoords = buildGarageCoords(garageData)
+    if not openCoords or not spawnCoords then return end
+
+    local garageLabel = label or string.format('Property Garage %s', propertyId)
+
     if Bridge.GarageScript == 'qbx_garages' then
-        local garageName = string.format("property-%s-garage", propertyId)
-        local spawn = garageData.spawn or garageData
+        local garageName = string.format('property-%s-garage', propertyId)
         local config = {
-            label = label or string.format("Property Garage %s", propertyId),
-            vehicleType = "car",
+            label = garageLabel,
+            vehicleType = 'car',
             accessPoints = {
                 {
-                    coords = vector3(garageData.x, garageData.y, garageData.z),
-                    spawn = vector4(spawn.x, spawn.y, spawn.z, spawn.h or 0.0),
-                    dropPoint = vector3(garageData.x, garageData.y, garageData.z)
+                    coords = openCoords,
+                    spawn = spawnCoords,
+                    dropPoint = openCoords
                 }
             },
             canAccess = function(source)
-                return CheckPermission(source, 'house', propertyId, 'entry')
+                local p = Properties and Properties[propertyId]
+                if not p or not p.metadata or not p.metadata.garage_data then return false end
+                return CheckPermission(source, 'house', propertyId, 'entry') == true
             end
         }
         exports.qbx_garages:RegisterGarage(garageName, config)
+    elseif Bridge.GarageScript == 'jg-advancedgarages' then
+        local garageKey = string.format('property-%s-garage', propertyId)
+        local options = {
+            id = garageKey,
+            name = garageLabel,
+            coords = openCoords,
+            spawnPoints = { spawnCoords },
+            vehicleType = 'car',
+            storeCoords = openCoords,
+            access = function(source, _garageId)
+                local p = Properties and Properties[propertyId]
+                if not p or not p.metadata or not p.metadata.garage_data then return false end
+                return CheckPermission(source, 'house', propertyId, 'entry') == true
+            end
+        }
+
+        local existingId = registeredGarages[propertyId]
+        if existingId then
+            local ok, updated, err = pcall(function()
+                return exports['jg-advancedgarages']:updateGarage(existingId, options)
+            end)
+            if ok and updated then
+                return existingId
+            end
+            debugPrint('warn', 'Failed to update jg-advancedgarages garage, re-registering', {propertyId = propertyId, garageId = existingId, err = err})
+            registeredGarages[propertyId] = nil
+        end
+
+        local ok, garageId, err = pcall(function()
+            return exports['jg-advancedgarages']:registerGarage(options)
+        end)
+        if ok and garageId then
+            registeredGarages[propertyId] = garageId
+            return garageId
+        else
+            debugPrint('warn', 'Failed to register jg-advancedgarages garage', {propertyId = propertyId, error = err or garageId})
+        end
+    elseif Bridge.GarageScript == 'cd_garage' then
+        local p = Properties and Properties[propertyId]
+        if not p or not p.owner or p.owner == '' then return end
+
+        local alreadyExists = false
+        local ok, locations = pcall(function()
+            return exports.cd_garage:GetGarageLocations()
+        end)
+        if ok and type(locations) == 'table' then
+            for _, loc in pairs(locations) do
+                if type(loc) == 'table' and loc.location_type == 'property' and loc.coords and loc.coords.open then
+                    local locOpen = vector3(loc.coords.open.x, loc.coords.open.y, loc.coords.open.z)
+                    if #(openCoords - locOpen) < 2.0 and loc.data and loc.data.owner_identifier == p.owner then
+                        alreadyExists = true
+                        break
+                    end
+                end
+            end
+        end
+
+        if alreadyExists then return end
+
+        local payload = {
+            garage_label = garageLabel,
+            allowed_vehicle_types = { 'car' },
+            coords = {
+                open = {
+                    x = openCoords.x,
+                    y = openCoords.y,
+                    z = openCoords.z,
+                    interact_distance = 5,
+                    view_distance = 15
+                },
+                spawn = {
+                    x = spawnCoords.x,
+                    y = spawnCoords.y,
+                    z = spawnCoords.z,
+                    heading = spawnCoords.w
+                }
+            },
+            data = {
+                owner_identifier = p.owner,
+                access_identifiers = getPropertyAccessIdentifiers(p)
+            },
+            blip = {
+                enabled = false,
+                sprite = 357,
+                scale = 0.6,
+                color = 9
+            }
+        }
+
+        TriggerEvent('cd_garage:PropertyGarage:Create', payload)
     end
 end
 
 function Bridge.Server.UnregisterGarage(propertyId)
     debugPrint('info', 'Bridge.Server.UnregisterGarage', {propertyId = propertyId})
-    -- Handled automatically or per garage script
+    if Bridge.GarageScript == 'jg-advancedgarages' then
+        local garageId = registeredGarages[propertyId]
+        if garageId then
+            pcall(function()
+                exports['jg-advancedgarages']:unregisterGarage(garageId)
+            end)
+            registeredGarages[propertyId] = nil
+        end
+    end
 end
+
+function Bridge.Server.RefreshGarageAccess(propertyId)
+    debugPrint('info', 'Bridge.Server.RefreshGarageAccess', {propertyId = propertyId})
+    if Bridge.GarageScript == 'jg-advancedgarages' then
+        local garageId = registeredGarages[propertyId]
+        if garageId then
+            pcall(function()
+                exports['jg-advancedgarages']:refreshGarageAccess(garageId)
+            end)
+        end
+    elseif Bridge.GarageScript == 'cd_garage' then
+        local p = Properties and Properties[propertyId]
+        if p and p.owner and p.owner ~= '' and p.metadata and p.metadata.garage_data then
+            Bridge.Server.RegisterGarage(propertyId, p.label, p.metadata.garage_data)
+        end
+    end
+end
+
+AddEventHandler('onResourceStart', function(resourceName)
+    if resourceName ~= 'qbx_garages' and resourceName ~= 'jg-advancedgarages' and resourceName ~= 'cd_garage' then
+        return
+    end
+    if not Bridge.GarageScript then
+        Bridge.GarageScript = resourceName
+    end
+    if Bridge.GarageScript ~= resourceName then return end
+
+    if resourceName == 'jg-advancedgarages' then
+        registeredGarages = {}
+    end
+
+    if DbReady and Properties then
+        for id, p in pairs(Properties) do
+            if p.metadata and p.metadata.garage_data then
+                Bridge.Server.RegisterGarage(id, p.label, p.metadata.garage_data)
+            end
+        end
+    end
+end)
+
+AddEventHandler('onResourceStop', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then return end
+    if Bridge.GarageScript == 'jg-advancedgarages' then
+        for propertyId, garageId in pairs(registeredGarages) do
+            pcall(function()
+                exports['jg-advancedgarages']:unregisterGarage(garageId)
+            end)
+            registeredGarages[propertyId] = nil
+        end
+    end
+end)
 
 -- Phone Scripts
 function Bridge.Server.PhoneNotification(source, data)

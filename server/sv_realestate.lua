@@ -68,6 +68,7 @@ RegisterNetEvent('LNS_Housing:server:payRent', function(propertyId, payAmount)
                 p.metadata.missed_payments = 0
                 p.metadata.due_by = nil
                 SyncPropertyDoor(id)
+                Bridge.Server.RefreshGarageAccess(id)
             end
         end
 
@@ -320,6 +321,7 @@ lib.callback.register('LNS_Housing:server:respondToContract', function(source, c
 
         SaveProperty(propertyId)
         SyncPropertyDoor(propertyId)
+        Bridge.Server.RefreshGarageAccess(propertyId)
 
         TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
         exports.LNS_Housing:GivePhysicalKey(propertyId, src)
@@ -505,6 +507,7 @@ lib.callback.register('LNS_Housing:server:deleteListing', function(source, prope
 
     MySQL.update.await('DELETE FROM housing_properties WHERE id = ?', { id })
     Properties[id] = nil
+    Bridge.Server.UnregisterGarage(id)
 
     for _, doorId in ipairs(doorsToRemove) do
         RemoveOxDoorlockDoor(doorId)
@@ -543,6 +546,7 @@ lib.callback.register('LNS_Housing:server:evictTenant', function(source, propert
 
     SaveProperty(id)
     SyncPropertyDoor(id)
+    Bridge.Server.RefreshGarageAccess(id)
     TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
     return true
 end)
@@ -570,6 +574,7 @@ lib.callback.register('LNS_Housing:server:terminateOwnLease', function(source, p
 
     SaveProperty(id)
     SyncPropertyDoor(id)
+    Bridge.Server.RefreshGarageAccess(id)
     TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
     return true
 end)
@@ -716,6 +721,7 @@ RegisterNetEvent('LNS_Housing:server:controlAuction', function(data)
                 exports.LNS_Housing:GivePhysicalKey(propertyId, bidder.PlayerData.source)
             end
             SyncPropertyDoor(propertyId)
+            Bridge.Server.RefreshGarageAccess(propertyId)
 
             MySQL.update.await('UPDATE housing_contracts SET status = ? WHERE property_id = ? AND status = ?', {'declined', propertyId, 'pending'})
 
