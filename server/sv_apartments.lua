@@ -2025,10 +2025,17 @@ lib.callback.register('LNS_Housing:server:deleteApartmentRoom', function(source,
         end
     end
 
-    if doorId and GetResourceState('ox_doorlock') == 'started' then
-        pcall(function()
-            exports.ox_doorlock:setDoorState(doorId, 0)
+    local doorId = roomDoors[roomId]
+    if not doorId and GetResourceState('ox_doorlock') == 'started' and exports.ox_doorlock and exports.ox_doorlock.getDoorFromName then
+        local ok, existingDoor = pcall(function()
+            return exports.ox_doorlock:getDoorFromName("Apartment Room #" .. roomId)
         end)
+        if ok and existingDoor and existingDoor.id then
+            doorId = existingDoor.id
+        end
+    end
+    if doorId then
+        RemoveOxDoorlockDoor(doorId)
     end
     roomDoors[roomId] = nil
 

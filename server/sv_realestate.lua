@@ -484,8 +484,31 @@ lib.callback.register('LNS_Housing:server:deleteListing', function(source, prope
         end
     end
 
+    local doorsToRemove = {}
+    local seenDoors = {}
+    if type(p.doors) == 'table' then
+        for _, doorId in ipairs(p.doors) do
+            local numDoorId = tonumber(type(doorId) == 'table' and (doorId.id or doorId._existingId) or doorId)
+            if numDoorId and numDoorId ~= 0 and not seenDoors[numDoorId] then
+                seenDoors[numDoorId] = true
+                doorsToRemove[#doorsToRemove + 1] = numDoorId
+            end
+        end
+    end
+    if p.door_id and p.door_id ~= 0 then
+        local numDoorId = tonumber(p.door_id)
+        if numDoorId and not seenDoors[numDoorId] then
+            seenDoors[numDoorId] = true
+            doorsToRemove[#doorsToRemove + 1] = numDoorId
+        end
+    end
+
     MySQL.update.await('DELETE FROM housing_properties WHERE id = ?', { id })
     Properties[id] = nil
+
+    for _, doorId in ipairs(doorsToRemove) do
+        RemoveOxDoorlockDoor(doorId)
+    end
 
     TriggerClientEvent('LNS_Housing:client:updateProperties', -1, Properties)
     return true

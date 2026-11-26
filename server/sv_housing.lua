@@ -104,6 +104,30 @@ function ProcessPropertyDoors(doorsInput, propertyLabel)
     return doorIds, spawnCoords
 end
 
+function RemoveOxDoorlockDoor(doorId)
+    local numDoorId = tonumber(doorId)
+    if not numDoorId or numDoorId == 0 then return false end
+    if GetResourceState('ox_doorlock') ~= 'started' then return false end
+    if not exports.ox_doorlock then return false end
+
+    if exports.ox_doorlock.removeDoor then
+        local ok, removed = pcall(function()
+            return exports.ox_doorlock:removeDoor(numDoorId)
+        end)
+        if not ok then
+            debugPrint('warn', 'Failed to remove ox_doorlock door', { doorId = numDoorId, error = tostring(removed) })
+            return false
+        end
+        return removed == true
+    elseif exports.ox_doorlock.setDoorState then
+        pcall(function()
+            exports.ox_doorlock:setDoorState(numDoorId, 0)
+        end)
+    end
+
+    return false
+end
+
 function IsRentOverdue(p)
     if not p or p.sale_type ~= 'rent' or not p.owner then return false end
     if p.metadata and p.metadata.due_by then
